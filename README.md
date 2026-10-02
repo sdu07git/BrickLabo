@@ -82,3 +82,18 @@ Consultez **AIDE.html** pour les commandes et **NOUVEAUTES.txt** pour l’histor
 La documentation de la v0.1.27 rapporte **184 tests dans 28 modules Python/Qt sous Linux**, dont l’inventaire 75192-1 de 765 lignes. L’exécutable Windows d’origine est conservé ; son lancement et l’ouverture réelle de l’Explorateur restent à vérifier sur Windows. Les essais API/page de la recherche de photos utilisent des réponses simulées ; les photos de **100097** n’ont pas été vérifiées en ligne dans cet environnement (HTTP 403).
 
 Pour signaler un problème, ouvrez une **[Issue](https://github.com/sdu07git/BrickLabo/issues)** en indiquant la version, les étapes de reproduction et la référence concernée. Les journaux sont accessibles via **Logs** ou **OUVRIR_LOGS.bat**, dans **Donnees/logs**.
+
+## Code source de la v0.1.27
+
+Les fichiers sources sont consultables directement dans ce dépôt : `main.py`, `atelier/`, `tests/`, `scripts/`, `packaging/` et `ressources/`. Les licences et attributions sont dans `licences/LDraw/`.
+
+Le ZIP `BrickLabo_by_SDU7_v0.1.27_Sources.zip` est également disponible sur la [page de la version](https://github.com/sdu07git/BrickLabo/releases/tag/v0.1.27).
+
+### Lancer les sources sous Windows
+
+1. Installez Python 3.12, puis récupérez le dépôt complet.
+2. Lancez `INSTALLER_DEPENDANCES.bat` pour créer l’environnement et installer les dépendances.
+3. Lancez `DEMARRER.bat` pour ouvrir BrickLabo depuis les sources.
+4. Pour fabriquer l’exécutable Windows, lancez `CONSTRUIRE_EXE.bat`.
+
+Pour utiliser le logiciel sans installer Python, téléchargez la version Windows Portable indiquée en haut de cette page.
