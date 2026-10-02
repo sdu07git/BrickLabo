@@ -1,0 +1,24 @@
+{
+  "counts": {
+    "checked": 1668,
+    "exact_local": 3827,
+    "unverified": 5
+  },
+  "model_status_counts": {
+    "official": 3975,
+    "unofficial": 236,
+    "unavailable": 1
+  },
+  "usable_models": 4208,
+  "pack_files": 604,
+  "failed_details": [
+    "5102c26.25",
+    "5102c17.5",
+    "5102c07.5",
+    "5102c12.5",
+    "5102c06.25"
+  ],
+  "missing_models": {
+    "70694c01.dat": "Dépendance absente : 70694c01.dat"
+  }
+}
