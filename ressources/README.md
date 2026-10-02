@@ -1,0 +1,1 @@
+Catalogue BrickArchitect : brickarchitect.json. Supplément : brickarchitect_ldraw.zip. Bases Rebrickable/BrickLink et complete.zip à reprendre depuis la distribution portable. Origines et droits : SOURCES_ET_LICENCES.html.
