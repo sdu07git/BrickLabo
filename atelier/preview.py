@@ -1,5 +1,8 @@
 from __future__ import annotations
 
+from .i18n import tr,tf
+from .color_links import bl_palette, rb_palette, resolve, candidates, save_choice, describe
+
 from pathlib import Path
 
 from PIL import Image
@@ -41,8 +44,10 @@ class VisualEngine:
         if chosen.startswith('#'):rgb=chosen
         elif chosen:
             if item['source']=='BL':
-                palette=self.db.setting('bl_colors',{})
-                code=str(palette.get(chosen,{}).get('rgb') or '').lstrip('#')
+                palette=bl_palette(self.db.setting)
+                mapped=resolve(self.db.setting,item['ref'],chosen)
+                native_rgb=palette.get(chosen,{}).get('rgb')
+                code=str((rb_palette().get(mapped,{}).get('rgb') if len(candidates(self.db.setting,chosen))>1 else native_rgb) or rb_palette().get(mapped,{}).get('rgb') or '').lstrip('#')
                 if len(code)==6 and all(c in '0123456789abcdefABCDEF' for c in code):rgb='#'+code
             else:
                 r=self.db.rows('SELECT rgb FROM colors WHERE id=?',(chosen,))
@@ -68,14 +73,14 @@ class VisualEngine:
                 except Exception as error:errors.append(str(error))
             if errors:raise ValueError(' ; '.join(errors))
             return None
-        chosen='' if _native else str(color) if color not in (None,'') else v['color']
+        chosen=(str(color) if color not in (None,'') else '') if _native else str(color) if color not in (None,'') else v['color']
         if v['image']:return self.images.get(v['image'],download)
         target=item['source'] if _native else {'photo_rb':'RB','photo_bl':'BL'}.get(v['mode'],item['source'])
         if target!=item['source']:
             if item['source']=='RB' and target=='BL':
-                image=self.bricklink_fallback(item,download)
+                image=self.bricklink_fallback(item,download,chosen)
                 if image is not None:return image
-            raise ValueError('La référence '+item['ref']+' appartient à '+item['source']+'. Choisis sa photo native ou importe une image de la référence équivalente.')
+            raise ValueError(tr('La référence ')+item['ref']+tr(' appartient à ')+item['source']+tr('. Choisis sa photo native ou importe une image de la référence équivalente.'))
         native=self.db.get_item(item['id']) if target=='RB' and item['kind']=='set' else None
         url=self.db.part_image(native or item,chosen);candidates=[url] if url else [];errors=[]
         if target=='RB' and item['kind']=='set':
@@ -140,27 +145,30 @@ class VisualEngine:
                     if image is not None and image.width>3 and image.height>3:
                         self.db.run('UPDATE items SET image=? WHERE id=?',(published,item['id']))
                         return image
-            except Exception as error:errors.append('Page Rebrickable : '+str(error))
+            except Exception as error:errors.append(tr('Page Rebrickable : ')+str(error))
         if item['source']=='RB' and target=='RB' and not _native:
             try:
-                image=self.bricklink_fallback(item,download)
+                image=self.bricklink_fallback(item,download,chosen)
                 if image is not None:return image
-            except Exception as error:errors.append('BrickLink : '+str(error))
-        if errors:raise ValueError('Aucune photo accessible : '+' ; '.join(dict.fromkeys(errors)))
+            except Exception as error:errors.append(tr('BrickLink : ')+str(error))
+        if errors:raise ValueError(tr('Aucune photo accessible : ')+' ; '.join(dict.fromkeys(errors)))
         return None
 
-    def bricklink_fallback(self,item,download=True):
+    def bricklink_fallback(self,item,download=True,color=None):
         from .cross_source import bricklink_reference
         ref=bricklink_reference(self.db,item,download)
         if not ref:return None
         native={**item,'source':'BL','ref':ref,'image':'','inventory_image':''}
-        image=self.photo(native,download,'',_native=True)
+        chosen=str(color if color is not None else self.db.visual(item['id'])['color'])
+        links=rb_palette().get(chosen,{}).get('external',{}).get('BL',[])
+        native_color=links[0]['id'] if len(links)==1 else ''
+        image=self.photo(native,download,native_color,_native=True)
         if image is not None:image.info['bricklabo_photo_source']={'source':'BL','ref':ref}
         return image
 
     def render_3d(self,item,size,color='',view='perspective',edge_strength=None,edge_settings=None,camera=None):
         renderer=self.renderer()
-        if not renderer:raise RenderError('LDraw non importé')
+        if not renderer:raise RenderError(tr('LDraw non importé'))
         rgb=self.color_rgb(item,str(color or self.db.visual(item['id'])['color']))
         camera=camera_for_item(self.db,item) if camera is None else camera
         from .brickarchitect import model_ref
@@ -188,16 +196,16 @@ class VisualEngine:
                 if r:
                     for view,key,sz in [('perspective','main',(620,420)),('top','top',(240,180)),('side','side',(240,160))]:
                         out[key],out['bounds']=self.render_3d(item,sz,chosen,view,edge_settings=style)
-                else:note='LDraw non importé : photo si disponible.'
+                else:note=tr('LDraw non importé : photo si disponible.')
             except RenderError as e:note=str(e)
         if 'main' not in out:
             try:out['main']=self.photo(item,download,chosen)
-            except Exception as e:note='Photo inaccessible : '+str(e)
+            except Exception as e:note=tr('Photo inaccessible : ')+str(e)
         provenance=out.get('main').info.get('bricklabo_photo_source') if out.get('main') is not None else None
         if provenance:
             source={'BL':'BrickLink','RB':'Rebrickable'}[provenance['source']]
-            caption='Photo '+source+' : '+provenance['ref']
-            if provenance['ref']!=item['ref']:caption+=' — variante de '+item['ref']
+            caption=tr('Photo ')+source+' : '+provenance['ref']
+            if provenance['ref']!=item['ref']:caption+=tr(' — variante de ')+item['ref']
             note=(note+'\n' if note else '')+caption
         return out,note
 
@@ -214,48 +222,76 @@ class Preview(QWidget):
     def __init__(self,db,engine,parent=None):
         super().__init__(parent);self.db=db;self.engine=engine;self.item=None;self.token=0;self.image=None;self.label_image=None;self.updating=False;self.color_requests=set();self.architect_requests=set()
         layout=QVBoxLayout(self);layout.setSizeConstraint(QVBoxLayout.SizeConstraint.SetMinimumSize)
-        self.title=QLabel('Aperçu');layout.addWidget(self.title)
-        self.photo=QLabel('Sélectionne une ligne');self.photo.setMinimumHeight(170);self.photo.setAlignment(Qt.AlignmentFlag.AlignCenter);layout.addWidget(self.photo)
-        self.expand=QPushButton('Agrandir l’aperçu');self.expand.clicked.connect(self.enlarge);layout.addWidget(self.expand)
-        self.camera_button=QPushButton('Modifier l’angle du rendu 3D…');self.camera_button.clicked.connect(self.edit_camera);layout.addWidget(self.camera_button)
-        self.edit_one=QPushButton('Modifier cette étiquette');self.edit_one.clicked.connect(self.edit_individual);layout.addWidget(self.edit_one)
-        self.reset_one=QPushButton('Réinitialiser la disposition');self.reset_one.clicked.connect(self.reset_individual);self.reset_one.setToolTip('Supprime la disposition et les arêtes personnalisées de cette étiquette pour suivre le modèle général.');layout.addWidget(self.reset_one)
-        self.label_title=QLabel('Aperçu de l’étiquette');layout.addWidget(self.label_title)
-        self.label_preview=LabelPreview();self.label_preview.double_clicked.connect(self.enlarge_label);self.label_preview.setToolTip('Double-clic : agrandir l’étiquette');self.label_preview.setMinimumHeight(100);self.label_preview.setAlignment(Qt.AlignmentFlag.AlignCenter);layout.addWidget(self.label_preview)
-        self.mode=QComboBox();self.mode.addItem('Rendu 3D LDraw','3d');self.mode.addItem('Photo Rebrickable','photo_rb');self.mode.addItem('Photo BrickLink','photo_bl');self.mode.addItem('Image locale','local')
-        self.mode_title=QLabel('Source du visuel');layout.addWidget(self.mode_title);layout.addWidget(self.mode)
-        self.model_title=QLabel('Modèle LDraw / variante');layout.addWidget(self.model_title)
+        self.title=QLabel(tr('Aperçu'));layout.addWidget(self.title)
+        self.photo=QLabel(tr('Sélectionne une ligne'));self.photo.setMinimumHeight(170);self.photo.setAlignment(Qt.AlignmentFlag.AlignCenter);layout.addWidget(self.photo)
+        self.expand=QPushButton(tr('Agrandir l’aperçu'));self.expand.clicked.connect(self.enlarge);layout.addWidget(self.expand)
+        self.camera_button=QPushButton(tr('Modifier l’angle du rendu 3D…'));self.camera_button.clicked.connect(self.edit_camera);layout.addWidget(self.camera_button)
+        self.edit_one=QPushButton(tr('Modifier cette étiquette'));self.edit_one.clicked.connect(self.edit_individual);layout.addWidget(self.edit_one)
+        self.reset_one=QPushButton(tr('Réinitialiser la disposition'));self.reset_one.clicked.connect(self.reset_individual);self.reset_one.setToolTip(tr('Supprime la disposition et les arêtes personnalisées de cette étiquette pour suivre le modèle général.'));layout.addWidget(self.reset_one)
+        self.label_title=QLabel(tr('Aperçu de l’étiquette'));layout.addWidget(self.label_title)
+        self.label_preview=LabelPreview();self.label_preview.double_clicked.connect(self.enlarge_label);self.label_preview.setToolTip(tr('Double-clic : agrandir l’étiquette'));self.label_preview.setMinimumHeight(100);self.label_preview.setAlignment(Qt.AlignmentFlag.AlignCenter);layout.addWidget(self.label_preview)
+        self.mode=QComboBox();self.mode.addItem(tr('Rendu 3D LDraw'),'3d');self.mode.addItem(tr('Photo Rebrickable'),'photo_rb');self.mode.addItem(tr('Photo BrickLink'),'photo_bl');self.mode.addItem(tr('Image locale'),'local')
+        self.mode_title=QLabel(tr('Source du visuel'));layout.addWidget(self.mode_title);layout.addWidget(self.mode)
+        self.model_title=QLabel(tr('Modèle LDraw / variante'));layout.addWidget(self.model_title)
         self.model_choice=QComboBox();self.model_choice.currentIndexChanged.connect(self.model_changed);layout.addWidget(self.model_choice)
-        self.photo_variant_title=QLabel('Référence de la photo');layout.addWidget(self.photo_variant_title)
+        self.photo_variant_title=QLabel(tr('Référence de la photo'));layout.addWidget(self.photo_variant_title)
         self.photo_variant=QComboBox();self.photo_variant.currentIndexChanged.connect(self.photo_variant_changed);layout.addWidget(self.photo_variant)
-        self.gallery_box=QGroupBox('Photos');self.gallery_box.setMinimumHeight(155);gallery_layout=QVBoxLayout(self.gallery_box);self.gallery=QComboBox();gallery_layout.addWidget(self.gallery)
-        self.find_rb_photos_button=QPushButton('Rechercher les photos Rebrickable');self.find_rb_photos_button.clicked.connect(self.find_rb_photos);gallery_layout.addWidget(self.find_rb_photos_button)
-        self.find_photos_button=QPushButton('Rechercher les photos BrickLink');self.find_photos_button.clicked.connect(self.find_photos);gallery_layout.addWidget(self.find_photos_button)
-        row=QHBoxLayout();b=QPushButton('Ajouter un lien image');b.clicked.connect(self.add_photo);row.addWidget(b);self.remove_photo_button=QPushButton('Supprimer ce lien image');self.remove_photo_button.clicked.connect(self.remove_photo);row.addWidget(self.remove_photo_button);gallery_layout.addLayout(row);layout.addWidget(self.gallery_box)
+        self.gallery_box=QGroupBox(tr('Photos'));self.gallery_box.setMinimumHeight(155);gallery_layout=QVBoxLayout(self.gallery_box);self.gallery=QComboBox();gallery_layout.addWidget(self.gallery)
+        self.find_rb_photos_button=QPushButton(tr('Rechercher les photos Rebrickable'));self.find_rb_photos_button.clicked.connect(self.find_rb_photos);gallery_layout.addWidget(self.find_rb_photos_button)
+        self.find_photos_button=QPushButton(tr('Rechercher les photos BrickLink'));self.find_photos_button.clicked.connect(self.find_photos);gallery_layout.addWidget(self.find_photos_button)
+        row=QHBoxLayout();b=QPushButton(tr('Ajouter un lien image'));b.clicked.connect(self.add_photo);row.addWidget(b);self.remove_photo_button=QPushButton(tr('Supprimer ce lien image'));self.remove_photo_button.clicked.connect(self.remove_photo);row.addWidget(self.remove_photo_button);gallery_layout.addLayout(row);layout.addWidget(self.gallery_box)
         self.gallery.currentIndexChanged.connect(self.choose_photo)
-        self.color=QComboBox();self.color.addItem('Couleur 3D par défaut','');self.color.addItem('Choisir une couleur…','custom');self.color_title=QLabel('Couleur du rendu 3D / palette');layout.addWidget(self.color_title);layout.addWidget(self.color)
-        self.available=QComboBox();self.available_title=QLabel('Couleurs disponibles dans les inventaires');layout.addWidget(self.available_title);layout.addWidget(self.available)
-        self.load_colors=QPushButton('Charger via l’API BrickLink (facultatif)');self.load_colors.clicked.connect(self.fetch_colors);layout.addWidget(self.load_colors)
-        self.local=QPushButton('Importer une image locale');self.local.clicked.connect(self.import_local);layout.addWidget(self.local)
+        self.color=QComboBox();self.color.addItem(tr('Couleur 3D par défaut'),'');self.color.addItem(tr('Choisir une couleur…'),'custom');self.color_title=QLabel(tr('Couleur du rendu 3D / palette'));layout.addWidget(self.color_title);layout.addWidget(self.color)
+        self.color_link=QPushButton(tr('Correspondances des couleurs…'));self.color_link.clicked.connect(self.choose_color_link);layout.addWidget(self.color_link)
+        self.available=QComboBox();self.available_title=QLabel(tr('Couleurs disponibles dans les inventaires'));layout.addWidget(self.available_title);layout.addWidget(self.available)
+        self.load_colors=QPushButton(tr('Charger via l’API BrickLink (facultatif)'));self.load_colors.clicked.connect(self.fetch_colors);layout.addWidget(self.load_colors)
+        self.local=QPushButton(tr('Importer une image locale'));self.local.clicked.connect(self.import_local);layout.addWidget(self.local)
         self.links=QWidget();self.links_layout=QVBoxLayout(self.links);self.links_layout.setContentsMargins(0,0,0,0);layout.addWidget(self.links)
-        addlink=QPushButton('Ajouter un lien de site');addlink.clicked.connect(self.add_link);layout.addWidget(addlink)
-        self.notice=QPushButton('Notices et documents du set');self.notice.clicked.connect(self.documents);layout.addWidget(self.notice)
-        self.inventory_button=QPushButton('Ajouter l’inventaire depuis un fichier TXT');self.inventory_button.clicked.connect(self.import_inventory);layout.addWidget(self.inventory_button)
+        addlink=QPushButton(tr('Ajouter un lien de site'));addlink.clicked.connect(self.add_link);layout.addWidget(addlink)
+        self.notice=QPushButton(tr('Notices et documents du set'));self.notice.clicked.connect(self.documents);layout.addWidget(self.notice)
+        self.inventory_button=QPushButton(tr('Ajouter l’inventaire depuis un fichier TXT'));self.inventory_button.clicked.connect(self.import_inventory);layout.addWidget(self.inventory_button)
         self.note=QLabel();self.note.setWordWrap(True);layout.addWidget(self.note);layout.addStretch()
         self.mode.currentIndexChanged.connect(self.settings_changed);self.color.currentIndexChanged.connect(self.color_changed);self.available.currentIndexChanged.connect(self.available_changed)
+
+    def choose_color_link(self):
+        if not self.item:return
+        chosen=str(self.item.get('chosen_color') or self.db.visual(self.item['id'])['color'] or '')
+        if self.item['source']=='RB':
+            palette=rb_palette()
+            if chosen not in palette:
+                labels=[k+' — '+v['name'] for k,v in palette.items()]
+                label,ok=QInputDialog.getItem(self,tr('Correspondances'),tr('Couleur Rebrickable'),labels,0,False)
+                if not ok:return
+                chosen=label.split(' — ')[0]
+            QMessageBox.information(self,tr('Correspondances'),describe(chosen));return
+        palette=bl_palette(self.db.setting)
+        if chosen not in palette:
+            labels=[k+' — '+v['name'] for k,v in sorted(palette.items(),key=lambda x:x[1]['name'])]
+            label,ok=QInputDialog.getItem(self,tr('Correspondances'),tr('Couleur BrickLink'),labels,0,False)
+            if not ok:return
+            chosen=label.split(' — ')[0]
+        options=candidates(self.db.setting,chosen)
+        if len(options)<2:
+            QMessageBox.information(self,tr('Correspondances'),describe(options[0]) if options else tr('Aucune correspondance connue.'));return
+        current=resolve(self.db.setting,self.item['ref'],chosen)
+        labels=[tr('Non résolue — conserver le code BrickLink')]+[describe(k) for k in options]
+        label,ok=QInputDialog.getItem(self,tr('Correspondance pour cette pièce'),self.item['ref']+' / BrickLink '+chosen,labels,options.index(current)+1 if current in options else 0,False)
+        if ok:
+            index=labels.index(label);save_choice(self.db,self.item['ref'],chosen,options[index-1] if index else '')
+            self.visual_changed.emit(self.item);self.refresh()
 
     def import_inventory(self):
         if not self.item:return
         from .set_inventory import choose_inventory
         selected=dict(self.item)
-        choose_inventory(self,self.db,selected,lambda:self.note.setText('Inventaire enregistré pour '+selected['ref']+' — double-clic sur le set pour voir les pièces.'))
+        choose_inventory(self,self.db,selected,lambda:self.note.setText(tr('Inventaire enregistré pour ')+selected['ref']+tr(' — double-clic sur le set pour voir les pièces.')))
 
     def set_item(self,item):
         previous=self.item
         self.item=item;self.token+=1
         if not item or not previous or previous['id']!=item['id']:
             self.image=None;self.label_image=None;self.photo.clear();self.label_preview.clear();self.note.clear()
-            self.photo.setText('Chargement du visuel…' if item else 'Sélectionne une ligne')
+            self.photo.setText(tr('Chargement du visuel…') if item else tr('Sélectionne une ligne'))
         if not item:return
         v=self.db.visual(item['id']);photos=[url for url in v['links'] if image_link(url)]
         if photos:
@@ -265,11 +301,12 @@ class Preview(QWidget):
             self.db.save_visual(item['id'],**updates)
         self.title.setText(item['ref']+' — '+item['name']);self.title.setWordWrap(True)
         is_set=item['kind']=='set'
+        self.color_link.setVisible(item['kind']=='part' and item['source'] in ('BL','RB'))
         for w in [self.label_title,self.label_preview,self.mode,self.mode_title,self.color,self.color_title,self.available,self.available_title,self.edit_one,self.reset_one]:w.setVisible(not is_set)
         self.find_rb_photos_button.setVisible(item['source'] in ('RB','BA') and not is_set and item['kind']=='part')
-        self.inventory_button.setVisible(is_set and item['source']=='BL');self.notice.setVisible(is_set);self.gallery_box.setVisible(True);self.gallery_box.setTitle('Photo du set' if is_set else 'Photos de la pièce');self.find_photos_button.setVisible(item['source'] in ('RB','BL','BA') and not is_set);self.load_colors.setVisible(item['source']=='BL' and not is_set and all(self.db.setting('api_bl',{}).get(k) for k in ('consumer_key','consumer_secret','token','token_secret')))
-        self.color.setToolTip('La palette permet de choisir un rendu. Elle ne garantit pas que cette pièce existe dans la couleur choisie.')
-        self.available_title.setText('Couleurs connues BrickLink' if item['source']=='BL' else 'Couleurs disponibles dans les inventaires')
+        self.inventory_button.setVisible(is_set and item['source']=='BL');self.notice.setVisible(is_set);self.gallery_box.setVisible(True);self.gallery_box.setTitle(tr('Photo du set') if is_set else tr('Photos de la pièce'));self.find_photos_button.setVisible(item['source'] in ('RB','BL','BA') and not is_set);self.load_colors.setVisible(item['source']=='BL' and not is_set and all(self.db.setting('api_bl',{}).get(k) for k in ('consumer_key','consumer_secret','token','token_secret')))
+        self.color.setToolTip(tr('La palette permet de choisir un rendu. Elle ne garantit pas que cette pièce existe dans la couleur choisie.'))
+        self.available_title.setText(tr('Couleurs connues BrickLink') if item['source']=='BL' else tr('Couleurs disponibles dans les inventaires'))
         v=self.db.visual(item['id']);self.camera_button.setVisible(not is_set);self.camera_button.setEnabled(v['mode']=='3d' and not v['image']);self.updating=True
         self.mode.setCurrentIndex(max(0,self.mode.findData(v['mode'])))
         self.model_choice.clear();self.model_title.setVisible(item['source']=='BA');self.model_choice.setVisible(item['source']=='BA')
@@ -278,15 +315,15 @@ class Preview(QWidget):
             models=record_for(self.db,item['ref']).get('models',[])
             for model in models:
                 status=record_for(self.db,item['ref']).get('model_status',{}).get(model,'')
-                suffix={'unofficial':' · Non officiel','official':' · Officiel','unavailable':' · Indisponible'}.get(status,'')
+                suffix={'unofficial':tr(' · Non officiel'),'official':' · Officiel','unavailable':' · Indisponible'}.get(status,'')
                 self.model_choice.addItem(model+suffix,model)
-            if not models:self.model_choice.addItem('Aucun modèle indiqué — photo si disponible','')
+            if not models:self.model_choice.addItem(tr('Aucun modèle indiqué — photo si disponible'),'')
             self.model_choice.setCurrentIndex(max(0,self.model_choice.findData(model_ref(self.db,item))))
             self.model_choice.setEnabled(bool(models))
         self.photo_variant.clear();self.photo_variant_title.setVisible(item['source']=='BA');self.photo_variant.setVisible(item['source']=='BA')
         if item['source']=='BA':
             info=record_for(self.db,item['ref'])
-            self.photo_variant.addItem('Automatique — référence indiquée sous l’aperçu','')
+            self.photo_variant.addItem(tr('Automatique — référence indiquée sous l’aperçu'),'')
             for source,label in [('RB','Rebrickable'),('BL','BrickLink')]:
                 for ref in info.get(source,[]):self.photo_variant.addItem(label+' — '+ref,source+':'+ref)
             self.photo_variant.setCurrentIndex(max(0,self.photo_variant.findData(self.db.setting('architect_photo_choice_'+str(item['id']),''))))
@@ -295,11 +332,11 @@ class Preview(QWidget):
             code=str(c['rgb']).lstrip('#')
             if len(code)==6:self.color.addItem(c['name']+' — rendu 3D','#'+code)
         if item['source']=='BL':
-            for key,c in sorted(self.db.setting('bl_colors',{}).items(),key=lambda pair:pair[1].get('name','')):
+            for key,c in sorted(bl_palette(self.db.setting).items(),key=lambda pair:pair[1].get('name','')):
                 # Without RGB, a catalog color still selects its native photo color ID.
-                self.color.addItem(c.get('name','Couleur '+key)+' — palette BrickLink',key)
+                self.color.addItem(c.get('name',tr('Couleur ')+key)+' — palette BrickLink',key)
         if v['color']:
-            self.color.addItem('Couleur enregistrée : '+v['color'],v['color']);self.color.setCurrentIndex(self.color.count()-1)
+            self.color.addItem(tr('Couleur enregistrée : ')+v['color'],v['color']);self.color.setCurrentIndex(self.color.count()-1)
         else:self.color.setCurrentIndex(0)
         self.reload_available_colors()
         self.reload_gallery()
@@ -319,15 +356,15 @@ class Preview(QWidget):
             info=record_for(self.db,item['ref']);native=[('BrickArchitect',info.get('url','https://brickarchitect.com/parts/'+ref))]
             native += [('Rebrickable '+r,'https://rebrickable.com/parts/'+urllib.parse.quote(r,safe='')+'/') for r in info.get('RB',[])]
             native += [('BrickLink '+r,'https://www.bricklink.com/v2/catalog/catalogitem.page?P='+urllib.parse.quote(r,safe='')) for r in info.get('BL',[])]
-        if is_set:native.append(('LEGO — notices','https://www.lego.com/fr-fr/service/buildinginstructions/'+ref.split('-')[0]))
+        if is_set:native.append((tr('LEGO — notices'),'https://www.lego.com/fr-fr/service/buildinginstructions/'+ref.split('-')[0]))
         for name,url in native:
             b=QPushButton(name);b.setToolTip(url);b.clicked.connect(lambda checked=False,u=url:QDesktopServices.openUrl(QUrl(u)));self.links_layout.addWidget(b)
         for url in v['links']:
             row=QWidget();buttons=QHBoxLayout(row);buttons.setContentsMargins(0,0,0,0)
             host=urllib.parse.urlsplit(url).netloc
             b=QPushButton(host if len(host)<=22 else host[:19]+'…');b.setToolTip(url);b.clicked.connect(lambda checked=False,u=url:QDesktopServices.openUrl(QUrl(u)));buttons.addWidget(b,1)
-            b=QPushButton('Image');b.setToolTip('Utiliser ce lien comme image');b.clicked.connect(lambda checked=False,u=url:self.use_link_photo(u));buttons.addWidget(b)
-            b=QPushButton('Supprimer');b.clicked.connect(lambda checked=False,u=url:self.remove_link(u));buttons.addWidget(b);self.links_layout.addWidget(row)
+            b=QPushButton(tr('Image'));b.setToolTip(tr('Utiliser ce lien comme image'));b.clicked.connect(lambda checked=False,u=url:self.use_link_photo(u));buttons.addWidget(b)
+            b=QPushButton(tr('Supprimer'));b.clicked.connect(lambda checked=False,u=url:self.remove_link(u));buttons.addWidget(b);self.links_layout.addWidget(row)
         self.refresh()
         if item['source']=='BA':self.enrich_architect(item)
         credentials=self.db.setting('api_bl',{})
@@ -342,7 +379,7 @@ class Preview(QWidget):
             if self.item and self.item['id']==owner['id']:
                 self.set_item({**self.item,**self.db.get_item(owner['id'])});self.visual_changed.emit(self.item)
         def failed(error):
-            if self.item and self.item['id']==owner['id']:self.note.setText('Fiche Brick Architect non vérifiée : '+error+'. Le modèle local et les réglages existants sont conservés.')
+            if self.item and self.item['id']==owner['id']:self.note.setText(tr('Fiche Brick Architect non vérifiée : ')+error+tr('. Le modèle local et les réglages existants sont conservés.'))
         async_task(self,lambda progress:enrich_record(self.db,owner),done,failed)
 
     def model_changed(self):
@@ -356,16 +393,16 @@ class Preview(QWidget):
 
     def reload_available_colors(self):
         if not self.item:return
-        self.available.blockSignals(True);self.available.clear();self.available.addItem('Choisir une couleur disponible','')
+        self.available.blockSignals(True);self.available.clear();self.available.addItem(tr('Choisir une couleur disponible'),'')
         colors=self.db.available_colors(self.item)
         for color in colors:
             self.available.addItem(color['name']+' ('+str(color['id'])+')',str(color['id']))
-            if color.get('element_codes'):self.available.setItemData(self.available.count()-1,'Codes élément LEGO : '+', '.join(color['element_codes']),Qt.ItemDataRole.ToolTipRole)
+            if color.get('element_codes'):self.available.setItemData(self.available.count()-1,tr('Codes élément LEGO : ')+', '.join(color['element_codes']),Qt.ItemDataRole.ToolTipRole)
         if self.item['source']=='BL' and self.item['kind']=='part':
             has_codes=bool(self.db.rows('SELECT 1 FROM bl_codes WHERE item_ref=? LIMIT 1',(self.item['ref'],)))
-            self.available_title.setText('Couleurs BrickLink renseignées (fichiers / cache)' if has_codes else 'Couleurs connues BrickLink')
-            self.available.setToolTip('Les codes élément LEGO renseignent certaines couleurs de cette pièce. Leur absence ne signifie pas que la pièce n’existe pas dans une couleur.')
-        if self.item['source']=='BL' and not colors:self.available.setItemText(0,'Disponibilité non renseignée dans les fichiers')
+            self.available_title.setText(tr('Couleurs BrickLink renseignées (fichiers / cache)') if has_codes else tr('Couleurs connues BrickLink'))
+            self.available.setToolTip(tr('Les codes élément LEGO renseignent certaines couleurs de cette pièce. Leur absence ne signifie pas que la pièce n’existe pas dans une couleur.'))
+        if self.item['source']=='BL' and not colors:self.available.setItemText(0,tr('Disponibilité non renseignée dans les fichiers'))
         self.available.setEnabled(bool(colors))
         self.available.blockSignals(False)
 
@@ -373,16 +410,16 @@ class Preview(QWidget):
         if not self.item or self.item['source']!='BL':return
         item=dict(self.item);iid=item['id']
         if iid in self.color_requests:return
-        self.color_requests.add(iid);self.note.setText('Chargement des couleurs connues BrickLink…')
+        self.color_requests.add(iid);self.note.setText(tr('Chargement des couleurs connues BrickLink…'))
         def done(colors):
             self.color_requests.discard(iid)
             if not self.item or self.item['id']!=iid:return
-            self.reload_available_colors();self.note.setText(str(len(colors))+' couleur(s) connue(s) BrickLink enregistrée(s).')
+            self.reload_available_colors();self.note.setText(str(len(colors))+tr(' couleur(s) connue(s) BrickLink enregistrée(s).'))
             if self.db.visual(iid)['color'] or item.get('chosen_color'):
                 self.visual_changed.emit(self.item);self.refresh()
         def failed(error):
             self.color_requests.discard(iid)
-            if self.item and self.item['id']==iid:self.note.setText('Couleurs BrickLink : '+error+'. Configure les quatre identifiants dans Clés API pour les charger ; les couleurs déjà en cache restent disponibles.')
+            if self.item and self.item['id']==iid:self.note.setText(tr('Couleurs BrickLink : ')+error+tr('. Configure les quatre identifiants dans Clés API pour les charger ; les couleurs déjà en cache restent disponibles.'))
         async_task(self,lambda progress:API(self.db).bl_available_colors(item),done,failed)
 
     def refresh(self):
@@ -396,12 +433,12 @@ class Preview(QWidget):
             if token!=self.token:return
             visual,label,note=result;self.image=visual.get('main');self.label_image=label
             if self.image:scalable(self.photo,self.image,310,210)
-            else:self.photo.clear();self.photo.setText('Visuel indisponible')
+            else:self.photo.clear();self.photo.setText(tr('Visuel indisponible'))
             if label:scalable(self.label_preview,label,310,115)
             self.note.setText(note)
         def failed(error):
             if token!=self.token:return
-            self.image=None;self.label_image=None;self.photo.clear();self.photo.setText('Visuel indisponible');self.label_preview.clear();self.note.setText(error)
+            self.image=None;self.label_image=None;self.photo.clear();self.photo.setText(tr('Visuel indisponible'));self.label_preview.clear();self.note.setText(error)
         async_task(self,work,done,failed)
 
     def edit_camera(self):
@@ -421,7 +458,7 @@ class Preview(QWidget):
         if self.updating or not self.item:return
         value=self.color.currentData()
         if value=='custom':
-            c=QColorDialog.getColor(QColor(self.db.setting('default_color','#f3d55b')),self,'Couleur du rendu')
+            c=QColorDialog.getColor(QColor(self.db.setting('default_color','#f3d55b')),self,tr('Couleur du rendu'))
             if not c.isValid():return
             value=c.name()
         self.save_color(value or '');self.refresh()
@@ -435,22 +472,22 @@ class Preview(QWidget):
         if self.item.get('_scope') in ('stock','queue') and 'entry_id' in self.item:
             scope=self.item['_scope']
             try:self.db.run(f'UPDATE {scope} SET color=? WHERE id=?',(value,self.item['entry_id']))
-            except Exception as e:QMessageBox.warning(self,'Couleur',str(e));return
+            except Exception as e:QMessageBox.warning(self,tr('Couleur'),str(e));return
         if 'chosen_color' in self.item:self.item['chosen_color']=value
         self.token+=1;self.visual_changed.emit(self.item)
 
     def import_local(self):
         if not self.item:return
-        path,_=QFileDialog.getOpenFileName(self,'Image locale','','Images (*.png *.jpg *.jpeg *.gif *.webp *.bmp *.tif *.tiff)')
+        path,_=QFileDialog.getOpenFileName(self,tr('Image locale'),'',tr('Images (*.png *.jpg *.jpeg *.gif *.webp *.bmp *.tif *.tiff)'))
         if not path:return
         try:
             dest=self.engine.images.preserve(path);self.db.save_visual(self.item['id'],mode='local',image=dest)
             self.camera_button.setEnabled(False);self.updating=True;self.mode.setCurrentIndex(self.mode.findData('local'));self.updating=False;self.token+=1;self.visual_changed.emit(self.item);self.refresh()
-        except Exception as e:QMessageBox.warning(self,'Image',str(e))
+        except Exception as e:QMessageBox.warning(self,tr('Image'),str(e))
 
     def add_link(self):
         if not self.item:return
-        url,ok=QInputDialog.getText(self,'Ajouter un lien','Adresse HTTPS :')
+        url,ok=QInputDialog.getText(self,tr('Ajouter un lien'),tr('Adresse HTTPS :'))
         url=url.strip()
         if ok and url.startswith(('https://','http://')):
             if image_link(url):self.use_link_photo(url);return
@@ -477,14 +514,14 @@ class Preview(QWidget):
         self.set_item(self.item);self.visual_changed.emit(self.item)
 
     def enlarge(self):
-        if self.image:image_dialog('Aperçu — '+self.item['ref'],self.image,self)
+        if self.image:image_dialog(tr('Aperçu — ')+self.item['ref'],self.image,self)
 
     def reload_gallery(self):
-        self.gallery.blockSignals(True);self.gallery.clear();self.gallery.addItem('Photo principale / automatique','')
+        self.gallery.blockSignals(True);self.gallery.clear();self.gallery.addItem(tr('Photo principale / automatique'),'')
         if self.item:
             urls=self.db.setting('photo_choices_'+str(self.item['id']),[])
             selected=self.db.visual(self.item['id'])['image']
-            for i,url in enumerate(urls):self.gallery.addItem('Photo '+str(i+1)+' — '+Path(__import__('urllib.parse',fromlist=['urlsplit']).urlsplit(url).path).name,url)
+            for i,url in enumerate(urls):self.gallery.addItem(tr('Photo ')+str(i+1)+' — '+Path(__import__('urllib.parse',fromlist=['urlsplit']).urlsplit(url).path).name,url)
             self.gallery.setCurrentIndex(max(0,self.gallery.findData(selected)))
         self.gallery.blockSignals(False)
         self.remove_photo_button.setEnabled(bool(self.gallery.currentData()))
@@ -510,19 +547,19 @@ class Preview(QWidget):
         if item['source']=='BA':
             from .brickarchitect import native_item
             item=native_item(self.db,item,'RB',preview=True)
-            if not item:self.note.setText('Aucune correspondance Rebrickable unique pour cette variante. Ajoute un lien image direct.');return
-        self.note.setText('Recherche des photos Rebrickable…');self.find_rb_photos_button.setEnabled(False)
+            if not item:self.note.setText(tr('Aucune correspondance Rebrickable unique pour cette variante. Ajoute un lien image direct.'));return
+        self.note.setText(tr('Recherche des photos Rebrickable…'));self.find_rb_photos_button.setEnabled(False)
         def done(result):
             urls,errors=result;self.store_photos(owner,urls)
             self.find_rb_photos_button.setEnabled(True)
             if self.item and self.item['id']==owner['id']:
-                message=str(len(urls))+' photo(s) Rebrickable répertoriée(s).'
+                message=str(len(urls))+tr(' photo(s) Rebrickable répertoriée(s).')
                 if errors:message+=' Certaines sources sont inaccessibles : '+' ; '.join(errors)
-                if not urls:message+=' Ajoute un lien image direct ou importe une image locale.'
+                if not urls:message+=tr(' Ajoute un lien image direct ou importe une image locale.')
                 self.note.setText(message)
         def fail(error):
             self.find_rb_photos_button.setEnabled(True)
-            if self.item and self.item['id']==owner['id']:self.note.setText('Recherche Rebrickable impossible : '+error)
+            if self.item and self.item['id']==owner['id']:self.note.setText(tr('Recherche Rebrickable impossible : ')+error)
         async_task(self,lambda progress:rebrickable_photos(self.db,item),done,fail)
 
     def find_photos(self):
@@ -531,8 +568,8 @@ class Preview(QWidget):
         if item['source']=='BA':
             from .brickarchitect import native_item
             item=native_item(self.db,item,'BL',preview=True)
-            if not item:self.note.setText('Aucune correspondance BrickLink unique pour la variante choisie.');return
-        self.note.setText('Recherche des photos BrickLink…')
+            if not item:self.note.setText(tr('Aucune correspondance BrickLink unique pour la variante choisie.'));return
+        self.note.setText(tr('Recherche des photos BrickLink…'))
         def work(progress):
             import urllib.parse
             typ={'set':'S','minifig':'M','part':'P'}.get(item['kind'],'P')
@@ -542,7 +579,7 @@ class Preview(QWidget):
             if item['source']=='RB':
                 from .cross_source import bricklink_reference
                 ref=bricklink_reference(self.db,item,True)
-                if not ref:raise ValueError('Aucune correspondance BrickLink unique vérifiée. Ajoute un lien image direct.');
+                if not ref:raise ValueError(tr('Aucune correspondance BrickLink unique vérifiée. Ajoute un lien image direct.'));
                 item.update(source='BL',ref=ref,image='')
                 page='https://www.bricklink.com/v2/catalog/catalogitem.page?'+typ+'='+urllib.parse.quote(ref,safe='')
             if self.db.setting('api_bl',{}).get('token'):
@@ -555,11 +592,11 @@ class Preview(QWidget):
             return list(dict.fromkeys(urls)),errors
         def done(result):
             urls,errors=result;self.store_photos(owner,urls)
-            if self.item and self.item['id']==owner['id']:self.note.setText(str(len(urls))+' photo(s) trouvée(s). '+(' ; '.join(errors) if errors else '')+(' Ajoute le lien photo si les images supplémentaires sont chargées dynamiquement.' if len(urls)<2 else ''))
+            if self.item and self.item['id']==owner['id']:self.note.setText(str(len(urls))+tr(' photo(s) trouvée(s). ')+(' ; '.join(errors) if errors else '')+(tr(' Ajoute le lien photo si les images supplémentaires sont chargées dynamiquement.') if len(urls)<2 else ''))
         async_task(self,work,done,lambda e:self.note.setText(e) if self.item and self.item['id']==owner['id'] else None)
     def add_photo(self):
         if not self.item:return
-        url,ok=QInputDialog.getText(self,'Photo supplémentaire','Lien direct vers une image (PNG, GIF, JPEG, WebP…) :')
+        url,ok=QInputDialog.getText(self,tr('Photo supplémentaire'),tr('Lien direct vers une image (PNG, GIF, JPEG, WebP…) :'))
         url=url.strip()
         if ok and url.startswith(('http://','https://')):
             self.use_link_photo(url)
@@ -571,7 +608,7 @@ class Preview(QWidget):
         self.token+=1;self.visual_changed.emit(self.item);self.refresh()
 
     def enlarge_label(self):
-        if self.label_image:image_dialog('Étiquette — '+self.item['ref'],self.label_image,self)
+        if self.label_image:image_dialog(tr('Étiquette — ')+self.item['ref'],self.label_image,self)
 
     def edit_individual(self):
         if not self.item:return

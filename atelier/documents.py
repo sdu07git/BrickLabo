@@ -1,7 +1,10 @@
 from __future__ import annotations
+
+from .i18n import tr,tf
 import html
 import os
 import uuid
+from .fileio import temporary_path
 from datetime import datetime,timezone
 from html.parser import HTMLParser
 import re
@@ -127,17 +130,17 @@ def discover_notices(content,url,ref,fetch=None,max_pages=5):
 class DocumentsPanel(QWidget):
     def __init__(self,db,parent=None):
         super().__init__(parent);self.db=db;self.item=None;self.token=0;self.entries=[]
-        layout=QVBoxLayout(self);layout.addWidget(QLabel('Notices disponibles pour le set sélectionné'))
+        layout=QVBoxLayout(self);layout.addWidget(QLabel(tr('Notices disponibles pour le set sélectionné')))
         row=QHBoxLayout()
-        for label,func in [('Rechercher en ligne',self.search),('Ajouter des PDF locaux',self.local),('Ouvrir',self.open_selected),('Télécharger',self.download_selected)]:
+        for label,func in [(tr('Rechercher en ligne'),self.search),(tr('Ajouter des PDF locaux'),self.local),(tr('Ouvrir'),self.open_selected),(tr('Télécharger'),self.download_selected)]:
             button=QPushButton(label);button.clicked.connect(func);row.addWidget(button)
-            if label=='Télécharger':self.download_button=button
-            if label=='Ouvrir':self.open_button=button
+            if label==tr('Télécharger'):self.download_button=button
+            if label==tr('Ouvrir'):self.open_button=button
         layout.addLayout(row)
-        self.rb_page_button=QPushButton('Ouvrir les notices Rebrickable dans le navigateur');self.rb_page_button.clicked.connect(self.open_rebrickable_page);layout.addWidget(self.rb_page_button)
-        row=QHBoxLayout();self.url=QLineEdit();self.url.setPlaceholderText('Lien PDF ou page de notice Manuall / Rebrickable…');row.addWidget(self.url,1);b=QPushButton('Ajouter le lien');b.clicked.connect(self.add_url);row.addWidget(b);self.remove_button=QPushButton('Supprimer le lien ajouté');self.remove_button.clicked.connect(self.remove_manual);self.remove_button.setEnabled(False);row.addWidget(self.remove_button);layout.addLayout(row)
-        self.table=QTableWidget(0,3);self.table.setHorizontalHeaderLabels(['Notice / document','Source','Disponibilité']);self.table.setSelectionBehavior(QAbstractItemView.SelectionBehavior.SelectRows);self.table.setSelectionMode(QAbstractItemView.SelectionMode.ExtendedSelection);self.table.itemSelectionChanged.connect(self.update_remove_button);self.table.setEditTriggers(QAbstractItemView.EditTrigger.NoEditTriggers);self.table.horizontalHeader().setStretchLastSection(True);self.table.itemDoubleClicked.connect(lambda _:self.open_selected());layout.addWidget(self.table,1);enable_header_menu(self.table,db,'documents');self.table.setContextMenuPolicy(Qt.ContextMenuPolicy.CustomContextMenu);self.table.customContextMenuRequested.connect(self.context_menu)
-        self.progress_label=QLabel('Sélectionne un set.');self.progress_label.setWordWrap(True);layout.addWidget(self.progress_label)
+        self.rb_page_button=QPushButton(tr('Ouvrir les notices Rebrickable dans le navigateur'));self.rb_page_button.clicked.connect(self.open_rebrickable_page);layout.addWidget(self.rb_page_button)
+        row=QHBoxLayout();self.url=QLineEdit();self.url.setPlaceholderText(tr('Lien PDF ou page de notice Manuall / Rebrickable…'));row.addWidget(self.url,1);b=QPushButton(tr('Ajouter le lien'));b.clicked.connect(self.add_url);row.addWidget(b);self.remove_button=QPushButton(tr('Supprimer le lien ajouté'));self.remove_button.clicked.connect(self.remove_manual);self.remove_button.setEnabled(False);row.addWidget(self.remove_button);layout.addLayout(row)
+        self.table=QTableWidget(0,3);self.table.setHorizontalHeaderLabels([tr('Notice / document'),tr('Source'),tr('Disponibilité')]);self.table.setSelectionBehavior(QAbstractItemView.SelectionBehavior.SelectRows);self.table.setSelectionMode(QAbstractItemView.SelectionMode.ExtendedSelection);self.table.itemSelectionChanged.connect(self.update_remove_button);self.table.setEditTriggers(QAbstractItemView.EditTrigger.NoEditTriggers);self.table.horizontalHeader().setStretchLastSection(True);self.table.itemDoubleClicked.connect(lambda _:self.open_selected());layout.addWidget(self.table,1);enable_header_menu(self.table,db,'documents');self.table.setContextMenuPolicy(Qt.ContextMenuPolicy.CustomContextMenu);self.table.customContextMenuRequested.connect(self.context_menu)
+        self.progress_label=QLabel(tr('Sélectionne un set.'));self.progress_label.setWordWrap(True);layout.addWidget(self.progress_label)
     def folder(self,item=None):
         item=item or self.item;p=self.db.path.parent/'Notices'/item['ref'];p.mkdir(parents=True,exist_ok=True);return p
     def sources(self,item):
@@ -146,18 +149,18 @@ class DocumentsPanel(QWidget):
     def set_item(self,item):
         self.item=dict(item) if item else None;self.token+=1
         if not self.item:
-            self.entries=[];self.table.setRowCount(0);self.update_remove_button();self.progress_label.setText('Sélectionne un set.');return
-        self.reload();self.progress_label.setText('Les PDF enregistrés sont listés ici. « Rechercher en ligne » recherche les liens PDF publiés par les sources.')
+            self.entries=[];self.table.setRowCount(0);self.update_remove_button();self.progress_label.setText(tr('Sélectionne un set.'));return
+        self.reload();self.progress_label.setText(tr('Les PDF enregistrés sont listés ici. « Rechercher en ligne » recherche les liens PDF publiés par les sources.'))
     def open_rebrickable_page(self):
         if self.item:QDesktopServices.openUrl(QUrl('https://rebrickable.com/instructions/'+urllib.parse.quote(self.item['ref'],safe='')+'/'))
     def reload(self):
         if not self.item:return
-        self.entries=[{'name':p.name,'source':'Local','url':str(p),'state':'Téléchargé'} for p in sorted(self.folder().glob('*.pdf'))]
+        self.entries=[{'name':p.name,'source':'Local','url':str(p),'state':tr('Téléchargé')} for p in sorted(self.folder().glob('*.pdf'))]
         self.entries+=[e for e in self.db.setting('notice_links_'+self.item['ref'],[]) if e.get('manual') or e.get('source')!='LEGO' or lego_instruction_pdf(e['url'])]
         # BrickLink instruction catalog entries are documents, not necessarily downloadable PDFs.
         number=self.item['ref'].split('-')[0]
         for obj in self.db.rows("SELECT * FROM items WHERE source='BL' AND kind='instructions' AND (ref=? OR ref LIKE ?)",(self.item['ref'],number+'-%')):
-            self.entries.append({'name':obj['ref']+' — '+obj['name'],'source':'BrickLink','url':'https://www.bricklink.com/v2/catalog/catalogitem.page?I='+urllib.parse.quote(obj['ref'],safe=''),'state':'Fiche de notice'})
+            self.entries.append({'name':obj['ref']+' — '+obj['name'],'source':'BrickLink','url':'https://www.bricklink.com/v2/catalog/catalogitem.page?I='+urllib.parse.quote(obj['ref'],safe=''),'state':tr('Fiche de notice')})
         self.table.setRowCount(len(self.entries))
         for r,obj in enumerate(self.entries):
             for c,k in enumerate(['name','source','state']):self.table.setItem(r,c,QTableWidgetItem(obj[k]))
@@ -169,7 +172,7 @@ class DocumentsPanel(QWidget):
         if obj:QDesktopServices.openUrl(QUrl(obj['url']) if obj['url'].startswith(('https:','http:')) else QUrl.fromLocalFile(obj['url']))
     def local(self):
         if not self.item:return
-        paths,_=QFileDialog.getOpenFileNames(self,'Ajouter des notices','','PDF (*.pdf)')
+        paths,_=QFileDialog.getOpenFileNames(self,tr('Ajouter des notices'),'','PDF (*.pdf)')
         for p in paths:
             target=self.folder()/Path(p).name
             if Path(p).resolve()!=target.resolve():shutil.copy2(p,target)
@@ -179,26 +182,26 @@ class DocumentsPanel(QWidget):
         url=self.url.text().strip()
         if not url.startswith(('http://','https://')):return
         key='notice_links_'+self.item['ref'];entries=self.db.setting(key,[])
-        if not any(e['url']==url for e in entries):entries.append({'name':Path(urllib.parse.urlsplit(url).path).name or 'Notice PDF','url':url,'source':'Lien ajouté','state':'À télécharger','manual':True});self.db.set_setting(key,entries)
+        if not any(e['url']==url for e in entries):entries.append({'name':Path(urllib.parse.urlsplit(url).path).name or tr('Notice PDF'),'url':url,'source':tr('Lien ajouté'),'state':tr('À télécharger'),'manual':True});self.db.set_setting(key,entries)
         self.url.clear();self.reload()
     def selected_manual(self):
-        return [self.entries[r.row()] for r in self.table.selectionModel().selectedRows() if r.row()<len(self.entries) and (self.entries[r.row()].get('manual') or self.entries[r.row()].get('source')=='Lien ajouté')]
+        return [self.entries[r.row()] for r in self.table.selectionModel().selectedRows() if r.row()<len(self.entries) and (self.entries[r.row()].get('manual') or self.entries[r.row()].get('source')==tr('Lien ajouté'))]
     def update_remove_button(self):
         self.remove_button.setEnabled(bool(self.selected_manual()))
-        obj=self.selected();fiche=bool(obj and obj.get('state')=='Fiche de notice')
-        self.open_button.setText('Ouvrir la fiche BrickLink' if fiche else 'Ouvrir')
+        obj=self.selected();fiche=bool(obj and obj.get('state')==tr('Fiche de notice'))
+        self.open_button.setText(tr('Ouvrir la fiche BrickLink') if fiche else tr('Ouvrir'))
         self.download_button.setEnabled(bool(obj and obj['url'].startswith(('http:','https:')) and not fiche))
-        self.download_button.setToolTip('Cette fiche BrickLink ne contient pas de lien PDF.' if fiche else 'Télécharger le document sélectionné')
+        self.download_button.setToolTip(tr('Cette fiche BrickLink ne contient pas de lien PDF.') if fiche else tr('Télécharger le document sélectionné'))
     def remove_manual(self):
         if not self.item:return
         urls={entry['url'] for entry in self.selected_manual()}
         if not urls:return
         key='notice_links_'+self.item['ref']
-        self.db.set_setting(key,[e for e in self.db.setting(key,[]) if not (e['url'] in urls and (e.get('manual') or e.get('source')=='Lien ajouté'))])
-        self.reload();self.progress_label.setText(str(len(urls))+' lien(s) ajouté(s) supprimé(s).')
+        self.db.set_setting(key,[e for e in self.db.setting(key,[]) if not (e['url'] in urls and (e.get('manual') or e.get('source')==tr('Lien ajouté')))])
+        self.reload();self.progress_label.setText(str(len(urls))+tr(' lien(s) ajouté(s) supprimé(s).'))
     def context_menu(self,pos):
-        menu=QMenu(self);menu.addAction('Ouvrir',self.open_selected);download=menu.addAction('Télécharger',self.download_selected);obj=self.selected();download.setEnabled(bool(obj and obj.get('state')!='Fiche de notice' and obj['url'].startswith(('http:','https:'))))
-        action=menu.addAction('Supprimer le lien ajouté',self.remove_manual);action.setEnabled(bool(self.selected_manual()));menu.exec(self.table.viewport().mapToGlobal(pos))
+        menu=QMenu(self);menu.addAction(tr('Ouvrir'),self.open_selected);download=menu.addAction(tr('Télécharger'),self.download_selected);obj=self.selected();download.setEnabled(bool(obj and obj.get('state')!=tr('Fiche de notice') and obj['url'].startswith(('http:','https:'))))
+        action=menu.addAction(tr('Supprimer le lien ajouté'),self.remove_manual);action.setEnabled(bool(self.selected_manual()));menu.exec(self.table.viewport().mapToGlobal(pos))
     def save_discovered(self,item,entries):
         key='notice_links_'+item['ref'];old=self.db.setting(key,[])
         for e in entries:
@@ -210,58 +213,59 @@ class DocumentsPanel(QWidget):
         self.db.set_setting(key,old)
     def search(self):
         if not self.item:return
-        item=dict(self.item);token=self.token;self.progress_label.setText('Recherche des notices en ligne…')
+        item=dict(self.item);token=self.token;self.progress_label.setText(tr('Recherche des notices en ligne…'))
         def work(progress):
             entries=[];errors=[]
             for source,url in self.sources(item):
-                progress('Recherche des notices : '+source+'…')
+                progress(tr('Recherche des notices : ')+source+'…')
                 try:
                     links,failures=discover_notices(request(url,timeout=15).decode('utf-8','replace'),url,item['ref'])
                     errors.extend(source+' : '+e for e in failures)
                     for link in links:
                         if source=='LEGO' and not lego_instruction_pdf(link):continue
                         doc=rebrickable_document_id(link)
-                        entries.append({'name':'Notice Rebrickable '+doc if doc else Path(urllib.parse.urlsplit(link).path).name or 'Notice PDF','source':source,'url':link,'state':'À télécharger'})
+                        entries.append({'name':tr('Notice Rebrickable ')+doc if doc else Path(urllib.parse.urlsplit(link).path).name or tr('Notice PDF'),'source':source,'url':link,'state':tr('À télécharger')})
                 except Exception as e:
                     message=str(e)
-                    if source=='Rebrickable' and getattr(e,'code',None) in (403,429):message+=' — recherche automatique refusée ; ouvre les notices Rebrickable dans le navigateur et ajoute le lien de téléchargement.'
+                    if source=='Rebrickable' and getattr(e,'code',None) in (403,429):message+=tr(' — recherche automatique refusée ; ouvre les notices Rebrickable dans le navigateur et ajoute le lien de téléchargement.')
                     errors.append(source+' : '+message)
             return entries,errors
         def done(result):
             entries,errors=result;self.save_discovered(item,entries)
             if token!=self.token:return
-            self.reload();self.progress_label.setText(str(len(entries))+' lien(s) PDF trouvé(s). '+('Sources inaccessibles : '+' ; '.join(errors) if errors else 'Tu peux aussi ajouter un lien PDF ou une page de notice.'))
+            self.reload();self.progress_label.setText(str(len(entries))+tr(' lien(s) PDF trouvé(s). ')+(tr('Sources inaccessibles : ')+' ; '.join(errors) if errors else tr('Tu peux aussi ajouter un lien PDF ou une page de notice.')))
         async_task(self,work,done,lambda e:self.progress_label.setText(e) if token==self.token else None,lambda message:self.progress_label.setText(message) if token==self.token else None)
     def download_selected(self):
         obj=self.selected()
         if not obj or not obj['url'].startswith(('http:','https:')):return
-        if obj['state']=='Fiche de notice':self.progress_label.setText('Fiche BrickLink : utilise « Rechercher en ligne » pour trouver un PDF du set.');return
+        if obj['state']==tr('Fiche de notice'):self.progress_label.setText(tr('Fiche BrickLink : utilise « Rechercher en ligne » pour trouver un PDF du set.'));return
         token=self.token;item=dict(self.item);folder=self.folder(item);url=obj['url']
         name=Path(urllib.parse.unquote(urllib.parse.urlsplit(url).path)).name
         if not name.lower().endswith('.pdf'):
             doc=rebrickable_document_id(url)
             name='notice-'+item['ref']+'-'+('rebrickable-'+doc if doc else str(time.time_ns()))+'.pdf'
-        dest=folder/name;temp=folder/('.notice-'+uuid.uuid4().hex+'.tmp');self.progress_label.setText('Récupération de la notice, sans limite de 200 Mo…')
+        dest=folder/name;temp=None;self.progress_label.setText(tr('Récupération de la notice, sans limite de 200 Mo…'))
         def work(progress):
             target=url
             if expired_notice_url(target):
                 host=urllib.parse.urlsplit(target).hostname or ''
                 if rebrickable_document_id(target) or host=='rebrickable-set-bi-files.eu-central-1.linodeobjects.com':
-                    progress('Actualisation du lien temporaire Rebrickable…')
+                    progress(tr('Actualisation du lien temporaire Rebrickable…'))
                     page='https://rebrickable.com/instructions/'+urllib.parse.quote(item['ref'],safe='')+'/'
                     try:
                         content=request(page,timeout=15).decode('utf-8','replace')
                         links,_=discover_notices(content,page,item['ref'])
-                    except Exception as error:raise ValueError('Lien Rebrickable expiré. Ouvre les notices dans le navigateur et ajoute un nouveau lien de téléchargement. '+str(error)) from error
+                    except Exception as error:raise ValueError(tr('Lien Rebrickable expiré. Ouvre les notices dans le navigateur et ajoute un nouveau lien de téléchargement. ')+str(error)) from error
                     candidates=[link for link in links if notice_identity(link)==notice_identity(target)]
                     if not candidates and host=='rebrickable-set-bi-files.eu-central-1.linodeobjects.com':
                         filename=Path(urllib.parse.urlsplit(target).path).stem
                         _,anchors=notice_targets(content,page)
                         candidates=[urllib.parse.urljoin(page,a['url']) for a in anchors if rebrickable_document_id(urllib.parse.urljoin(page,a['url'])) and re.search(r'(?<!\d)'+re.escape(filename)+r'(?!\d)',a['text'])]
                         candidates=list(dict.fromkeys(candidates))
-                    if len(candidates)>1:raise ValueError('Plusieurs notices correspondent : relance la recherche et sélectionne le document à télécharger.')
-                    if not candidates:raise ValueError('Lien Rebrickable expiré : relance la recherche ou ajoute un nouveau lien depuis la page des notices.')
+                    if len(candidates)>1:raise ValueError(tr('Plusieurs notices correspondent : relance la recherche et sélectionne le document à télécharger.'))
+                    if not candidates:raise ValueError(tr('Lien Rebrickable expiré : relance la recherche ou ajoute un nouveau lien depuis la page des notices.'))
                     target=candidates[0]
+            temp=temporary_path(folder)
             def download(link):
                 request(link,headers={'Referer':url},destination=temp,timeout=90)
                 with temp.open('rb') as f:return f.read(5)==b'%PDF-'
@@ -269,11 +273,11 @@ class DocumentsPanel(QWidget):
                 if download(target):os.replace(temp,dest);return dest,[]
                 with temp.open('rb') as f:content=f.read(5_000_000).decode('utf-8','replace')
                 links,errors=discover_notices(content,target,item['ref'])
-                if not links:raise ValueError('Aucun lien PDF téléchargeable trouvé sur cette page. Ajoute le lien PDF direct de la notice.')
+                if not links:raise ValueError(tr('Aucun lien PDF téléchargeable trouvé sur cette page. Ajoute le lien PDF direct de la notice.'))
                 if len(links)>1:
-                    source='Manuall' if 'manuall.' in urllib.parse.urlsplit(url).netloc else 'Rebrickable' if 'rebrickable.com' in urllib.parse.urlsplit(url).netloc else 'Source du lien'
-                    return None,[{'name':Path(urllib.parse.urlsplit(link).path).name or 'Notice PDF','source':source,'url':link,'state':'À télécharger'} for link in links]
-                if not download(links[0]):raise ValueError('Le lien trouvé ne renvoie pas un PDF téléchargeable.')
+                    source='Manuall' if 'manuall.' in urllib.parse.urlsplit(url).netloc else 'Rebrickable' if 'rebrickable.com' in urllib.parse.urlsplit(url).netloc else tr('Source du lien')
+                    return None,[{'name':Path(urllib.parse.urlsplit(link).path).name or tr('Notice PDF'),'source':source,'url':link,'state':tr('À télécharger')} for link in links]
+                if not download(links[0]):raise ValueError(tr('Le lien trouvé ne renvoie pas un PDF téléchargeable.'))
                 os.replace(temp,dest);return dest,[]
             finally:
                 if temp.exists():temp.unlink()
@@ -281,5 +285,5 @@ class DocumentsPanel(QWidget):
             path,entries=result
             if entries:self.save_discovered(item,entries)
             if token!=self.token:return
-            self.reload();self.progress_label.setText('Notice téléchargée : '+path.name if path else str(len(entries))+' notices trouvées : sélectionne le PDF à télécharger.')
+            self.reload();self.progress_label.setText(tr('Notice téléchargée : ')+path.name if path else str(len(entries))+tr(' notices trouvées : sélectionne le PDF à télécharger.'))
         async_task(self,work,done,lambda e:self.progress_label.setText(e) if token==self.token else None)

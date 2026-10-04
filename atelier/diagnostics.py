@@ -1,4 +1,6 @@
 """Persistent UTF-8 text diagnostics for the Windows portable application."""
+
+from .i18n import tr,tf
 import faulthandler
 import logging
 from logging.handlers import RotatingFileHandler
@@ -32,12 +34,12 @@ def setup_logging(directory=None):
         _crash_stream=(folder/'BrickLabo_crash.txt').open('a',encoding='utf-8',buffering=1)
         faulthandler.enable(file=_crash_stream,all_threads=True)
         _log_directory=folder
-    logger.info('Démarrage %s v%s | Python %s | %s',APP_NAME,VERSION,platform.python_version(),platform.platform())
-    _crash_stream.write('\nDémarrage '+APP_NAME+' v'+VERSION+'\n');_crash_stream.flush()
-    def exception(typ,value,tb):logger.critical('Exception non interceptée',exc_info=(typ,value,tb))
+    logger.info(tr('Démarrage %s v%s | Python %s | %s'),APP_NAME,VERSION,platform.python_version(),platform.platform())
+    _crash_stream.write(tr('\nDémarrage ')+APP_NAME+' v'+VERSION+'\n');_crash_stream.flush()
+    def exception(typ,value,tb):logger.critical(tr('Exception non interceptée'),exc_info=(typ,value,tb))
     sys.excepthook=exception
-    def thread_exception(args):logger.critical('Exception du thread %s',args.thread.name if args.thread else '?',exc_info=(args.exc_type,args.exc_value,args.exc_traceback))
+    def thread_exception(args):logger.critical(tr('Exception du thread %s'),args.thread.name if args.thread else '?',exc_info=(args.exc_type,args.exc_value,args.exc_traceback))
     threading.excepthook=thread_exception
-    def unraisable(args):logger.error('Exception ignorée : %s',args.err_msg or 'finalisation',exc_info=(args.exc_type,args.exc_value,args.exc_traceback))
+    def unraisable(args):logger.error(tr('Exception ignorée : %s'),args.err_msg or 'finalisation',exc_info=(args.exc_type,args.exc_value,args.exc_traceback))
     sys.unraisablehook=unraisable
     return logger,folder

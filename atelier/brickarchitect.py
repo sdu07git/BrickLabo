@@ -1,5 +1,7 @@
 """Brick Architect ranking snapshot, explicit external IDs and LDraw choices."""
 from __future__ import annotations
+
+from .i18n import tr,tf
 import json,re,datetime,concurrent.futures,threading
 from pathlib import Path
 from html import unescape
@@ -17,13 +19,13 @@ def parse_page(text,page):
         if not name:continue
         title=unescape(re.sub('<[^>]*>',' ',name[1])).strip()
         records.append({'ref':ref,'name':title,'rank':(page-1)*250+len(records)+1,'url':'https://brickarchitect.com/parts/'+ref,'models':[],'BL':[],'RB':[]})
-    if not records:raise ValueError('Page Brick Architect vide ou format non reconnu : '+str(page))
+    if not records:raise ValueError(tr('Page Brick Architect vide ou format non reconnu : ')+str(page))
     return records
 
 def parse_detail(text,ref):
     out={'ref':ref,'models':[],'BL':[],'RB':[],'checked':True}
     title=re.search(r'<h1>(.*?)</h1>',text,re.S)
-    if not title:raise ValueError('Fiche Brick Architect non reconnue : '+ref)
+    if not title:raise ValueError(tr('Fiche Brick Architect non reconnue : ')+ref)
     breadcrumb=re.findall(r'href="https://brickarchitect.com/parts/category-[^"]+"[^>]*>(.*?)</a>',text,re.S)
     out['category']=unescape(re.sub('<[^>]*>',' ',breadcrumb[-1])).strip() if breadcrumb else 'Autres'
     for match in re.finditer(r'href="([^"]+)"',text):
@@ -49,9 +51,9 @@ def record_for(db,ref):
 
 def replace_catalogue(db,data):
     records=data.get('records',[])
-    if not records or len({r['ref'] for r in records})!=len(records):raise ValueError('Catalogue BrickArchitect vide ou références dupliquées.')
+    if not records or len({r['ref'] for r in records})!=len(records):raise ValueError(tr('Catalogue BrickArchitect vide ou références dupliquées.'))
     for r in records:
-        if not r.get('ref') or not r.get('name') or not isinstance(r.get('models',[]),list):raise ValueError('Référence BrickArchitect invalide.')
+        if not r.get('ref') or not r.get('name') or not isinstance(r.get('models',[]),list):raise ValueError(tr('Référence BrickArchitect invalide.'))
     with db.connect() as c:
         # Keep metadata for removed entries already referenced by stock/history.
         c.execute("DELETE FROM brickarchitect WHERE ref NOT IN (SELECT i.ref FROM items i WHERE i.source='BA' AND (EXISTS(SELECT 1 FROM stock WHERE item_id=i.id) OR EXISTS(SELECT 1 FROM queue WHERE item_id=i.id) OR EXISTS(SELECT 1 FROM history WHERE item_id=i.id)))")
@@ -108,12 +110,12 @@ def native_item(db,item,source='RB',preview=False):
 
 def update_from_site(db,progress=lambda *_:None,pages=22,cancelled=None):
     def check():
-        if cancelled and cancelled.is_set():raise ValueError('Mise à jour annulée ; catalogue précédent conservé.')
+        if cancelled and cancelled.is_set():raise ValueError(tr('Mise à jour annulée ; catalogue précédent conservé.'))
     records=[]
     for page in range(1,pages+1):
-        check();progress('BrickArchitect : page '+str(page)+' / '+str(pages))
+        check();progress(tr('BrickArchitect : page ')+str(page)+' / '+str(pages))
         records.extend(parse_page(request(ORIGIN+(('?page='+str(page)) if page>1 else '')).decode('utf-8','replace'),page))
-    if len({r['ref'] for r in records})!=len(records):raise ValueError('Pagination incohérente : références dupliquées.')
+    if len({r['ref'] for r in records})!=len(records):raise ValueError(tr('Pagination incohérente : références dupliquées.'))
     def detail(record):
         check()
         try:return parse_detail(request(record['url'],timeout=25).decode('utf-8','replace'),record['ref'])
@@ -126,15 +128,15 @@ def update_from_site(db,progress=lambda *_:None,pages=22,cancelled=None):
     # Limited concurrency; no retry loop or workaround on server refusal.
     with concurrent.futures.ThreadPoolExecutor(max_workers=4) as pool:
         for index,(record,result) in enumerate(zip(records,pool.map(detail,records))):
-            check();record.update(result);progress('Correspondances : '+str(index+1)+' / '+str(len(records)))
+            check();record.update(result);progress(tr('Correspondances : ')+str(index+1)+' / '+str(len(records)))
     if pages==22:
         from .architect_models import URLS,build_pack
         folder=db.path.parent/'temporaires'/'brickarchitect';folder.mkdir(parents=True,exist_ok=True)
         archives=[]
         for status,url in URLS.items():
-            check();progress('Téléchargement LDraw '+status+'…');path=folder/(status+'.zip')
+            check();progress(tr('Téléchargement LDraw ')+status+'…');path=folder/(status+'.zip')
             request(url,destination=path,timeout=90);archives.append((status,path))
-        check();progress('Vérification des dépendances LDraw…')
+        check();progress(tr('Vérification des dépendances LDraw…'))
         existing=db.setting('ldraw','')
         build_pack(records,archives,folder/'supplement.pending.zip',existing if existing and Path(existing).is_file() else None)
     check();data={'origin':ORIGIN,'date':datetime.date.today().isoformat(),'records':records,'warnings':[{'ref':r['ref'],'error':r['detail_error']} for r in records if r.get('detail_error')]}
@@ -155,18 +157,18 @@ class BrickArchitectCatalogue(Catalogue):
         if not db.setting('columns_BA_part_catalogue'):
             db.set_setting('columns_BA_part_catalogue',['ref','name','category','architect_rank','ldraw_model','image'])
         super().__init__(db,'BA','part','catalogue',parent)
-        self.button=QPushButton('Mettre à jour BrickArchitect depuis le site…');self.button.clicked.connect(self.update_site);self.layout().insertWidget(0,self.button)
-        self.cancel_button=QPushButton('Annuler la mise à jour');self.cancel_button.hide();self.cancel_button.clicked.connect(lambda:self.cancelled.set());self.layout().insertWidget(1,self.cancel_button)
+        self.button=QPushButton(tr('Mettre à jour BrickArchitect depuis le site…'));self.button.clicked.connect(self.update_site);self.layout().insertWidget(0,self.button)
+        self.cancel_button=QPushButton(tr('Annuler la mise à jour'));self.cancel_button.hide();self.cancel_button.clicked.connect(lambda:self.cancelled.set());self.layout().insertWidget(1,self.cancel_button)
         self.info=QLabel();self.info.setWordWrap(True);self.layout().insertWidget(1,self.info);self.update_info()
     def update_info(self):
         info=self.db.setting('brickarchitect_info',{})
-        self.info.setText('Classement toutes années · '+str(self.db.query('BA','part')[1])+' références · '+str(info.get('date',''))+(' · '+str(len(info.get('warnings',[])))+' fiches non vérifiées' if info.get('warnings') else ''))
+        self.info.setText(tr('Classement toutes années · ')+str(self.db.query('BA','part')[1])+tr(' références · ')+str(info.get('date',''))+(' · '+str(len(info.get('warnings',[])))+tr(' fiches non vérifiées') if info.get('warnings') else ''))
     def update_site(self):
         self.button.setEnabled(False);self.cancelled=threading.Event();self.cancel_button.show()
         def done(count):
             self.button.setEnabled(True);self.cancel_button.hide();self.ids.clear();self.reload_categories();self.reload();self.update_info();self.changed.emit();self.selected.emit(None)
             if self.engine:self.engine.ldraw=None;self.engine.ldraw_path=''
             self.load_thumbnails()
-            QMessageBox.information(self,'BrickArchitect',str(count)+' références mises à jour. Les éléments du stock et les réglages individuels sont conservés.')
+            QMessageBox.information(self,'BrickArchitect',str(count)+tr(' références mises à jour. Les éléments du stock et les réglages individuels sont conservés.'))
         def failed(error):self.button.setEnabled(True);self.cancel_button.hide();self.update_info();QMessageBox.warning(self,'BrickArchitect',error)
         async_task(self,lambda progress:update_from_site(self.db,progress,cancelled=self.cancelled),done,failed,progress_callback=self.info.setText)

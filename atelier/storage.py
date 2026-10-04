@@ -1,4 +1,6 @@
 """Application-owned files live beside the executable; no user-profile fallback."""
+
+from .i18n import tr,tf
 import hashlib
 from contextlib import closing
 import json
@@ -36,7 +38,7 @@ def _remap(value,old,new):
 def relocate_database(path,old,new):
     if not Path(path).is_file():return
     with closing(sqlite3.connect(path)) as connection,connection:
-        if connection.execute('PRAGMA quick_check').fetchone()[0]!='ok':raise ValueError('Base de données endommagée : déplacement interrompu.')
+        if connection.execute('PRAGMA quick_check').fetchone()[0]!='ok':raise ValueError(tr('Base de données endommagée : déplacement interrompu.'))
         tables={r[0] for r in connection.execute("SELECT name FROM sqlite_master WHERE type='table'")}
         if 'settings' in tables:
             for key,value in connection.execute('SELECT key,value FROM settings').fetchall():
@@ -56,7 +58,7 @@ def _digest(path):
 def migrate_legacy(source,target):
     source=Path(source);target=Path(target)
     if not (source/'atelier.sqlite').is_file():return False
-    if target.resolve().is_relative_to(source.resolve()):raise ValueError('Déplace le dossier du logiciel en dehors de l’ancien dossier LEGOAtelier avant la migration.')
+    if target.resolve().is_relative_to(source.resolve()):raise ValueError(tr('Déplace le dossier du logiciel en dehors de l’ancien dossier LEGOAtelier avant la migration.'))
     if target.exists():
         # Keep the active portable database and archive a separate older profile locally.
         archive=target/('Ancien_profil_'+uuid.uuid4().hex)
@@ -67,7 +69,7 @@ def migrate_legacy(source,target):
         shutil.copytree(source,stage)
         for file in source.rglob('*'):
             if file.is_file() and _digest(file)!=_digest(stage/file.relative_to(source)):
-                raise ValueError('Les données ont changé pendant le déplacement. Ferme les autres instances du logiciel et réessaie.')
+                raise ValueError(tr('Les données ont changé pendant le déplacement. Ferme les autres instances du logiciel et réessaie.'))
         relocate_database(stage/'atelier.sqlite',source,target)
         (stage/'emplacement.json').write_text(json.dumps({'data':str(target),'app':str(target.parent)}),encoding='utf-8')
         stage.rename(target)
@@ -77,7 +79,7 @@ def migrate_legacy(source,target):
     # The verified copy is already in place before removing the old application folder.
     try:shutil.rmtree(source)
     except OSError as error:
-        raise OSError('Les données sont copiées dans '+str(target)+', mais l’ancien dossier '+str(source)+' n’a pas pu être supprimé. Ferme les anciennes instances et supprime ce dossier après vérification.') from error
+        raise OSError(tr('Les données sont copiées dans ')+str(target)+tr(', mais l’ancien dossier ')+str(source)+tr(' n’a pas pu être supprimé. Ferme les anciennes instances et supprime ce dossier après vérification.')) from error
     return True
 
 
@@ -85,12 +87,14 @@ def prepare_portable_storage():
     root=data_directory()
     from .backups import apply_pending
     apply_pending(root)
+    from .i18n import read_language,set_language
+    set_language(read_language(root/'atelier.sqlite'))
     legacy_base=os.environ.get('LOCALAPPDATA')
     if legacy_base:migrate_legacy(Path(legacy_base)/'LEGOAtelier',root)
     root.mkdir(parents=True,exist_ok=True)
     probe=root/('.ecriture-'+uuid.uuid4().hex)
     try:probe.write_bytes(b'');probe.unlink()
-    except OSError as error:raise OSError('Le dossier du logiciel doit être accessible en écriture. Déplace BrickLabo dans un dossier où tu peux enregistrer des fichiers.') from error
+    except OSError as error:raise OSError(tr('Le dossier du logiciel doit être accessible en écriture. Déplace BrickLabo dans un dossier où tu peux enregistrer des fichiers.')) from error
     marker=root/'emplacement.json'
     if marker.exists():
         previous=json.loads(marker.read_text(encoding='utf-8'))

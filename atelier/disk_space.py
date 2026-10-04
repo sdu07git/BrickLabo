@@ -1,4 +1,7 @@
 """Scoped disk maintenance: no Windows-temp access, no symlink traversal."""
+
+from .i18n import tr,tf
+from .fileio import temporary_path
 import hashlib,json,os,re,time,uuid,shutil
 from pathlib import Path
 
@@ -16,13 +19,13 @@ def files(folder):
 
 def locations(db):
  root=db.path.parent
- return {'Total du dossier Donnees':root,'Base de données':root,'Temporaires':root/'temp','Miniatures':root/'cache'/'miniatures','Images (locales et téléchargées)':root/'images','Notices':root/'Notices','Archives LDraw':root,'Téléchargements des bases':root/'downloads','Étiquettes générées':Path(db.setting('output',str(root/'Exports'))),'Fichiers fournis':Path(__file__).resolve().parent.parent/'ressources'}
+ return {tr('Total du dossier Donnees'):root,tr('Base de données'):root,tr('Temporaires'):root/'temp',tr('Miniatures'):root/'cache'/'miniatures',tr('Images (locales et téléchargées)'):root/'images',tr('Notices'):root/'Notices',tr('Archives LDraw'):root,tr('Téléchargements des bases'):root/'downloads',tr('Étiquettes générées'):Path(db.setting('output',str(root/'Exports'))),tr('Fichiers fournis'):Path(__file__).resolve().parent.parent/'ressources'}
 
 def usage(db):
  root=db.path.parent;result=[]
  for label,folder in locations(db).items():
-  if label=='Base de données':paths=[db.path,Path(str(db.path)+'-wal'),Path(str(db.path)+'-shm')]
-  elif label=='Archives LDraw':paths=ldraw_files(root)
+  if label==tr('Base de données'):paths=[db.path,Path(str(db.path)+'-wal'),Path(str(db.path)+'-shm')]
+  elif label==tr('Archives LDraw'):paths=ldraw_files(root)
   else:paths=files(folder)
   size=count=0
   for p in paths:
@@ -46,12 +49,12 @@ def reuse_ldraw(db,path):
   if candidate.is_file() and not candidate.is_symlink() and (candidate.resolve()==path.resolve() or (candidate.stat().st_size==path.stat().st_size and digest(candidate)==source_hash)):return candidate
  target=root/('ldraw-'+source_hash+'.zip')
  if target.is_file():
-  if digest(target)!=source_hash:raise ValueError('Archive LDraw existante endommagée : import interrompu.')
+  if digest(target)!=source_hash:raise ValueError(tr('Archive LDraw existante endommagée : import interrompu.'))
   return target
- temporary=root/('.ldraw-'+uuid.uuid4().hex+'.part')
+ temporary=temporary_path(root)
  try:
   shutil.copy2(path,temporary)
-  if digest(temporary)!=source_hash:raise ValueError('Archive modifiée pendant la copie ; réessayer.')
+  if digest(temporary)!=source_hash:raise ValueError(tr('Archive modifiée pendant la copie ; réessayer.'))
   os.replace(temporary,target)
  finally:temporary.unlink(missing_ok=True)
  return target

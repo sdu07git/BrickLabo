@@ -1,5 +1,7 @@
 from __future__ import annotations
 
+from .i18n import tr,tf
+
 import io
 import math
 import os
@@ -160,7 +162,7 @@ def render_label(item,db,visuals,template=None,dpi=300):
                 tile=Image.new('RGBA',(lw,lh));tile.alpha_composite(im,((lw-im.width)//2,(lh-im.height)//2))
                 result.alpha_composite(tile,(x,y))
             elif layer['type']=='main':
-                d.text((x,y+lh/2),'Visuel indisponible',fill='#6c7480',font=font(1.2*scale))
+                d.text((x,y+lh/2),tr('Visuel indisponible'),fill='#6c7480',font=font(1.2*scale))
         else:
             text=label_text(layer,item,db,bounds)
             if not text:continue
@@ -180,7 +182,7 @@ def render_label(item,db,visuals,template=None,dpi=300):
 def page_layout(width,height,page_w=210,page_h=297,margin=8,gap=2):
     cols=max(1,int((page_w-2*margin+gap)//(width+gap)))
     rows=max(1,int((page_h-2*margin+gap)//(height+gap)))
-    if width>page_w-2*margin or height>page_h-2*margin:raise ValueError('Étiquette trop grande pour la page A4')
+    if width>page_w-2*margin or height>page_h-2*margin:raise ValueError(tr('Étiquette trop grande pour la page A4'))
     return [(margin+c*(width+gap),margin+r*(height+gap)) for r in range(rows) for c in range(cols)]
 
 

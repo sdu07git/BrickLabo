@@ -1,5 +1,7 @@
 from __future__ import annotations
 
+from .i18n import tr,tf
+
 import copy
 from .edge_controls import EdgeControls
 from .edge_style import general_style
@@ -16,9 +18,9 @@ from .labels import default_template,render_label,template_for_item,individual_t
 from .ui_common import pixmap
 
 
-NAMES={'category':'Texte de catégorie','category_band':'Bandeau de catégorie','main':'Vue principale / photo','top':'Vue de dessus','side':'Vue de côté',
-       'reference':'Référence','references':'Références et dimensions','name':'Nom','studs':'Dimensions en tenons',
-       'dimensions':'Dimensions physiques','free':'Texte libre','divider':'Séparateur'}
+NAMES={'category':tr('Texte de catégorie'),'category_band':tr('Bandeau de catégorie'),'main':tr('Vue principale / photo'),'top':tr('Vue de dessus'),'side':tr('Vue de côté'),
+       'reference':tr('Référence'),'references':tr('Références et dimensions'),'name':tr('Nom'),'studs':tr('Dimensions en tenons'),
+       'dimensions':tr('Dimensions physiques'),'free':tr('Texte libre'),'divider':tr('Séparateur')}
 
 
 class LayerHandle(QGraphicsRectItem):
@@ -58,50 +60,50 @@ class LabelEditor(QDialog):
         self.template=template_for_item(self.item,db) if individual else independent_category(db.setting('template',default_template()));self.updating=False;self.undo_stack=[];self.redo_stack=[]
         try:self.visuals,_=engine.visuals(self.item,download=False,template=self.template)
         except Exception:self.visuals={}
-        self.setWindowTitle('Disposition de cette étiquette — '+self.item['ref'] if individual else 'Éditeur d’étiquettes');self.setWindowFlags(self.windowFlags()|Qt.WindowType.WindowMaximizeButtonHint|Qt.WindowType.WindowMinimizeButtonHint);self.resize(1250,790)
+        self.setWindowTitle(tr('Disposition de cette étiquette — ')+self.item['ref'] if individual else tr('Éditeur d’étiquettes'));self.setWindowFlags(self.windowFlags()|Qt.WindowType.WindowMaximizeButtonHint|Qt.WindowType.WindowMinimizeButtonHint);self.resize(1250,790)
         outer=QVBoxLayout(self);toolbar=QHBoxLayout();outer.addLayout(toolbar)
-        for name,func in [('Modèle de base',self.reset),('Charger…',self.load),('Enregistrer sous…',self.save_as),('Annuler',self.undo),('Rétablir',self.redo)]:
+        for name,func in [(tr('Modèle de base'),self.reset),(tr('Charger…'),self.load),(tr('Enregistrer sous…'),self.save_as),(tr('Annuler'),self.undo),(tr('Rétablir'),self.redo)]:
             b=QPushButton(name);b.clicked.connect(func);toolbar.addWidget(b)
         toolbar.addStretch()
         split=QSplitter();outer.addWidget(split,1)
-        left=QWidget();lv=QVBoxLayout(left);lv.addWidget(QLabel('Calques — premier plan en haut'));self.layer_list=QListWidget();lv.addWidget(self.layer_list,1)
+        left=QWidget();lv=QVBoxLayout(left);lv.addWidget(QLabel(tr('Calques — premier plan en haut')));self.layer_list=QListWidget();lv.addWidget(self.layer_list,1)
         self.types=QComboBox()
         for k,n in NAMES.items():self.types.addItem(n,k)
         lv.addWidget(self.types)
-        for name,func in [('Ajouter une information',self.add_layer),('Ajouter un texte libre',self.add_free),('Dupliquer',self.duplicate),('Monter le calque',lambda:self.move_layer(-1)),('Descendre le calque',lambda:self.move_layer(1)),('Supprimer',self.remove_layer)]:
+        for name,func in [(tr('Ajouter une information'),self.add_layer),(tr('Ajouter un texte libre'),self.add_free),(tr('Dupliquer'),self.duplicate),(tr('Monter le calque'),lambda:self.move_layer(-1)),(tr('Descendre le calque'),lambda:self.move_layer(1)),(tr('Supprimer'),self.remove_layer)]:
             b=QPushButton(name);b.clicked.connect(func);lv.addWidget(b)
         split.addWidget(left)
         center=QWidget();cv=QVBoxLayout(center);self.scene=QGraphicsScene();self.view=QGraphicsView(self.scene);self.view.setRenderHint(QPainter.RenderHint.Antialiasing);cv.addWidget(self.view,1)
-        zoomrow=QHBoxLayout();self.snap=QCheckBox('Grille / aimantation 0,5 mm');zoomrow.addWidget(self.snap);zoomrow.addWidget(QLabel('Zoom'));self.zoom=QSlider(Qt.Orientation.Horizontal);self.zoom.setRange(25,250);self.zoom.setValue(100);self.zoom.valueChanged.connect(self.zoom_changed);zoomrow.addWidget(self.zoom);cv.addLayout(zoomrow)
+        zoomrow=QHBoxLayout();self.snap=QCheckBox(tr('Grille / aimantation 0,5 mm'));zoomrow.addWidget(self.snap);zoomrow.addWidget(QLabel(tr('Zoom')));self.zoom=QSlider(Qt.Orientation.Horizontal);self.zoom.setRange(25,250);self.zoom.setValue(100);self.zoom.valueChanged.connect(self.zoom_changed);zoomrow.addWidget(self.zoom);cv.addLayout(zoomrow)
         self.small=QLabel();self.small.setAlignment(Qt.AlignmentFlag.AlignCenter);cv.addWidget(self.small);split.addWidget(center)
         right=QWidget();form=QFormLayout(right);self.props={}
-        for key,label in [('x','Position X (mm)'),('y','Position Y (mm)'),('w','Largeur (mm)'),('h','Hauteur (mm)'),('font','Taille du texte (mm)')]:
+        for key,label in [('x',tr('Position X (mm)')),('y',tr('Position Y (mm)')),('w',tr('Largeur (mm)')),('h',tr('Hauteur (mm)')),('font',tr('Taille du texte (mm)'))]:
             spin=QDoubleSpinBox();spin.setRange(-1000 if key in ('x','y') else .1,1000);spin.setDecimals(2);spin.setSingleStep(.5);self.props[key]=spin;form.addRow(label,spin);spin.valueChanged.connect(self.property_changed)
-        self.auto_crop=QCheckBox('Réduire les marges autour de la pièce');form.addRow(self.auto_crop);self.auto_crop.toggled.connect(self.property_changed)
-        image_row=QWidget();image_layout=QHBoxLayout(image_row);image_layout.setContentsMargins(0,0,0,0);self.image_zoom=QSlider(Qt.Orientation.Horizontal);self.image_zoom.setRange(50,300);self.image_zoom_value=QDoubleSpinBox();self.image_zoom_value.setRange(50,300);self.image_zoom_value.setDecimals(0);self.image_zoom_value.setSuffix(' %');image_layout.addWidget(self.image_zoom);image_layout.addWidget(self.image_zoom_value);form.addRow('Zoom de cette vue',image_row)
+        self.auto_crop=QCheckBox(tr('Réduire les marges autour de la pièce'));form.addRow(self.auto_crop);self.auto_crop.toggled.connect(self.property_changed)
+        image_row=QWidget();image_layout=QHBoxLayout(image_row);image_layout.setContentsMargins(0,0,0,0);self.image_zoom=QSlider(Qt.Orientation.Horizontal);self.image_zoom.setRange(50,300);self.image_zoom_value=QDoubleSpinBox();self.image_zoom_value.setRange(50,300);self.image_zoom_value.setDecimals(0);self.image_zoom_value.setSuffix(' %');image_layout.addWidget(self.image_zoom);image_layout.addWidget(self.image_zoom_value);form.addRow(tr('Zoom de cette vue'),image_row)
         self.image_zoom.valueChanged.connect(self.image_zoom_value.setValue);self.image_zoom_value.valueChanged.connect(lambda value:self.image_zoom.setValue(round(value)));self.image_zoom_value.valueChanged.connect(self.property_changed)
-        self.image_zoom.setToolTip('Au-delà de 100 %, les bords de la vue peuvent être coupés par sa zone. Agrandis Largeur / Hauteur pour garder la pièce entière.')
-        self.family=QLineEdit('Segoe UI');form.addRow('Police ou chemin .ttf',self.family);self.family.editingFinished.connect(self.property_changed)
-        self.free=QLineEdit();form.addRow('Texte libre',self.free);self.free.editingFinished.connect(self.property_changed)
-        self.align=QComboBox();self.align.addItems(['left','center','right']);form.addRow('Alignement',self.align);self.align.currentIndexChanged.connect(self.property_changed)
+        self.image_zoom.setToolTip(tr('Au-delà de 100 %, les bords de la vue peuvent être coupés par sa zone. Agrandis Largeur / Hauteur pour garder la pièce entière.'))
+        self.family=QLineEdit('Segoe UI');form.addRow(tr('Police ou chemin .ttf'),self.family);self.family.editingFinished.connect(self.property_changed)
+        self.free=QLineEdit();form.addRow(tr('Texte libre'),self.free);self.free.editingFinished.connect(self.property_changed)
+        self.align=QComboBox();self.align.addItems(['left','center','right']);form.addRow(tr('Alignement'),self.align);self.align.currentIndexChanged.connect(self.property_changed)
         self.bold=QCheckBox();self.visible=QCheckBox();self.locked=QCheckBox()
-        for label,w in [('Gras',self.bold),('Visible',self.visible),('Verrouillé',self.locked)]:form.addRow(label,w);w.toggled.connect(self.property_changed)
-        b=QPushButton('Couleur du texte…');b.clicked.connect(self.text_color);form.addRow(b)
+        for label,w in [(tr('Gras'),self.bold),(tr('Visible'),self.visible),(tr('Verrouillé'),self.locked)]:form.addRow(label,w);w.toggled.connect(self.property_changed)
+        b=QPushButton(tr('Couleur du texte…'));b.clicked.connect(self.text_color);form.addRow(b)
         self.width=QDoubleSpinBox();self.height=QDoubleSpinBox();self.border=QDoubleSpinBox();self.margin=QDoubleSpinBox()
-        for key,label,w in [('width','Largeur totale (mm)',self.width),('height','Hauteur totale (mm)',self.height),('border','Contour (mm)',self.border),('margin','Repère de marge (mm)',self.margin)]:
+        for key,label,w in [('width',tr('Largeur totale (mm)'),self.width),('height',tr('Hauteur totale (mm)'),self.height),('border',tr('Contour (mm)'),self.border),('margin',tr('Repère de marge (mm)'),self.margin)]:
             w.setRange(.1,300);w.setDecimals(2);w.setValue(self.template[key]);w.valueChanged.connect(self.format_changed);form.addRow(label,w)
             if individual and key in ('width','height'):w.setEnabled(False)
-        for name,func in [('Contour de cette catégorie…',self.category_color),('Fond…',lambda:self.format_color('background')),('Contour par défaut…',lambda:self.format_color('outline'))]:
+        for name,func in [(tr('Contour de cette catégorie…'),self.category_color),(tr('Fond…'),lambda:self.format_color('background')),(tr('Contour par défaut…'),lambda:self.format_color('outline'))]:
             b=QPushButton(name);b.clicked.connect(func);form.addRow(b)
         self.edge_controls=None;self.edge_revision=0;self.edge_running=False;self.edge_closed=False
         self.edge_timer=QTimer(self);self.edge_timer.setSingleShot(True);self.edge_timer.setInterval(140);self.edge_timer.timeout.connect(self.render_edge_preview)
         self.edge_status=QLabel();self.edge_status.setWordWrap(True)
         if individual:
-            form.addRow(QLabel('Arêtes 3D de cette étiquette'))
+            form.addRow(QLabel(tr('Arêtes 3D de cette étiquette')))
             self.edge_controls=EdgeControls(self.template.get('edge_settings') or general_style(db),inherit=True);self.edge_controls.set_settings(self.template.get('edge_settings') or general_style(db),self.template.get('edge_settings') is None);self.edge_controls.changed.connect(self.edge_changed);form.addRow(self.edge_controls);form.addRow(self.edge_status)
         scroll=QScrollArea();scroll.setWidgetResizable(True);scroll.setWidget(right);split.addWidget(scroll);split.setSizes([220,650,320])
-        bottom=QHBoxLayout();bottom.addWidget(QLabel('Déplace un champ ; tire son coin inférieur droit pour le redimensionner.'),1)
-        apply=QPushButton('Appliquer');apply.clicked.connect(self.apply);bottom.addWidget(apply);close=QPushButton('Fermer');close.clicked.connect(self.reject);bottom.addWidget(close);outer.addLayout(bottom)
+        bottom=QHBoxLayout();bottom.addWidget(QLabel(tr('Déplace un champ ; tire son coin inférieur droit pour le redimensionner.')),1)
+        apply=QPushButton(tr('Appliquer'));apply.clicked.connect(self.apply);bottom.addWidget(apply);close=QPushButton(tr('Fermer'));close.clicked.connect(self.reject);bottom.addWidget(close);outer.addLayout(bottom)
         self.layer_list.currentRowChanged.connect(self.fill_properties);self.reload_layers()
 
     def snapshot(self):
@@ -145,7 +147,7 @@ class LabelEditor(QDialog):
         self.small.setPixmap(pixmap(im).scaledToWidth(300,Qt.TransformationMode.SmoothTransformation))
     def zoom_changed(self,value):self.view.resetTransform();self.view.scale(value/100,value/100)
     def add_layer(self):
-        self.snapshot();self.template['layers'].insert(0,{'type':self.types.currentData(),'text':'Texte','x':2,'y':6,'w':25,'h':4,'font':2,'visible':True,'locked':False,'color':'#202020','align':'left'});self.reload_layers();self.layer_list.setCurrentRow(0)
+        self.snapshot();self.template['layers'].insert(0,{'type':self.types.currentData(),'text':tr('Texte'),'x':2,'y':6,'w':25,'h':4,'font':2,'visible':True,'locked':False,'color':'#202020','align':'left'});self.reload_layers();self.layer_list.setCurrentRow(0)
     def add_free(self):self.types.setCurrentIndex(self.types.findData('free'));self.add_layer()
     def duplicate(self):
         l=self.current()
@@ -180,25 +182,25 @@ class LabelEditor(QDialog):
         if self.redo_stack:self.undo_stack.append(copy.deepcopy(self.template));self.template=self.redo_stack.pop();self.sync_format();self.reload_layers()
     def save_as(self):
         import json
-        path,_=QFileDialog.getSaveFileName(self,'Enregistrer le modèle','modele-etiquette.json','Modèle (*.json)')
+        path,_=QFileDialog.getSaveFileName(self,tr('Enregistrer le modèle'),'modele-etiquette.json',tr('Modèle (*.json)'))
         if path:
             with open(path,'w',encoding='utf-8') as f:json.dump(self.template,f,ensure_ascii=False,indent=2)
     def load(self):
         import json
-        path,_=QFileDialog.getOpenFileName(self,'Charger un modèle','','Modèle (*.json)')
+        path,_=QFileDialog.getOpenFileName(self,tr('Charger un modèle'),'',tr('Modèle (*.json)'))
         if path:
             try:
                 with open(path,encoding='utf-8') as f:t=json.load(f)
-                if not all(k in t for k in ('width','height','layers','category_colors','outline','background')):raise ValueError('Modèle invalide')
+                if not all(k in t for k in ('width','height','layers','category_colors','outline','background')):raise ValueError(tr('Modèle invalide'))
                 self.snapshot();self.template=independent_category(t);self.sync_format();self.reload_layers()
-            except Exception as e:QMessageBox.warning(self,'Modèle',str(e))
+            except Exception as e:QMessageBox.warning(self,tr('Modèle'),str(e))
     def edge_changed(self):
         if self.updating:return
         self.snapshot();self.template['edge_settings']=self.edge_controls.settings()
         if self.edge_controls.inherit.isChecked():self.edge_controls.set_settings(general_style(self.db),True)
         self.schedule_edge_preview()
     def schedule_edge_preview(self):
-        self.edge_revision+=1;self.edge_status.setText('Actualisation des arêtes…');self.edge_timer.start()
+        self.edge_revision+=1;self.edge_status.setText(tr('Actualisation des arêtes…'));self.edge_timer.start()
     def render_edge_preview(self):
         if self.edge_closed or self.edge_running:return
         revision=self.edge_revision;template=copy.deepcopy(self.template);item=dict(self.item);self.edge_running=True
@@ -208,7 +210,7 @@ class LabelEditor(QDialog):
             if self.edge_closed:return
             if revision==self.edge_revision:
                 if result:self.visuals,note=result;self.edge_status.setText(note);self.refresh_canvas()
-                else:self.edge_status.setText('Aperçu indisponible : '+str(error))
+                else:self.edge_status.setText(tr('Aperçu indisponible : ')+str(error))
             else:self.edge_timer.start()
         async_task(self,work,lambda result:finish(result),lambda error:finish(error=error))
     def done(self,result):self.edge_closed=True;self.edge_revision+=1;self.edge_timer.stop();super().done(result)

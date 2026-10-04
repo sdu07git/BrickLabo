@@ -3,10 +3,14 @@ from collections import OrderedDict
 import hashlib,json,os,threading,time,uuid
 from pathlib import Path
 from PIL import Image
+import logging
+from .fileio import compact_digest,atomic_output,error_message
 
 class ThumbnailCache:
     def __init__(self,folder,ram_limit=8*1024*1024,disk_limit=256*1024*1024):
-        self.folder=Path(folder);self.folder.mkdir(parents=True,exist_ok=True)
+        self.folder=Path(folder);self.disk_error=False
+        try:self.folder.mkdir(parents=True,exist_ok=True)
+        except OSError as error:self.warn(error)
         self.ram_limit=ram_limit;self.disk_limit=disk_limit;self.memory=OrderedDict();self.memory_bytes=0;self.lock=threading.RLock();self.generation=0
         self.disk=OrderedDict();self.disk_bytes=0
         entries=[]
@@ -15,8 +19,12 @@ class ThumbnailCache:
             except OSError:pass
         for _,p,size in sorted(entries):self.disk[p]=size;self.disk_bytes+=size
         self.trim()
+    def warn(self,error):
+        if not self.disk_error:
+            logging.getLogger('bricklabo').warning('Miniatures : cache mémoire conservé, écriture disque impossible. %s',error_message(error))
+            self.disk_error=True
     def path(self,key):
-        digest=hashlib.sha256(json.dumps(key,ensure_ascii=False,default=str).encode()).hexdigest()
+        digest=compact_digest(json.dumps(key,ensure_ascii=False,default=str))
         return self.folder/(str(key[0])+'-'+digest+'.png')
     def remember(self,key,image):
         size=image.width*image.height*4
@@ -51,14 +59,11 @@ class ThumbnailCache:
         canvas=Image.new('RGBA',(100,65));canvas.alpha_composite(small,((100-small.width)//2,(65-small.height)//2))
         with self.lock:
             if generation is not None and generation!=self.generation:return canvas
-            self.remember(key,canvas);path=self.path(key);temp=path.with_suffix('.'+uuid.uuid4().hex+'.tmp')
+            self.remember(key,canvas);path=self.path(key)
             try:
-                canvas.save(temp,format='PNG');os.replace(temp,path)
+                with atomic_output(path) as temp:canvas.save(temp,format='PNG')
                 self.disk_bytes-=self.disk.pop(path,0);size=path.stat().st_size;self.disk[path]=size;self.disk_bytes+=size;self.trim()
-            except OSError:pass
-            finally:
-                try:temp.unlink(missing_ok=True)
-                except OSError:pass
+            except OSError as error:self.warn(error)
         return canvas
     def trim(self):
         with self.lock:

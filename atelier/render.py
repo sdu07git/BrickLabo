@@ -1,5 +1,7 @@
 from __future__ import annotations
 
+from .i18n import tr,tf
+
 import math
 import re
 import zipfile
@@ -57,7 +59,7 @@ class LDraw:
         if self.supplement:
             for n in candidates:
                 if n in self.supplement_names:return self.supplement.read(self.supplement_names[n]).decode('utf-8',errors='replace')
-        raise RenderError('Fichier LDraw absent : '+name)
+        raise RenderError(tr('Fichier LDraw absent : ')+name)
 
     def resolve(self,ref):
         # Aucun rapprochement arbitraire entre les motifs RB et BL.
@@ -66,7 +68,7 @@ class LDraw:
         for n in names:
             try:self.read(n);return n
             except RenderError:pass
-        raise RenderError('Pas de modèle LDraw pour '+ref)
+        raise RenderError(tr('Pas de modèle LDraw pour ')+ref)
 
     def clear_mesh_cache(self):
         with self.mesh_lock:self.mesh_cache.clear();self.mesh_bytes=0
@@ -86,10 +88,10 @@ class LDraw:
     def build_mesh(self,ref):
         triangles=[];edges=[];conditional=[]
         def walk(name,mat,offset,current,stack):
-            if name in stack:raise RenderError('Référence LDraw cyclique')
+            if name in stack:raise RenderError(tr('Référence LDraw cyclique'))
             text=self.read(name)
             # Si une texture est nécessaire, préférer une photo à un modèle incomplet.
-            if '!TEXMAP' in text:raise RenderError('Modèle texturé : utiliser une photo pour préserver le motif')
+            if '!TEXMAP' in text:raise RenderError(tr('Modèle texturé : utiliser une photo pour préserver le motif'))
             for raw in text.splitlines():
                 t=raw.split()
                 if not t or t[0] not in ('1','2','3','4','5'):continue
@@ -109,7 +111,7 @@ class LDraw:
                     else:
                         triangles.append((points[[0,1,2]],color));triangles.append((points[[0,2,3]],color))
         walk(self.resolve(ref),np.eye(3),np.zeros(3),16,set())
-        if not triangles:raise RenderError('Géométrie vide')
+        if not triangles:raise RenderError(tr('Géométrie vide'))
         xyz=np.concatenate([t[0] for t in triangles])
         bounds=np.ptp(xyz,axis=0)
         return triangles,edges,conditional,bounds

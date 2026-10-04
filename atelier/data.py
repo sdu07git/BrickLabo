@@ -1,5 +1,7 @@
 from __future__ import annotations
 
+from .i18n import tr,tf
+
 import csv
 import gzip
 import io
@@ -99,6 +101,8 @@ class Database:
                 c.execute("ALTER TABLE items ADD COLUMN imported_at TEXT NOT NULL DEFAULT ''")
             c.execute("CREATE TRIGGER IF NOT EXISTS items_import_date AFTER INSERT ON items WHEN NEW.imported_at='' BEGIN UPDATE items SET imported_at=datetime('now','localtime') WHERE id=NEW.id; END")
             c.execute('CREATE INDEX IF NOT EXISTS idx_items_import_date ON items(source,kind,imported_at)')
+            from .search_index import prepare_index
+            self.search_index_available=prepare_index(c)
 
     @contextmanager
     def connect(self):
@@ -173,8 +177,12 @@ class Database:
             args.extend([pattern,pattern,pattern])
         return ('WHERE '+' AND '.join(parts) if parts else ''),args
 
-    def query(self,source=None,kind=None,search='',category='',scope='catalogue',page=1,size=100,sort='ref',descending=False,hide_decorated=False,year=''):
-        clause,args = self.filter_clause(source,kind,search,category)
+    def query(self,source=None,kind=None,search='',category='',scope='catalogue',page=1,size=100,sort='ref',descending=False,hide_decorated=False,year='',advanced=None):
+        clause,args = self.filter_clause(source,kind,search if not self.search_index_available else '',category)
+        from .search_index import indexed_clause, advanced_clause
+        extra_parts,extra_args=indexed_clause(search) if self.search_index_available else ([],[])
+        ap,aa=advanced_clause(advanced or {},scope);extra_parts+=ap;extra_args+=aa
+        if extra_parts:clause+=(' AND ' if clause else 'WHERE ')+' AND '.join(extra_parts);args.extend(extra_args)
         if scope=='catalogue':clause+=(' AND ' if clause else 'WHERE ')+'i.catalogue_hidden=0'
         if year:
             clause+=(' AND ' if clause else 'WHERE ')+"TRIM(COALESCE(i.year,''))=?"
@@ -195,15 +203,15 @@ class Database:
         return rows,total,pages,page
 
     def add(self,scope,item_id,color='',quantity=1):
-        if scope not in ('stock','queue'):raise ValueError('Destination inconnue')
+        if scope not in ('stock','queue'):raise ValueError(tr('Destination inconnue'))
         quantity=int(quantity)
-        if quantity<1:raise ValueError('Quantité positive requise')
+        if quantity<1:raise ValueError(tr('Quantité positive requise'))
         additions=[(item_id,str(color),quantity)]
         item=self.get_item(item_id)
-        if not item:raise ValueError('Référence absente du catalogue')
+        if not item:raise ValueError(tr('Référence absente du catalogue'))
         if scope=='stock' and item['kind']=='set':
             parts=self.components(item)
-            if not parts:raise ValueError('Inventaire indisponible pour '+item['ref']+'. Importe les inventaires Rebrickable ou ouvre le set pour charger / définir sa composition avant de l’ajouter au stock.')
+            if not parts:raise ValueError(tr('Inventaire indisponible pour ')+item['ref']+tr('. Importe les inventaires Rebrickable ou ouvre le set pour charger / définir sa composition avant de l’ajouter au stock.'))
             for part in parts:
                 amount=int(part.get('chosen_quantity',1))*quantity
                 if amount>0:additions.append((part['id'],str(part.get('chosen_color','')),amount))
@@ -221,7 +229,7 @@ class Database:
         return len(additions)
 
     def remove(self,scope,ids,remove_set_parts=False):
-        if scope not in ('stock','queue','history'): raise ValueError('Suppression interdite')
+        if scope not in ('stock','queue','history'): raise ValueError(tr('Suppression interdite'))
         if ids:
             with self.connect() as c:
                 if scope=='stock' and remove_set_parts:
@@ -233,7 +241,7 @@ class Database:
                         if not parts:
                             item=self.get_item(entry['item_id'])
                             inventory=self.components(item)
-                            if not inventory:raise ValueError('Composition introuvable pour '+item['ref']+'. Choisissez de conserver les pièces ou importez son inventaire.')
+                            if not inventory:raise ValueError(tr('Composition introuvable pour ')+item['ref']+tr('. Choisissez de conserver les pièces ou importez son inventaire.'))
                             parts=[{'item_id':p['id'],'color':str(p.get('chosen_color','')),'quantity':int(p.get('chosen_quantity',1))*entry['quantity']} for p in inventory]
                         for part in parts:
                             key=(part['item_id'],part['color']);removals[key]=removals.get(key,0)+part['quantity']
@@ -254,7 +262,7 @@ class Database:
         if not ids:return
         with self.connect() as c:
             rows=c.execute('SELECT id,source FROM items WHERE id IN ('+','.join('?' for _ in ids)+')',ids).fetchall()
-            if len(rows)!=len(ids) or any(row['source']!='ALT' for row in rows):raise ValueError('Seules les références du catalogue alternatif peuvent être supprimées.')
+            if len(rows)!=len(ids) or any(row['source']!='ALT' for row in rows):raise ValueError(tr('Seules les références du catalogue alternatif peuvent être supprimées.'))
             # Keep identity and inventory so personal stock/history are preserved.
             c.executemany('UPDATE items SET catalogue_hidden=1 WHERE id=?',[(iid,) for iid in ids])
 
@@ -268,7 +276,7 @@ class Database:
             self.set_setting('alt_components_'+str(target),[{'item_id':p['id'],'color':str(p.get('chosen_color','')),'quantity':p.get('chosen_quantity',1)} for p in parts])
 
     def alternative(self,kind,ref,name,category,image='',item_id=None):
-        if not ref.strip() or not name.strip(): raise ValueError('Référence et nom obligatoires')
+        if not ref.strip() or not name.strip(): raise ValueError(tr('Référence et nom obligatoires'))
         if not item_id:
             hidden=self.rows("SELECT id FROM items WHERE source='ALT' AND kind=? AND ref=? AND catalogue_hidden=1",(kind,ref.strip()))
             if hidden:
@@ -335,7 +343,8 @@ class Database:
 
     def available_colors(self,item):
         if item['source']=='BL':
-            palette=self.setting('bl_colors',{})
+            from .color_links import bl_palette
+            palette=bl_palette(self.setting)
             ids={str(key) for key in self.setting('bl_available_colors_'+item['kind']+'_'+item['ref'],[])}
             ids.update(row['color'] for row in self.rows("SELECT DISTINCT p.color FROM bl_manual_inventory p JOIN items i ON i.id=p.item_id WHERE i.source='BL' AND i.kind=? AND i.ref=?",(item['kind'],item['ref'])))
             codes={}
@@ -345,7 +354,7 @@ class Database:
                     key=names.get(row['color_name'])
                     if key is not None:
                         ids.add(str(key));codes.setdefault(str(key),[]).append(row['element_code'])
-            return sorted([{'id':key,'name':palette.get(key,{}).get('name','Couleur '+key),'rgb':palette.get(key,{}).get('rgb',''),**({'element_codes':sorted(set(codes[key]))} if key in codes else {})} for key in ids],key=lambda c:c['name'])
+            return sorted([{'id':key,'name':palette.get(key,{}).get('name',tr('Couleur ')+key),'rgb':palette.get(key,{}).get('rgb',''),**({'element_codes':sorted(set(codes[key]))} if key in codes else {})} for key in ids],key=lambda c:c['name'])
         if item['source']!='RB':return []
         return self.rows('SELECT DISTINCT c.* FROM inventory_parts p JOIN colors c ON c.id=p.color_id WHERE p.part_num=? ORDER BY c.name',(item['ref'],))
 
@@ -364,12 +373,12 @@ class Database:
         if path.suffix.lower()=='.txt' and re.fullmatch(r'S-(.+)\.txt',path.name,re.I):
             ref=re.fullmatch(r'S-(.+)\.txt',path.name,re.I).group(1)
             selected=self.rows("SELECT * FROM items WHERE source='BL' AND kind='set' AND ref=?",(ref,))
-            if not selected:raise ValueError('Importer d’abord le catalogue BrickLink Sets pour trouver le set '+ref+'.')
+            if not selected:raise ValueError(tr('Importer d’abord le catalogue BrickLink Sets pour trouver le set ')+ref+'.')
             from .set_inventory import import_inventory
             return import_inventory(self,selected[0],path,progress)['rows']
         if path.name.lower()=='complete.zip':
             with zipfile.ZipFile(path) as z:
-                if 'ldraw/LDConfig.ldr' not in z.namelist(): raise ValueError('Archive LDraw non reconnue')
+                if 'ldraw/LDConfig.ldr' not in z.namelist(): raise ValueError(tr('Archive LDraw non reconnue'))
             from .disk_space import reuse_ldraw
             target=reuse_ldraw(self,path)
             self.set_setting('ldraw',str(target))
@@ -378,7 +387,7 @@ class Database:
         if path.suffix.lower()=='.zip':
             with zipfile.ZipFile(path) as z:
                 names=[n for n in z.namelist() if n.lower().endswith('.csv') and not n.startswith('__MACOSX/')]
-                if len(names)!=1:raise ValueError('Le ZIP doit contenir un CSV Rebrickable')
+                if len(names)!=1:raise ValueError(tr('Le ZIP doit contenir un CSV Rebrickable'))
                 with z.open(names[0]) as f:
                     return self._import_rb(Path(names[0]).stem,csv.DictReader(io.TextIOWrapper(f,encoding='utf-8-sig',newline='')),path,progress)
         if path.suffix.lower()=='.gz':
@@ -398,14 +407,14 @@ class Database:
             'itemtypes':('bl_itemtypes',('Item Type ID','Item Type Name'))}
         if stem.lower() in auxiliary:
             table,columns=auxiliary[stem.lower()]
-            if not set(columns).issubset(reader.fieldnames or []):raise ValueError('Colonnes BrickLink manquantes : '+stem)
+            if not set(columns).issubset(reader.fieldnames or []):raise ValueError(tr('Colonnes BrickLink manquantes : ')+stem)
             count=0;batch=[]
             with self.connect() as c:
                 c.execute('DELETE FROM '+table)
                 sql='INSERT OR IGNORE INTO '+table+' VALUES('+','.join('?' for _ in columns)+')'
                 for row in reader:
                     values=tuple(str(row.get(k) or '').strip() for k in columns)
-                    if any(not v for v in values):raise ValueError('Ligne incomplète dans '+path.name)
+                    if any(not v for v in values):raise ValueError(tr('Ligne incomplète dans ')+path.name)
                     batch.append(values);count+=1
                     if len(batch)>=5000:c.executemany(sql,batch);batch=[];progress(stem,count)
                 c.executemany(sql,batch)
@@ -418,21 +427,21 @@ class Database:
         id_field=next((fields[k] for k in ('color id','colorid','id') if k in fields),None)
         name_field=next((fields[k] for k in ('color name','colorname','name') if k in fields),None)
         if stem.lower() in ('colors','colours'):
-            if not id_field or not name_field:raise ValueError('Colors.txt doit contenir Color ID et Color Name.')
+            if not id_field or not name_field:raise ValueError(tr('Colors.txt doit contenir Color ID et Color Name.'))
             rgb_field=next((fields[k] for k in ('rgb','color code','colorcode','hex','hex code') if k in fields),None)
             palette=dict(self.setting('bl_colors',{}));count=0
             for row in reader:
                 key=str(row[id_field]).strip();name=str(row[name_field]).strip()
-                if not key.isdigit() or not name:raise ValueError('Identifiant ou nom de couleur BrickLink invalide.')
+                if not key.isdigit() or not name:raise ValueError(tr('Identifiant ou nom de couleur BrickLink invalide.'))
                 rgb=str(row.get(rgb_field,'') or '').strip().lstrip('#') if rgb_field else ''
-                if rgb and not re.fullmatch('[0-9a-fA-F]{6}',rgb):raise ValueError('Code RGB invalide pour '+name)
+                if rgb and not re.fullmatch('[0-9a-fA-F]{6}',rgb):raise ValueError(tr('Code RGB invalide pour ')+name)
                 palette[key]={'name':name,'rgb':rgb or palette.get(key,{}).get('rgb',''),'type':row.get(fields.get('type'),''),'year_from':row.get(fields.get('year from'),''),'year_to':row.get(fields.get('year to'),'')};count+=1
             self.set_setting('bl_colors',palette)
             self.run('INSERT OR REPLACE INTO imports VALUES(?,?,?,?)',(path.name,str(path),time.strftime('%Y-%m-%d %H:%M'),count))
             return count
         kinds={'Parts':'part','Sets':'set','Minifigures':'minifig','Instructions':'instructions','Original Boxes':'box','Books':'book','Gear':'gear','Catalogs':'catalog'}
-        if stem not in kinds:raise ValueError('Type de catalogue BrickLink inconnu : '+stem)
-        if not {'Number','Name','Category Name'}.issubset(reader.fieldnames or []):raise ValueError('Colonnes BrickLink manquantes')
+        if stem not in kinds:raise ValueError(tr('Type de catalogue BrickLink inconnu : ')+stem)
+        if not {'Number','Name','Category Name'}.issubset(reader.fieldnames or []):raise ValueError(tr('Colonnes BrickLink manquantes'))
         count=0;batch=[]
         with self.connect() as c:
             for r in reader:
@@ -454,10 +463,10 @@ class Database:
             'inventory_minifigs':('inventory_minifigs',['inventory_id','fig_num','quantity']),
             'elements':('elements',['element_id','part_num','color_id','design_id']),
             'part_relationships':('relationships',['rel_type','child_part_num','parent_part_num'])}
-        if stem not in configs and stem not in ('parts','sets','minifigs'):raise ValueError('CSV Rebrickable inconnu : '+stem)
+        if stem not in configs and stem not in ('parts','sets','minifigs'):raise ValueError(tr('CSV Rebrickable inconnu : ')+stem)
         required={'parts':['part_num','name','part_cat_id'],'sets':['set_num','name','theme_id'],'minifigs':['fig_num','name']}.get(stem,configs.get(stem,(None,[]))[1])
         # Les anciennes éditions peuvent ne pas inclure img_url dans inventory_parts.
-        if not set(x for x in required if x not in ('img_url','design_id')).issubset(reader.fieldnames or []):raise ValueError('Colonnes Rebrickable manquantes : '+stem)
+        if not set(x for x in required if x not in ('img_url','design_id')).issubset(reader.fieldnames or []):raise ValueError(tr('Colonnes Rebrickable manquantes : ')+stem)
         count=0;batch=[]
         with self.connect() as c:
             if stem in configs:

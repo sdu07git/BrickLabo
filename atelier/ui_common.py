@@ -1,6 +1,9 @@
 from __future__ import annotations
 
+from .i18n import tr,tf
+
 import traceback
+from .fileio import error_message
 from pathlib import Path
 from io import BytesIO
 
@@ -55,7 +58,7 @@ class Task(QRunnable):
         super().__init__();self.fn=fn;self.signals=Signals()
     def run(self):
         try:self.signals.result.emit(self.fn(self.signals.progress.emit))
-        except Exception as e:self.signals.error.emit(str(e));traceback.print_exc()
+        except Exception as e:self.signals.error.emit(error_message(e));traceback.print_exc()
 
 
 def async_task(parent,fn,done,fail=None,progress_callback=None):
@@ -79,7 +82,7 @@ class TaskBridge(QObject):
     @Slot(str)
     def failed(self,error):
         if self.fail:self.fail(error)
-        else:QMessageBox.warning(self.parent(),'Opération impossible',error)
+        else:QMessageBox.warning(self.parent(),tr('Opération impossible'),error)
         self.deleteLater()
     @Slot(object)
     def progress(self,text):
@@ -111,21 +114,21 @@ def dialog(title,parent):
 def image_dialog(title,image,parent):
     d=dialog(title,parent);layout=QVBoxLayout(d);scroll=QScrollArea();scroll.setWidgetResizable(True)
     label=QLabel();label.setAlignment(Qt.AlignmentFlag.AlignCenter);label.setPixmap(pixmap(image));scroll.setWidget(label)
-    layout.addWidget(scroll);close=QPushButton('Fermer');close.clicked.connect(d.accept);layout.addWidget(close);d.exec()
+    layout.addWidget(scroll);close=QPushButton(tr('Fermer'));close.clicked.connect(d.accept);layout.addWidget(close);d.exec()
 
 
 def edit_item(parent,db,item=None,kind='part'):
-    d=dialog('Modifier la référence alternative' if item else 'Ajouter une référence alternative',parent)
+    d=dialog(tr('Modifier la référence alternative') if item else tr('Ajouter une référence alternative'),parent)
     layout=QVBoxLayout(d);form=QFormLayout();layout.addLayout(form)
     ref=QLineEdit(item['ref'] if item else '');name=QLineEdit(item['name'] if item else '')
     category=QLineEdit(item['category'] if item else '')
-    types=QComboBox();types.addItem('Pièce','part');types.addItem('Set','set');types.addItem('Mini-fig','minifig')
+    types=QComboBox();types.addItem(tr('Pièce'),'part');types.addItem(tr('Set'),'set');types.addItem(tr('Mini-fig'),'minifig')
     types.setCurrentIndex(max(0,types.findData(item['kind'] if item else kind)))
-    form.addRow('Type',types);form.addRow('Référence',ref);form.addRow('Nom',name);form.addRow('Catégorie',category)
+    form.addRow(tr('Type'),types);form.addRow(tr('Référence'),ref);form.addRow(tr('Nom'),name);form.addRow(tr('Catégorie'),category)
     buttons=QDialogButtonBox(QDialogButtonBox.StandardButton.Save|QDialogButtonBox.StandardButton.Cancel)
     layout.addWidget(buttons);buttons.rejected.connect(d.reject)
     def save():
         try:db.alternative(types.currentData(),ref.text(),name.text(),category.text(),item.get('image','') if item else '',item['id'] if item else None);d.accept()
-        except Exception as e:QMessageBox.warning(d,'Référence invalide',str(e))
+        except Exception as e:QMessageBox.warning(d,tr('Référence invalide'),str(e))
     buttons.accepted.connect(save)
     return d.exec()

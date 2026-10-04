@@ -1,3 +1,5 @@
+
+from .i18n import tr,tf
 from PySide6.QtCore import Qt,Signal
 from PySide6.QtWidgets import QWidget,QVBoxLayout,QHBoxLayout,QLabel,QSlider,QDoubleSpinBox,QCheckBox
 from .edge_style import normalize_style
@@ -7,9 +9,9 @@ class EdgeControls(QWidget):
     def __init__(self,settings,inherit=False,parent=None):
         super().__init__(parent);self.loading=True;self.sliders={};self.spins={};self.rows=[]
         root=QVBoxLayout(self);root.setContentsMargins(0,0,0,0)
-        self.inherit=QCheckBox('Utiliser le réglage général') if inherit else None
+        self.inherit=QCheckBox(tr('Utiliser le réglage général')) if inherit else None
         if self.inherit:root.addWidget(self.inherit);self.inherit.toggled.connect(self.inheritance_changed)
-        for key,title,lo,hi,suffix in [('black','Intensité du noir',0,100,' %'),('width','Épaisseur des arêtes',.5,10,' px')]:
+        for key,title,lo,hi,suffix in [('black',tr('Intensité du noir'),0,100,' %'),('width',tr('Épaisseur des arêtes'),.5,10,' px')]:
             root.addWidget(QLabel(title));row=QWidget();layout=QHBoxLayout(row);layout.setContentsMargins(0,0,0,0);slider=QSlider(Qt.Orientation.Horizontal);slider.setRange(round(lo*10),round(hi*10));spin=QDoubleSpinBox();spin.setRange(lo,hi);spin.setDecimals(1);spin.setSingleStep(.1);spin.setSuffix(suffix);layout.addWidget(slider,1);layout.addWidget(spin);root.addWidget(row)
             self.rows.append(row);self.sliders[key]=slider;self.spins[key]=spin
             slider.valueChanged.connect(lambda value,k=key:self.from_slider(k,value));spin.valueChanged.connect(lambda value,k=key:self.from_spin(k,value))

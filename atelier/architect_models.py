@@ -1,5 +1,7 @@
 """Create a minimal licensed LDraw supplement with recursive dependencies."""
 from __future__ import annotations
+
+from .i18n import tr,tf
 import json,re,zipfile,hashlib,os,threading
 MODEL_LOCK=threading.RLock()
 from pathlib import Path
@@ -26,7 +28,7 @@ def build_pack(records,archives,destination,existing=None):
         name=name.replace('\\','/').lower()
         for key in [name,'parts/'+name,'p/'+name]:
             if key in files:return key
-        raise RenderError('Dépendance absente : '+name)
+        raise RenderError(tr('Dépendance absente : ')+name)
     def walk(name,used):
         key=resolve(name)
         if key in used:return

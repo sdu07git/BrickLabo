@@ -1,5 +1,7 @@
 from __future__ import annotations
 
+from .i18n import tr,tf
+
 from pathlib import Path
 
 from PySide6.QtCore import QObject,QEvent,QTimer,QSize,Qt
@@ -10,9 +12,9 @@ from .ui_common import async_task,pixmap
 
 class PartThumbnails(QObject):
     """Load visible inventory images in a worker, retaining per-row colors."""
-    def __init__(self,table,db,engine,rows,column,parent):
+    def __init__(self,table,db,engine,rows,column,parent,force_3d=False):
         super().__init__(parent)
-        self.table=table;self.db=db;self.engine=engine;self.rows=rows;self.column=column
+        self.table=table;self.db=db;self.engine=engine;self.rows=rows;self.column=column;self.force_3d=force_3d
         self.token=0;self.applied={};self.active=True;self.running=False;self.dirty=False
         self.timer=QTimer(self);self.timer.setSingleShot(True);self.timer.setInterval(60)
         self.timer.timeout.connect(self.load)
@@ -55,22 +57,23 @@ class PartThumbnails(QObject):
         from .edge_style import style_for_item
         from .viewpoint import camera_for_item
         visual=self.db.visual(item['id'])
+        if self.force_3d:visual=dict(visual,mode='3d',image='')
         chosen=item.get('chosen_color');color=str(chosen if chosen not in (None,'') else visual['color'])
         from .thumbnail_cache import file_stamp
         from .brickarchitect import model_ref,record_for
         info=record_for(self.db,item['ref']) if item['source']=='BA' else {}
         return (item['id'],color,visual['mode'],visual['image'],visual['color'],
-                self.db.setting('default_color','#f3d55b'),self.db.setting('ldraw',''),tuple(camera_for_item(self.db,item).values()),self.db.setting('architect_model_'+str(item['id']),''),self.db.setting('architect_photo_choice_'+str(item['id']),''),self.db.setting('edge_strength',0),file_stamp(visual['image']),file_stamp(self.db.setting('ldraw','')),file_stamp(self.db.path.parent/'brickarchitect_ldraw.zip'),file_stamp(Path(__file__).resolve().parent.parent/'ressources'/'brickarchitect_ldraw.zip'),tuple(sorted(style_for_item(self.db,item).items())),'thumb-v2',item.get('image',''),model_ref(self.db,item),tuple(info.get('BL',[])),tuple(info.get('RB',[])))
+                self.db.setting('default_color','#f3d55b'),self.db.setting('ldraw',''),tuple(camera_for_item(self.db,item).values()),self.db.setting('architect_model_'+str(item['id']),''),self.db.setting('architect_photo_choice_'+str(item['id']),''),self.db.setting('edge_strength',0),file_stamp(visual['image']),file_stamp(self.db.setting('ldraw','')),file_stamp(self.db.path.parent/'brickarchitect_ldraw.zip'),file_stamp(Path(__file__).resolve().parent.parent/'ressources'/'brickarchitect_ldraw.zip'),tuple(sorted(style_for_item(self.db,item).items())),'thumb-v3-colors',self.engine.color_rgb(item,color),item.get('image',''),model_ref(self.db,item),tuple(info.get('BL',[])),tuple(info.get('RB',[])))
 
     def apply(self,row,key,image,note):
         rows=self.rows()
-        if not self.active or row>=len(rows) or self.state(rows[row])!=key:return
+        if not self.active or row>=len(rows) or not rows[row] or self.state(rows[row])!=key:return
         cell=self.table.item(row,self.column)
         if cell is None:return
         if image is not None:
-            cell.setIcon(QIcon(pixmap(image)));cell.setText('');cell.setToolTip('Aperçu 3D / photo')
+            cell.setIcon(QIcon(pixmap(image)));cell.setText('');cell.setToolTip(tr('Aperçu 3D / photo'))
         else:
-            cell.setIcon(QIcon());cell.setText('Visuel indisponible');cell.setToolTip(note or 'Aucun modèle 3D ni photo disponible.')
+            cell.setIcon(QIcon());cell.setText(tr('Visuel indisponible'));cell.setToolTip(note or tr('Aucun modèle 3D ni photo disponible.'))
         self.applied[row]=key
         if self.table.rowHeight(row)!=72:self.table.setRowHeight(row,72)
 
@@ -85,10 +88,11 @@ class PartThumbnails(QObject):
         for row in list(self.applied):
             if row not in wanted:
                 cell=self.table.item(row,self.column)
-                if cell:cell.setIcon(QIcon());cell.setText('3D / photo à charger')
+                if cell:cell.setIcon(QIcon());cell.setText(tr('3D / photo à charger'))
                 self.applied.pop(row,None)
         pending=[]
         for row in sorted(wanted):
+            if not rows[row]:continue
             item=dict(rows[row]);key=self.state(item)
             if self.applied.get(row)!=key:pending.append((row,item,key))
         if not pending:return

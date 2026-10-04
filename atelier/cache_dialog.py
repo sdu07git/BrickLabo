@@ -1,3 +1,5 @@
+
+from .i18n import tr,tf
 from PySide6.QtCore import Qt,QUrl
 from PySide6.QtGui import QDesktopServices
 from PySide6.QtWidgets import QDialog,QVBoxLayout,QLabel,QPushButton,QDialogButtonBox,QTableWidget,QTableWidgetItem,QAbstractItemView
@@ -5,33 +7,33 @@ from .ui_common import async_task
 from .disk_space import usage,locations,clean_temp,deduplicate_ldraw
 
 def size_text(size):
- return f'{size/1073741824:.2f} Gio' if size>=1073741824 else f'{size/1048576:.1f} Mio'
+ return f'{size/1073741824:.2f} '+tr('Gio') if size>=1073741824 else f'{size/1048576:.1f} '+tr('Mio')
 
 class SpaceDialog(QDialog):
  def __init__(self,parent):
   super().__init__(parent);self.parent_app=parent;self.busy=False;self.closed=False;self.buttons=[]
-  self.setWindowTitle('Espace disque et caches');self.resize(740,560);self.setWindowFlag(Qt.WindowType.WindowMaximizeButtonHint)
-  layout=QVBoxLayout(self);info=QLabel('Données personnelles : '+str(parent.db.path.parent)+'\nMiniatures : limite de 256 Mio sur disque, 8 Mio en RAM.');info.setWordWrap(True);layout.addWidget(info)
-  self.table=QTableWidget(0,3);self.table.setHorizontalHeaderLabels(['Dossier / contenu','Taille','Fichiers']);self.table.horizontalHeader().setStretchLastSection(True);self.table.setEditTriggers(QAbstractItemView.EditTrigger.NoEditTriggers);self.table.itemDoubleClicked.connect(self.open_folder);self.table.setToolTip('Double-clic sur une ligne : ouvrir son dossier');layout.addWidget(self.table,1)
-  for label,func in [('Actualiser les tailles',self.refresh),('Vider le cache des miniatures',self.clear_cache),('Nettoyer les temporaires de plus de 7 jours',lambda:self.operate(lambda:clean_temp(parent.db))),('Supprimer les copies LDraw identiques',lambda:self.operate(lambda:deduplicate_ldraw(parent.db)))]:
+  self.setWindowTitle(tr('Espace disque et caches'));self.resize(740,560);self.setWindowFlag(Qt.WindowType.WindowMaximizeButtonHint)
+  layout=QVBoxLayout(self);info=QLabel(tr('Données personnelles : ')+str(parent.db.path.parent)+tr('\nMiniatures : limite de 256 Mio sur disque, 8 Mio en RAM.'));info.setWordWrap(True);layout.addWidget(info)
+  self.table=QTableWidget(0,3);self.table.setHorizontalHeaderLabels([tr('Dossier / contenu'),tr('Taille'),tr('Fichiers')]);self.table.horizontalHeader().setStretchLastSection(True);self.table.setEditTriggers(QAbstractItemView.EditTrigger.NoEditTriggers);self.table.itemDoubleClicked.connect(self.open_folder);self.table.setToolTip(tr('Double-clic sur une ligne : ouvrir son dossier'));layout.addWidget(self.table,1)
+  for label,func in [(tr('Actualiser les tailles'),self.refresh),(tr('Vider le cache des miniatures'),self.clear_cache),(tr('Nettoyer les temporaires de plus de 7 jours'),lambda:self.operate(lambda:clean_temp(parent.db))),(tr('Supprimer les copies LDraw identiques'),lambda:self.operate(lambda:deduplicate_ldraw(parent.db)))]:
    button=QPushButton(label);button.clicked.connect(func);self.buttons.append(button);layout.addWidget(button)
-  text=QLabel('Les temporaires récents, fichiers référencés, images importées, notices, stock et réglages sont conservés. LDraw : seules des copies au contenu identique sont supprimées, avec conservation de l’archive active. Aucun nettoyage du dossier Temp de Windows.');text.setWordWrap(True);layout.addWidget(text)
+  text=QLabel(tr('Les temporaires récents, fichiers référencés, images importées, notices, stock et réglages sont conservés. LDraw : seules des copies au contenu identique sont supprimées, avec conservation de l’archive active. Aucun nettoyage du dossier Temp de Windows.'));text.setWordWrap(True);layout.addWidget(text)
   self.status=QLabel();self.status.setWordWrap(True);layout.addWidget(self.status)
   self.result_label=QLabel();self.result_label.setWordWrap(True);layout.addWidget(self.result_label)
-  close=QDialogButtonBox(QDialogButtonBox.StandardButton.Close);close.rejected.connect(self.reject);close.button(QDialogButtonBox.StandardButton.Close).setText('Fermer');self.buttons.append(close.button(QDialogButtonBox.StandardButton.Close));layout.addWidget(close);self.refresh()
+  close=QDialogButtonBox(QDialogButtonBox.StandardButton.Close);close.rejected.connect(self.reject);close.button(QDialogButtonBox.StandardButton.Close).setText(tr('Fermer'));self.buttons.append(close.button(QDialogButtonBox.StandardButton.Close));layout.addWidget(close);self.refresh()
  def set_busy(self,value):
   self.busy=value
   for button in self.buttons:button.setEnabled(not value)
  def refresh(self):
   if self.busy:return
-  self.set_busy(True);self.status.setText('Calcul des tailles…')
+  self.set_busy(True);self.status.setText(tr('Calcul des tailles…'))
   def done(rows):
    if self.closed:return
    self.table.setRowCount(len(rows));folders=locations(self.parent_app.db)
    for r,(label,size,count) in enumerate(rows):
     for c,value in enumerate((label,size_text(size),str(count))):
-     cell=QTableWidgetItem(value);cell.setData(Qt.ItemDataRole.UserRole,str(folders[label].resolve()));cell.setToolTip('Double-clic : '+cell.data(Qt.ItemDataRole.UserRole));self.table.setItem(r,c,cell)
-   self.table.resizeColumnsToContents();self.table.setColumnWidth(0,330);self.set_busy(False);self.status.setText('Mesure terminée. Les fichiers temporaires Windows ne sont pas inclus.')
+     cell=QTableWidgetItem(value);cell.setData(Qt.ItemDataRole.UserRole,str(folders[label].resolve()));cell.setToolTip(tr('Double-clic : ')+cell.data(Qt.ItemDataRole.UserRole));self.table.setItem(r,c,cell)
+   self.table.resizeColumnsToContents();self.table.setColumnWidth(0,330);self.set_busy(False);self.status.setText(tr('Mesure terminée. Les fichiers temporaires Windows ne sont pas inclus.'))
   async_task(self,lambda progress:usage(self.parent_app.db),done,self.fail)
  def open_folder(self,item):
   if self.busy:return
@@ -39,21 +41,21 @@ class SpaceDialog(QDialog):
   target=item.data(Qt.ItemDataRole.UserRole)
   if not target:return
   folder=Path(target)
-  if not folder.is_dir():self.status.setText('Ce dossier n’existe pas encore : '+str(folder));return
-  if not QDesktopServices.openUrl(QUrl.fromLocalFile(str(folder))):self.status.setText('Impossible d’ouvrir ce dossier : '+str(folder))
-  else:self.status.setText('Dossier ouvert : '+str(folder))
+  if not folder.is_dir():self.status.setText(tr('Ce dossier n’existe pas encore : ')+str(folder));return
+  if not QDesktopServices.openUrl(QUrl.fromLocalFile(str(folder))):self.status.setText(tr('Impossible d’ouvrir ce dossier : ')+str(folder))
+  else:self.status.setText(tr('Dossier ouvert : ')+str(folder))
  def fail(self,error):
-  if not self.closed:self.set_busy(False);self.status.setText('Opération interrompue : '+error)
+  if not self.closed:self.set_busy(False);self.status.setText(tr('Opération interrompue : ')+error)
  def operate(self,work,after=None):
   if self.busy:return
-  self.set_busy(True);self.status.setText('Nettoyage en cours…')
+  self.set_busy(True);self.status.setText(tr('Nettoyage en cours…'))
   def done(result):
    if self.closed:return
    count,freed,errors=result
    if after:after()
    self.set_busy(False);self.refresh()
    # Retain cleanup result as a separate summary while refreshing measurements.
-   self.result_label.setText(str(count)+' fichier(s) supprimé(s), '+size_text(freed)+' libérés.'+(' Certains fichiers sont conservés : '+' ; '.join(errors[:3]) if errors else ''))
+   self.result_label.setText(str(count)+tr(' fichier(s) supprimé(s), ')+size_text(freed)+tr(' libérés.')+(tr(' Certains fichiers sont conservés : ')+' ; '.join(errors[:3]) if errors else ''))
   async_task(self,lambda progress:work(),done,self.fail)
  def clear_cache(self):
   def work():

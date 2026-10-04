@@ -1,5 +1,7 @@
 from __future__ import annotations
 
+from .i18n import tr,tf
+
 import hashlib
 import hmac
 import io
@@ -15,6 +17,7 @@ from pathlib import Path
 
 from PIL import Image
 from .version import VERSION
+from .fileio import compact_digest,atomic_output
 
 
 def rebrickable_set_photo(html,ref,page_url):
@@ -42,17 +45,13 @@ def rebrickable_set_photo(html,ref,page_url):
 
 
 def request(url,headers=None,destination=None,timeout=45):
-    if urllib.parse.urlsplit(url).scheme not in ('http','https'):raise ValueError('Lien HTTP ou HTTPS requis')
+    if urllib.parse.urlsplit(url).scheme not in ('http','https'):raise ValueError(tr('Lien HTTP ou HTTPS requis'))
     req=urllib.request.Request(url,headers={'User-Agent':'BrickLabo/'+VERSION,**(headers or {})})
     if destination:
         destination=Path(destination);destination.parent.mkdir(parents=True,exist_ok=True)
-        temp=destination.with_suffix(destination.suffix+'.part')
-        try:
+        with atomic_output(destination) as temp:
             with urllib.request.urlopen(req,timeout=timeout) as r,temp.open('wb') as f:
                 shutil.copyfileobj(r,f,length=1024*1024)
-            os.replace(temp,destination)
-        finally:
-            if temp.exists():temp.unlink()
         return destination
     with urllib.request.urlopen(req,timeout=timeout) as r:return r.read()
 
@@ -76,17 +75,17 @@ class API:
 
     def rb(self,path):
         key=self.db.setting('api_rb','')
-        if not key:raise ValueError('Clé Rebrickable manquante')
+        if not key:raise ValueError(tr('Clé Rebrickable manquante'))
         url=path if path.startswith('https://rebrickable.com/api/') else 'https://rebrickable.com/api/v3/lego/'+path
         return json.loads(request(url,{'Authorization':'key '+key}))
 
     def bl(self,path):
         credentials=self.db.setting('api_bl',{})
         if not all(credentials.get(k) for k in ['consumer_key','consumer_secret','token','token_secret']):
-            raise ValueError('BrickLink nécessite Consumer Key, Consumer Secret, Token et Token Secret')
+            raise ValueError(tr('BrickLink nécessite Consumer Key, Consumer Secret, Token et Token Secret'))
         url='https://api.bricklink.com/api/store/v1/'+path
         result=json.loads(request(url,{'Authorization':oauth_header(url,credentials)}))
-        if result.get('meta',{}).get('code')!=200:raise ValueError(result.get('meta',{}).get('description','Erreur BrickLink'))
+        if result.get('meta',{}).get('code')!=200:raise ValueError(result.get('meta',{}).get('description',tr('Erreur BrickLink')))
         return result['data']
 
     def bl_components(self,item):
@@ -122,9 +121,9 @@ class API:
         return out
 
     def bl_available_colors(self,item):
-        if item['source']!='BL':raise ValueError('Référence BrickLink requise')
+        if item['source']!='BL':raise ValueError(tr('Référence BrickLink requise'))
         typ={'part':'PART','minifig':'MINIFIG','set':'SET'}.get(item['kind'])
-        if not typ:raise ValueError('Couleurs indisponibles pour ce type de document')
+        if not typ:raise ValueError(tr('Couleurs indisponibles pour ce type de document'))
         # Keep native BrickLink identifiers; never treat an RB ID as a BL ID.
         known=self.bl('items/'+typ+'/'+urllib.parse.quote(item['ref'],safe='')+'/colors')
         palette=self.db.setting('bl_colors',{})
@@ -159,7 +158,7 @@ class API:
             if not self.db.setting('bl_colors',{}):
                 colors=self.bl('colors')
                 self.db.set_setting('bl_colors',{str(c['color_id']):{'name':c['color_name'],'rgb':c['color_code']} for c in colors})
-        else:raise ValueError('Cette source ne possède pas d’API configurée')
+        else:raise ValueError(tr('Cette source ne possède pas d’API configurée'))
         if image:self.db.run('UPDATE items SET image=? WHERE id=?',(image,item['id']))
         return image
 
@@ -191,19 +190,19 @@ def rebrickable_photos(db,item):
     if db.setting('api_rb',''):
         api=API(db)
         try:add(api.rb('parts/'+urllib.parse.quote(ref,safe='')+'/').get('part_img_url') or '')
-        except Exception as e:errors.append('API Rebrickable : '+str(e))
+        except Exception as e:errors.append(tr('API Rebrickable : ')+str(e))
         try:
             path='parts/'+urllib.parse.quote(ref,safe='')+'/colors/?page_size=100';seen=set()
             while path and path not in seen:
                 seen.add(path);data=api.rb(path)
                 for row in data.get('results',[]):add(row.get('part_img_url') or '')
                 path=data.get('next') or ''
-                if path and not path.startswith('https://rebrickable.com/api/v3/lego/'):raise ValueError('Pagination Rebrickable invalide')
-        except Exception as e:errors.append('Couleurs Rebrickable : '+str(e))
+                if path and not path.startswith('https://rebrickable.com/api/v3/lego/'):raise ValueError(tr('Pagination Rebrickable invalide'))
+        except Exception as e:errors.append(tr('Couleurs Rebrickable : ')+str(e))
     page='https://rebrickable.com/parts/'+urllib.parse.quote(ref,safe='')+'/'
     try:
         for url in rebrickable_photo_links(request(page,timeout=15).decode('utf-8','replace'),item):add(url)
-    except Exception as e:errors.append('Page Rebrickable : '+str(e))
+    except Exception as e:errors.append(tr('Page Rebrickable : ')+str(e))
     return urls,errors
 
 
@@ -238,12 +237,14 @@ class Images:
             path=Path(url)
             if not path.is_file():return None
         else:
-            path=self.folder/(hashlib.sha256(url.encode()).hexdigest()+'.img')
+            path=self.folder/(compact_digest(url)+'.img')
+            legacy=self.folder/(hashlib.sha256(url.encode()).hexdigest()+'.img')
+            if not path.exists() and legacy.is_file():path=legacy
             with self._guard:lock=self._locks.setdefault(str(path),threading.Lock())
             with lock:
                 if download and self._missing.get(str(path),0)>time.monotonic():
                     import urllib.error
-                    raise urllib.error.HTTPError(url,404,'Photo absente (cache temporaire)',None,None)
+                    raise urllib.error.HTTPError(url,404,tr('Photo absente (cache temporaire)'),None,None)
                 if not path.exists():
                     if not download:return None
                     try:request(url,destination=path,timeout=10)
@@ -260,8 +261,12 @@ class Images:
                 ledger=self.folder/'SOURCES_IMAGES.json'
                 try:entries=json.loads(ledger.read_text(encoding='utf-8')) if ledger.exists() else {}
                 except (ValueError,OSError):entries={}
-                entries[path.name]={'url':url,'date':time.strftime('%Y-%m-%d'),'rights':'Droits du fournisseur et des auteurs ; aucune licence libre présumée.'}
-                temp=ledger.with_suffix('.tmp');temp.write_text(json.dumps(entries,ensure_ascii=False,indent=2),encoding='utf-8');os.replace(temp,ledger)
+                entries[path.name]={'url':url,'date':time.strftime('%Y-%m-%d'),'rights':tr('Droits du fournisseur et des auteurs ; aucune licence libre présumée.')}
+                try:
+                    with atomic_output(ledger) as temp:temp.write_text(json.dumps(entries,ensure_ascii=False,indent=2),encoding='utf-8')
+                except OSError:
+                    import logging
+                    logging.getLogger('bricklabo').warning('Impossible de mettre à jour le registre des images',exc_info=True)
         return result
 
     def preserve(self,path):
