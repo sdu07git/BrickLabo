@@ -1,0 +1,1 @@
+13 tests ciblés réussis : 10 tests existants de construction, 3 tests aperçus/exports/contours. Vérification Qt hors écran sous Linux. Exécutable Windows conservé ; lancement Windows natif non testé. Données utilisateur absentes du ZIP.

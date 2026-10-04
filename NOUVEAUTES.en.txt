@@ -1,0 +1,137 @@
+Version 0.1.36 — Category tags, previews and sorting
+
+Advanced filters now support multiple removable category tags (OR between
+categories, AND with other filters). Saved filters retain tags and older presets
+remain supported. Buildable set parts display a 3D preview with photo fallback.
+Click result table headers to sort sets, parts, MOCs and alternate builds.
+Quantities sort numerically; actions and previews keep the correct row identity.
+MOC windows retain construction photos: detailed MOC inventories are not supplied
+by the API. Part previews apply to locally available set inventories.
+
+Version 0.1.35: right-click a result in Buildable sets from My Stock and choose
+View alternate builds. Uses the configured Rebrickable API key for the selected
+set; stock quantities remain unchanged.
+
+v0.1.33 — Part preview, exports and outlines
+
+Double-click a part in the lower Buildable sets table to open its 3D/photo preview. Missing and owned part reports can be exported as CSV for the selected set. Owned reports distinguish total stock from the amount usable for the requested copies. Ignored colours remain marked *. These are BrickLabo reports, not direct Rebrickable import files. Reports use the displayed snapshot; rerun the search after stock changes.
+
+Outlines now lists only categories used by parts. Set themes are excluded.
+
+Extract the full ZIP into a new folder. Close the old version and copy its Donnees folder next to the new exe. Keep the old installation as backup.
+
+## v0.1.32 — FTS5 search and buildable sets
+
+Includes the indexed search and combined advanced filters from v0.1.28b, with saved presets. The first launch indexes existing records; subsequent imports maintain the index automatically. A classic-search fallback remains available if FTS5 trigram is unavailable.
+
+In My Stock, open Buildable sets from My Stock. Choose a source, minimum percentage (100% by default), copy count and whether to ignore colours. Select a result to inspect required, owned and missing quantities; double-click to open its details. Calculations use locally available inventories. Incomplete inventories are excluded. Cached unambiguous BrickLink mappings are reused. Results are evaluated separately and do not reserve or deduct stock.
+
+Extract into a new folder, close the old application and copy its Donnees folder next to the new executable. Keep the old installation as backup. Original folder layout and previous export/alternate-build features are preserved.
+
+v0.1.31 — Export all stock as two Rebrickable lists
+
+Mon Stock / My Stock now offers a review dialog. stock_sets.csv contains owned sets; stock_pieces.csv contains loose parts after subtracting tracked set components. Import into separate My Set Lists and My Parts Lists. Avoid duplicating existing collection lists. BrickLink references and colors can be converted using your Rebrickable API key; ambiguous or missing matches require review. Exclusions are recorded in stock_rapport.txt. Stock is not modified.
+
+v0.1.30 — based on the original v0.1.28
+
+Right-click a set and choose View alternate builds. Requires a Rebrickable API key and Internet. A separate window provides the paginated list, designer, part count, photo and instructions link. No stock changes.
+Generated cache names and temporary file names are shorter. PNG/PDF writes are atomic; failed batches show an error without a success history entry. Original folder layout preserved.
+Extract in a fresh folder and copy your old Donnees folder beside BrickLabo.exe while the application is closed. Keep a backup.
+
+BrickLabo by SDU7 — cumulative release notes
+
+v0.1.28 — French / English interface
+- New Language button with Français and English. The preference is stored
+  in Donnees/atelier.sqlite and applied after closing and restarting.
+- English buttons, menus, submenus, right-click commands, tooltips and
+  application messages, including editor, edges, camera, print preview,
+  data updates, manual BrickLink inventories and backups.
+- Database names, categories, references and imported colour names stay
+  unchanged. User-entered text and saved label content are preserved.
+- English help documents 155 commands and gestures. English README,
+  attribution/licence page and cumulative notes use fixed filenames.
+- Developer batch messages are bilingual. Original third-party licences
+  are preserved. Native Windows windows follow Windows display language.
+- The v0.1.21 portable launcher and flat layout are retained, with all
+  v0.1.27 functions. The user confirmed manual BrickLink import on Windows.
+
+Update: close BrickLabo, extract separately and copy Donnees beside the
+new executable. Keep the previous installation for rollback.
+
+v0.1.27 — manual BrickLink inventories and backups
+- Import a set TXT from its right preview or component window, or import
+  S-reference.txt through Data updates. No BrickLink API access required.
+- SQLite stores references, colour IDs, quantities and inventory flags;
+  the TXT may be deleted. Reimport replaces inventory without changing
+  stock. Extra parts are included; alternatives and counterparts are
+  retained but excluded from automatic additions to avoid double counting.
+- Private, verified Donnees backups include consistent SQLite snapshots
+  and API keys; exclude caches and temporary files. Restoration occurs at
+  the next startup, preserving the previous state and supporting cancellation.
+
+v0.1.26 — open folders from Disk space
+- Double-click any disk-space row cell to open its associated folder.
+  Tooltips show paths. Missing folders are reported without creating them.
+
+v0.1.25 — disk space and import date
+- Measure Donnees, SQLite, thumbnails, images, instructions, LDraw,
+  downloads and output folders. Clean old unreferenced temporary files,
+  clear thumbnails or remove identical inactive LDraw archives.
+- Reimporting identical LDraw content reuses an existing archive.
+- Import date records first local import and remains stable on updates.
+  Historical references without recorded dates remain Unknown.
+- The global Windows Temp folder is neither measured nor cleaned.
+
+v0.1.24 — Rebrickable photos and related-set boxes
+- Dedicated Rebrickable photo search combines known inventory images,
+  optional API part/colour images and published exact-reference links.
+  Access refusals are reported; direct URLs and local images remain usable.
+- Right-click containing sets in part/minifigure relationship windows
+  to show original packaging. Outdated box image results are ignored.
+
+v0.1.23 — return to the v0.1.21 layout
+- Restore the original Windows launcher and flat runtime structure after
+  relocation caused Windows startup problems. Preserve later feature fixes.
+
+v0.1.21 — complete version
+- Improve the label controls, category outlines, per-label edge settings
+  and layer placement. Extend edge width to 10 px and support independent
+  category text and band positions.
+- Expand help for buttons and right-click menus. Provide original-box
+  access, verified photo/model matches and the project GitHub link.
+
+v0.1.20 — complete version
+- Update label rendering, outlines and layer controls while retaining
+  catalogues, previews, stock, instructions, exports and printing.
+
+v0.1.19 — rendering and portable resources
+- Improve edge controls and label views, and retain reusable general
+  and individual settings. Consolidate portable-resource and cache handling.
+
+v0.1.18 — bounded thumbnail caches
+- Limit derived thumbnails on disk and in RAM, with bounded rendering
+  workers and geometry caching. Imported images and user data remain separate.
+
+v0.1.17 — visual and rendering improvements
+- Improve image fallback and rendering controls while preserving catalogue
+  identity, stock, templates and individual visual choices.
+
+v0.1.16 — BrickArchitect catalogue
+- Import the all-time part ranking and explicit LDraw choices.
+  Use verified Rebrickable/BrickLink links for photo fallback when needed.
+- Retain source links, model author/licence records and unofficial status.
+
+v0.1.9 — baseline without Brick Labels
+- Remove the problematic Brick Labels source and use this baseline for
+  subsequent BrickArchitect work. Preserve the established core catalogues.
+
+v0.1.1 — early corrections
+- Improve catalogue interactions, component windows, columns and visuals.
+
+v0.1.0 — initial application
+- Dark catalogue interface, label editor, Rebrickable/BrickLink/LDraw
+  data import, stock, queue, history, PDF/PNG generation and printing.
+
+Older-version entries above provide an English overview of the retained
+French cumulative history. NOUVEAUTES.txt contains the original detailed
+French notes. Keep backups private: they contain your API credentials.

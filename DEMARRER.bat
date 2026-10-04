@@ -7,6 +7,6 @@ if exist "BrickLabo.exe" (
 if exist ".venv\Scripts\python.exe" (
     ".venv\Scripts\python.exe" main.py
 ) else (
-    echo Lancez INSTALLER_DEPENDANCES.bat avant de demarrer les sources.
+    echo Lancez INSTALLER_DEPENDANCES.bat avant de demarrer les sources. / Run INSTALLER_DEPENDANCES.bat before launching the source code.
     pause
 )

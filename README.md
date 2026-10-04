@@ -1,99 +1,60 @@
 # BrickLabo by SDU7
 
-**Version 0.1.27 — Windows portable**
+**Version 0.1.36 — Windows portable**
 
-Logiciel de création d’étiquettes pour les rangements de briques de construction et de gestion du stock.
+Création d’étiquettes pour les rangements de briques de construction, catalogues et gestion du stock.
 
-## Télécharger la version complète
+## Télécharger
 
-➡️ **[Télécharger BrickLabo v0.1.27 pour Windows](https://github.com/sdu07git/BrickLabo/releases/download/v0.1.27/BrickLabo_by_SDU7_v0.1.27_Windows_Portable.zip)**
+- [Version complète Windows — sans installation de Python](https://github.com/sdu07git/BrickLabo/releases/download/v0.1.36/BrickLabo_v0.1.36_Complet.zip)
+- [Code source avec ressources](https://github.com/sdu07git/BrickLabo/releases/download/v0.1.36/BrickLabo_v0.1.36_Sources.zip)
+- [Page de la version v0.1.36](https://github.com/sdu07git/BrickLabo/releases/tag/v0.1.36)
 
-[Consulter la page de la version](https://github.com/sdu07git/BrickLabo/releases/tag/v0.1.27)
+Le ZIP complet inclut l’exécutable, son environnement Python et les ressources nécessaires. Extraire toute l’archive, puis lancer `BrickLabo.exe`. Choisir un dossier accessible en écriture avec un chemin aussi court que possible.
 
-Le ZIP contient le logiciel, son environnement Python et les ressources nécessaires. **Aucune installation séparée de Python n’est nécessaire.**
+## Mettre à jour sans perdre son stock
 
-## Installation
+1. Fermer BrickLabo et conserver une sauvegarde de l’ancienne installation.
+2. Extraire le ZIP complet dans un nouveau dossier.
+3. Copier l’ancien dossier `Donnees` dans le nouveau dossier `BrickLabo`, avant le premier lancement.
+4. Lancer `BrickLabo.exe`.
 
-1. Téléchargez le ZIP Windows Portable.
-2. Extrayez **toute l’archive** dans un dossier court accessible en écriture, par exemple C:\LEGO.
-3. Ouvrez le dossier **BrickLabo** et lancez **BrickLabo.exe**, ou **DEMARRER.bat**.
-4. Sur une base vide, laissez l’import automatique des ressources se terminer.
+Le stock, les réglages, les images, les notices et les clés API restent dans le dossier du logiciel. Ne pas publier `Donnees` ni ses sauvegardes : ils peuvent contenir des clés API.
 
-Les imports des fichiers inclus ne nécessitent pas de clé API. Certaines fonctions en ligne dépendent de l’accès aux sites concernés.
+## Nouveautés de la v0.1.36
 
-## Mettre à jour avec la version complète
+- Recherche avancée par plusieurs catégories sous forme de tags retirables : **OU** entre catégories, **ET** avec le texte et les autres filtres. Les tags sont conservés dans les réglages enregistrés.
+- Colonne **Aperçu 3D / photo** dans le tableau des pièces des sets réalisables. Rendu 3D en priorité, photo en recours si disponible.
+- Tri par en-tête dans les résultats de sets, pièces, MOC et constructions alternatives, avec tri numérique des quantités et pourcentages.
+- Les aperçus, menus et doubles-clics restent associés à la bonne référence après le tri.
 
-1. Fermez BrickLabo et sauvegardez votre installation actuelle.
-2. Extrayez la nouvelle version dans un **nouveau dossier court**.
-3. Copiez votre ancien dossier **Donnees** dans le nouveau dossier **BrickLabo**, à côté de **BrickLabo.exe**, **avant le premier lancement**.
-4. Lancez la nouvelle version et importez les nouveaux fichiers proposés si nécessaire.
+## Améliorations incluses depuis la v0.1.27
 
-**La structure de la v0.1.21 est conservée.** La v0.1.22 avec le dossier Programme est abandonnée : ne superposez pas cette archive à cette version. Conservez votre v0.1.21 d’origine.
+- Recherche SQLite FTS5 et filtres multicritères, avec recherche compatible si FTS5 est indisponible.
+- Recherche des sets réalisables avec les pièces en stock, choix des sets et pièces utilisables sans les supprimer, exports CSV des pièces manquantes et disponibles.
+- Export du stock vers Rebrickable en deux listes : sets et pièces en vrac, avec contrôle des correspondances et prévention des doubles comptes.
+- Constructions alternatives d’un set et suggestions de MOC via les sets reconstituables avec les pièces disponibles.
+- Table locale de 273 couleurs Rebrickable et correspondances BrickLink, LEGO et LDraw. Les ambiguïtés BrickLink 72 et 77 sont choisies par référence de pièce et couleur.
+- Noms de fichiers de cache raccourcis et signalement des erreurs de chemins trop longs.
 
-Donnees contient le stock, les réglages, les images, les notices, les exports et les journaux. Pour déplacer le logiciel, déplacez son dossier complet.
+### Limites de la recherche de MOC
 
-## Nouveautés de la v0.1.27
+Une clé API Rebrickable est nécessaire. L’API v3 permet les alternatives de sets, mais ne fournit pas de recherche exhaustive des MOC par stock ni leurs inventaires détaillés. Les résultats sont des suggestions à vérifier sur Rebrickable, notamment les pièces de rechange et les notices éventuellement payantes. Chaque résultat utilise le même stock indépendamment. Les aperçus de pièces concernent les inventaires de sets disponibles localement.
 
-- **Inventaires BrickLink** : bouton **Ajouter l’inventaire depuis un fichier TXT** dans le volet droit des sets et dans la fenêtre de composition. Import également depuis **Mise à jour des données**, pour les fichiers S-référence.txt, sans clé API.
-- **Inventaire conservé** : références, couleurs, quantités et indicateurs enregistrés dans SQLite ; le TXT d’origine peut ensuite être supprimé. Réimport remplace l’inventaire et conserve le stock existant.
-- **Stock et étiquettes** : les inventaires manuels servent aux ajouts et à la recherche des sets contenant une pièce. Pièces supplémentaires incluses ; variantes et équivalents conservés en base, exclus des ajouts automatiques pour éviter le double compte.
-- **Sauvegardes** : ZIP privé et vérifié de Donnees avec base SQLite cohérente. Caches, temporaires et fichiers extérieurs à Donnees exclus. **Les clés API sont incluses : gardez ces sauvegardes privées.**
-- **Restauration** : application au prochain démarrage, avec copie de l’état précédent et possibilité d’annuler avant redémarrage.
+## Fonctions principales
 
-## Améliorations des versions récentes incluses
+Catalogues Rebrickable, BrickLink, BrickArchitect et références alternatives ; aperçus LDraw et photos ; éditeur d’étiquettes ; exports PDF/PNG et impression ; stock, inventaires, notices, historique et sauvegardes.
 
-### v0.1.26 — Ouverture des dossiers
+## Sources et lancement
 
-Double-cliquez sur une ligne du tableau **Espace disque** pour ouvrir le dossier correspondant dans l’Explorateur Windows. Le chemin complet apparaît en infobulle ; les dossiers inexistants sont signalés. Les exports ouvrent le dossier de sortie réellement choisi.
+Les modules Python sont consultables dans `atelier/`, les tests dans `tests/`. Avec Python 3.12 sous Windows : `INSTALLER_DEPENDANCES.bat`, puis `DEMARRER.bat`. Pour fabriquer un exécutable : `CONSTRUIRE_EXE.bat`.
 
-### v0.1.25 — Espace disque et date d’import
+Le ZIP Sources contient les ressources volumineuses nécessaires. Le téléchargement automatique « Source code » de GitHub reflète uniquement les fichiers du dépôt.
 
-- **Espace disque** : mesure des données, miniatures, images, notices, archives LDraw, téléchargements, exports et ressources, en arrière-plan.
-- Nettoyage manuel des miniatures et temporaires anciens de Donnees/temp. Fichiers récents et référencés conservés ; aucun nettoyage du Temp global de Windows.
-- Réutilisation des archives LDraw identiques et suppression manuelle des copies au contenu identique, avec conservation de l’archive active et des versions différentes.
-- Colonne **Date d’import**, masquable, déplaçable et triable avant pagination. La première date est conservée lors des réimports ; les anciennes références sans date indiquent **Inconnue**.
+## Aide, licences et validation
 
-### v0.1.24 — Photos et boîtes d’origine
+Consulter `AIDE.html`, `NOUVEAUTES.txt`, `RECHERCHE_STOCK.txt` et `COULEURS.txt`. Les sources tierces et leurs conditions figurent dans `SOURCES_ET_LICENCES.html` et `licences/` ; leurs licences et attributions restent applicables.
 
-Bouton **Rechercher les photos Rebrickable** : images des inventaires, fiche et couleurs avec clé API, liens de la page lorsque le site autorise l’accès. Le choix reste propre à la référence et actualise l’étiquette et la miniature. Les variantes présentes sur la page ne sont pas assimilées à la pièce sélectionnée. Les photos connues, l’ajout de lien direct et l’import local restent disponibles si le site refuse l’accès.
+**50 tests ciblés Python/Qt réussis sous Linux pour la v0.1.36.** Le lancement natif Windows reste à vérifier. L’exécutable portable et son runtime sont conservés ; les modules et ressources sont mis à jour.
 
-Dans **Sets contenant** (pièces et mini-figures), clic droit sur un set → **Afficher la boîte d’origine**. Commande désactivée sans boîte répertoriée dans Original Boxes.txt. Le clic droit utilise le set visé même en sélection multiple ; les anciennes réponses de chargement sont ignorées.
-
-Les améliorations précédentes sont incluses : nouvelle icône, arêtes 3D jusqu’à 10 px et préréglages, texte de catégorie et bandeau dans deux calques distincts, correspondances LDraw explicites, caches de miniatures limités, zoom indépendant des vues et suppression des marges transparentes.
-
-## Fonctionnalités principales
-
-- Catalogues de pièces, sets et mini-figures avec recherche et filtres.
-- Catalogue **BrickArchitect** : 5 500 références relevées sur les 22 pages du classement toutes années le 1er octobre 2026.
-- Aperçus 3D LDraw, choix de modèles et variantes, photos Rebrickable/BrickLink en recours.
-- Éditeur d’étiquettes, exports PDF/PNG et impression.
-- Gestion du stock, des notices, de l’historique et des sauvegardes.
-
-## Sources et licences
-
-La documentation **SOURCES_ET_LICENCES.html** est incluse dans le logiciel et accessible depuis **Sources et licences**. Elle présente les origines des données et ressources : Brick Architect, LDraw, Rebrickable, BrickLink, LEGO et Manuall.
-
-Les modèles LDraw conservent leurs auteurs, mentions de licence et statut officiel ou non officiel. Les textes de licence et registres d’attribution sont inclus dans **licences/LDraw**. Les ressources tierces restent soumises à leurs propres conditions ; l’attribution ne constitue pas à elle seule une autorisation générale de redistribution.
-
-## Aide et validation
-
-Consultez **AIDE.html** pour les commandes et **NOUVEAUTES.txt** pour l’historique regroupé des changements. **PROJET_GITHUB.url** donne accès au dépôt depuis le dossier du logiciel.
-
-La documentation de la v0.1.27 rapporte **184 tests dans 28 modules Python/Qt sous Linux**, dont l’inventaire 75192-1 de 765 lignes. L’exécutable Windows d’origine est conservé ; son lancement et l’ouverture réelle de l’Explorateur restent à vérifier sur Windows. Les essais API/page de la recherche de photos utilisent des réponses simulées ; les photos de **100097** n’ont pas été vérifiées en ligne dans cet environnement (HTTP 403).
-
-Pour signaler un problème, ouvrez une **[Issue](https://github.com/sdu07git/BrickLabo/issues)** en indiquant la version, les étapes de reproduction et la référence concernée. Les journaux sont accessibles via **Logs** ou **OUVRIR_LOGS.bat**, dans **Donnees/logs**.
-
-## Code source de la v0.1.27
-
-Les fichiers sources sont consultables directement dans ce dépôt : `main.py`, `atelier/`, `tests/`, `scripts/`, `packaging/` et `ressources/`. Les licences et attributions sont dans `licences/LDraw/`.
-
-Le ZIP `BrickLabo_by_SDU7_v0.1.27_Sources.zip` est également disponible sur la [page de la version](https://github.com/sdu07git/BrickLabo/releases/tag/v0.1.27).
-
-### Lancer les sources sous Windows
-
-1. Installez Python 3.12, puis récupérez le dépôt complet.
-2. Lancez `INSTALLER_DEPENDANCES.bat` pour créer l’environnement et installer les dépendances.
-3. Lancez `DEMARRER.bat` pour ouvrir BrickLabo depuis les sources.
-4. Pour fabriquer l’exécutable Windows, lancez `CONSTRUIRE_EXE.bat`.
-
-Pour utiliser le logiciel sans installer Python, téléchargez la version Windows Portable indiquée en haut de cette page.
+Pour signaler un problème, ouvrir une Issue avec la version, les étapes et la référence concernée. Les journaux sont dans `Donnees/logs` ; retirer toute donnée privée avant de les partager.

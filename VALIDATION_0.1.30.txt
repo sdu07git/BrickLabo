@@ -1,0 +1,6 @@
+Base : archive Windows portable v0.1.28 originale.
+35 tests cibles passes (8 miniatures, 4 nouveaux cas regroupes, 8 sauvegardes, 8 notices, 7 espace disque).
+Exports reels PNG/PDF + erreur ENAMETOOLONG : OK, aucun faux historique.
+Fenetre alternatives inspectee visuellement sous Qt/Linux avec donnees simulees.
+Schema endpoint confirme sur le Swagger officiel Rebrickable.
+Pas de test API authentifie (aucune cle fournie). Pas de validation Windows native.

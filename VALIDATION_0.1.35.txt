@@ -1,0 +1,7 @@
+26 tests ciblés réussis : réservation des sets, exclusion des pièces, stock en
+vrac sans set possédé, quantités sans double déduction, snapshot du filtre dans
+les détails, résultats MOC simulés via API, clic droit sur la bonne ligne,
+concordances de couleurs, exports et fonctions v0.1.33.
+Compilation Python vérifiée. Qt hors écran sous Linux.
+Appels API simulés pour les tests ; pas de clé utilisateur utilisée ici.
+Exécutable Windows non exécuté dans cet environnement.

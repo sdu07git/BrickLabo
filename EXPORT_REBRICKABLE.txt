@@ -1,0 +1,22 @@
+## v0.1.31 — export du stock vers Rebrickable
+
+Dans **Mon Stock**, le bouton **Exporter tout mon stock vers Rebrickable** ouvre une fenêtre de contrôle avec deux onglets. L’export porte sur tout le stock, indépendamment de la page, des filtres et des lignes sélectionnées.
+
+Deux listes sont produites :
+- **stock_sets.csv** : sets possédés, avec référence Rebrickable et quantité. Importer dans **My LEGO → My Set Lists**, dans une liste dédiée.
+- **stock_pieces.csv** : pièces en vrac, avec référence, code couleur Rebrickable et quantité. Importer dans **My LEGO → My Parts Lists**, dans une liste dédiée, au format Rebrickable CSV.
+
+Activer les deux listes dans les calculs de construction sur le site. Ne pas compter une autre copie des mêmes sets/pièces déjà présente sur votre compte. Pour une actualisation, remplacer le contenu des listes dédiées au lieu d’ajouter une nouvelle fois tout le stock. BrickLabo ne transmet rien automatiquement à votre compte.
+
+Les pièces suivies comme appartenant aux sets sont soustraites de la liste des pièces pour éviter les doublons. Les quantités restantes constituent le vrac. Les mini-figs restantes sont décomposées si leur inventaire est disponible ; sinon elles sont signalées, sans être inventées ni assimilées à une pièce ordinaire. Si le suivi historique d’un set manque, ou si l’inventaire/stock a été modifié, l’export demande de vérifier les incohérences.
+
+**Pièces BrickLink :** cliquer sur **Convertir BrickLink (API RB)** avec votre clé Rebrickable configurée. Le service officiel recherche les correspondances des références via bricklink_id et celles des couleurs via external_ids. Elles sont conservées localement pour les exports suivants. Un numéro de couleur BrickLink n’est jamais supposé égal au numéro Rebrickable. Une correspondance multiple reste à choisir : survoler la cellule pour voir les propositions puis saisir la référence/couleur voulue.
+
+Les colonnes Réf. RB et Couleur RB peuvent être corrigées dans la fenêtre ; ces corrections ne changent pas le stock. Les autres colonnes sont en lecture seule. Les références sans équivalent, les couleurs non renseignées et les mini-figs sans inventaire bloquent par défaut l’export. Un export partiel doit être autorisé explicitement ; le fichier **stock_rapport.txt** décrit les exclusions et points à vérifier. Si un set est exclu, ses pièces suivies restent exclues de la liste de vrac : corriger le set puis refaire un export complet.
+
+L’organisation des dossiers reste celle de la v0.1.28 d’origine. Les fonctions de la v0.1.30 (alternatives de sets, caches courts et exports protégés) sont conservées.
+
+Installation : extraire le ZIP complet dans un nouveau dossier, fermer l’ancienne version et copier Donnees à côté du nouvel exe. Conserver l’ancienne installation.
+
+Validation : six tests dédiés (non-double-comptage, couleurs BrickLink différentes, correspondances multiples, mini-figs, stock modifié, génération des deux CSV). Fenêtre inspectée sous Qt/Linux. Connexion réelle avec votre clé et import dans votre compte Rebrickable non effectués ici.
+

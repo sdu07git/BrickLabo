@@ -1,0 +1,28 @@
+BrickLabo 0.1.34 — Correspondances des couleurs
+
+Table locale : ressources/color_links.json, extraite de la page Rebrickable
+https://rebrickable.com/colors/ fournie au format MHT (instantané du 03/10/2026).
+273 couleurs Rebrickable. Conservation des codes LEGO, LDraw, BrickLink et BrickOwl
+lorsqu’ils sont renseignés. Une absence de correspondance reste une absence.
+
+Dans l’aperçu d’une pièce, cliquer sur « Correspondances des couleurs… ».
+Pour BrickLink 72 et 77, choisir la couleur Rebrickable ou laisser non résolu.
+Le choix est enregistré par référence de pièce BrickLink ET couleur BrickLink.
+Il peut être modifié ou retiré. Il ne s’applique pas à toutes les pièces de la couleur.
+L’export du stock propose également une liste de choix pour ces couleurs.
+
+La table est utilisée hors ligne pour les couleurs du rendu, les noms de couleurs
+BrickLink, l’export Rebrickable et le calcul des sets fabricables. Les photos
+BrickLink de remplacement utilisent le code couleur BrickLink correspondant
+lorsque la couleur Rebrickable et la référence de pièce sont connues.
+Les codes LEGO et LDraw sont consultables, mais ne sont pas confondus avec les
+identifiants Rebrickable. Les correspondances de références de pièces restent
+indépendantes : cette table ne détermine pas un moule ou un inventaire de set.
+
+Le tableau vérifié est prioritaire sur les anciens caches de conversion des couleurs.
+Les mises à jour du CSV colors Rebrickable ne suppriment pas cette ressource.
+Les choix sont stockés dans la base locale existante, sans modifier les quantités.
+
+Installation : fermer BrickLabo. Extraire la version complète dans un dossier neuf.
+Pour conserver les données, copier le dossier Donnees de l’ancienne version dans
+ce nouveau dossier (garder une sauvegarde). Lancer BrickLabo.exe.

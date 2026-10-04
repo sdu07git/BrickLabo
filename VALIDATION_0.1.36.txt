@@ -1,0 +1,7 @@
+50 tests ciblés réussis : catégories multiples OU, combinaison ET, FTS5 et
+recherche compatible, pagination, anciens réglages, persistance des tags,
+tri numérique et identité des lignes, aperçu et couleur après tri,
+constructions alternatives, stock filtré, exports et cache de miniatures.
+Compilation Python réussie. Interface Qt testée hors écran sous Linux.
+Lancement natif Windows non testé ici. L’exécutable portable et son runtime
+proviennent de la v0.1.35 ; les modules Python et ressources sont mis à jour.

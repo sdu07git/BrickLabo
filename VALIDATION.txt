@@ -1,0 +1,6 @@
+BrickLabo v0.1.28
+198 Python/Qt tests passed in 29 modules on Linux.
+English startup, UI, dynamic messages, saved language and unchanged catalogue/stock data checked.
+English UI inspected offscreen. Native Windows execution remains unvalidated here.
+The user confirmed BrickLink inventory TXT import on Windows in v0.1.27.
+The v0.1.21 Windows launcher and flat runtime layout are retained.
