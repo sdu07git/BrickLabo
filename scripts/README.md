@@ -16,11 +16,16 @@ python scripts/run_dev.py
 
 ## Organisation
 
-- `scripts/run_dev.py` : point d’entrée principal du développement
-- `scripts/windows/` : lanceurs Windows de compatibilité et de maintenance
-- `packaging/` : scripts de build autonome et exécutable
-- les fichiers `.bat` racine restent présents uniquement pour compatibilité avec les utilisateurs portables
+- `scripts/run_dev.py` : point d’entrée principal pour le développement local
+- `scripts/windows/` : lanceurs Windows de compatibilité et maintenance
+- `packaging/` : scripts de build, packaging et exécution portable
+- `main.py` : point d’entrée minimal de compatibilité pour les anciens lancements
+- les fichiers `.bat` à la racine restent seulement pour compatibilité avec les utilisateurs de la version portable
 
-## Règle de structure
+## Règles de structure
 
-Le flux de développement standard passe par `pyproject.toml` et `scripts/` ; la racine du dépôt reste propre et ne contient que les fichiers de compatibilité et les actifs de distribution.
+- Le code applicatif est dans `atelier/`.
+- Les outils de démarrage et d’assistance sont dans `scripts/`.
+- Les scripts de build sont séparés de l’application.
+- La racine du dépôt reste épurée et accueille uniquement les éléments de compatibilité et de distribution.
+- Les ressources runtime (`Donnees/`, `Exports/`, caches, logs, données utilisateur) ne sont pas traitées comme du code source.
