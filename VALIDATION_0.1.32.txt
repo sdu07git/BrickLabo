@@ -1,6 +1,0 @@
-BrickLabo v0.1.32 — validation
-13 tests de recherche indexée : migration, maintien par triggers, normalisation, critères combinés, pagination, préréglages, restauration et repli sans trigram.
-10 tests de sets réalisables : quantités, couleurs, exemplaires, inventaires récursifs, mini-figures, pièces absentes du catalogue, correspondances BrickLink, cycles, annulation, stock inchangé et fenêtre Qt.
-6 tests export stock Rebrickable et 4 tests alternatives/chemins : réussis.
-Environnement : Python et Qt/Linux hors écran. Exécutable Windows d’origine conservé ; lancement Windows natif non testé ici.
-Le calcul de construction exploite uniquement les inventaires locaux disponibles, sans téléchargement automatique ni réservation du stock.
