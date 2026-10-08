@@ -1,7 +1,0 @@
-Base : version 0.1.30 issue de la v0.1.28 originale.
-6 tests export stock : OK.
-Deux CSV separés (Set,Quantity et Part,Color,Quantity).
-Test de non double comptage : 2 sets de 5 pièces + 3 pièces libres => 2 sets et 3 pièces exportées.
-Code couleur BrickLink jamais copié comme code Rebrickable ; recherche via API simulée testée, équivalences ambiguës conservées sans choix automatique.
-Mini-figs décomposées uniquement avec inventaire disponible.
-Interface inspectée Qt/Linux. Test sur Windows et import réel sur Rebrickable non effectués.
