@@ -61,9 +61,9 @@ class CoreTests(unittest.TestCase):
         self.archive('inventory_parts',['inventory_id','part_num','color_id','quantity','is_spare','img_url'],[[7,'0',4,3,'False',''],[7,'0',14,2,'False',''],[7,'1',4,1,'True','']])
         item=self.db.rows("SELECT * FROM items WHERE kind='set'")[0]
         self.db.add('stock',item['id'],quantity=2)
-        rows=self.db.query(scope='stock',size=100)[0];quantities={(r['ref'],r['chosen_color']):r['chosen_quantity'] for r in rows}
+        rows=self.db.query(scope='stock_available',size=100)[0];quantities={(r['ref'],r['chosen_color']):r['chosen_quantity'] for r in rows}
         self.assertEqual(quantities[('42-1','')],2);self.assertEqual(quantities[('0','4')],6);self.assertEqual(quantities[('0','14')],4);self.assertEqual(quantities[('1','4')],2)
-        self.db.add('stock',item['id']);rows=self.db.query(scope='stock',size=100)[0]
+        self.db.add('stock',item['id']);rows=self.db.query(scope='stock_available',size=100)[0]
         quantities={(r['ref'],r['chosen_color']):r['chosen_quantity'] for r in rows}
         self.assertEqual(quantities[('42-1','')],3);self.assertEqual(quantities[('0','4')],9)
         # A missing inventory must not leave a set without its required component stock.
@@ -72,10 +72,10 @@ class CoreTests(unittest.TestCase):
         with self.assertRaises(ValueError):self.db.add('stock',missing['id'])
         self.assertFalse(self.db.rows('SELECT * FROM stock WHERE item_id=?',(missing['id'],)))
         # Force a mid-transaction error and check rollback of both the set and parts.
-        before=self.db.rows('SELECT * FROM stock ORDER BY id')
-        self.db.run("CREATE TRIGGER fail_stock BEFORE UPDATE ON stock WHEN NEW.color='14' BEGIN SELECT RAISE(ABORT,'test rollback'); END")
+        before=self.db.rows('SELECT * FROM stock_available ORDER BY id');components_before=self.db.rows('SELECT * FROM stock_set_components')
+        self.db.run("CREATE TRIGGER fail_stock BEFORE UPDATE ON stock_set_components WHEN NEW.color='14' BEGIN SELECT RAISE(ABORT,'test rollback'); END")
         with self.assertRaises(Exception):self.db.add('stock',item['id'])
-        self.assertEqual(before,self.db.rows('SELECT * FROM stock ORDER BY id'))
+        self.assertEqual(before,self.db.rows('SELECT * FROM stock_available ORDER BY id'));self.assertEqual(components_before,self.db.rows('SELECT * FROM stock_set_components'))
 
     def test_search_dimensions_and_global_pagination(self):
         self.parts()
