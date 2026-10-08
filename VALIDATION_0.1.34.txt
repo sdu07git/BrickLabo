@@ -1,8 +1,0 @@
-Validation v0.1.34
-43 tests ciblés réussis : correspondances de couleurs, choix par pièce, export du
-stock, calcul des sets, interface v0.1.33, photos, cache et fichiers BrickLink.
-Compilation Python vérifiée.
-Qt testé en mode hors écran sous Linux. Exécutable Windows non exécuté ici.
-Contrôle supplémentaire i18n : couverture complète des textes anglais non atteinte,
-avec un texte du calcul de stock déjà absent du dictionnaire de la v0.1.33.
-Les nouveaux libellés de cette version ont leur traduction anglaise.

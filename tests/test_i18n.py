@@ -21,7 +21,7 @@ class TranslationTests(unittest.TestCase):
    self.assertEqual(fields(source),fields(translated),source)
    self.assertTrue(translated,source)
  def test_literal_translation_coverage(self):
-  for p in (i18n.ROOT/'atelier').glob('*.py'):
+  for p in Path(i18n.__file__).parent.glob('*.py'):
    if p.name=='i18n.py':continue
    for node in ast.walk(ast.parse(p.read_text())):
     if isinstance(node,ast.Call) and isinstance(node.func,ast.Name) and node.func.id in ('tr','tf') and node.args and isinstance(node.args[0],ast.Constant):
@@ -39,10 +39,11 @@ class TranslationTests(unittest.TestCase):
   i18n.set_language('en');self.assertEqual(i18n.document('AIDE').name,'AIDE.en.html');self.assertEqual(i18n.document('SOURCES_ET_LICENCES').name,'SOURCES_ET_LICENCES.en.html')
   i18n.set_language('fr');self.assertEqual(i18n.document('AIDE').name,'AIDE.html')
  def test_english_docs_have_all_major_features(self):
-  text=(i18n.ROOT/'AIDE.en.html').read_text()
+  i18n.set_language('en');text=i18n.document('AIDE').read_text()
   for value in ['Data updates','Original box','Alternate','Backups','Language','3D edges','Print preview','PDF','Ctrl','Import date']:
    self.assertIn(value,text)
-  for name in ['README.en.md','SOURCES_ET_LICENCES.en.html','NOUVEAUTES.en.txt']:self.assertTrue((i18n.ROOT/name).is_file())
+  self.assertTrue((i18n.ROOT/'README.en.md').is_file())
+  for name in ['SOURCES_ET_LICENCES.en.html','NOUVEAUTES.txt']:self.assertTrue((i18n.ROOT/'documentation'/name).is_file())
  def test_language_selector_persists_choice_without_live_switch(self):
   from PySide6.QtWidgets import QApplication,QDialog,QComboBox,QMessageBox
   app=QApplication.instance() or QApplication([])
@@ -54,7 +55,7 @@ class TranslationTests(unittest.TestCase):
    self.assertEqual(db.setting('ui_language'),'en');self.assertEqual(i18n.language(),'fr');message.assert_called_once()
  def test_startup_english_headers_menus_and_unchanged_catalogue(self):
   with tempfile.TemporaryDirectory() as folder:
-   root=Path(folder);shutil.copytree(i18n.ROOT/'atelier',root/'atelier',ignore=shutil.ignore_patterns('__pycache__'))
+   root=Path(folder);shutil.copytree(Path(i18n.__file__).parent,root/'atelier',ignore=shutil.ignore_patterns('__pycache__'))
    (root/'ressources'/'langues').mkdir(parents=True);shutil.copy(i18n.ROOT/'ressources'/'langues'/'en.json',root/'ressources'/'langues'/'en.json')
    db=Database(root/'Donnees'/'atelier.sqlite');db.set_setting('ui_language','en');db.run("INSERT INTO items(source,kind,ref,name,category,search) VALUES('RB','part','3037','Slope original','Original category','slope')");db.add('stock',1,quantity=4)
    code='''import json

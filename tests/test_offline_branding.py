@@ -54,8 +54,8 @@ class OfflineTests(unittest.TestCase):
         sid=self.make_set();self.db.add('stock',self.item['id'],'5',7);self.db.add('stock',self.item['id'],'7',4)
         self.db.add('stock',sid,quantity=2)
         self.db.set_setting('alt_components_'+str(sid),[{'item_id':self.item['id'],'color':'5','quantity':99}])
-        entry=self.db.rows('SELECT id FROM stock WHERE item_id=?',(sid,))[0]['id']
-        self.db.remove('stock',[entry],remove_set_parts=True)
+        entry=self.db.rows('SELECT id FROM stock_sets WHERE item_id=?',(sid,))[0]['id']
+        self.db.remove('stock_sets',[entry],remove_set_parts=True)
         rows=self.db.rows('SELECT color,quantity FROM stock WHERE item_id=? ORDER BY color',(self.item['id'],))
         self.assertEqual(rows,[{'color':'5','quantity':7},{'color':'7','quantity':4}])
         self.assertEqual(self.db.rows('SELECT * FROM stock_set_components'),[])
@@ -63,9 +63,9 @@ class OfflineTests(unittest.TestCase):
         from atelier.catalogue import Catalogue
         from PySide6.QtWidgets import QMessageBox
         sid=self.make_set();self.db.add('stock',sid)
-        cat=Catalogue(self.db,kind='set',scope='stock');self.windows.append(cat);cat.table.selectRow(0)
+        cat=Catalogue(self.db,kind='set',scope='stock_sets');self.windows.append(cat);cat.table.selectRow(0)
         with patch.object(QMessageBox,'question',return_value=QMessageBox.StandardButton.Cancel):cat.delete_selected()
-        self.assertEqual(len(self.db.rows('SELECT * FROM stock')),2)
+        self.assertEqual(len(self.db.rows('SELECT * FROM stock_sets')),1);self.assertEqual(self.db.rows('SELECT quantity FROM stock')[0]['quantity'],0)
         with patch.object(QMessageBox,'question',return_value=QMessageBox.StandardButton.No):cat.delete_selected()
         self.assertEqual(self.db.rows('SELECT item_id,quantity FROM stock'),[{'item_id':self.item['id'],'quantity':3}])
     def test_yes_never_creates_negative_quantity_and_multiple_sets(self):
@@ -73,18 +73,18 @@ class OfflineTests(unittest.TestCase):
         self.db.run('UPDATE stock SET quantity=1 WHERE item_id=?',(self.item['id'],))
         from atelier.catalogue import Catalogue
         from PySide6.QtWidgets import QMessageBox
-        cat=Catalogue(self.db,kind='set',scope='stock');self.windows.append(cat);cat.table.selectRow(0)
+        cat=Catalogue(self.db,kind='set',scope='stock_sets');self.windows.append(cat);cat.table.selectRow(0)
         with patch.object(QMessageBox,'question',return_value=QMessageBox.StandardButton.Yes):cat.delete_selected()
-        self.assertEqual(self.db.rows('SELECT * FROM stock'),[])
-    def test_legacy_set_removal_uses_existing_composition(self):
+        self.assertEqual(self.db.rows('SELECT * FROM stock_sets'),[]);self.assertEqual(self.db.rows('SELECT * FROM stock_set_components'),[])
+    def test_untracked_set_removal_does_not_invent_components(self):
         sid=self.make_set();self.db.add('stock',sid,quantity=2);self.db.run('DELETE FROM stock_set_components')
-        entry=self.db.rows('SELECT id FROM stock WHERE item_id=?',(sid,))[0]['id']
-        self.db.remove('stock',[entry],remove_set_parts=True)
-        self.assertEqual(self.db.rows('SELECT * FROM stock'),[])
+        entry=self.db.rows('SELECT id FROM stock_sets WHERE item_id=?',(sid,))[0]['id']
+        self.db.remove('stock_sets',[entry],remove_set_parts=True)
+        self.assertEqual(self.db.rows('SELECT * FROM stock_sets'),[]);self.assertEqual(self.db.rows('SELECT * FROM stock_set_components'),[])
 
-    def test_adding_another_copy_of_legacy_set_keeps_removal_quantities(self):
+    def test_adding_copy_to_untracked_set_tracks_only_the_new_copy(self):
         sid=self.make_set();self.db.add('stock',sid);self.db.run('DELETE FROM stock_set_components')
         self.db.add('stock',sid)
-        entry=self.db.rows('SELECT id FROM stock WHERE item_id=?',(sid,))[0]['id']
-        self.db.remove('stock',[entry],remove_set_parts=True)
-        self.assertEqual(self.db.rows('SELECT * FROM stock'),[])
+        entry=self.db.rows('SELECT id FROM stock_sets WHERE item_id=?',(sid,))[0]['id']
+        self.db.remove('stock_sets',[entry],remove_set_parts=True)
+        self.assertEqual(self.db.rows('SELECT * FROM stock_sets'),[]);self.assertEqual(self.db.rows('SELECT * FROM stock_set_components'),[])

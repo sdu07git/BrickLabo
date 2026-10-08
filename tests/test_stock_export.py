@@ -48,7 +48,7 @@ class ExportTests(unittest.TestCase):
   rows,_,_=stock_rows(self.db);valid,issues=validate_rows(rows,{'head'},{'4'})
   self.assertEqual(valid,[('head','4',6)]);self.assertEqual(len(issues),1);self.assertFalse(issues[0]['convertible'])
  def test_edited_stock_and_legacy_sets_raise_review_notes(self):
-  p,s=self.seed();self.db.run('UPDATE stock SET quantity=1 WHERE item_id=?',(p,));rows,notes,_=stock_rows(self.db);self.assertTrue(notes);self.assertFalse(rows)
+  p,s=self.seed();self.db.run('UPDATE stock SET quantity=1 WHERE item_id=?',(p,));rows,notes,_=stock_rows(self.db);self.assertFalse(notes);self.assertEqual(rows[0]['quantity'],1)
   self.db.run('DELETE FROM stock_set_components');rows,notes,_=stock_rows(self.db);self.assertIn('sans suivi',notes[0]);self.assertEqual(rows[0]['quantity'],1)
  def test_dialog_two_tabs_and_save_two_lists(self):
   self.seed()

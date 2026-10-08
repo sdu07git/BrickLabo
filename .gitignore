@@ -1,31 +1,33 @@
+# Python and local environments
 __pycache__/
 *.py[cod]
 .venv/
 venv/
+.pytest_cache/
+.ruff_cache/
+.idea/
+.vscode/
+
+# Personal data and local settings
 Donnees/
-build/
-dist/
-*.spec
-*.exe
-*.dll
-*.pyd
+Donnees_avant_restauration_*/
 *.sqlite
 *.sqlite-*
 *.db
 *.log
 .env
 .env.*
-.pytest_cache/
-.idea/
-.vscode/
-ressources/*.zip
-ressources/*.csv
-ressources/*.gz
-ressources/Books.txt
-ressources/Catalogs.txt
-ressources/Gear.txt
-ressources/Instructions.txt
-ressources/Minifigures.txt
-ressources/Original Boxes.txt
-ressources/Parts.txt
-ressources/Sets.txt
+
+# Compiled distributions and embedded Windows runtime
+build/
+dist/
+*.exe
+*.dll
+*.pyd
+*.obj
+*.pdb
+app/lib/
+app/python312.zip
+
+# LDraw archive exceeds GitHub's regular file limit; see README.md
+ressources/complete.zip

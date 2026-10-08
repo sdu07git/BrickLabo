@@ -1,7 +1,0 @@
-{
-  "miniatures_testées": 1000,
-  "cache_RAM_max_octets": 8372000,
-  "cache_disque_octets": 23030000,
-  "durée_secondes": 2.12,
-  "réserve": "Ces chiffres mesurent le cache, pas la RAM totale du processus."
-}

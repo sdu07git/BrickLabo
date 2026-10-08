@@ -20,21 +20,21 @@ class StockFilterTests(unittest.TestCase):
   with self.db.connect() as c:return InventoryReader(c,False,exclude).stock()
  def test_excluded_set_reserves_only_tracked_quantities(self):
   self.db.add('stock',self.p,'4',3);self.db.add('stock',self.s,quantity=2)
-  entry=self.db.rows('SELECT id FROM stock WHERE item_id=?',(self.s,))[0]['id']
+  entry=-self.db.rows('SELECT id FROM stock_sets WHERE item_id=?',(self.s,))[0]['id']
   self.assertEqual(sum(self.stock([]).values()),13)
   self.assertEqual(sum(self.stock([entry]).values()),3)
-  self.assertEqual(sum(r['quantity'] for r in self.db.rows('SELECT quantity FROM stock WHERE item_id=?',(self.p,))),13)
+  self.assertEqual(sum(r['quantity'] for r in self.db.rows('SELECT quantity FROM stock_available WHERE item_id=?',(self.p,))),13)
   self.assertEqual(find_builds(self.db,excluded_entries=[entry])[0],[])
   self.assertEqual(build_details(self.db,self.db.get_item(self.s),excluded_entries=[entry])[0][0][-1],2)
  def test_piece_exclusion_and_set_exclusion_do_not_double_subtract(self):
   self.db.add('stock',self.s,quantity=1);self.db.add('stock',self.p,'4',2)
-  ids=[r['id'] for r in self.db.rows('SELECT id FROM stock')]
+  ids=[r['id'] for r in self.db.rows('SELECT id FROM stock_available')]
   self.assertFalse(self.stock(ids))
  def test_loose_pieces_find_sets_without_owned_set(self):
   self.db.add('stock',self.p,'4',5)
   self.assertEqual(find_builds(self.db)[0][0]['ref'],'100-1')
  def test_untracked_excluded_set_not_silently_ignored(self):
-  entry=self.db.run("INSERT INTO stock(item_id,color,quantity) VALUES(?,'',1)",(self.s,))
+  entry=-self.db.run("INSERT INTO stock_sets(item_id,color,quantity) VALUES(?,'',1)",(self.s,))
   with self.assertRaises(ValueError):self.stock([entry])
  def test_moc_from_loose_stock_and_dedup(self):
   self.db.add('stock',self.p,'4',5);self.db.set_setting('api_rb','fake')
@@ -53,7 +53,7 @@ class StockFilterTests(unittest.TestCase):
   d.reject()
  def test_search_detail_keeps_filter_snapshot(self):
   self.db.add('stock',self.s,quantity=1);self.db.add('stock',self.p,'4',2)
-  entry=self.db.rows('SELECT id FROM stock WHERE item_id=?',(self.s,))[0]['id'];self.db.set_setting('build_excluded_entries',[entry])
+  entry=-self.db.rows('SELECT id FROM stock_sets WHERE item_id=?',(self.s,))[0]['id'];self.db.set_setting('build_excluded_entries',[entry])
   def task(owner,work,done,*args):done(work(lambda *_:None))
   with patch('atelier.build_stock.async_task',side_effect=task):
    d=BuildStockDialog(self.db);d.minimum.setValue(0);d.start()

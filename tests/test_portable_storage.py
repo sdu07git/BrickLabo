@@ -8,7 +8,7 @@ from atelier.viewpoint import DEFAULT_CAMERA,camera_for_item,save_camera
 class PortableStorageTests(unittest.TestCase):
     def setUp(self):
         self.temp=tempfile.TemporaryDirectory();self.folder=Path(self.temp.name);self.app=self.folder/'BrickLabo';self.app.mkdir();self.target=self.app/'Donnees';self.profile=self.folder/'Profile';self.source=self.profile/'LEGOAtelier'
-    def tearDown(self):self.temp.cleanup()
+    def tearDown(self):__import__('atelier.temp_area',fromlist=['close']).close();self.temp.cleanup()
     def legacy(self):
         db=Database(self.source/'atelier.sqlite');db.set_setting('api_rb','test-key');db.set_setting('camera_presets',{'Avant':{'yaw':180,'pitch':-23,'roll':-3}})
         image=self.source/'images'/'import.png';image.parent.mkdir();image.write_bytes(b'image')
@@ -39,7 +39,7 @@ class PortableStorageTests(unittest.TestCase):
     def test_first_launch_paths_temp_and_relocation_after_moving_folder(self):
         self.legacy()
         with patch.dict(os.environ,{'LOCALAPPDATA':str(self.profile)}),patch('atelier.storage.application_directory',return_value=self.app),patch.object(tempfile,'tempdir',tempfile.tempdir):
-            root=prepare_portable_storage();self.assertEqual(root,self.target);self.assertEqual(os.environ['TEMP'],str(root/'temp'));self.assertEqual(tempfile.gettempdir(),str(root/'temp'))
+            root=prepare_portable_storage();self.assertEqual(root,self.target);self.assertEqual(Path(os.environ['TEMP']).parent,root/'temp');self.assertEqual(Path(tempfile.gettempdir()).parent,root/'temp')
             db=Database(root/'atelier.sqlite');configure_portable_database(db)
         moved=self.folder/'Moved';shutil.move(self.app,moved)
         with patch.dict(os.environ,{'LOCALAPPDATA':str(self.profile)}),patch('atelier.storage.application_directory',return_value=moved),patch.object(tempfile,'tempdir',tempfile.tempdir):

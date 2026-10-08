@@ -1,0 +1,50 @@
+BrickLabo — historique cumulatif / cumulative history
+
+v0.1.39
+FR : Contrôle du code, de l'architecture et des dépendances. Connexion SQLite de lecture partagée ; réimports et visuels inchangés sans réécriture inutile ; cache RAM des photos et des textes LDraw. Aperçu limité à la dernière demande et caches protégés contre les anciennes tâches. Imports personnels atomiques, ajouts multiples annulables, fusion des couleurs du stock corrigée. Publication BrickArchitect avec retour arrière et nettoyage des téléchargements. Temporaires sous Donnees/temp ; purge protégée de l'ancien dossier temporaires et exclusion des sauvegardes. Fermeture ordonnée des tâches et archives ; notices sans création de dossiers vides. Lanceur recompilé, icône bitmap en sept tailles et liaison contrôlée dans le paquet. Aide française et anglaise actualisée.
+EN : Code, architecture and dependency checks. Shared SQLite read connection; unchanged imports and visual settings avoid redundant writes; RAM caches for photos and LDraw text. Latest-request previews and protection against stale cache tasks. Atomic personal imports, undoable multi-part additions and fixed stock colour merges. BrickArchitect publication rollback and download cleanup. Temporary work under Donnees/temp; protected legacy cleanup and backup exclusion. Ordered worker and archive shutdown; instruction browsing without empty folders. Rebuilt launcher with seven bitmap icon sizes and packaged resource validation. Updated French and English help.
+
+v0.1.38
+FR : Photos des sets dans « Sets réalisables avec Mon stock » ; toutes les colonnes, dont « Set », sont redimensionnables. Recherche globale par mot clé / créateur accessible depuis les catalogues de sets Rebrickable, BrickLink et alternatifs, avec reprise du mot clé saisi. MOC et alternatives inclus par défaut, sans filtre de stock ; liens vers les sets de départ publiés par Rebrickable. Aide et sources de distribution mises à jour.
+EN : Set photos in « Sets buildable with My stock »; all columns, including « Set », are resizable. Global keyword / creator search is available from Rebrickable, BrickLink and alternative set catalogues and carries over the entered keyword. Original MOCs and alternate builds are included by default without a stock filter; links to base sets published by Rebrickable. Updated help and distribution sources.
+
+v0.1.37
+FR : Stocks séparés, annulation, imports de collections, recherche MOC, étiquettes multiples, sauvegardes sélectives, caches bornés, chemins longs SQLite sous Windows et architecture app.
+EN : Separate stocks, undo, collection imports, MOC search, multiple-part labels, selective backups, bounded caches, Windows SQLite long paths and app layout.
+
+v0.1.36
+FR : Catégories par tags, aperçus et tri des résultats.
+EN : Category tags, previews and sortable results.
+
+v0.1.35
+FR : Suggestions de MOC depuis les sets reconstituables ; filtres du stock par sets et pièces.
+EN : MOC suggestions from rebuildable sets; stock filters for sets and parts.
+
+v0.1.34
+FR : Table locale des couleurs Rebrickable / BrickLink / LEGO / LDraw ; choix des ambiguïtés 72 et 77.
+EN : Local Rebrickable / BrickLink / LEGO / LDraw colour mappings; explicit choices for ambiguous IDs 72 and 77.
+
+v0.1.33
+FR : Aperçus des pièces ; exports manquantes / possédées ; contours des catégories de pièces.
+EN : Part previews; missing / owned exports; part-category outlines.
+
+v0.1.32
+FR : FTS5, filtres multicritères enregistrables et sets réalisables.
+EN : FTS5, saved multi-criteria filters and buildable sets.
+
+v0.1.31
+FR : Exports Rebrickable séparés pour sets et pièces ; correspondances BrickLink.
+EN : Separate Rebrickable sets and parts exports; BrickLink mappings.
+
+v0.1.30
+FR : Alternatives de sets ; noms de caches et temporaires courts ; exports protégés.
+EN : Alternate set builds; short cache and temporary names; atomic exports.
+
+v0.1.28
+FR : Interface et aide en français et anglais.
+EN : French and English interface and help.
+
+v0.1.27
+FR : Inventaires BrickLink TXT ; sauvegarde et restauration complète.
+EN : BrickLink TXT inventories; full backups and restores.
+

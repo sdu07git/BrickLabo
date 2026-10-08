@@ -19,7 +19,7 @@ class DiskSpaceTests(unittest.TestCase):
   self.assertNotEqual(self.db.setting('ldraw'),str(first));self.assertTrue(first.exists());self.assertEqual(len(list(self.root.glob('ldraw*.zip'))),2)
  def test_supplied_resource_import_does_not_make_a_copy(self):
   program=Path(self.tmp.name)/'App';source=self.archive(program/'ressources'/'complete.zip')
-  with patch('atelier.disk_space.__file__',str(program/'atelier'/'disk_space.py')):self.db.import_file(source)
+  with patch('atelier.disk_space.resources_directory',return_value=program/'ressources'):self.db.import_file(source)
   self.assertEqual(self.db.setting('ldraw'),str(source));self.assertEqual(list(self.root.glob('ldraw*.zip')),[])
  def test_dedup_preserves_active_and_remaps_references_only_for_identical_copy(self):
   active=self.archive(self.root/'ldraw_1.zip');duplicate=self.root/'ldraw_2.zip';duplicate.write_bytes(active.read_bytes());other=self.archive(self.root/'ldraw_3.zip','different');self.db.set_setting('ldraw',str(active));self.db.set_setting('old_reference',str(duplicate))

@@ -29,9 +29,9 @@ class AlternativeDeleteTests(unittest.TestCase):
         self.db.add('stock',item['id']);self.db.add('queue',part['id'])
         self.db.run('INSERT INTO history(item_id,quantity,method) VALUES(?,?,?)',(item['id'],1,'PDF'))
         self.db.delete_alternatives([item['id']]);self.assertEqual(self.db.query('ALT','set')[1],0)
-        self.assertEqual(self.db.query('ALT','set',scope='stock')[1],1);self.assertEqual(self.db.query(scope='history')[1],1);self.assertEqual(self.db.query(scope='queue')[1],1)
+        self.assertEqual(self.db.query('ALT','set',scope='stock_sets')[1],1);self.assertEqual(self.db.query(scope='history')[1],1);self.assertEqual(self.db.query(scope='queue')[1],1)
         self.assertEqual(self.db.components(item)[0]['chosen_quantity'],3)
-        entry=self.db.rows('SELECT id FROM stock WHERE item_id=?',(item['id'],))[0]['id'];self.db.remove('stock',[entry],True)
+        entry=self.db.rows('SELECT id FROM stock_sets WHERE item_id=?',(item['id'],))[0]['id'];self.db.remove('stock_sets',[entry],True)
         self.assertEqual(self.db.query(scope='stock')[1],0)
     def test_multiple_deletion_and_native_catalogue_protection_are_atomic(self):
         a=self.item('a');b=self.item('b');native=self.item('native','RB')

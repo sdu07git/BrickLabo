@@ -17,10 +17,10 @@ class InventoryTests(unittest.TestCase):
   self.assertEqual(db.containing_sets(parts[0])[0]['id'],self.item['id'])
  def test_stock_exact_quantities_and_removal_after_reimport(self):
   self.load();self.db.add('stock',self.item['id'],quantity=2)
-  self.assertEqual(sum(r['quantity'] for r in self.db.rows('SELECT * FROM stock')),14)
+  self.assertEqual(sum(r['quantity'] for r in self.db.rows('SELECT * FROM stock_available')),14)
   self.path.write_text(HEADER+'P\t3001\tBrick\t99\t86\tN\tN\t0\tN\n');self.load()
-  entry=self.db.rows('SELECT * FROM stock WHERE item_id=?',(self.item['id'],))[0]
-  self.db.remove('stock',[entry['id']],remove_set_parts=True);self.assertEqual(self.db.rows('SELECT * FROM stock'),[])
+  entry=self.db.rows('SELECT * FROM stock_sets WHERE item_id=?',(self.item['id'],))[0]
+  self.db.remove('stock_sets',[entry['id']],remove_set_parts=True);self.assertEqual(self.db.rows('SELECT * FROM stock WHERE quantity>0'),[]);self.assertEqual(self.db.rows('SELECT * FROM stock_sets'),[])
  def test_reimport_replaces_without_duplicate_or_reset_stock(self):
   self.load();part=self.db.components(self.item)[0];self.db.add('stock',part['id'],'86',5);self.load()
   self.assertEqual(self.db.rows('SELECT COUNT(*) n FROM bl_manual_inventory')[0]['n'],5);self.assertEqual(self.db.rows('SELECT quantity FROM stock')[0]['quantity'],5)

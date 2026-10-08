@@ -1,0 +1,24 @@
+{
+  "runtime": "Python 3.12.10 embed amd64",
+  "dependencies": [
+    "pyside6_essentials-6.11.2-cp310-abi3-win_amd64.whl",
+    "pyside6_addons-6.11.2-cp310-abi3-win_amd64.whl",
+    "pyside6-6.11.2-cp310-abi3-win_amd64.whl",
+    "numpy-2.5.3-cp312-cp312-win_amd64.whl",
+    "charset_normalizer-3.5.2-cp312-cp312-win_amd64.whl",
+    "reportlab-4.5.1-py3-none-any.whl",
+    "pillow-12.3.0-cp312-cp312-win_amd64.whl",
+    "shiboken6-6.11.2-cp310-abi3-win_amd64.whl"
+  ],
+  "python_archive_md5": "fe8ef205f2e9c3ba44d0cf9954e1abd3",
+  "target": "Windows 10/11 64 bits",
+  "launch": "BrickLabo.exe → app/pythonw.exe → app/bootstrap.py",
+  "validation": "Qt/Linux et inspection PE ; lancement natif Windows à vérifier",
+  "version": "0.1.39",
+  "interface_languages": [
+    "fr",
+    "en"
+  ],
+  "layout": "Application app/atelier; embedded Python app; dependencies app/lib",
+  "sqlite_windows_vfs": "win32-longpath (normal file locking)"
+}
