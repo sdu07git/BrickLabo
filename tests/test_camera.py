@@ -63,15 +63,15 @@ class CameraTests(unittest.TestCase):
     def test_apply_via_preview_updates_item_or_all_models(self):
         p=self.keep(Preview(self.db,self.engine));p.set_item(self.parts[0]);signals=[];p.visual_changed.connect(signals.append)
         def choose(global_view):
-            dialog=app.activeModalWidget()
+            dialog=next((w for w in app.topLevelWidgets() if isinstance(w,CameraDialog) and w.isVisible()),None)
             if not isinstance(dialog,CameraDialog):QTimer.singleShot(10,lambda:choose(global_view));return
             dialog.set_camera({'yaw':180 if not global_view else 60});dialog.all_models.setChecked(global_view)
             def apply():
                 if dialog.buttons.button(QDialogButtonBox.StandardButton.Save).isEnabled():dialog.accept()
                 else:QTimer.singleShot(10,apply)
             QTimer.singleShot(10,apply)
-        QTimer.singleShot(10,lambda:choose(False));p.edit_camera();self.assertEqual(camera_for_item(self.db,self.parts[0])['yaw'],180);self.assertEqual(camera_for_item(self.db,self.parts[1])['yaw'],0)
-        QTimer.singleShot(10,lambda:choose(True));p.edit_camera();self.assertEqual(camera_for_item(self.db,self.parts[1])['yaw'],60);self.assertIsNone(signals[-1])
+        QTimer.singleShot(10,lambda:choose(False));p.edit_camera();wait(lambda:camera_for_item(self.db,self.parts[0])['yaw']==180);self.assertEqual(camera_for_item(self.db,self.parts[1])['yaw'],0)
+        QTimer.singleShot(10,lambda:choose(True));p.edit_camera();wait(lambda:camera_for_item(self.db,self.parts[1])['yaw']==60);self.assertIsNone(signals[-1])
     def test_camera_is_used_in_catalogue_thumbnail_and_label(self):
         item=self.parts[0];cat=self.keep(Catalogue(self.db,'RB','part'));cat.engine=self.engine;cat.show();cat.load_thumbnails()
         row=next(i for i,r in enumerate(cat.rows) if r['id']==item['id']);col=cat.visible_columns.index('image')

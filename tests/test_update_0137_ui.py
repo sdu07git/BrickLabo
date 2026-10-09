@@ -34,7 +34,7 @@ class Update37UiTests(unittest.TestCase):
             window=self.keep(MainWindow(self.db));window.startup_timer.stop();return window
 
     def test_navigation_and_undo_controls_follow_stock_journal(self):
-        window=self.main_window();self.assertEqual(window.nav.count(),12);self.assertEqual(NAV[8][3],'stock');self.assertEqual(NAV[9][3],'stock_sets');self.assertFalse(window.undo_button.isEnabled())
+        window=self.main_window();self.assertEqual(window.nav.count(),13);self.assertEqual(NAV[8][3],'stock');self.assertEqual(NAV[9][3],'stock_sets');self.assertFalse(window.undo_button.isEnabled())
         self.db.add('stock',self.set,quantity=2)
         with patch('atelier.catalogue.Catalogue.load_thumbnails'):window.refresh_counts()
         self.assertTrue(window.undo_button.isEnabled());self.assertTrue(window.undo_shortcut.isEnabled());self.assertEqual(window.undo_shortcut.shortcut().toString(),'Ctrl+Z');self.assertEqual(self.db.query(scope='stock')[1],0)
@@ -44,7 +44,7 @@ class Update37UiTests(unittest.TestCase):
         self.db.add('stock',self.set,quantity=2);panel=self.keep(OwnedSetsPanel(self.db,VisualEngine(self.db)));panel.select(self.db.query(scope='stock_sets')[0][0]);self.assertEqual(panel.table.columnCount(),6)
         panel.table.sortItems(4,Qt.SortOrder.DescendingOrder);self.assertEqual(panel.ordered_parts()[0]['ref'],'3005');self.assertEqual(panel.table.item(0,4).data(Qt.ItemDataRole.DisplayRole),10)
         with patch('atelier.dialogs.RelationsDialog') as dialog:
-            panel.table.cellDoubleClicked.emit(0,5);self.assertEqual(dialog.call_args.args[2]['ref'],'3005');dialog.return_value.exec.assert_called_once()
+            panel.table.cellDoubleClicked.emit(0,5);self.assertEqual(dialog.call_args.args[2]['ref'],'3005');dialog.return_value.show.assert_called_once()
 
     def test_import_preview_choice_and_missing_reference_gate(self):
         window=self.keep(StockImportDialog(self.db,destination='stock_sets'));self.assertEqual(window.destination.currentData(),'stock_sets');self.assertTrue(window.target.isEnabled());self.assertTrue(window.name.isEnabled())
@@ -52,7 +52,7 @@ class Update37UiTests(unittest.TestCase):
         path.write_text('Part,Color,Quantity\nmissing,4,2\n');window.load();self.assertFalse(window.commit.isEnabled());self.assertEqual(self.db.query(scope='stock')[1],0)
 
     def test_backup_defaults_seven_separate_families_without_api(self):
-        parent=self.main_window();window=self.keep(BackupDialog(parent));self.assertEqual(len(window.families),8);self.assertFalse(window.families['api'].isChecked());self.assertEqual(sum(c.isChecked() for c in window.families.values()),7)
+        parent=self.main_window();window=self.keep(BackupDialog(parent));self.assertEqual(len(window.families),9);self.assertFalse(window.families['api'].isChecked());self.assertEqual(sum(c.isChecked() for c in window.families.values()),8)
 
     def test_moc_origin_loading_preserves_sorted_selection(self):
         window=self.keep(MocSearchDialog(self.db,None));window.rows=[{'set_num':'MOC-123','name':'Falcon','bases_loaded':False,'bases':[]},{'set_num':'MOC-456','name':'Other','bases_loaded':True,'bases':['100-1']}];window.fill();window.table.sortItems(4,Qt.SortOrder.AscendingOrder)

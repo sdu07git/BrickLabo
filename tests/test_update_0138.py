@@ -62,7 +62,7 @@ class Update38Tests(unittest.TestCase):
         for source in ('RB','BL','ALT'):
             catalogue=self.keep(Catalogue(self.db,source,'set'));catalogue.search.setText('falcon');catalogue.timer.stop()
             with patch('atelier.moc_search.MocSearchDialog') as search:
-                catalogue.moc_search_button.click();self.assertEqual(search.call_args.kwargs['keyword'],'falcon');search.return_value.exec.assert_called_once()
+                catalogue.moc_search_button.click();self.assertEqual(search.call_args.kwargs['keyword'],'falcon');search.return_value.show.assert_called_once()
         window=self.keep(BuildStockDialog(self.db));window.search.setText('falcon')
         with patch('atelier.moc_search.MocSearchDialog') as search:
             window.global_search();self.assertEqual(search.call_args.kwargs['keyword'],'falcon')

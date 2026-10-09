@@ -50,8 +50,8 @@ class TranslationTests(unittest.TestCase):
   with tempfile.TemporaryDirectory() as folder:
    db=Database(Path(folder)/'atelier.sqlite');i18n.set_language('fr')
    def accept(dialog):
-    dialog.findChild(QComboBox).setCurrentIndex(1);return QDialog.DialogCode.Accepted
-   with patch.object(QDialog,'exec',accept),patch.object(QMessageBox,'information') as message:i18n.language_dialog(db,None)
+    dialog.findChild(QComboBox).setCurrentIndex(1);dialog.accept()
+   with patch.object(QDialog,'show',accept),patch.object(QMessageBox,'information') as message:i18n.language_dialog(db,None)
    self.assertEqual(db.setting('ui_language'),'en');self.assertEqual(i18n.language(),'fr');message.assert_called_once()
  def test_startup_english_headers_menus_and_unchanged_catalogue(self):
   with tempfile.TemporaryDirectory() as folder:
@@ -95,7 +95,7 @@ print('ENGLISH_STARTUP_OK')
   app=QApplication.instance() or QApplication([]);i18n.set_language('en');seen=[]
   def inspect(dialog):
    browser=dialog.findChild(QTextBrowser);seen.append(browser.source().toLocalFile());self.assertIn('Top toolbar',browser.toPlainText());return QDialog.DialogCode.Rejected
-  with patch.object(QDialog,'exec',inspect):help_dialog(None)
+  with patch.object(QDialog,'show',inspect):help_dialog(None)
   self.assertEqual(Path(seen[0]).name,'AIDE.en.html')
 
  def test_restored_language_applies_before_next_interface_start(self):
