@@ -45,7 +45,10 @@ def self_test(data):
 
 def run():
     from atelier.storage import prepare_portable_storage
-    data=prepare_portable_storage()
+    from atelier.update_installer import startup_gate
+    with startup_gate(ROOT):data=prepare_portable_storage()
+    from atelier.software_updates import clean_update_workspaces
+    clean_update_workspaces(ROOT)
     try:
         if '--self-test' in sys.argv:return self_test(data)
         from atelier.app import main
