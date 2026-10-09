@@ -1134,5 +1134,8 @@
   "Référence exacte : {}": "Exact reference: {}",
   "Taille des aperçus sur les tiroirs": "Drawer preview size",
   "Zoom sur le meuble": "Zoom to cabinet",
-  "Installer et redémarrer ferme BrickLabo, attend la fin des tâches et remplace uniquement le logiciel. Si le remplacement échoue, l’ancienne installation est rétablie. Après le démarrage réussi de la nouvelle version, l’ancienne version est supprimée automatiquement. Donnees est conservé.": "Install and restart closes BrickLabo, waits for tasks and replaces only the software. If replacement fails, the old installation is restored. After the new version starts successfully, the old version is deleted automatically. Donnees is preserved."
+  "Installer et redémarrer ferme BrickLabo, attend la fin des tâches et remplace uniquement le logiciel. Si le remplacement échoue, l’ancienne installation est rétablie. Après le démarrage réussi de la nouvelle version, l’ancienne version est supprimée automatiquement. Donnees est conservé.": "Install and restart closes BrickLabo, waits for tasks and replaces only the software. If replacement fails, the old installation is restored. After the new version starts successfully, the old version is deleted automatically. Donnees is preserved.",
+  "Valeurs par défaut": "Default values",
+  " — référence Rebrickable : ": " — Rebrickable reference: ",
+  "Fermeture : arrêt des tâches en cours…": "Closing: stopping background tasks…"
 }
