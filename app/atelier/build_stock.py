@@ -1,3 +1,4 @@
+from .windows import show_window
 """Read-only inventory matching against the complete stock ledger."""
 from collections import Counter
 from functools import lru_cache
@@ -47,6 +48,10 @@ class InventoryReader:
                 if not p:return (),False
                 rows.append((p['source'],p['kind'],p['ref'],str(value['color']),int(value['quantity']),False))
             return tuple(rows),found
+        cache=self.c.execute('SELECT parts FROM catalogue_inventory WHERE source=? AND ref=?',(source,ref)).fetchone()
+        if cache and not (source=='BL' and item and kind=='set' and self.setting('bl_manual_inventory_'+str(item['id']))):
+            values=json.loads(cache['parts'])
+            return tuple((p['source'],p.get('kind','part'),p['ref'],str(p['color']),int(p['quantity']),bool(p.get('is_spare'))) for p in values),bool(values)
         if source=='BL':
             if item and kind=='set' and self.setting('bl_manual_inventory_'+str(item['id'])):
                 records=self.c.execute('SELECT i.source,i.kind,i.ref,p.color,p.quantity,p.extra FROM bl_manual_inventory p LEFT JOIN items i ON i.id=p.item_id WHERE p.set_id=? AND p.alternate=0 AND p.counterpart=0',(item['id'],)).fetchall()
@@ -205,21 +210,23 @@ class BuildStockDialog(QDialog):
         close=QPushButton(tr('Fermer'));close.clicked.connect(self.reject);layout.addWidget(close)
     def choose_stock(self):
         from .stock_filter import StockFilterDialog
-        if StockFilterDialog(self.db,self).exec():
+        def saved(result):
+            if not result:return
             if self.set_thumbnails:self.set_thumbnails.suspend()
             self.detail_token+=1;self.clear_details();self.parts.setRowCount(0);self.table.setRowCount(0);self.results=[]
             self.status.setText(tr('Stock utilisable modifié : relance la recherche.'))
+        show_window(StockFilterDialog(self.db,self),self,saved)
 
     def global_search(self):
         from .moc_search import MocSearchDialog
-        MocSearchDialog(self.db,self.engine,self,keyword=self.search.text().strip()).exec()
+        show_window(MocSearchDialog(self.db,self.engine,self,keyword=self.search.text().strip()),self)
 
     def visible_sets(self):
         return [self.results[index] if 0<=index<len(self.results) else None for index in (row_index(self.table,i) for i in range(self.table.rowCount()))]
 
     def find_mocs(self):
         from .stock_mocs import StockMocsDialog
-        StockMocsDialog(self.db,self.engine,self.db.setting('build_excluded_entries',[]),self).exec()
+        show_window(StockMocsDialog(self.db,self.engine,self.db.setting('build_excluded_entries',[]),self),self)
 
     def context_menu(self,pos):
         index=self.table.indexAt(pos)
@@ -232,10 +239,11 @@ class BuildStockDialog(QDialog):
 
     def show_alternates(self,item):
         from .alternates import AlternatesDialog
-        AlternatesDialog(self.db,self.engine,item,self).exec()
+        show_window(AlternatesDialog(self.db,self.engine,item,self),self)
 
     def start(self):
         if self.busy:return
+        revision=self.db.stock_revision()
         if self.set_thumbnails:self.set_thumbnails.suspend()
         self.clear_details();self.busy=True;self.cancel.clear();self.detail_token+=1;self.parts.setRowCount(0);self.table.setRowCount(0);self.results=[]
         source=self.source.currentData();text=self.search.text();ignore=self.ignore.isChecked();copies=self.copies.value();minimum=self.minimum.value();excluded_stock=list(self.db.setting('build_excluded_entries',[]))
@@ -246,6 +254,7 @@ class BuildStockDialog(QDialog):
             for widget in (self.run,self.source,self.search,self.ignore,self.copies,self.minimum,self.stock_filter,self.mocs):widget.setEnabled(True)
         def done(data):
             if self.closed:return
+            if revision!=self.db.stock_revision():finish();self.stock_changed();return
             self.results,warnings,excluded,cancelled=data;self.last_ignore=ignore;self.last_copies=copies;self.last_excluded=excluded_stock
             fill_table(self.table,[[round(row[key],1) if key=='percent' else row.get(key,'') for key in ('source','ref','name','year','percent','total','missing')]+[tr('Chargement…') if self.engine else tr('Aperçu indisponible')] for row in self.results])
             if self.set_thumbnails:self.set_thumbnails.reset()
@@ -314,8 +323,8 @@ class BuildStockDialog(QDialog):
             note.setText(message)
         def failed(error):
             if alive[0]:visual.setText(tr('Aperçu indisponible'));note.setText(error)
+        show_window(preview,self)
         async_task(preview,lambda progress:self.engine.visuals(item,chosen,True),loaded,failed)
-        preview.exec()
     def export_parts(self,mode):
         if not self.detail_item:return
         filename='manquantes.csv' if mode=='missing' else 'en_stock.csv'
@@ -331,11 +340,16 @@ class BuildStockDialog(QDialog):
         index=row_index(self.table)
         if self.engine and 0<=index<len(self.results):
             from .dialogs import RelationsDialog
-            RelationsDialog(self.db,self.engine,self.results[index],self).exec()
+            show_window(RelationsDialog(self.db,self.engine,self.results[index],self),self)
     def done(self,result):
         if self.set_thumbnails:self.set_thumbnails.stop()
         if self.thumbnails:self.thumbnails.stop()
         self.closed=True;self.cancel.set();self.detail_token+=1;super().done(result)
+    def stock_changed(self):
+        if self.busy:self.cancel.set()
+        self.detail_token+=1;self.clear_details();self.parts.setRowCount(0)
+        self.status.setText(tr('Le stock a changé : relance la recherche pour actualiser les résultats.'))
+        self.table.setRowCount(0);self.results=[]
 
 
 def export_build_parts(path,item,rows,mode,copies=1,ignore_colors=False):

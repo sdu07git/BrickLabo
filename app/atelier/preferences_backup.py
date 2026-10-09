@@ -7,7 +7,7 @@ from .data import normalize
 from .fileio import atomic_output
 from .i18n import tr
 
-FAMILIES={'labels':tr('Modèles d’étiquette'),'colors':tr('Couleurs des catégories'),'views':tr('Vues et rendus 3D'),'loose':tr('Pièces en vrac'),'sets':tr('Sets et leurs pièces'),'queue':tr('Étiquettes à imprimer'),'preferences':tr('Autres préférences'),'api':tr('Clés API (privées)')}
+FAMILIES={'labels':tr('Modèles d’étiquette'),'colors':tr('Couleurs des catégories'),'views':tr('Vues et rendus 3D'),'loose':tr('Pièces en vrac'),'sets':tr('Sets et leurs pièces'),'queue':tr('Étiquettes à imprimer'),'storage':tr('Meubles et emplacements'),'preferences':tr('Autres préférences'),'api':tr('Clés API (privées)')}
 ITEM_KEYS=('camera_item_','architect_model_','architect_photo_choice_','photo_choices_','label_layout_item_')
 ENTRY_RE=re.compile(r'^label_layout_(stock_sets|stock|queue|history)_([0-9]+)$')
 
@@ -45,6 +45,9 @@ def _settings(db,predicate,strip_colors=False):
 
 def collect_family(db,family):
     if family not in FAMILIES:raise ValueError(tr('Famille de sauvegarde inconnue'))
+    if family=='storage':
+        from .storage_wall import walls,drawers,contents
+        return {'walls':[{'name':w['name'],'columns':w['columns'],'rows':w['rows'],'drawers':[dict({k:d[k] for k in ('col','row','width','height','name')},parts=[{'item':identity(p),'color':p['chosen_color']} for p in contents(db,d['id'])]) for d in drawers(db,w['id'])]} for w in walls(db)]}
     if family in ('loose','sets','queue'):
         table={'loose':'stock','sets':'stock_sets','queue':'queue'}[family];entries=[]
         for row in db.rows('SELECT i.*,s.id AS entry_id,s.color,s.quantity AS stock_quantity FROM '+table+' s JOIN items i ON i.id=s.item_id WHERE s.quantity>0 ORDER BY i.source,i.ref,s.color'):
@@ -125,13 +128,24 @@ def _preserve_colors(value,old):
 def restore_families(db,paths):
     payloads=[read_family(p) for p in paths]
     if len({p['family'] for p in payloads})!=len(payloads):raise ValueError(tr('Choisis un seul fichier par famille.'))
-    order={'loose':0,'sets':1,'queue':2,'labels':3,'colors':4,'views':5,'preferences':6,'api':7}
+    order={'loose':0,'sets':1,'queue':2,'labels':3,'colors':4,'views':5,'storage':6,'preferences':7,'api':8}
     with db.connect() as c:
         c.execute('BEGIN IMMEDIATE')
         for payload in sorted(payloads,key=lambda p:order[p['family']]):
             family=payload['family'];data=payload['data']
             previous_labels={}
-            if family in ('loose','sets','queue'):
+            if family=='storage':
+                c.execute('DELETE FROM storage_walls')
+                for wall in data.get('walls',[]):
+                    columns,rows=int(wall['columns']),int(wall['rows'])
+                    if not wall['name'].strip() or not 1<=columns<=100 or not 1<=rows<=100:raise ValueError(tr('Meuble invalide'))
+                    wid=c.execute('INSERT INTO storage_walls(name,columns,rows) VALUES(?,?,?)',(wall['name'],columns,rows)).lastrowid;rects=[]
+                    for drawer in wall['drawers']:
+                        col,row,width,height=(int(drawer[k]) for k in ('col','row','width','height'))
+                        if min(col,row,width,height)<1 or col+width-1>columns or row+height-1>rows or any(col<x+w and x<col+width and row<y+h and y<row+height for x,y,w,h in rects):raise ValueError(tr('Tiroir invalide'))
+                        rects.append((col,row,width,height));did=c.execute('INSERT INTO storage_drawers(wall_id,col,row,width,height,name) VALUES(?,?,?,?,?,?)',(wid,col,row,width,height,drawer['name'])).lastrowid
+                        for part in drawer['parts']:c.execute('INSERT INTO storage_contents(drawer_id,item_id,color) VALUES(?,?,?)',(did,_item(c,part['item']),str(part['color'])))
+            elif family in ('loose','sets','queue'):
                 table={'loose':'stock','sets':'stock_sets','queue':'queue'}[family]
                 layouts=_entry_layouts(c,table)
                 c.execute('DELETE FROM settings WHERE key LIKE ?',('label_layout_'+table+'_%',))

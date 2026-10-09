@@ -29,18 +29,19 @@ from .editor import LabelEditor
 from .labels import default_template,render_label,export_pdf,template_for_item,category_outline
 from .printing import PrintPreview
 from .ui_common import STYLE,async_task,dialog
+from .windows import show_window
 
 
 NAV=[(tr('Catalogue Rebrickable'),'RB','part','catalogue'),(tr('Catalogue BrickLink'),'BL','part','catalogue'),
      ('BrickArchitect','BA','part','catalogue'),(tr('Catalogue Mini-Figs'),None,'minifig','catalogue'),(tr('Catalogue Briques Alternatives'),'ALT','part','catalogue'),
      (tr('Catalogue Set Rebrickable'),'RB','set','catalogue'),(tr('Catalogue Set BrickLink'),'BL','set','catalogue'),
      (tr('Catalogue Set Alternatif'),'ALT','set','catalogue'),(tr('Mon stock'),None,('part','minifig'),'stock'),(tr('Mon stock set'),None,'set','stock_sets'),
-     (tr('Impression Étiquettes'),None,None,'queue'),(tr('Historique'),None,None,'history')]
+     (tr('Impression Étiquettes'),None,None,'queue'),(tr('Historique'),None,None,'history'),(tr('Mon rangement'),None,None,'storage')]
 
 
 class MainWindow(QMainWindow):
     def __init__(self,db):
-        super().__init__();self.db=db;self.engine=VisualEngine(db);self.current_item=None;self.catalogues=[];self.owned_panels=[];self.generating=False
+        super().__init__();self.db=db;self.engine=VisualEngine(db);self.current_item=None;self.catalogues=[];self.owned_panels=[];self.generating=False;self._stock_revision=db.stock_revision()
         self.setWindowTitle(f'{APP_NAME} — v{VERSION}');self.resize(1500,900);self.setMinimumSize(950,650)
         outer=QWidget();self.setCentralWidget(outer);root=QVBoxLayout(outer)
         top=QHBoxLayout();root.addLayout(top)
@@ -59,6 +60,9 @@ class MainWindow(QMainWindow):
         self.nav=QListWidget();self.nav.addItems([x[0] for x in NAV]);self.nav.setMinimumWidth(225);self.nav.setMaximumWidth(300);split.addWidget(self.nav)
         self.stack=QStackedWidget();split.addWidget(self.stack)
         for title,source,kind,scope in NAV:
+            if scope=='storage':
+                from .storage_panel import StoragePanel
+                self.storage=StoragePanel(db,self.engine);self.storage.selected.connect(self.item_selected);self.stack.addWidget(self.storage);continue
             if scope in ('stock','stock_sets'):
                 widget=QWidget();vl=QVBoxLayout(widget);vl.setContentsMargins(0,0,0,0);row=QHBoxLayout();vl.addLayout(row)
                 for name,func in [(tr('Importer une collection'),lambda _,s=scope:self.import_stock(s)),(tr('Exporter vers Rebrickable'),self.export_stock_rebrickable),(tr('Sets réalisables'),self.build_from_stock),(tr('Rechercher des MOC / alternatives'),self.search_mocs)]:
@@ -99,17 +103,18 @@ class MainWindow(QMainWindow):
     def visual_changed(self,item):
         for cat in self.catalogues:
             if cat.isVisible():cat.refresh_visual(item)
+        if hasattr(self,'storage'):self.storage.invalidate(item)
 
     def import_stock(self,scope='stock'):
         from .stock_import_dialog import StockImportDialog
-        if StockImportDialog(self.db,self,scope).exec():self.refresh_counts()
+        show_window(StockImportDialog(self.db,self,scope),self)
 
     def stock_migration_report(self):
         QMessageBox.information(self,tr('Rapport de migration du stock'),'\n'.join(self.db.setting('stock_migration_report',[])))
 
     def search_mocs(self):
         from .moc_search import MocSearchDialog
-        MocSearchDialog(self.db,self.engine,self).exec()
+        show_window(MocSearchDialog(self.db,self.engine,self),self)
 
     def update_undo(self):
         description=self.db.undo_description();self.undo_button.setEnabled(bool(description));self.undo_shortcut.setEnabled(bool(description));self.undo_button.setToolTip(description)
@@ -121,22 +126,29 @@ class MainWindow(QMainWindow):
 
     def build_from_stock(self):
         from .build_stock import BuildStockDialog
-        BuildStockDialog(self.db,self.engine,self).exec()
+        show_window(BuildStockDialog(self.db,self.engine,self),self)
 
     def export_stock_rebrickable(self):
         from .stock_export import StockExportDialog
-        StockExportDialog(self.db,self).exec()
+        show_window(StockExportDialog(self.db,self),self)
 
     def open_item(self,item):
-        d=RelationsDialog(self.db,self.engine,item,self);d.exec();self.refresh_counts()
+        show_window(RelationsDialog(self.db,self.engine,item,self),self)
     def refresh_counts(self):
         for c in self.catalogues:
             if c.scope in ('stock','stock_sets','queue','history') or c.source=='ALT':c.reload()
         for panel in self.owned_panels:panel.refresh()
         self.update_undo()
+        revision=self.db.stock_revision()
+        if revision!=self._stock_revision:
+            self._stock_revision=revision
+            if hasattr(self,'storage'):self.storage.refresh()
+            for window in list(getattr(self,'_consultation_windows',[])):
+                if hasattr(window,'stock_changed'):window.stock_changed()
     def refresh_all(self):
         for c in self.catalogues:c.reload_categories();c.reload()
         if self.current_item:self.preview.set_item(self.db.get_item(self.current_item['id']))
+        if hasattr(self,'storage'):self.storage.reload_walls();self.storage.invalidate()
     def first_import(self):
         resources=resources_directory()
         paths=[str(p) for p in resources.iterdir() if p.suffix.lower() in ('.zip','.txt','.csv','.gz') and p.name!='brickarchitect_ldraw.zip'] if resources.exists() else []
@@ -148,12 +160,12 @@ class MainWindow(QMainWindow):
             paths=[p for p in paths if Path(p).name.lower() in supplemental]
         if paths:
             if empty:
-                d=ImportDialog(self.db,self,paths,auto_start=True);d.finished_import.connect(self.refresh_all);self.import_window=d;d.exec()
+                d=ImportDialog(self.db,self,paths,auto_start=True);d.finished_import.connect(self.refresh_all);self.import_window=d;show_window(d,self)
             else:self.imports(paths)
 
     def sources_licenses(self):
         from PySide6.QtWidgets import QTextBrowser
-        d=dialog(tr('Sources et licences'),self);layout=QVBoxLayout(d);browser=QTextBrowser();browser.setOpenExternalLinks(True);browser.setSource(QUrl.fromLocalFile(str(document('SOURCES_ET_LICENCES'))));layout.addWidget(browser);close=QPushButton(tr('Fermer'));close.clicked.connect(d.accept);layout.addWidget(close);d.exec()
+        d=dialog(tr('Sources et licences'),self);layout=QVBoxLayout(d);browser=QTextBrowser();browser.setOpenExternalLinks(True);browser.setSource(QUrl.fromLocalFile(str(document('SOURCES_ET_LICENCES'))));layout.addWidget(browser);close=QPushButton(tr('Fermer'));close.clicked.connect(d.accept);layout.addWidget(close);show_window(d,self)
 
     def language_settings(self):
         from .i18n import language_dialog
@@ -163,7 +175,7 @@ class MainWindow(QMainWindow):
         if self.generating:
             QMessageBox.information(self,tr('Sauvegardes'),tr('Attends la fin de la génération.'));return
         from .backup_dialog import BackupDialog
-        BackupDialog(self).exec()
+        show_window(BackupDialog(self),self)
 
     def cache_settings(self):
         from .cache_dialog import show_cache
@@ -174,17 +186,21 @@ class MainWindow(QMainWindow):
 
     def imports(self,paths=None):
         if isinstance(paths,bool):paths=None
-        d=ImportDialog(self.db,self,paths);d.finished_import.connect(self.refresh_all);self.import_window=d;d.exec()
-    def api(self):APIDialog(self.db,self).exec()
+        if self.import_window is not None:
+            try:
+                if self.import_window.isVisible():self.import_window.raise_();self.import_window.activateWindow();return
+            except RuntimeError:pass
+        d=ImportDialog(self.db,self,paths);d.finished_import.connect(self.refresh_all);self.import_window=d;show_window(d,self)
+    def api(self):show_window(APIDialog(self.db,self),self)
     def editor(self):
         d=LabelEditor(self.db,self.engine,self.current_item,self)
-        if d.exec():
-            if self.current_item:self.preview.refresh()
+        show_window(d,self,lambda result:self.preview.refresh() if result and self.current_item else None)
     def edge_settings(self):
         from .edges import EdgeDialog
         d=EdgeDialog(self.db,self.engine,self.current_item,self)
-        if d.exec():
-            self.db.set_setting('edge_settings',d.settings());self.preview.refresh();self.visual_changed(None)
+        def saved(result):
+            if result:self.db.set_setting('edge_settings',d.settings());self.preview.refresh();self.visual_changed(None)
+        show_window(d,self,saved)
 
     def default_color(self):
         c=QColorDialog.getColor(QColor(self.db.setting('default_color','#f3d55b')),self,tr('Couleur par défaut des pièces en 3D'))
@@ -192,18 +208,19 @@ class MainWindow(QMainWindow):
     def category_colors(self):
         from .contours import ContourDialog
         d=ContourDialog(self.db,self.engine,self.current_item,self)
-        if d.exec():
-            self.db.set_setting('template',d.template);self.preview.refresh()
+        show_window(d,self,lambda result:(self.db.set_setting('template',d.template),self.preview.refresh()) if result else None)
     def label_size(self):
         d=dialog(tr('Taille par défaut de l’étiquette'),self);d.resize(450,200);layout=QVBoxLayout(d);form=QFormLayout();layout.addLayout(form);t=self.db.setting('template',default_template());values={}
         for key,name in [('width',tr('Largeur (mm)')),('height',tr('Hauteur (mm)'))]:
             w=QDoubleSpinBox();w.setRange(5,280);w.setDecimals(2);w.setValue(t[key]);values[key]=w;form.addRow(name,w)
         b=QPushButton(tr('Appliquer'));b.clicked.connect(d.accept);layout.addWidget(b)
-        if d.exec():
+        def saved(result):
+            if not result:return
             # Redimensionner proportionnellement les calques du modèle existant.
             sx=values['width'].value()/t['width'];sy=values['height'].value()/t['height']
             for l in t['layers']:l['x']*=sx;l['w']*=sx;l['y']*=sy;l['h']*=sy
             t.update({k:w.value() for k,w in values.items()});self.db.set_setting('template',t);self.preview.refresh()
+        show_window(d,self,saved)
     def output_folder(self):
         path=QFileDialog.getExistingDirectory(self,tr('Dossier des fichiers PNG et PDF'),self.export_path)
         if path:
@@ -269,7 +286,7 @@ class MainWindow(QMainWindow):
                 QMessageBox.information(self,tr('Génération terminée'),tf('{0} étiquette(s) générée(s).\nDossier : {2}', len(images), None, folder)+warning)
             else:
                 p=PrintPreview(images,template['width'],template['height'],self,lambda:self.record_history(successful,tr('Impression')))
-                p.exec()
+                show_window(p,self)
         def fail(error):self.generating=False;QMessageBox.warning(self,tr('Génération'),error)
         async_task(self,work,done,fail)
     def record_history(self,entries,method):
@@ -281,9 +298,25 @@ class MainWindow(QMainWindow):
     def clear_before(self):
         date,ok=QInputDialog.getText(self,tr('Historique'),tr('Supprimer les entrées avant cette date (AAAA-MM-JJ) :'))
         if ok and re.fullmatch(r'\d{4}-\d{2}-\d{2}',date):self.db.run('DELETE FROM history WHERE date<?',(date,));self.refresh_counts()
+    def request_software_update(self,prepared):
+        from PySide6.QtCore import QThreadPool
+        from .software_updates import other_instances
+        from .temp_area import temporary_folder
+        from .backups import REQUEST
+        if self.generating or QThreadPool.globalInstance().activeThreadCount() or any(getattr(w,'running',False) for w in getattr(self,'_consultation_windows',[])):
+            QMessageBox.information(self,tr('Mise à jour du logiciel BrickLabo'),tr('Attends la fin des tâches en cours avant d’installer la mise à jour.'));return False
+        if (self.db.path.parent/REQUEST).exists():
+            QMessageBox.information(self,tr('Mise à jour du logiciel BrickLabo'),tr('Une restauration des données est prévue. Termine ou annule cette restauration avant la mise à jour du logiciel.'));return False
+        if other_instances(prepared.root,own_stage=prepared.stage,own_session=temporary_folder(self.db.path.parent/'temp')):
+            QMessageBox.information(self,tr('Mise à jour du logiciel BrickLabo'),tr('Ferme les autres instances de BrickLabo avant d’installer la mise à jour.'));return False
+        self._pending_software_update=prepared
+        if not self.close():self._pending_software_update=None;return False
+        return True
     def closeEvent(self,event):
         if self.generating:QMessageBox.information(self,tr('Génération'),tr('Attends la fin de la génération avant de fermer.'));event.ignore();return
         self.startup_timer.stop()
+        for window in list(getattr(self,'_consultation_windows',[])):window.reject()
+        if hasattr(self,'storage'):self.storage.icon_token+=1;self.storage.icon_timer.stop()
         super().closeEvent(event)
 
 
@@ -308,4 +341,13 @@ def main():
         QThreadPool.globalInstance().waitForDone()
         window.engine.close();db.close()
     logger.info(tr('Fermeture de l’application, code %s'),status)
+    prepared=getattr(window,'_pending_software_update',None)
+    if prepared is not None:
+        from .software_updates import start_installer
+        try:
+            if status==0:start_installer(prepared)
+            else:prepared.discard()
+        except Exception as error:
+            prepared.discard();logger.exception('Software update installer could not start')
+            QMessageBox.critical(None,tr('Mise à jour du logiciel BrickLabo'),str(error));status=1
     return status

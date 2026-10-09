@@ -1,3 +1,4 @@
+from .windows import show_window
 """Discover alternate builds through sets covered by the selected stock.
 The API exposes no general MOC inventory search: results are suggestions,
 not an independently verified MOC bill of materials.
@@ -19,7 +20,7 @@ class StockMocsDialog(QDialog):
         layout=QVBoxLayout(self)
         note=QLabel(tr('Les pièces en vrac et les pièces des sets autorisés sont combinées, en couleurs exactes. BrickLabo recherche les alternatives des sets Rebrickable reconstituables à 100 %. Ce n’est pas une recherche exhaustive de MOC. Les inventaires des MOC ne sont pas vérifiés : contrôler les pièces, pièces supplémentaires et notices sur Rebrickable. Chaque proposition utilise le même stock indépendamment.'));note.setWordWrap(True);layout.addWidget(note)
         self.status=QLabel(tr('Clique sur Rechercher pour analyser le stock sélectionné.'));self.status.setWordWrap(True);layout.addWidget(self.status)
-        self.table=QTableWidget(0,5);self.table.setHorizontalHeaderLabels([tr('Référence'),tr('Construction'),tr('Créateur'),tr('Pièces'),tr('Sets de départ')]);self.table.horizontalHeader().setSectionResizeMode(1,QHeaderView.ResizeMode.Stretch);self.table.horizontalHeader().setSectionResizeMode(4,QHeaderView.ResizeMode.Stretch);self.table.setSelectionBehavior(QAbstractItemView.SelectionBehavior.SelectRows);self.table.setSelectionMode(QAbstractItemView.SelectionMode.SingleSelection);self.table.setEditTriggers(QAbstractItemView.EditTrigger.NoEditTriggers);layout.addWidget(self.table,1)
+        self.table=QTableWidget(0,5);self.table.setHorizontalHeaderLabels([tr('Référence'),tr('Construction'),tr('Créateur'),tr('Pièces'),tr('Sets de départ')]);self.table.horizontalHeader().setSectionResizeMode(QHeaderView.ResizeMode.Interactive);self.table.setColumnWidth(1,350);self.table.setColumnWidth(4,230);self.table.setSelectionBehavior(QAbstractItemView.SelectionBehavior.SelectRows);self.table.setSelectionMode(QAbstractItemView.SelectionMode.SingleSelection);self.table.setEditTriggers(QAbstractItemView.EditTrigger.NoEditTriggers);layout.addWidget(self.table,1)
         self.photo=QLabel();self.photo.setAlignment(Qt.AlignmentFlag.AlignCenter);self.photo.setMinimumHeight(160);layout.addWidget(self.photo)
         buttons=QHBoxLayout();self.run=QPushButton(tr('Rechercher'));self.more=QPushButton(tr('Analyser les 20 sets suivants'));self.more.setEnabled(False);self.stop=QPushButton(tr('Arrêter'));self.stop.setEnabled(False);self.open=QPushButton(tr('Voir la construction / les notices'));self.open.setEnabled(False)
         for b in (self.run,self.more,self.stop,self.open):buttons.addWidget(b)
@@ -29,17 +30,19 @@ class StockMocsDialog(QDialog):
         self.table.itemSelectionChanged.connect(self.select);self.table.itemDoubleClicked.connect(lambda _:self.open_selected())
     def global_search(self):
         from .moc_search import MocSearchDialog
-        MocSearchDialog(self.db,self.engine,self).exec()
+        show_window(MocSearchDialog(self.db,self.engine,self),self)
 
     def controls(self,busy):
         self.busy=busy;self.run.setEnabled(not busy);self.more.setEnabled(not busy and self.cursor<len(self.sets));self.stop.setEnabled(busy)
     def start(self):
         if self.busy:return
+        revision=self.db.stock_revision()
         if not self.db.setting('api_rb',''):
             self.status.setText(tr('Renseigne ta clé Rebrickable dans « API Keys », puis réessaie.'));return
         self.cancel.clear();self.rows=[];self.table.setRowCount(0);self.sets=[];self.cursor=0;self.photo.clear();self.photos+=1;self.controls(True)
         def done(result):
             if self.closed:return
+            if revision!=self.db.stock_revision():self.controls(False);self.stock_changed();return
             self.sets,warnings,excluded,cancelled=result;self.controls(False)
             self.status.setText(str(len(self.sets))+tr(' sets reconstituables avec le stock sélectionné.')+'\n'+'\n'.join(warnings))
             if self.sets and not cancelled:self.next_batch()
@@ -50,6 +53,7 @@ class StockMocsDialog(QDialog):
         if not self.closed:self.controls(False);self.status.setText(str(error))
     def next_batch(self):
         if self.busy:return
+        revision=self.db.stock_revision()
         self.cancel.clear();self.controls(True);start=self.cursor;end=min(start+20,len(self.sets));key=self.db.setting('api_rb','')
         def work(progress):
             found=[];cursor=start;errors=[]
@@ -73,6 +77,7 @@ class StockMocsDialog(QDialog):
             return found,cursor,errors
         def done(result):
             if self.closed:return
+            if revision!=self.db.stock_revision():self.controls(False);self.stock_changed();return
             found,self.cursor,errors=result
             lookup={r['set_num']:r for r in self.rows}
             for row,ref in found:
@@ -102,3 +107,7 @@ class StockMocsDialog(QDialog):
         if rb_link(url):QDesktopServices.openUrl(QUrl(url))
     def done(self,result):
         self.closed=True;self.photos+=1;self.cancel.set();super().done(result)
+    def stock_changed(self):
+        self.cancel.set();self.sets=[];self.cursor=0;self.more.setEnabled(False)
+        self.rows=[];self.table.setRowCount(0);self.photo.clear();self.photos+=1;self.open.setEnabled(False)
+        self.status.setText(tr('Le stock a changé : relance la recherche pour actualiser les résultats.'))

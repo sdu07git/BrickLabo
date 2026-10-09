@@ -1,4 +1,5 @@
 from __future__ import annotations
+from .windows import show_window
 
 from .i18n import tr,tf
 
@@ -98,12 +99,11 @@ class Catalogue(QWidget):
     def advanced_filters(self):
         from .search_filters import FilterDialog
         d=FilterDialog(self)
-        if d.exec()==d.DialogCode.Accepted:
-            self.apply_filter_state(d.state())
+        show_window(d,self,lambda result:self.apply_filter_state(d.state()) if result==d.DialogCode.Accepted else None)
 
     def search_mocs(self):
         from .moc_search import MocSearchDialog
-        MocSearchDialog(self.db,self.engine,self,keyword=self.search.text().strip()).exec()
+        show_window(MocSearchDialog(self.db,self.engine,self,keyword=self.search.text().strip()),self)
 
     def filter_state(self):
         return {'search':self.search.text(),'category':self.category.currentData() or '',
@@ -299,11 +299,11 @@ class Catalogue(QWidget):
 
     def show_alternates(self,item):
         from .alternates import AlternatesDialog
-        AlternatesDialog(self.db,self.engine,item,self).exec()
+        show_window(AlternatesDialog(self.db,self.engine,item,self),self)
 
     def show_box(self,item):
         from .boxes import BoxDialog
-        if self.engine:BoxDialog(self.db,self.engine,item,self).exec()
+        if self.engine:show_window(BoxDialog(self.db,self.engine,item,self),self)
 
     def delete_selected(self):
         selected=self.selection()

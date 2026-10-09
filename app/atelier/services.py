@@ -19,6 +19,9 @@ from PIL import Image
 from .version import VERSION
 from .fileio import compact_digest,atomic_output
 
+_rb_lock=threading.Lock()
+_rb_last_call=0.0
+
 
 def rebrickable_set_photo(html,ref,page_url):
     """Read the set's published sharing image, never a recommended set image."""
@@ -74,10 +77,19 @@ class API:
     def __init__(self,db):self.db=db
 
     def rb(self,path):
+        global _rb_last_call
         key=self.db.setting('api_rb','')
         if not key:raise ValueError(tr('Clé Rebrickable manquante'))
         url=path if path.startswith('https://rebrickable.com/api/') else 'https://rebrickable.com/api/v3/lego/'+path
-        return json.loads(request(url,{'Authorization':'key '+key}))
+        if not url.startswith('https://rebrickable.com/api/v3/lego/'):raise ValueError(tr('Lien API Rebrickable invalide'))
+        with _rb_lock:
+            delay=max(0,1.1-(time.monotonic()-_rb_last_call))
+            cancel=getattr(self,'cancel',None)
+            if cancel:
+                if cancel.wait(delay):raise ValueError(tr('Chargement arrêté.'))
+            elif delay:time.sleep(delay)
+            try:return json.loads(request(url,{'Authorization':'key '+key}))
+            finally:_rb_last_call=time.monotonic()
 
     def bl(self,path):
         credentials=self.db.setting('api_bl',{})
