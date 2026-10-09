@@ -1,10 +1,11 @@
-BrickLabo v0.1.42
+BrickLabo v0.1.43
 
 Extraire le ZIP entier dans un nouveau dossier accessible en ecriture.
 Fermer l ancienne version, conserver une sauvegarde et copier Donnees a cote du nouvel exe.
 Lancer BrickLabo.exe ; conserver app, ressources, documentation et licences ensemble.
 Mises a jour suivantes : Mise a jour des donnees > Rechercher une mise a jour du logiciel.
 Le ZIP complet et son SHA-256 sont verifies ; Donnees est conserve.
+Mon rangement : Disposer les meubles ou Organiser le meuble > Positionner / Supprimer le meuble.
 Aide : documentation/AIDE.html. Historique : documentation/NOUVEAUTES.txt.
 Diagnostic : BrickLabo.exe --self-test, puis Donnees/diagnostic.json.
 En cas d erreur de chemin, deplacer tout le logiciel vers un chemin plus court.

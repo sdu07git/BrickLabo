@@ -1,7 +1,17 @@
-# BrickLabo — v0.1.42
+# BrickLabo — v0.1.43
 
-Windows desktop software for LEGO catalogues, stock, build searches and labels. This version uses the delivered v0.1.41 sources, based on the original v0.1.28.
+Windows desktop software for LEGO catalogues, stock, build searches and labels. This version uses the delivered v0.1.42 sources, based on the original v0.1.28.
 
+
+## Cabinet arrangement and deletion — v0.1.43
+
+In **My storage**, **All cabinets** displays every cabinet at its saved position and searches across the layout. Uncheck it to view only the selected cabinet. Clicking a drawer selects its cabinet and displays its contents.
+
+**Arrange cabinets** lets you drag a whole cabinet by its front or name, alongside or above others. Click **Finish arranging** to select drawers again. Positions are saved only when you release the mouse and survive restarting. Moving, rotating and zooming do not generate rendering files.
+
+For precise placement, use **Organise cabinet → Position cabinet…**. Choose a reference cabinet and **To the left**, **To the right**, **Above** or **Below**, adjust the gap, then save. Coordinates use standard drawer units; a negative vertical value places the cabinet above the origin. This window also allows renaming. Cabinets cannot overlap; enlarging a drawer into a neighbouring cabinet is rejected until that cabinet is moved.
+
+**Organise cabinet → Delete cabinet** asks for confirmation, then removes that cabinet, its drawers and their storage links. Loose parts, sets and their quantities are preserved. Editors belonging to the deleted cabinet close. Positions are included in **Cabinets and locations** backups; old cabinets and backups without coordinates are placed alongside each other.
 
 ## Updates from GitHub — v0.1.42
 
@@ -93,12 +103,13 @@ Read [English help](documentation/AIDE.en.html) and [component licences](documen
 | 0.1.40 | Storage wall, independent windows and inventory batches. |
 | 0.1.41 | Transparent label backgrounds, exports and printing. |
 | 0.1.42 | Verified GitHub updates, installation after shutdown and rollback. |
+| 0.1.43 | Cabinet deletion and persistent arrangements alongside or above others. |
 
 One bilingual [NOUVEAUTES.txt](documentation/NOUVEAUTES.txt) holds cumulative notes. This branch does not document a released 0.1.29. The 0.1.28b / Range variants were not used as the baseline. Test reports are excluded from the source package.
 
 ## Development and diagnostics
 
-The repository retains the source ZIP layout. `ressources/complete.zip` is excluded from Git because it exceeds GitHub’s file size limit. Copy this LDraw archive from **BrickLabo_v0.1.42_Sources.zip** or **BrickLabo_v0.1.42_Complet.zip**, available in [releases](https://github.com/sdu07git/BrickLabo/releases), to recover the shipped models and run tests that need them. GitHub’s automatic “Source code” archives omit this file.
+The repository retains the source ZIP layout. `ressources/complete.zip` is excluded from Git because it exceeds GitHub’s file size limit. Copy this LDraw archive from **BrickLabo_v0.1.43_Sources.zip** or **BrickLabo_v0.1.43_Complet.zip**, available in [releases](https://github.com/sdu07git/BrickLabo/releases), to restore the shipped models and run the tests that depend on them. GitHub’s automatic “Source code” archives do not include this file.
 
 Install Python 3.12 and `app/requirements.txt` in a virtual environment, then run `python app/bootstrap.py`. Run `python tools/run_tests.py` for tests. On Linux with MinGW-w64, run `python tools/build_distribution.py path/BrickLabo_v0.1.37_Complet.zip output_folder`. The tool reuses libraries from the previous complete package and also accepts the old v0.1.36 layout. `BrickLabo.exe --self-test` writes `Donnees/diagnostic.json`; console equivalent: `app/python.exe -B app/bootstrap.py --self-test`. Tests run on Qt/Linux; the compiled launcher and archive structure are inspected. Native Windows execution remains to be checked on Windows.
 

@@ -1,11 +1,35 @@
 """Drawer geometry and loose-stock links; locations never duplicate stock."""
 from .data import normalize
 from .i18n import tr
+import math
+
+MAX_POSITION=100000
+
+
+def extent(wall):
+    """Standard drawer units, including the cabinet frame and name strip."""
+    return wall['columns']+.3,wall['rows']+.5
+
+
+def coordinate(value):
+    if isinstance(value,bool) or not isinstance(value,(int,float)) or not math.isfinite(value) or abs(value)>MAX_POSITION:
+        raise ValueError(tr('Position du meuble invalide.'))
+    return round(float(value),1)
+
+
+def check_position(c,wall_id,x,y,columns,rows):
+    x,y=coordinate(x),coordinate(y);width,height=extent({'columns':columns,'rows':rows})
+    for other in c.execute('SELECT * FROM storage_walls WHERE id<>?',(wall_id or -1,)):
+        w,h=extent(other)
+        if x<other['x']+w-1e-8 and other['x']<x+width-1e-8 and y<other['y']+h-1e-8 and other['y']<y+height-1e-8:
+            raise ValueError(tr('Cet emplacement chevauche un autre meuble. Déplace le meuble ou augmente l’écart.'))
+    return x,y
 
 
 def prepare(c):
     c.executescript('''
-    CREATE TABLE IF NOT EXISTS storage_walls(id INTEGER PRIMARY KEY,name TEXT NOT NULL,columns INTEGER NOT NULL,rows INTEGER NOT NULL);
+    CREATE TABLE IF NOT EXISTS storage_walls(id INTEGER PRIMARY KEY,name TEXT NOT NULL,columns INTEGER NOT NULL,rows INTEGER NOT NULL,
+      x REAL NOT NULL DEFAULT 0,y REAL NOT NULL DEFAULT 0);
     CREATE TABLE IF NOT EXISTS storage_drawers(id INTEGER PRIMARY KEY,wall_id INTEGER NOT NULL REFERENCES storage_walls(id) ON DELETE CASCADE,
       col INTEGER NOT NULL,row INTEGER NOT NULL,width INTEGER NOT NULL DEFAULT 1,height INTEGER NOT NULL DEFAULT 1,name TEXT NOT NULL DEFAULT '',
       UNIQUE(wall_id,col,row));
@@ -13,13 +37,25 @@ def prepare(c):
       item_id INTEGER NOT NULL REFERENCES items(id),color TEXT NOT NULL DEFAULT '',PRIMARY KEY(drawer_id,item_id,color));
     CREATE INDEX IF NOT EXISTS idx_storage_item ON storage_contents(item_id,color);
     ''')
+    fields={row['name'] for row in c.execute('PRAGMA table_info(storage_walls)')}
+    if 'x' not in fields:c.execute('ALTER TABLE storage_walls ADD COLUMN x REAL NOT NULL DEFAULT 0')
+    if 'y' not in fields:c.execute('ALTER TABLE storage_walls ADD COLUMN y REAL NOT NULL DEFAULT 0')
+    if 'x' not in fields or 'y' not in fields:
+        # Existing independent cabinets gain a usable overview once, retaining
+        # drawer identities and every stock/location association.
+        position=0.0
+        for wall in c.execute('SELECT id,columns FROM storage_walls ORDER BY id').fetchall():
+            c.execute('UPDATE storage_walls SET x=?,y=0 WHERE id=?',(position,wall['id']))
+            position=round(position+wall['columns']+.5,1)
 
 
-def create_wall(db,name,columns=4,rows=6):
+def create_wall(db,name,columns=4,rows=6,x=None,y=0):
     name=name.strip()
     if not name or not 1<=columns<=100 or not 1<=rows<=100:raise ValueError(tr('Nom et dimensions du meuble invalides.'))
     with db.connect() as c:
-        wall_id=c.execute('INSERT INTO storage_walls(name,columns,rows) VALUES(?,?,?)',(name,columns,rows)).lastrowid
+        if x is None:x=round(c.execute('SELECT COALESCE(MAX(x+columns+.5),0) FROM storage_walls').fetchone()[0],1)
+        x,y=check_position(c,None,x,y,columns,rows)
+        wall_id=c.execute('INSERT INTO storage_walls(name,columns,rows,x,y) VALUES(?,?,?,?,?)',(name,columns,rows,x,y)).lastrowid
         c.executemany('INSERT INTO storage_drawers(wall_id,col,row) VALUES(?,?,?)',((wall_id,col,row) for row in range(1,rows+1) for col in range(1,columns+1)))
     return wall_id
 
@@ -27,7 +63,52 @@ def create_wall(db,name,columns=4,rows=6):
 def walls(db):return db.rows('SELECT * FROM storage_walls ORDER BY id')
 
 
+def update_wall(db,wall_id,name,x,y):
+    if not name.strip():raise ValueError(tr('Nom du meuble invalide.'))
+    with db.connect() as c:
+        wall=c.execute('SELECT * FROM storage_walls WHERE id=?',(wall_id,)).fetchone()
+        if not wall:raise ValueError(tr('Meuble introuvable.'))
+        x,y=check_position(c,wall_id,x,y,wall['columns'],wall['rows'])
+        if (name.strip(),x,y)!=(wall['name'],wall['x'],wall['y']):
+            c.execute('UPDATE storage_walls SET name=?,x=?,y=? WHERE id=?',(name.strip(),x,y,wall_id))
+
+
+def position_wall(db,wall_id,x,y):
+    with db.connect() as c:
+        wall=c.execute('SELECT * FROM storage_walls WHERE id=?',(wall_id,)).fetchone()
+        if not wall:raise ValueError(tr('Meuble introuvable.'))
+        x,y=check_position(c,wall_id,x,y,wall['columns'],wall['rows'])
+        if (x,y)!=(wall['x'],wall['y']):c.execute('UPDATE storage_walls SET x=?,y=? WHERE id=?',(x,y,wall_id))
+
+
+def relative_position(db,wall_id,reference_id,direction,gap=.2):
+    gap=coordinate(gap)
+    if gap<0 or wall_id==reference_id:raise ValueError(tr('Position relative du meuble invalide.'))
+    selected=db.rows('SELECT * FROM storage_walls WHERE id IN (?,?)',(wall_id,reference_id))
+    by_id={wall['id']:wall for wall in selected}
+    if wall_id not in by_id or reference_id not in by_id:raise ValueError(tr('Meuble introuvable.'))
+    wall,reference=by_id[wall_id],by_id[reference_id];w,h=extent(wall);rw,rh=extent(reference)
+    x,y=reference['x'],reference['y']
+    if direction=='left':x-=w+gap
+    elif direction=='right':x+=rw+gap
+    elif direction=='above':y-=h+gap
+    elif direction=='below':y+=rh+gap
+    else:raise ValueError(tr('Position relative du meuble invalide.'))
+    return coordinate(x),coordinate(y)
+
+
+def delete_wall(db,wall_id):
+    with db.connect() as c:
+        if not c.execute('SELECT 1 FROM storage_walls WHERE id=?',(wall_id,)).fetchone():raise ValueError(tr('Meuble introuvable.'))
+        # FK cascades remove drawers and location links; stocks are independent.
+        c.execute('DELETE FROM storage_walls WHERE id=?',(wall_id,))
+
+
 def drawers(db,wall_id):return db.rows('SELECT * FROM storage_drawers WHERE wall_id=? ORDER BY row,col',(wall_id,))
+
+
+def layout_drawers(db,wall_id=None):
+    return db.rows('SELECT * FROM storage_drawers'+(' WHERE wall_id=?' if wall_id is not None else '')+' ORDER BY wall_id,row,col',(wall_id,) if wall_id is not None else ())
 
 
 def address(drawer):return tr('Colonne')+' '+str(drawer['col'])+' · '+tr('Tiroir')+' '+str(drawer['row'])
@@ -38,6 +119,7 @@ def save_drawer(db,wall_id,col,row,width=1,height=1,name='',drawer_id=None):
     with db.connect() as c:
         wall=c.execute('SELECT * FROM storage_walls WHERE id=?',(wall_id,)).fetchone()
         if not wall:raise ValueError(tr('Meuble introuvable.'))
+        check_position(c,wall_id,wall['x'],wall['y'],max(wall['columns'],col+width-1),max(wall['rows'],row+height-1))
         if drawer_id and not c.execute('SELECT 1 FROM storage_drawers WHERE id=? AND wall_id=?',(drawer_id,wall_id)).fetchone():raise ValueError(tr('Tiroir introuvable.'))
         others=c.execute('SELECT * FROM storage_drawers WHERE wall_id=? AND id<>?',(wall_id,drawer_id or -1)).fetchall()
         overlapping=[d for d in others if col<d['col']+d['width'] and d['col']<col+width and row<d['row']+d['height'] and d['row']<row+height]
@@ -66,10 +148,10 @@ def contents(db,drawer_id):
        WHERE p.drawer_id=? ORDER BY i.source,i.ref,p.color''',(drawer_id,))
 
 
-def wall_contents(db,wall_id):
+def wall_contents(db,wall_id=None):
     return db.rows('''SELECT p.drawer_id,i.*,p.color AS chosen_color,COALESCE(s.quantity,0) AS chosen_quantity
       FROM storage_contents p JOIN storage_drawers d ON d.id=p.drawer_id JOIN items i ON i.id=p.item_id
-      LEFT JOIN stock s ON s.item_id=p.item_id AND s.color=p.color WHERE d.wall_id=? ORDER BY d.row,d.col,i.ref''',(wall_id,))
+      LEFT JOIN stock s ON s.item_id=p.item_id AND s.color=p.color'''+(' WHERE d.wall_id=?' if wall_id is not None else '')+' ORDER BY d.wall_id,d.row,d.col,i.ref',(wall_id,) if wall_id is not None else ())
 
 
 def search(db,query,wall_id=None):
