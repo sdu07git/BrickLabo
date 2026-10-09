@@ -1,4 +1,7 @@
 """Resolution of general and per-label edge styles, with legacy migration."""
+def default_style():
+    return {'black':86.3,'width':1.0}
+
 def normalize_style(value):
     value=value or {}
     return {'black':round(max(0,min(100,float(value.get('black',100)))),1),

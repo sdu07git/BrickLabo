@@ -28,7 +28,7 @@ class EdgeDialog(QDialog):
         buttons=QDialogButtonBox(QDialogButtonBox.StandardButton.Save|QDialogButtonBox.StandardButton.Cancel);buttons.button(QDialogButtonBox.StandardButton.Save).setText(tr('Appliquer comme réglage général'));buttons.button(QDialogButtonBox.StandardButton.Cancel).setText(tr('Annuler'));buttons.accepted.connect(self.accept);buttons.rejected.connect(self.reject);root.addWidget(buttons)
         self.timer=QTimer(self);self.timer.setSingleShot(True);self.timer.setInterval(140);self.timer.timeout.connect(self.render_preview);self.controls.changed.connect(self.refresh);self.refresh()
     def settings(self):return self.controls.settings()
-    def refresh(self):self.revision+=1;self.timer.start()
+    def refresh(self):self.revision+=1;self.timer.start(140)
     def render_preview(self):
         if self.closed or self.running:return
         revision=self.revision;settings=self.settings()
@@ -37,7 +37,9 @@ class EdgeDialog(QDialog):
         def work(progress):
             visuals={}
             for view,key,size in [('perspective','main',(620,420)),('top','top',(240,180)),('side','side',(240,160))]:
+                if self.closed or revision!=self.revision:return None
                 visuals[key],visuals['bounds']=self.engine.render_3d(self.item,size,self.item.get('chosen_color') or '',view,edge_settings=settings)
+            if self.closed or revision!=self.revision:return None
             return visuals['main'],render_label(self.item,self.db,visuals)
         def finish(result=None,error=None):
             self.running=False
@@ -45,7 +47,7 @@ class EdgeDialog(QDialog):
             if revision==self.revision:
                 if result:scalable(self.preview,result[0],560,350);scalable(self.label,result[1],560,200,show_transparency=True);self.status.setText(tr('Aperçu : ')+self.item['ref'])
                 else:self.preview.clear();self.label.clear();self.status.setText(tr('Aperçu 3D indisponible : ')+str(error))
-            else:self.timer.start()
+            else:self.timer.start(0)
         async_task(self,work,lambda result:finish(result),lambda error:finish(error=error))
     def reload_presets(self,selected=None):
         self.presets.blockSignals(True);self.presets.clear();self.presets.addItem(tr('Charger un réglage…'),None)

@@ -1,7 +1,18 @@
-"""Bounded image memory and shared in-flight calculations."""
+"""Bounded image/array memory and shared in-flight calculations."""
 from collections import OrderedDict
 from concurrent.futures import Future
 import threading
+
+def memory_cost(value,seen=None):
+    """Count buffers in compound render results, without counting aliases twice."""
+    seen=set() if seen is None else seen
+    if id(value) in seen:return 0
+    seen.add(id(value))
+    if isinstance(value,dict):return 128+sum(memory_cost(v,seen) for v in value.values())
+    if isinstance(value,(list,tuple)):return 128+sum(memory_cost(v,seen) for v in value)
+    if hasattr(value,'nbytes'):return int(value.nbytes)+128
+    if hasattr(value,'width') and hasattr(value,'height'):return value.width*value.height*4+128
+    return 64
 
 class MemoryCache:
     def __init__(self,limit=64*1024*1024):
@@ -14,7 +25,7 @@ class MemoryCache:
             if owner:future=Future();self.pending[key]=(future,generation)
         if not owner:return future.result()
         try:
-            value=factory();image=value[0] if isinstance(value,tuple) else value;cost=getattr(image,'width',0)*getattr(image,'height',0)*4+128
+            value=factory();cost=memory_cost(value)
             with self.lock:
                 if generation==self.generation and cost<=self.limit:
                     self.items[key]=(value,cost);self.bytes+=cost

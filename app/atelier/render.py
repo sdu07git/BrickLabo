@@ -15,6 +15,7 @@ import numpy as np
 from PIL import Image, ImageDraw
 from .viewpoint import normalize_camera
 from .fileio import shared_reader
+from .memory_cache import MemoryCache
 
 
 _RENDER_SLOTS=threading.BoundedSemaphore(2)
@@ -40,6 +41,7 @@ class LDraw:
     def __init__(self,path,user_supplement=None):
         self.mesh_cache=OrderedDict();self.mesh_bytes=0;self.mesh_limit=32*1024*1024;self.mesh_lock=threading.RLock()
         self.text_cache=OrderedDict();self.text_bytes=0;self.text_limit=8*1024*1024
+        self.frame_cache=MemoryCache(32*1024*1024);self.edge_cache=MemoryCache(16*1024*1024)
         self.path=Path(path)
         self.archive=self.supplement=self.user_supplement=None;self.palette={}
         try:
@@ -76,6 +78,7 @@ class LDraw:
             for archive in (self.archive,self.supplement,self.user_supplement):
                 if archive is not None:archive.close()
             self.mesh_cache.clear();self.mesh_bytes=0;self.text_cache.clear();self.text_bytes=0
+            self.frame_cache.clear();self.edge_cache.clear()
 
     def _read(self,name):
         name=name.replace('\\','/').lower()
@@ -109,6 +112,7 @@ class LDraw:
 
     def clear_mesh_cache(self):
         with self.mesh_lock:self.mesh_cache.clear();self.mesh_bytes=0
+        self.frame_cache.clear();self.edge_cache.clear()
 
     def mesh(self,ref):
         with self.mesh_lock:
@@ -157,6 +161,27 @@ class LDraw:
         with _RENDER_SLOTS:return self._render(ref,size,color,view,outlines,camera,edge_strength,edge_settings)
 
     def _render(self,ref,size=(500,330),color='#f3d55b',view='perspective',outlines=True,camera=None,edge_strength=0,edge_settings=None):
+        angles=tuple(normalize_camera(camera).values()) if camera is not None and view not in ('top','side') else None
+        key=(self.frame_cache.generation,ref,tuple(size),color,view,angles)
+        frame=self.frame_cache.get_or_create(key,lambda:self._frame(ref,size,color,view,camera))
+        rgba=frame['rgba'].copy()
+        if outlines:
+            if edge_settings is None:self._legacy_edges(rgba,frame,edge_strength)
+            else:
+                from .edge_style import normalize_style
+                settings=normalize_style(edge_settings)
+                if settings['black']>0:
+                    mask=self.edge_cache.get_or_create((key,settings['width']),lambda:self._edge_coverage(frame,settings['width']))
+                    covered=mask>0
+                    coverage=mask[covered]*np.float32(settings['black']/100)
+                    old=rgba[covered].astype(np.float32);alpha=old[:,3]/255
+                    combined=coverage+alpha*(1-coverage)
+                    old[:,:3]*=(alpha*(1-coverage)/np.maximum(combined,1e-8))[:,None]
+                    old[:,3]=combined*255;rgba[covered]=np.rint(old).astype(np.uint8)
+        return Image.fromarray(rgba).resize(size,Image.Resampling.LANCZOS),frame['bounds']
+
+    def _frame(self,ref,size,color,view,camera):
+        """The surface, depth and projected edges do not depend on the ink style."""
         triangles,edges,conditional,bounds=self.mesh(ref)
         width,height=size;ss=2;w=width*ss;h=height*ss
         if view=='top':
@@ -218,37 +243,44 @@ class LDraw:
             else:base=rgb
             rgba[ymin:ymax+1,xmin:xmax+1][mask]=(*[int(v*shade) for v in base],255)
             chunk[mask]=zz[mask]
-        if outlines:
-            level=max(0,min(2,int(edge_strength)))
-            ink=(35,35,35,255) if level==0 else (0,0,0,255)
-            radius=1.5 if level==1 else 2
-            offsets=[(0,0),(1,0),(0,1)] if level==0 else [(dx,dy) for dx in range(-2,3) for dy in range(-2,3) if dx*dx+dy*dy<=radius*radius]
-            custom=edge_settings is not None
-            if custom:
-                from .edge_style import normalize_style
-                settings=normalize_style(edge_settings);opacity=settings['black']/100;radius=settings['width']*ss/2
-                reach=math.ceil(radius+.5)
-                offsets=[(dx,dy) for dx in range(-reach,reach+1) for dy in range(-reach,reach+1) if dx*dx+dy*dy<(radius+.5)**2]
-            visible_edges=list(edges)
-            for x,c in conditional:
-                p=project(x);v=p[1,:2]-p[0,:2]
-                cross1=v[0]*(p[2,1]-p[0,1])-v[1]*(p[2,0]-p[0,0])
-                cross2=v[0]*(p[3,1]-p[0,1])-v[1]*(p[3,0]-p[0,0])
-                if cross1*cross2>=0:visible_edges.append((x[:2],c))
-            for x,c in visible_edges:
-                p=project(x)
-                count=max(2,int(np.linalg.norm(p[1,:2]-p[0,:2])*1.5))
-                samples=p[0]+np.linspace(0,1,count)[:,None]*(p[1]-p[0])
-                for dx,dy in offsets:
-                    px=np.rint(samples[:,0]).astype(int)+dx;py=np.rint(samples[:,1]).astype(int)+dy
-                    valid=(px>=0)&(px<w)&(py>=0)&(py<h)
-                    px=px[valid];py=py[valid];pz=samples[:,2][valid]
-                    visible=pz>=zbuf[py,px]-.75
-                    if not custom:rgba[py[visible],px[visible]]=ink
-                    elif opacity>0:
-                        coverage=max(0,min(1,radius+.5-math.hypot(dx,dy)))*opacity
-                        old=rgba[py[visible],px[visible]].astype(float);alpha=old[:,3]/255
-                        combined=coverage+alpha*(1-coverage)
-                        old[:,:3]*=(alpha*(1-coverage)/np.maximum(combined,1e-8))[:,None]
-                        old[:,3]=combined*255;rgba[py[visible],px[visible]]=np.rint(old).astype(np.uint8)
-        return Image.fromarray(rgba).resize(size,Image.Resampling.LANCZOS),bounds
+        projected=[project(x) for x,c in edges]
+        for x,c in conditional:
+            p=project(x);v=p[1,:2]-p[0,:2]
+            cross1=v[0]*(p[2,1]-p[0,1])-v[1]*(p[2,0]-p[0,0])
+            cross2=v[0]*(p[3,1]-p[0,1])-v[1]*(p[3,0]-p[0,0])
+            if cross1*cross2>=0:projected.append(p[:2])
+        samples=[]
+        for p in projected:
+            count=max(2,int(np.linalg.norm(p[1,:2]-p[0,:2])*1.5))
+            samples.append(p[0]+np.linspace(0,1,count)[:,None]*(p[1]-p[0]))
+        samples=np.concatenate(samples) if samples else np.empty((0,3))
+        return {'rgba':rgba,'depth':zbuf,'x':np.rint(samples[:,0]).astype(np.int32),
+                'y':np.rint(samples[:,1]).astype(np.int32),'z':samples[:,2],'bounds':bounds}
+
+    @staticmethod
+    def _visible_samples(frame,dx,dy):
+        h,w=frame['depth'].shape
+        px=frame['x']+dx;py=frame['y']+dy
+        valid=(px>=0)&(px<w)&(py>=0)&(py<h)
+        px=px[valid];py=py[valid];pz=frame['z'][valid]
+        visible=pz>=frame['depth'][py,px]-.75
+        return py[visible],px[visible]
+
+    def _legacy_edges(self,rgba,frame,edge_strength):
+        level=max(0,min(2,int(edge_strength)))
+        ink=(35,35,35,255) if level==0 else (0,0,0,255)
+        radius=1.5 if level==1 else 2
+        offsets=[(0,0),(1,0),(0,1)] if level==0 else [(dx,dy) for dx in range(-2,3) for dy in range(-2,3) if dx*dx+dy*dy<=radius*radius]
+        for dx,dy in offsets:rgba[self._visible_samples(frame,dx,dy)]=ink
+
+    def _edge_coverage(self,frame,width):
+        """Rasterise all strokes together; crossing lines keep the same opacity."""
+        radius=width  # The surface uses two samples per output pixel.
+        reach=math.ceil(radius+.5);mask=np.zeros(frame['depth'].shape,dtype=np.float32)
+        for dx in range(-reach,reach+1):
+            for dy in range(-reach,reach+1):
+                coverage=max(0,min(1,radius+.5-math.hypot(dx,dy)))
+                if coverage:
+                    indices=self._visible_samples(frame,dx,dy)
+                    mask[indices]=np.maximum(mask[indices],coverage)
+        return mask

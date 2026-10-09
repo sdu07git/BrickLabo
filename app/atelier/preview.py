@@ -36,7 +36,7 @@ class VisualEngine:
         from .memory_cache import MemoryCache
         self.render_cache=MemoryCache()
         self.renderer_lock=threading.RLock()
-        self.db=db;self.images=Images(db.path.parent/'images');self.ldraw=None;self.ldraw_path='';self.ldraw_stamp=();self.enrichment_attempts=set();self.page_attempts=set()
+        self.db=db;self.images=Images(db.path.parent/'images');self.ldraw=None;self.ldraw_path='';self.ldraw_stamp=();self.enrichment_attempts=set();self.page_attempts=set();self.reference_attempts=set()
 
     def renderer(self):
         with self.renderer_lock:
@@ -129,8 +129,9 @@ class VisualEngine:
                 # Old catalog entries can have only a small GIF/JPEG or a large image.
                 variants += [base+legacy+ref+ext for ext in ('.gif','.png','.jpg','.jpeg')]
                 variants += [base+large+ref+ext for ext in ('.png','.gif','.jpg')]
-                path={'set':'SN/','minifig':'MN/','part':'PN/0/','instructions':'IN/','box':'ON/'}[item['kind']]
+                path={'set':'SN/0/','minifig':'MN/0/','part':'PN/0/','instructions':'IN/','box':'ON/'}[item['kind']]
                 variants += [base+path+ref+ext for ext in ('.png','.gif','.jpg','.webp')]
+                if item['kind']=='minifig':variants += [base+'MN/'+ref+ext for ext in ('.png','.gif','.jpg','.webp')]
                 candidates=(variants[:3]+candidates+variants[3:]) if chosen.isdigit() and item['kind']=='part' else candidates+variants
         for url in dict.fromkeys(candidates):
             try:
@@ -157,8 +158,12 @@ class VisualEngine:
             self.page_attempts.add(item['id'])
             try:
                 import urllib.parse
+                from .cross_source import rebrickable_references,save_references
                 page='https://rebrickable.com/sets/'+urllib.parse.quote(item['ref'],safe='')+'/'
-                published=rebrickable_set_photo(request(page,timeout=12).decode('utf-8','replace'),item['ref'],page)
+                self.reference_attempts.add(('RB','set',item['ref']))
+                html=request(page,timeout=12).decode('utf-8','replace')
+                save_references(self.db,item,rebrickable_references(html,item))
+                published=rebrickable_set_photo(html,item['ref'],page)
                 if published:
                     image=self.images.get(published,True)
                     if image is not None and image.width>3 and image.height>3:
@@ -175,7 +180,7 @@ class VisualEngine:
 
     def bricklink_fallback(self,item,download=True,color=None):
         from .cross_source import bricklink_reference
-        ref=bricklink_reference(self.db,item,download)
+        ref=bricklink_reference(self.db,item,download,attempted_pages=self.reference_attempts)
         if not ref:return None
         native={**item,'source':'BL','ref':ref,'image':'','inventory_image':''}
         chosen=str(color if color is not None else self.db.visual(item['id'])['color'])
@@ -201,7 +206,8 @@ class VisualEngine:
         key=(identity,ref,tuple(size),rgb,view,json.dumps(options,sort_keys=True))
         return self.render_cache.get_or_create(key,lambda:renderer.render(ref,size,rgb,view,**options))
 
-    def visuals(self,item,color=None,download=False,template=None,mode=None,_composition=True):
+    def visuals(self,item,color=None,download=False,template=None,mode=None,_composition=True,cancelled=None):
+        if cancelled and cancelled():return {},''
         from .labels import template_for_item
         template=template or template_for_item(item,self.db)
         from .edge_style import style_for_item
@@ -214,18 +220,16 @@ class VisualEngine:
         if item['kind']=='set':
             im=self.photo(item,download,chosen)
             out={'main':im}
-            if _composition:
-                from .label_pieces import enrich
-                enrich(self,template,out,download)
-            return out,''
-        if v['mode']=='3d' and not v['image']:
+        elif v['mode']=='3d' and not v['image']:
             try:
                 r=self.renderer()
                 if r:
                     for view,key,sz in [('perspective','main',(620,420)),('top','top',(240,180)),('side','side',(240,160))]:
+                        if cancelled and cancelled():return {},''
                         out[key],out['bounds']=self.render_3d(item,sz,chosen,view,edge_settings=style)
                 else:note=tr('LDraw non importé : photo si disponible.')
             except RenderError as e:note=str(e)
+        if cancelled and cancelled():return {},''
         if 'main' not in out:
             try:out['main']=self.photo(item,download,chosen)
             except Exception as e:note=tr('Photo inaccessible : ')+str(e)
@@ -233,9 +237,11 @@ class VisualEngine:
         if provenance:
             source={'BL':'BrickLink','RB':'Rebrickable'}[provenance['source']]
             caption=tr('Photo ')+source+' : '+provenance['ref']
-            if provenance['ref']!=item['ref']:caption+=tr(' — variante de ')+item['ref']
+            if provenance['ref']!=item['ref']:
+                caption+=tr(' — référence Rebrickable : ')+item['ref'] if item['source']=='RB' and provenance['source']=='BL' else tr(' — variante de ')+item['ref']
             note=(note+'\n' if note else '')+caption
         if _composition:
+            if cancelled and cancelled():return {},''
             from .label_pieces import enrich
             enrich(self,template,out,download)
         return out,note
@@ -466,7 +472,7 @@ class Preview(QWidget):
         item=dict(self.item);token=self.token;self.render_running=True;self.render_dirty=False
         def work(progress):
             if token!=self.token or self.stopped:return None
-            visual,note=self.engine.visuals(item,item.get('chosen_color'),True)
+            visual,note=self.engine.visuals(item,item.get('chosen_color'),True,cancelled=lambda:token!=self.token or self.stopped)
             if token!=self.token or self.stopped:return None
             label=render_label(item,self.db,visual) if item['kind']!='set' else None
             return visual,label,note

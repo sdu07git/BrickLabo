@@ -1,8 +1,8 @@
 
 from .i18n import tr,tf
 from PySide6.QtCore import Qt,Signal
-from PySide6.QtWidgets import QWidget,QVBoxLayout,QHBoxLayout,QLabel,QSlider,QDoubleSpinBox,QCheckBox
-from .edge_style import normalize_style
+from PySide6.QtWidgets import QWidget,QVBoxLayout,QHBoxLayout,QLabel,QSlider,QDoubleSpinBox,QCheckBox,QPushButton
+from .edge_style import normalize_style,default_style
 
 class EdgeControls(QWidget):
     changed=Signal()
@@ -15,7 +15,10 @@ class EdgeControls(QWidget):
             root.addWidget(QLabel(title));row=QWidget();layout=QHBoxLayout(row);layout.setContentsMargins(0,0,0,0);slider=QSlider(Qt.Orientation.Horizontal);slider.setRange(round(lo*10),round(hi*10));spin=QDoubleSpinBox();spin.setRange(lo,hi);spin.setDecimals(1);spin.setSingleStep(.1);spin.setSuffix(suffix);layout.addWidget(slider,1);layout.addWidget(spin);root.addWidget(row)
             self.rows.append(row);self.sliders[key]=slider;self.spins[key]=spin
             slider.valueChanged.connect(lambda value,k=key:self.from_slider(k,value));spin.valueChanged.connect(lambda value,k=key:self.from_spin(k,value))
+        self.defaults=QPushButton(tr('Valeurs par défaut'));self.defaults.clicked.connect(self.reset_defaults);root.addWidget(self.defaults)
         self.set_settings(settings,False);self.loading=False
+    def reset_defaults(self):
+        self.set_settings(default_style(),False);self.changed.emit()
     def set_settings(self,value,inherit=False):
         self.loading=True
         for key,number in normalize_style(value).items():self.spins[key].setValue(number);self.sliders[key].setValue(round(number*10))

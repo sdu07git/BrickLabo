@@ -1,15 +1,18 @@
 """Application temporary sessions, protected by process leases."""
 import atexit
 import json
+import logging
 import os
 import re
 import shutil
+import stat
 import tempfile
 import threading
 import time
 import uuid
 from contextlib import contextmanager
 from pathlib import Path
+from .update_installer import native_path,linked
 _session=None;_lease=None;_previous=None;_active=set();_lock=threading.RLock()
 
 def _acquire(stream):
@@ -21,20 +24,35 @@ def _acquire(stream):
         import fcntl
         fcntl.flock(stream.fileno(),fcntl.LOCK_EX|fcntl.LOCK_NB)
 def is_live(folder):
-    if _session and Path(folder).resolve()==_session:return True
+    folder=native_path(folder)
+    if _session and folder.resolve()==native_path(_session).resolve():return True
     # A detached updater overlaps the GUI lease during a safe ownership handoff.
     for name in ('actif','maj'):
-        lease=Path(folder)/name
+        lease=folder/name
         if not lease.exists():continue
         try:
             with lease.open('r+b') as stream:_acquire(stream)
         except OSError:return True
     return False
+
+def _remove_readonly(function,path,error):
+    """Retry our temporary entries with the Windows read-only bit removed."""
+    path=native_path(path)
+    if not isinstance(error,PermissionError) or function not in (os.unlink,os.remove,os.rmdir) or linked(path):raise error
+    mode=path.stat().st_mode
+    if mode & stat.S_IWRITE:raise error
+    path.chmod(mode|stat.S_IWRITE);function(path)
+
+def _unlink(path):
+    path=native_path(path)
+    try:os.unlink(path)
+    except PermissionError as error:_remove_readonly(os.unlink,path,error)
+
 def purge(root,days=0,protected=(),sessions_only=False):
-    root=Path(root);removed=freed=0;errors=[];cutoff=time.time()-days*86400
+    root=native_path(root);removed=freed=0;errors=[];cutoff=time.time()-days*86400
     if root.is_symlink() or not root.is_dir():return removed,freed,errors
-    with _lock:active=set(_active)
-    protected=[Path(p).resolve() for p in protected]
+    with _lock:active={native_path(p).resolve() for p in _active}
+    protected=[native_path(p).resolve() for p in protected]
     # Retain the standalone recovery helper after a crash until the transaction
     # has been repaired, including when the user explicitly purges old temps.
     journal=root.parent/'maj'/'transaction.json'
@@ -52,7 +70,7 @@ def purge(root,days=0,protected=(),sessions_only=False):
             try:
                 resolved=path.resolve();stat=path.stat()
                 if not resolved.is_relative_to(root.resolve()) or any(resolved==p or resolved.is_relative_to(p) for p in active) or stat.st_mtime>=cutoff or any(resolved==p or resolved.is_relative_to(p) for p in protected):continue
-                path.unlink();removed+=1;freed+=stat.st_size
+                _unlink(path);removed+=1;freed+=stat.st_size
             except OSError as error:errors.append(str(error))
         if entry.is_dir():
             for folder in sorted((p for p in entry.rglob('*') if p.is_dir() and not p.is_symlink()),key=lambda p:len(p.parts),reverse=True):
@@ -63,12 +81,13 @@ def purge(root,days=0,protected=(),sessions_only=False):
     return removed,freed,errors
 def configure(root):
     global _session,_lease,_previous
-    temporary=Path(root)/'temp';temporary.mkdir(parents=True,exist_ok=True)
+    temporary=Path(root)/'temp';native_path(temporary).mkdir(parents=True,exist_ok=True)
     if _session and (_session.parent!=temporary.resolve() or not _session.exists()):close()
     if _session is None:
         _previous=({k:os.environ.get(k) for k in ('TEMP','TMP','TMPDIR')},tempfile.tempdir)
-        _session=(temporary/('s'+uuid.uuid4().hex[:10])).resolve();_session.mkdir();_lease=(_session/'actif').open('w+b');_lease.write(b'1');_lease.flush();_acquire(_lease)
-        purge(temporary,sessions_only=True)
+        _session=(temporary/('s'+uuid.uuid4().hex[:10])).resolve();native_path(_session).mkdir();_lease=native_path(_session/'actif').open('w+b');_lease.write(b'1');_lease.flush();_acquire(_lease)
+        _,_,errors=purge(temporary,sessions_only=True)
+        if errors:logging.getLogger('bricklabo').warning('Abandoned temporary session cleanup failed: %s',' ; '.join(errors))
     for key in ('TEMP','TMP','TMPDIR'):os.environ[key]=str(_session)
     tempfile.tempdir=str(_session);return _session
 def close():
@@ -83,8 +102,9 @@ def close():
                     if value is None:os.environ.pop(key,None)
                     else:os.environ[key]=value
             if tempfile.tempdir==str(session):tempfile.tempdir=_previous[1]
-        try:shutil.rmtree(session)
-        except OSError:pass
+        try:shutil.rmtree(native_path(session),onexc=_remove_readonly)
+        except FileNotFoundError:pass
+        except OSError:logging.getLogger('bricklabo').warning('Temporary session cleanup failed: %s',session,exc_info=True)
     _previous=None
 def register(path):
     with _lock:_active.add(Path(path).resolve())

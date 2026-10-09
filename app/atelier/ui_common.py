@@ -56,15 +56,21 @@ class Signals(QObject):
 
 
 class Task(QRunnable):
-    def __init__(self,fn):
-        super().__init__();self.fn=fn;self.signals=Signals()
+    def __init__(self,fn,cancel=None):
+        super().__init__();self.fn=fn;self.cancel=cancel;self.signals=Signals()
     def run(self):
-        try:self.signals.result.emit(self.fn(self.signals.progress.emit))
+        from .services import request_scope,RequestCancelled
+        try:
+            with request_scope(self.cancel):
+                result=None if self.cancel is not None and self.cancel.is_set() else self.fn(self.signals.progress.emit)
+                self.signals.result.emit(result)
+        except RequestCancelled:self.signals.result.emit(None)
         except Exception as e:self.signals.error.emit(error_message(e));traceback.print_exc()
 
 
 def async_task(parent,fn,done,fail=None,progress_callback=None):
-    t=Task(fn)
+    from .windows import application_owner
+    t=Task(fn,getattr(application_owner(parent),'_request_cancel',None))
     # Les connexions vers QObject sont mises en file vers le thread UI.
     bridge=TaskBridge(parent,done,fail,progress_callback)
     t.signals.result.connect(bridge.complete)
@@ -79,7 +85,11 @@ class TaskBridge(QObject):
         super().__init__(parent);self.done=done;self.fail=fail;self.progress_callback=progress_callback
         from .windows import task_owner
         self.owner=task_owner(parent)
+        from .windows import application_owner
+        self.application=application_owner(parent)
         if self.owner:self.owner._active_tasks+=1
+    def blocked(self):
+        return bool(getattr(self.application,'_closing',False) or self.owner and self.owner._closed_by_manager)
     def dispose(self):
         if self.owner:
             self.owner._active_tasks-=1
@@ -88,18 +98,18 @@ class TaskBridge(QObject):
     @Slot(object)
     def complete(self,result):
         try:
-            if not self.owner or not self.owner._closed_by_manager:self.done(result)
+            if not self.blocked():self.done(result)
         finally:self.dispose()
     @Slot(str)
     def failed(self,error):
         try:
-            if self.owner and self.owner._closed_by_manager:return
+            if self.blocked():return
             if self.fail:self.fail(error)
             else:QMessageBox.warning(self.parent(),tr('Opération impossible'),error)
         finally:self.dispose()
     @Slot(object)
     def progress(self,text):
-        if self.owner and self.owner._closed_by_manager:return
+        if self.blocked():return
         if self.progress_callback:self.progress_callback(text);return
         if hasattr(self.parent(),'statusBar'):self.parent().statusBar().showMessage(text)
         elif hasattr(self.parent(),'progress_label'):self.parent().progress_label.setText(text)
