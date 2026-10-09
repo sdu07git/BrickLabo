@@ -1,8 +1,25 @@
-# BrickLabo — v0.1.45
+# BrickLabo — v0.1.47
 
-Windows desktop software for LEGO catalogues, stock, construction searches and labels. This version continues the delivered v0.1.44, based on the original v0.1.28.
+Windows desktop software for LEGO catalogues, stock, construction searches and labels. This version continues the delivered v0.1.46, based on the original v0.1.28.
 
-**v0.1.45 downloads:** [complete Windows package](https://github.com/sdu07git/BrickLabo/releases/download/v0.1.45/BrickLabo_v0.1.45_Complet.zip) · [source code with resources](https://github.com/sdu07git/BrickLabo/releases/download/v0.1.45/BrickLabo_v0.1.45_Sources.zip) · [release notes](https://github.com/sdu07git/BrickLabo/releases/tag/v0.1.45). This release combines the v0.1.44 additions and v0.1.45 fixes.
+**v0.1.47 downloads:** [complete Windows version](https://github.com/sdu07git/BrickLabo/releases/download/v0.1.47/BrickLabo_v0.1.47_Complet.zip) · [source code with resources](https://github.com/sdu07git/BrickLabo/releases/download/v0.1.47/BrickLabo_v0.1.47_Sources.zip) · [release notes](https://github.com/sdu07git/BrickLabo/releases/tag/v0.1.47). This release includes v0.1.46 and v0.1.47 fixes.
+
+
+## Edge previews, default values and shutdown — v0.1.47
+
+In **3D edges** and the individual label editor, **Default values** sets black strength to **86.3%** and width to **1 px**. The button updates the draft and preview; **Apply as general settings** or **Apply** saves it. **Cancel** keeps the previous settings. For an individual label, defaults become its own override; **Use general settings** restores inheritance of the current general values.
+
+Black strength and width changes reuse the surface and depth calculation in RAM. All visible strokes are rasterised together, so crossings and duplicate lines no longer accumulate opacity. 0% hides the edges; hidden and conditional edges remain respected. Rapid changes stop obsolete requests between views and finish on the latest settings. These calculations create no temporary render files.
+
+On shutdown, the window remains visible with **Closing: stopping background tasks…** until workers finish. New requests and queued tasks stop; a local operation already underway completes safely. Interrupted downloads close their files and remove partial copies. The temporary-session lease closes before cleanup. Cleanup supports long paths and read-only temporary files. Real failures are logged; free abandoned sessions are retried at the next startup.
+
+Rebrickable photo fallbacks now use **1,278 additional explicit, unique part links** already checked in the supplied BrickArchitect data. Official set and minifigure pages can confirm further links; normalised small BrickLink **MN/0** images are supported. Catalogue references, variants, inventories, 3D models and colour choices remain distinct. Captions identify the photo source; equal IDs alone do not create a link. Ambiguous colour mappings still require an explicit choice. Cached photos are reused without rewriting them.
+
+## Rebrickable set 030-2 photo — v0.1.46
+
+If the Rebrickable photo for **030-2 — Building Set** is unavailable, its preview uses the BrickLink photo through a verified cross-reference. This fallback requires neither a BrickLink catalogue import nor an API key. The complete **030-2** reference, including its leading zero, and Rebrickable catalogue data are preserved. **Photo BrickLink : 030-2** is shown under the preview (translated in the English interface).
+
+Set photos now accept a single explicit cross-reference in photo metadata; similar or ambiguous references are not treated as equivalent. An available Rebrickable photo keeps priority. The fallback supports large and normalised small BrickLink images. Later views reuse the shared cache without rewriting images.
 
 ## Storage, set actions and update cleanup — v0.1.45
 
@@ -45,7 +62,7 @@ Old application files stay in **Donnees/maj/b…** during replacement. From v0.1
 
 After a power loss during replacement, close every instance, inspect the `stage` field in `Donnees/maj/transaction.json`, open a terminal in the corresponding `Donnees/temp/u…` folder and run `r\python.exe -I -B i.py --recover`. Recovery verifies the retained plan, restores old files and restarts the application. If preparation is lost, use Explorer with all instances closed to copy the files in `Donnees/maj/b…` back into the installation folder, without moving `Donnees`. A deliberate downgrade also requires a compatible data backup if its format changed.
 
-To move from a version older than v0.1.42, install this complete ZIP in a new folder and copy **Donnees** into it once, as described below. The new option will then handle future published releases. 
+To move from a version older than v0.1.42, install this complete ZIP in a new folder and copy **Donnees** into it once, as described below. The new option will then handle future published releases. Version v0.1.47 is available in [GitHub releases](https://github.com/sdu07git/BrickLabo/releases/tag/v0.1.47), with the complete Windows ZIP and source ZIP.
 
 ## Transparent label backgrounds — v0.1.41
 
@@ -68,6 +85,8 @@ Consultation windows, construction searches, inventories, instructions, previews
 Use **Data updates → Load set inventories in batches** to list Rebrickable or BrickLink sets by reference / name / theme, select rows or enter known catalogue references. **Queue selected sets** saves a queue. Batch size ranges from 10 to 1000. **Load next batch** stops after one batch; **Continue through batches** runs until paused. Complete local inventories are skipped by default; refresh is an explicit queue option. Queues, successes and errors survive closing and restarting. **Retry failed items** requeues errors only. An interrupted inventory page is not published as a partial inventory. Downloads require the source API credentials. Rebrickable requests are spaced; authentication or throttling failures stop the batch and preserve the queue.
 
 Loaded inventories do not mark sets as owned or add parts to stock. They feed **Buildable sets** and suggestions of alternatives from rebuildable sets. Official-set inventories are not a complete MOC inventory catalogue: API v3 does not provide general MOC inventories. Exact MOC comparisons require the MOC's own inventory. For a full Rebrickable catalogue, use its existing CSV downloads.
+
+Version v0.1.47 is available in [GitHub releases](https://github.com/sdu07git/BrickLabo/releases/tag/v0.1.47), with the complete Windows ZIP and source ZIP.
 
 ## v0.1.39 checks and fixes
 
@@ -123,20 +142,22 @@ Read [English help](documentation/AIDE.en.html) and [component licences](documen
 | 0.1.42 | Verified GitHub updates, installation after shutdown and rollback. |
 | 0.1.43 | Cabinet deletion and persistent arrangements alongside or above others. |
 | 0.1.44 | Select all categories, drawer dragging and swaps, A4 cabinet printing / PDF with thumbnails. |
-| 0.1.45 | Storage zoom and larger thumbnails, cabinet renaming and reference-removal fixes, containing-set actions and automatic removal of previous application copies after a successful update. |
+| 0.1.45 | Storage zoom and preview sizing, cabinet rename and reference removal, containing-set actions and old update-copy cleanup. |
+| 0.1.46 | Verified BrickLink photo for Rebrickable set 030-2, source caption and normalised small set images. |
+| 0.1.47 | Faster RAM-based edge previews, default-value buttons, visible worker shutdown and stronger temporary cleanup; verified catalogue photo links. |
 
 One bilingual [NOUVEAUTES.txt](documentation/NOUVEAUTES.txt) holds cumulative notes. This branch does not document a released 0.1.29. The 0.1.28b / Range variants were not used as the baseline. Test reports are excluded from the source package.
 
 ## Development and diagnostics
 
-The repository follows the source ZIP layout. `ressources/complete.zip` is excluded from Git because it exceeds GitHub’s regular file-size limit. Copy this LDraw archive from **BrickLabo_v0.1.45_Sources.zip** or **BrickLabo_v0.1.45_Complet.zip** in the [v0.1.45 release](https://github.com/sdu07git/BrickLabo/releases/tag/v0.1.45) to restore the bundled models and run tests that use them. GitHub’s automatic “Source code” archives omit this file.
-
-**v0.1.45 validation:** 454 tests passed on Qt/Linux; archive consistency, dependency versions and embedded launcher icon resources verified. Native execution still needs verification on Windows.
-
-Install Python 3.12 and `app/requirements.txt` in a virtual environment, then run `python app/bootstrap.py`. Run `python tools/run_tests.py` for tests. On Linux with MinGW-w64, run `python tools/build_distribution.py path/BrickLabo_v0.1.43_Complet.zip output_folder`. The tool reuses libraries from the previous complete package and also accepts the old v0.1.36 layout. `BrickLabo.exe --self-test` writes `Donnees/diagnostic.json`; console equivalent: `app/python.exe -B app/bootstrap.py --self-test`. Tests run on Qt/Linux; the compiled launcher and archive structure are inspected. Native Windows execution remains to be checked on Windows.
+Install Python 3.12 and `app/requirements.txt` in a virtual environment, then run `python app/bootstrap.py`. Run `python tools/run_tests.py` for tests. On Linux with MinGW-w64, run `python tools/build_distribution.py path/BrickLabo_v0.1.37_Complet.zip output_folder`. The tool reuses libraries from the previous complete package and also accepts the old v0.1.36 layout. `BrickLabo.exe --self-test` writes `Donnees/diagnostic.json`; console equivalent: `app/python.exe -B app/bootstrap.py --self-test`. Tests run on Qt/Linux; the compiled launcher and archive structure are inspected. Native Windows execution remains to be checked on Windows.
 
 Project: https://github.com/sdu07git/BrickLabo. Keep Donnees and private backups out of public repositories.
 
 Check a built distribution: `python tools/check_distribution.py path/BrickLabo`.
 
 For a compatible future update, publish a public stable release with tag `vX.Y.Z`, release notes and the **BrickLabo_vX.Y.Z_Complet.zip** file produced by this tool. GitHub must expose the asset’s SHA-256 `digest` in its API. GitHub’s automatically generated source archives cannot be installed. The application checks up to the 100 most recent releases and never publishes files.
+
+When developing from this repository, copy `ressources/complete.zip` from the attached Sources ZIP: this LDraw archive exceeds GitHub’s file-size limit. GitHub’s automatic “Source code” archives include neither that resource nor the Windows runtime. The two attached ZIPs are the delivered and tested version; repository READMEs are adapted for publication.
+
+**v0.1.47 validation:** 487 tests passed under Qt/Linux; archive consistency, dependency versions and the launcher’s embedded icon were verified. Native Windows execution remains to be checked.
