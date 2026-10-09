@@ -47,7 +47,7 @@ def collect_family(db,family):
     if family not in FAMILIES:raise ValueError(tr('Famille de sauvegarde inconnue'))
     if family=='storage':
         from .storage_wall import walls,drawers,contents
-        return {'walls':[{'name':w['name'],'columns':w['columns'],'rows':w['rows'],'drawers':[dict({k:d[k] for k in ('col','row','width','height','name')},parts=[{'item':identity(p),'color':p['chosen_color']} for p in contents(db,d['id'])]) for d in drawers(db,w['id'])]} for w in walls(db)]}
+        return {'walls':[{'name':w['name'],'columns':w['columns'],'rows':w['rows'],'x':w['x'],'y':w['y'],'drawers':[dict({k:d[k] for k in ('col','row','width','height','name')},parts=[{'item':identity(p),'color':p['chosen_color']} for p in contents(db,d['id'])]) for d in drawers(db,w['id'])]} for w in walls(db)]}
     if family in ('loose','sets','queue'):
         table={'loose':'stock','sets':'stock_sets','queue':'queue'}[family];entries=[]
         for row in db.rows('SELECT i.*,s.id AS entry_id,s.color,s.quantity AS stock_quantity FROM '+table+' s JOIN items i ON i.id=s.item_id WHERE s.quantity>0 ORDER BY i.source,i.ref,s.color'):
@@ -135,11 +135,15 @@ def restore_families(db,paths):
             family=payload['family'];data=payload['data']
             previous_labels={}
             if family=='storage':
+                from .storage_wall import check_position
                 c.execute('DELETE FROM storage_walls')
                 for wall in data.get('walls',[]):
                     columns,rows=int(wall['columns']),int(wall['rows'])
                     if not wall['name'].strip() or not 1<=columns<=100 or not 1<=rows<=100:raise ValueError(tr('Meuble invalide'))
-                    wid=c.execute('INSERT INTO storage_walls(name,columns,rows) VALUES(?,?,?)',(wall['name'],columns,rows)).lastrowid;rects=[]
+                    if ('x' in wall)!=('y' in wall):raise ValueError(tr('Position du meuble invalide.'))
+                    default_x=round(c.execute('SELECT COALESCE(MAX(x+columns+.5),0) FROM storage_walls').fetchone()[0],1)
+                    x,y=check_position(c,None,wall.get('x',default_x),wall.get('y',0),columns,rows)
+                    wid=c.execute('INSERT INTO storage_walls(name,columns,rows,x,y) VALUES(?,?,?,?,?)',(wall['name'],columns,rows,x,y)).lastrowid;rects=[]
                     for drawer in wall['drawers']:
                         col,row,width,height=(int(drawer[k]) for k in ('col','row','width','height'))
                         if min(col,row,width,height)<1 or col+width-1>columns or row+height-1>rows or any(col<x+w and x<col+width and row<y+h and y<row+height for x,y,w,h in rects):raise ValueError(tr('Tiroir invalide'))
