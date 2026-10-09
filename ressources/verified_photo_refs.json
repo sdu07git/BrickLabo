@@ -1,1 +1,14 @@
-{"part:113578":{"BrickLink":["113578"],"evidence":"BrickLink catalogue item links explicitly to Rebrickable /parts/bricklink/113578","source_url":"https://www.bricklink.com/v2/catalog/catalogitem.page?P=113578","checked":"2026-10-02"}}
+{
+  "part:113578": {
+    "BrickLink": ["113578"],
+    "evidence": "BrickLink catalogue item links explicitly to Rebrickable /parts/bricklink/113578",
+    "source_url": "https://www.bricklink.com/v2/catalog/catalogitem.page?P=113578",
+    "checked": "2026-10-02"
+  },
+  "set:030-2": {
+    "BrickLink": ["030-2"],
+    "evidence": "BrickLink set 030-2 links explicitly to Rebrickable /sets/030-2 in Other Databases; both catalogues identify Building Set, 1973, 29 parts",
+    "source_url": "https://www.bricklink.com/v2/catalog/catalogitem.page?S=030-2",
+    "checked": "2026-10-09"
+  }
+}
