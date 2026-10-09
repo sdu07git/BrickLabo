@@ -1,7 +1,17 @@
-# BrickLabo — v0.1.42
+# BrickLabo — v0.1.43
 
-Logiciel de bureau Windows pour les catalogues LEGO, les stocks, les recherches de constructions et les étiquettes. Cette version reprend la v0.1.41 livrée, issue de la v0.1.28 d’origine.
+Logiciel de bureau Windows pour les catalogues LEGO, les stocks, les recherches de constructions et les étiquettes. Cette version reprend la v0.1.42 livrée, issue de la v0.1.28 d’origine.
 
+
+## Disposition et suppression des meubles — v0.1.43
+
+Dans **Mon rangement**, **Tous les meubles** affiche l’ensemble des meubles à leurs positions et recherche dans tout le rangement. Décocher l’option isole le meuble sélectionné. Cliquer sur un tiroir sélectionne son meuble et affiche son contenu.
+
+**Disposer les meubles** permet de glisser un meuble entier, par sa façade ou son nom, à côté ou au-dessus des autres. Cliquer sur **Terminer le placement** pour sélectionner de nouveau les tiroirs. La position est enregistrée uniquement au relâchement de la souris, puis conservée au redémarrage. Les déplacements, la rotation et le zoom ne génèrent aucun fichier de rendu.
+
+Pour un placement précis, utiliser **Organiser le meuble → Positionner le meuble…**. Choisir un meuble de référence puis **À gauche**, **À droite**, **Au-dessus** ou **En dessous**, régler l’écart et enregistrer. Les coordonnées sont mesurées en tiroirs standards ; une valeur verticale négative place le meuble au-dessus de l’origine. Cette fenêtre permet aussi de modifier le nom du meuble. Deux meubles ne peuvent pas se chevaucher ; agrandir un tiroir jusqu’à un meuble voisin est refusé et demande de déplacer ce meuble d’abord.
+
+**Organiser le meuble → Supprimer le meuble** demande confirmation, puis retire ce meuble, ses tiroirs et leurs associations de rangement. Les pièces en vrac, les sets et leurs quantités sont conservés. Les fenêtres de modification propres au meuble supprimé se ferment. Les positions figurent dans les sauvegardes **Meubles et emplacements** ; les anciens meubles et anciennes sauvegardes sans coordonnées sont disposés côte à côte.
 
 ## Mises à jour depuis GitHub — v0.1.42
 
@@ -99,12 +109,13 @@ L’aide complète se trouve dans [documentation/AIDE.html](documentation/AIDE.h
 | 0.1.40 | Mur de rangement, fenêtres indépendantes et inventaires par lots. |
 | 0.1.41 | Fonds transparents des étiquettes, exports et impression. |
 | 0.1.42 | Mises à jour GitHub vérifiées, installation après fermeture et retour arrière. |
+| 0.1.43 | Suppression des meubles et disposition persistante côte à côte ou superposée. |
 
 Un seul [NOUVEAUTES.txt](documentation/NOUVEAUTES.txt) réunit les notes françaises et anglaises. Les notes de cette branche ne documentent pas de livraison 0.1.29. Les variantes 0.1.28b et Range n’ont pas servi de base. Aucun rapport de tests n’est inclus dans les sources.
 
 ## Développement et diagnostic
 
-Le dépôt conserve l’organisation du ZIP source. `ressources/complete.zip` est exclu de Git car il dépasse la limite de taille de GitHub. Copier cette archive LDraw depuis **BrickLabo_v0.1.42_Sources.zip** ou **BrickLabo_v0.1.42_Complet.zip**, disponibles dans les [releases](https://github.com/sdu07git/BrickLabo/releases), pour retrouver les modèles livrés et exécuter les tests qui en dépendent. Les archives automatiques « Source code » de GitHub n’incluent pas ce fichier.
+Le dépôt conserve l’organisation du ZIP source. `ressources/complete.zip` est exclu de Git car il dépasse la limite de taille de GitHub. Copier cette archive LDraw depuis **BrickLabo_v0.1.43_Sources.zip** ou **BrickLabo_v0.1.43_Complet.zip**, disponibles dans les [releases](https://github.com/sdu07git/BrickLabo/releases), pour retrouver les modèles livrés et exécuter les tests qui en dépendent. Les archives automatiques « Source code » de GitHub n’incluent pas ce fichier.
 
 Installer Python 3.12, créer un environnement virtuel puis `python -m pip install -r app/requirements.txt`. Lancer `python app/bootstrap.py`. Tester avec `python tools/run_tests.py`. Sous Linux avec MinGW-w64 : `python tools/build_distribution.py chemin/BrickLabo_v0.1.39_Complet.zip dossier_de_sortie`. L’outil reprend les bibliothèques de l’archive complète précédente ; il accepte aussi l’ancienne organisation v0.1.36.
 
