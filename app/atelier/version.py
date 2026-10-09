@@ -1,2 +1,2 @@
 APP_NAME = "BrickLabo by SDU7"
-VERSION = "0.1.43"
+VERSION = "0.1.45"

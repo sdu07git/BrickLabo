@@ -24,7 +24,7 @@ class Catalogue(QWidget):
     def __init__(self,db,source=None,kind=None,scope='catalogue',parent=None):
         super().__init__(parent);self.db=db;self.source=source;self.kind=kind;self.scope=scope
         self.page=1;self.sort='ref';self.desc=False;self.rows=[];self.ids=set();self.loading=False;self.total=0
-        self.engine=None;self.thumbnail_token=0;self.visual_versions={};self.advanced={}
+        self.engine=None;self.thumbnail_token=0;self.visual_versions={};self.advanced={};self.reference_filter=None
         self.key=f'columns_{source}_{kind}_{scope}'
         default_columns=['ref','name','chosen_quantity','image'] if scope=='stock_sets' else ['ref','name','category']+(['has_print','has_sticker'] if kind!='set' else [])+['image']+(['chosen_color','chosen_quantity'] if scope in ('queue','stock') else [])+(['date','method'] if scope=='history' else ['date'] if scope=='queue' else [])
         self.visible_columns=self.db.setting(self.key,default_columns)
@@ -50,7 +50,8 @@ class Catalogue(QWidget):
         layout.addLayout(filters)
         from .category_tags import TagBar
         self.category_tags=TagBar();self.category_tags.removed.connect(self.remove_category_tag);self.category_tags.set_tags([]);layout.addWidget(self.category_tags)
-        filter_row=QHBoxLayout();self.filters_button=QPushButton(tr('Filtres avancés…'));self.filters_button.clicked.connect(self.advanced_filters);filter_row.addWidget(self.filters_button);filter_row.addStretch();layout.addLayout(filter_row)
+        filter_row=QHBoxLayout();self.filters_button=QPushButton(tr('Filtres avancés…'));self.filters_button.clicked.connect(self.advanced_filters);filter_row.addWidget(self.filters_button)
+        self.reference_tag=QPushButton();self.reference_tag.setToolTip(tr('Retirer le filtre de référence exacte'));self.reference_tag.clicked.connect(self.reset);self.reference_tag.hide();filter_row.addWidget(self.reference_tag);filter_row.addStretch();layout.addLayout(filter_row)
         if kind=='set' and scope=='catalogue':
             self.moc_search_button=QPushButton(tr('MOC par mot clé / créateur'));self.moc_search_button.setToolTip(tr('Rechercher sur Rebrickable dans tous les MOC et alternatives, sans filtre de stock.'));self.moc_search_button.clicked.connect(self.search_mocs);filter_row.addWidget(self.moc_search_button)
         if kind!='set':
@@ -144,11 +145,25 @@ class Catalogue(QWidget):
         self.hide_decorated=checked;self.db.set_setting('hide_decorated_'+self.key,checked)
         self.decorated_button.setText(tr('Réafficher stickers et sérigraphies') if checked else tr('Masquer stickers et sérigraphies'));self.reset()
 
-    def reset(self):self.page=1;self.ids.clear();self.reload()
+    def reset(self):self.reference_filter=None;self.reference_tag.hide();self.page=1;self.ids.clear();self.reload()
+
+    def reveal_item(self,item_id):
+        item=self.db.get_item(item_id)
+        if (not item or item.get('catalogue_hidden') or self.scope!='catalogue' or self.source!=item['source'] or self.kind!=item['kind']):return False
+        self.loading=True;self.timer.stop()
+        self.search.blockSignals(True);self.search.setText(item['ref']);self.search.blockSignals(False)
+        self.category.setCurrentIndex(0)
+        if self.year is not None:self.year.setCurrentIndex(0)
+        self.advanced={};self.refresh_filter_tags();self.reference_filter=item['ref'];self.page=1;self.ids.clear()
+        self.reference_tag.setText(tf('Référence exacte : {}',item['ref'])+' ×');self.reference_tag.show()
+        self.loading=False;self.reload()
+        row=next((index for index,value in enumerate(self.rows) if value['id']==item_id),None)
+        if row is None:return False
+        self.table.selectRow(row);self.table.scrollToItem(self.table.item(row,0));return True
 
     def reload(self):
         self.loading=True
-        self.rows,self.total,n_pages,self.page=self.db.query(self.source,self.kind,self.search.text(),self.category.currentData() or '',self.scope,self.page,int(self.page_size.currentText()),self.sort,self.desc,self.hide_decorated,year=(self.year.currentData() or '') if self.year is not None else '',advanced=self.advanced)
+        self.rows,self.total,n_pages,self.page=self.db.query(self.source,self.kind,self.search.text(),self.category.currentData() or '',self.scope,self.page,int(self.page_size.currentText()),self.sort,self.desc,self.hide_decorated,year=(self.year.currentData() or '') if self.year is not None else '',advanced=self.advanced,reference=self.reference_filter)
         self.table.setColumnCount(len(self.visible_columns));self.table.setHorizontalHeaderLabels([dict(COLUMNS).get(k,k) for k in self.visible_columns]);self.table.setRowCount(len(self.rows))
         self.table.clearSelection()
         for r,row in enumerate(self.rows):

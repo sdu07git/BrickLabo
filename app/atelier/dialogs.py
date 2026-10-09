@@ -18,7 +18,8 @@ from .services import API,request
 from .preview import Preview
 from .thumbnails import PartThumbnails
 from .boxes import BoxDialog,boxes_for_set
-from .windows import show_window,notify_changed
+from .windows import show_window,notify_changed,application_owner
+from .result_tables import fill_table,row_index
 
 
 class APIDialog(QDialog):
@@ -127,7 +128,7 @@ class RelationsDialog(QDialog):
         self.sets_heading=QLabel(tr('Sets contenant la mini-figure') if item['kind']=='minifig' else tr('Sets contenant la pièce'));self.sets_heading.setVisible(self.show_sets);lv.addWidget(self.sets_heading)
         self.tables_splitter=QSplitter(Qt.Orientation.Vertical);self.tables_splitter.setHandleWidth(9);self.tables_splitter.setChildrenCollapsible(False);self.tables_splitter.setStyleSheet('QSplitter::handle:vertical { background:#354963; border-top:1px solid #5a708c; border-bottom:1px solid #5a708c; }');lv.addWidget(self.tables_splitter,1)
         self.set_table=QTableWidget(0,3);self.set_table.setHorizontalHeaderLabels([tr('Référence'),tr('Set'),tr('Famille')]);self.set_table.setSelectionBehavior(QAbstractItemView.SelectionBehavior.SelectRows);self.set_table.horizontalHeader().setStretchLastSection(True);self.set_table.itemSelectionChanged.connect(self.set_selected);self.set_table.setMinimumHeight(70);self.tables_splitter.addWidget(self.set_table)
-        self.set_table.setVisible(self.show_sets);self.set_table.setEditTriggers(QAbstractItemView.EditTrigger.NoEditTriggers);self.set_table.itemDoubleClicked.connect(self.open_containing_set)
+        self.set_table.setVisible(self.show_sets);self.set_table.setEditTriggers(QAbstractItemView.EditTrigger.NoEditTriggers);self.set_table.itemDoubleClicked.connect(self.open_containing_set);self.set_table.horizontalHeader().setSortIndicator(0,Qt.SortOrder.AscendingOrder)
         self.set_table.setContextMenuPolicy(Qt.ContextMenuPolicy.CustomContextMenu);self.set_table.customContextMenuRequested.connect(self.set_context_menu)
         self.part_table=QTableWidget(0,6);self.part_table.verticalHeader().setDefaultSectionSize(72);self.part_table.setHorizontalHeaderLabels([tr('Référence'),tr('Pièce'),tr('Couleur'),tr('Quantité'),tr('Supplémentaire'),tr('Aperçu 3D / photo')]);self.part_table.setSelectionBehavior(QAbstractItemView.SelectionBehavior.SelectRows);self.part_table.setSelectionMode(QAbstractItemView.SelectionMode.ExtendedSelection);self.part_table.setEditTriggers(QAbstractItemView.EditTrigger.NoEditTriggers);self.part_table.horizontalHeader().setStretchLastSection(True);self.part_table.itemSelectionChanged.connect(self.part_selected);self.part_table.itemDoubleClicked.connect(self.open_component);self.part_table.setMinimumHeight(100);self.tables_splitter.addWidget(self.part_table);self.tables_splitter.setSizes(db.setting('relations_table_sizes',[220,440]));self.tables_splitter.handle(1).setToolTip(tr('Glisser pour répartir la hauteur des deux tableaux'));self.tables_splitter.handle(1).setCursor(Qt.CursorShape.SplitVCursor)
         self.source_note=QLabel();self.source_note.setWordWrap(True);lv.addWidget(self.source_note)
@@ -156,36 +157,45 @@ class RelationsDialog(QDialog):
             if item['kind']=='minifig' and not self.parts and item['source']=='RB' and db.setting('api_rb',''):self.fetch_rb()
         else:
             self.sets=db.containing_sets(item)
-            self.set_table.setRowCount(len(self.sets))
-            for r,s in enumerate(self.sets):
-                for c,k in enumerate(['ref','name','category']):self.set_table.setItem(r,c,QTableWidgetItem(s[k]))
+            fill_table(self.set_table,[(s['ref'],s['name'],s['category']) for s in self.sets])
             self.preview.set_item(item)
             if self.sets:self.set_table.selectRow(0)
             elif item['source']=='BL':self.source_note.setText(tr('Les fichiers TXT BrickLink n’incluent pas les relations pièce → sets. L’inventaire d’un set peut être chargé depuis l’API dans le catalogue de sets BrickLink.'))
             else:self.source_note.setText(tr('Aucun set trouvé dans les inventaires importés.'))
     def set_selected(self):
-        row=self.set_table.currentRow()
+        row=row_index(self.set_table)
         if 0<=row<len(self.sets):
             if self.item['kind']=='minifig':self.show_set_image(self.sets[row])
             else:self.load_set(self.sets[row])
     def load_containing_sets(self):
-        self.sets=self.db.containing_sets(self.item);self.set_table.setRowCount(len(self.sets))
+        self.sets=self.db.containing_sets(self.item)
         self.sets_heading.setText(tr('Sets contenant la mini-figure — ')+str(len(self.sets))+tr(' résultat(s)'))
-        for r,item in enumerate(self.sets):
-            for c,key in enumerate(('ref','name','category')):self.set_table.setItem(r,c,QTableWidgetItem(str(item.get(key,''))))
+        fill_table(self.set_table,[(item['ref'],item['name'],item['category']) for item in self.sets])
         if self.sets:self.set_table.selectRow(0)
         else:self.sets_heading.setText(tr('Sets contenant la mini-figure — ')+(tr('relations absentes des fichiers BrickLink fournis') if self.item['source']=='BL' else tr('aucun set trouvé dans les inventaires importés')))
     def set_context_menu(self,pos):
         index=self.set_table.indexAt(pos)
-        if not index.isValid() or index.row()>=len(self.sets):return
-        item=dict(self.sets[index.row()]);self.set_table.selectRow(index.row())
+        row=row_index(self.set_table,index.row()) if index.isValid() else -1
+        if not 0<=row<len(self.sets):return
+        item=dict(self.sets[row]);self.set_table.selectRow(index.row())
+        menu=self.containing_set_menu(item);menu.exec(self.set_table.viewport().mapToGlobal(pos))
+    def containing_set_menu(self,item):
         menu=QMenu(self)
         action=menu.addAction(tr('Afficher la boîte d’origine'),lambda:show_window(BoxDialog(self.db,self.engine,item,self),self))
         action.setEnabled(bool(boxes_for_set(self.db,item)));action.setToolTip(tr('Ouvrir la boîte BrickLink du set.') if action.isEnabled() else tr('Aucune boîte répertoriée pour ce set ; importer Original Boxes.txt si nécessaire.'))
-        menu.setToolTipsVisible(True);menu.exec(self.set_table.viewport().mapToGlobal(pos))
+        menu.addAction(tr('Voir les constructions alternatives'),lambda:self.show_alternates(item))
+        action=menu.addAction(tr('Afficher dans le catalogue de sets'),lambda:self.show_in_catalogue(item))
+        action.setEnabled(hasattr(application_owner(self),'show_catalogue_item') and not item.get('catalogue_hidden'))
+        menu.setToolTipsVisible(True);return menu
+    def show_alternates(self,item):
+        from .alternates import AlternatesDialog
+        return show_window(AlternatesDialog(self.db,self.engine,item,self),self)
+    def show_in_catalogue(self,item):
+        owner=application_owner(self)
+        if not hasattr(owner,'show_catalogue_item') or not owner.show_catalogue_item(item['id']):QMessageBox.information(self,tr('Catalogue de sets'),tr('Ce set n’est plus disponible dans le catalogue.'))
 
     def open_containing_set(self,_):
-        row=self.set_table.currentRow()
+        row=row_index(self.set_table)
         if 0<=row<len(self.sets):show_window(RelationsDialog(self.db,self.engine,self.sets[row],self),self)
     def show_set_image(self,item):
         self.set_image_token+=1;token=self.set_image_token
@@ -220,7 +230,8 @@ class RelationsDialog(QDialog):
             choice.setCurrentIndex(idx);choice.currentIndexChanged.connect(lambda i,row=r,w=choice:self.change_part_color(row,w.currentData() or w.currentText()));self.part_table.setCellWidget(r,2,choice)
         self.part_table.setColumnWidth(1,280);self.part_table.setColumnWidth(5,150)
         self.thumbnails.schedule()
-        image_item=self.sets[self.set_table.currentRow()] if self.item['kind']=='minifig' and 0<=self.set_table.currentRow()<len(self.sets) else item
+        row=row_index(self.set_table)
+        image_item=self.sets[row] if self.item['kind']=='minifig' and 0<=row<len(self.sets) else item
         self.show_set_image(image_item)
         if self.parts:self.part_table.selectRow(0)
     def open_component(self,_):

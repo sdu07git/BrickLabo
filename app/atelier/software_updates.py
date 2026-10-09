@@ -448,6 +448,63 @@ def clean_update_workspaces(root):
         pass
 
 
+def _previous_tree_safe(path):
+    if not path.is_dir() or linked(path):return False
+    if any(child.name not in DIRECTORIES+ROOT_FILES for child in path.iterdir()):return False
+    for folder,dirs,files in os.walk(path,followlinks=False):
+        if any(linked(Path(folder)/name) for name in dirs+files):return False
+    return True
+
+
+def confirm_running_version(root,version=VERSION):
+    """After the new UI starts, remove only recorded old application trees.
+
+    Interrupted/failed deployments retain their rollback files. Cleanup is
+    resumable if Windows temporarily locks a file; Donnees is never a target.
+    """
+    root=native_path(root);state=root/'Donnees'/STATE_FOLDER
+    result={'confirmed':False,'removed':[],'pending':[]}
+    try:
+        if any(linked(path) for path in (root,root/'Donnees',state)) or not (state/JOURNAL).is_file():return result
+        with acquire_lease(state/'verrou'):
+            journal=read_json(state/JOURNAL);report=read_json(state/REPORT);current=read_json(root/'app'/'structure.json')
+            if not all(isinstance(value,dict) for value in (journal,report,current)):return result
+            if (current.get('application')!='BrickLabo' or current.get('version')!=version
+                    or journal.get('status') not in ('installed','confirmed') or report.get('success') is not True
+                    or journal.get('version')!=version or report.get('version')!=version
+                    or any(journal.get(key)!=report.get(key) for key in ('previous','from_version','stage'))):return result
+            changes=journal.get('changes',[])
+            if (not isinstance(changes,list) or len(changes)!=len(DIRECTORIES+ROOT_FILES)
+                    or any(not isinstance(change,dict) or change.get('phase')!='installed' or type(change.get('had_old')) is not bool for change in changes)
+                    or {change.get('name') for change in changes}!=set(DIRECTORIES+ROOT_FILES)):return result
+            previous=journal.get('previous','')
+            if not isinstance(previous,str) or not re.fullmatch(r'b[0-9a-f]{10}',previous):return result
+            if journal['status']=='installed':
+                pending=[]
+                for path in state.iterdir():
+                    if not re.fullmatch(r'b[0-9a-f]{10}',path.name) or not _previous_tree_safe(path):continue
+                    try:
+                        marker=read_json(path/'app'/'structure.json')
+                        if marker.get('application')=='BrickLabo' and version_tuple(marker.get('version',''))<version_tuple(version):pending.append(path.name)
+                    except (OSError,ValueError,TypeError):continue
+                journal.update(status='confirmed',cleanup_pending=sorted(pending));atomic_json(state/JOURNAL,journal)
+                report['startup_confirmed']=True;atomic_json(state/REPORT,report)
+            pending=journal.get('cleanup_pending',[])
+            if not isinstance(pending,list) or any(not isinstance(name,str) or not re.fullmatch(r'b[0-9a-f]{10}',name) for name in pending):return result
+            result['confirmed']=True
+            for name in pending:
+                path=state/name
+                if not path.exists():continue
+                try:
+                    if not _previous_tree_safe(path):result['pending'].append(name);continue
+                    shutil.rmtree(path);result['removed'].append(name)
+                except OSError:result['pending'].append(name)
+            if pending!=result['pending']:
+                journal['cleanup_pending']=result['pending'];atomic_json(state/JOURNAL,journal)
+    except (OSError,ValueError,TypeError):pass
+    return result
+
+
 def previous_installation(root):
     state = native_path(root) / 'Donnees' / STATE_FOLDER
     try:

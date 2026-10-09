@@ -12,7 +12,7 @@ from . import storage_wall as store
 from .ui_common import async_task,pixmap
 from .windows import show_window,notify_changed,application_owner
 from .result_tables import fill_table,row_index
-from .thumbnails import PartThumbnails
+from .thumbnails import PartThumbnails,load_thumbnail
 
 
 def face_transforms(yaw,pitch):
@@ -66,9 +66,10 @@ class CabinetItem(QGraphicsObject):
 
 class DrawerItem(QGraphicsObject):
     chosen=Signal(int)
-    def __init__(self,drawer,parts,icons,yaw,pitch,parent=None,arranging=False):
+    moved=Signal(int,object)
+    def __init__(self,drawer,parts,icons,yaw,pitch,parent=None,arranging=False,dragging=False,thumbnail_size=100):
         super().__init__(parent)
-        self.drawer=drawer;self.parts=parts;self.icons=icons;self.selected=False;self.match=False
+        self.drawer=drawer;self.parts=parts;self.icons=icons;self.selected=False;self.match=False;self.thumbnail_size=thumbnail_size
         self.w=drawer['width']*112-6;self.h=drawer['height']*70-6
         self.back,self.transform_face=face_transforms(yaw,pitch)
         x=(drawer['col']-1)*112+(12 if parent else 0);y=(drawer['row']-1)*70+(26 if parent else 0)
@@ -81,6 +82,8 @@ class DrawerItem(QGraphicsObject):
         self.setToolTip(store.address(drawer)+'\n'+drawer['name']+'\n'+'\n'.join(p['ref']+' — '+p['name'] for p in parts))
         self.setAcceptHoverEvents(True)
         self.setAcceptedMouseButtons(Qt.MouseButton.NoButton if arranging else Qt.MouseButton.LeftButton)
+        self.setFlag(QGraphicsObject.GraphicsItemFlag.ItemIsMovable,dragging)
+        self.setCursor(Qt.CursorShape.OpenHandCursor if dragging else Qt.CursorShape.ArrowCursor)
     def boundingRect(self):return self.bounds
     def paint(self,painter,option,widget=None):
         painter.setRenderHint(QPainter.RenderHint.Antialiasing)
@@ -93,33 +96,58 @@ class DrawerItem(QGraphicsObject):
         painter.setFont(QFont('Segoe UI',8));painter.setPen(QColor('#e8edf5'))
         label=self.drawer['name'] or (self.parts[0]['ref'] if self.parts else tr('Vide'))
         if len(self.parts)>1 and not self.drawer['name']:label+=' +'+str(len(self.parts)-1)
-        painter.drawText(QRectF(5,3,self.w-10,16),Qt.AlignmentFlag.AlignCenter,painter.fontMetrics().elidedText(label,Qt.TextElideMode.ElideRight,int(self.w-10)))
-        shown=self.parts[:min(3,max(1,int(self.w/35)))];left=(self.w-len(shown)*32)/2
-        for index,part in enumerate(shown):
+        painter.drawText(QRectF(5,3,self.w-43,16),Qt.AlignmentFlag.AlignCenter,painter.fontMetrics().elidedText(label,Qt.TextElideMode.ElideRight,int(self.w-43)))
+        for part,box in self.thumbnail_boxes():
             image=self.icons.get((part['id'],str(part['chosen_color'])))
             if image and not image.isNull():
-                image=image.scaled(30,25,Qt.AspectRatioMode.KeepAspectRatio,Qt.TransformationMode.SmoothTransformation)
-                painter.drawPixmap(QPointF(left+index*32+(30-image.width())/2,22),image)
+                image=image.scaled(max(1,int(box.width())),max(1,int(box.height())),Qt.AspectRatioMode.KeepAspectRatio,Qt.TransformationMode.SmoothTransformation)
+                painter.drawPixmap(QPointF(box.center().x()-image.width()/2,box.center().y()-image.height()/2),image)
             else:
-                painter.setPen(QColor('#bdc9d7'));painter.drawText(QRectF(left+index*32,24,30,18),Qt.AlignmentFlag.AlignCenter,part['ref'][:7])
-        painter.setPen(QColor('#a9bdd1'));painter.drawText(QRectF(self.w-32,self.h-16,28,12),Qt.AlignmentFlag.AlignRight,str(self.drawer['col'])+'/'+str(self.drawer['row']))
+                painter.setPen(QColor('#bdc9d7'));painter.drawText(box,Qt.AlignmentFlag.AlignCenter,painter.fontMetrics().elidedText(part['ref'],Qt.TextElideMode.ElideRight,int(box.width())))
+        painter.setFont(QFont('Segoe UI',7));painter.setPen(QColor('#a9bdd1'));painter.drawText(QRectF(self.w-34,5,30,12),Qt.AlignmentFlag.AlignRight,str(self.drawer['col'])+'/'+str(self.drawer['row']))
         painter.setPen(QPen(QColor('#81a0bf'),3));painter.drawLine(QPointF(self.w*.38,self.h-6),QPointF(self.w*.62,self.h-6))
         painter.restore()
+    def thumbnail_boxes(self):
+        shown=self.parts[:min(3,max(1,int(self.w/35)))];count=len(shown)
+        if not count:return []
+        cell_width=(self.w-12)/count;factor=self.thumbnail_size/100
+        width=min(120,cell_width-4)*factor;height=min(78,self.h-31)*factor
+        return [(part,QRectF(6+index*cell_width+(cell_width-width)/2,20+(self.h-31-height)/2,width,height)) for index,part in enumerate(shown)]
     def mousePressEvent(self,event):
-        if event.button()==Qt.MouseButton.LeftButton:self.chosen.emit(self.drawer['id']);event.accept()
-        else:super().mousePressEvent(event)
+        if event.button()!=Qt.MouseButton.LeftButton:return super().mousePressEvent(event)
+        self.start_position=QPointF(self.pos());self.chosen.emit(self.drawer['id'])
+        if self.flags()&QGraphicsObject.GraphicsItemFlag.ItemIsMovable:
+            self.setZValue(10)
+            if self.parentItem():self.parentItem().setZValue(1)
+        super().mousePressEvent(event);event.accept()
+    def mouseReleaseEvent(self,event):
+        super().mouseReleaseEvent(event);self.setZValue(0)
+        if self.parentItem():self.parentItem().setZValue(0)
+        if self.flags()&QGraphicsObject.GraphicsItemFlag.ItemIsMovable and self.pos()!=getattr(self,'start_position',self.pos()):
+            self.moved.emit(self.drawer['id'],self.mapToScene(QPointF()))
 
 
 class WallView(QGraphicsView):
     view_changed=Signal()
+    def zoom(self,factor,position=None):
+        current=self.transform().m11()
+        if current<=0:return
+        target=min(16,max(.000001,current*factor))
+        before=self.mapToScene(position) if position is not None else None
+        self.scale(target/current,target/current)
+        if before is not None:
+            after=self.mapToScene(position);self.translate(after.x()-before.x(),after.y()-before.y())
+        self.view_changed.emit()
+    def fit_rect(self,bounds):
+        if bounds.isEmpty():return
+        self.resetTransform();self.fitInView(bounds,Qt.AspectRatioMode.KeepAspectRatio);self.centerOn(bounds.center());self.view_changed.emit()
     def resizeEvent(self,event):
         super().resizeEvent(event);self.view_changed.emit()
     def wheelEvent(self,event):
-        if event.modifiers()&Qt.KeyboardModifier.ControlModifier:
-            factor=1.15 if event.angleDelta().y()>0 else 1/1.15
-            if .2<=self.transform().m11()*factor<=5:self.scale(factor,factor)
-            self.view_changed.emit();event.accept()
-        else:super().wheelEvent(event)
+        if event.modifiers()&Qt.KeyboardModifier.ShiftModifier:return super().wheelEvent(event)
+        delta=event.angleDelta().y() or event.pixelDelta().y()
+        if delta:self.zoom(1.15**(max(-480,min(480,delta))/120),event.position().toPoint())
+        event.accept()
 
 
 class StockPicker(QDialog):
@@ -159,29 +187,46 @@ class StoragePanel(QWidget):
         super().__init__(parent);self.db=db;self.engine=engine;self.drawer_id=None;self.wall_id=None;self.rows=[];self.matches=[];self.drawers=[];self.items={};self.cabinets={};self.wall_drawers={};self.icons=OrderedDict();self.loading=False;self.icon_token=0
         layout=QVBoxLayout(self);bar=QHBoxLayout();self.wall=QComboBox();bar.addWidget(self.wall,1)
         organise=QPushButton(tr('Organiser le meuble'));menu=QMenu(organise)
-        for name,fn in [(tr('Créer un meuble'),self.new_wall),(tr('Positionner le meuble…'),self.position_dialog),(tr('Supprimer le meuble'),self.remove_wall),(tr('Ajouter un tiroir'),lambda:self.edit_drawer(True)),(tr('Modifier le tiroir'),self.edit_drawer),(tr('Supprimer le tiroir'),self.remove_drawer)]:menu.addAction(name,fn)
+        for name,fn in [(tr('Créer un meuble'),self.new_wall),(tr('Renommer le meuble…'),self.rename_dialog),(tr('Positionner le meuble…'),self.position_dialog),(tr('Supprimer le meuble'),self.remove_wall),(tr('Ajouter un tiroir'),lambda:self.edit_drawer(True)),(tr('Modifier le tiroir'),self.edit_drawer),(tr('Supprimer le tiroir'),self.remove_drawer)]:menu.addAction(name,fn)
+        menu.addSeparator();self.drag_drawers=menu.addAction(tr('Déplacer les tiroirs'));self.drag_drawers.setCheckable(True)
+        self.print_action=menu.addAction(tr('Imprimer les meubles sur A4…'),self.print_wall)
         organise.setMenu(menu);bar.addWidget(organise)
         self.arrange=QPushButton(tr('Disposer les meubles'));self.arrange.setCheckable(True);bar.addWidget(self.arrange)
         layout.addLayout(bar);self.query=QLineEdit();self.query.setPlaceholderText(tr('Pièce, référence, dimensions, couleur ou nom du tiroir'));layout.addWidget(self.query);bar=QHBoxLayout()
         self.all_walls=QCheckBox(tr('Tous les meubles'));self.all_walls.setChecked(True);bar.addWidget(self.all_walls)
         self.front=QCheckBox(tr('Vue de face'));bar.addWidget(self.front);bar.addWidget(QLabel(tr('Angle')))
         self.angle=QSlider(Qt.Orientation.Horizontal);self.angle.setRange(-35,35);self.angle.setValue(db.setting('storage_wall_angle',18));self.angle.setMaximumWidth(120);bar.addWidget(self.angle);layout.addLayout(bar)
+        bar=QHBoxLayout();bar.addWidget(QLabel(tr('Zoom')))
+        self.zoom_out=QPushButton('−');self.zoom_in=QPushButton('+')
+        for button,label in [(self.zoom_out,tr('Dézoomer')),(self.zoom_in,tr('Zoomer'))]:button.setFixedWidth(32);button.setToolTip(label);button.setAccessibleName(label);bar.addWidget(button)
+        self.zoom_label=QLabel();self.zoom_label.setMinimumWidth(55);bar.addWidget(self.zoom_label)
+        self.focus_button=QPushButton(tr('Zoom sur le meuble'));bar.addWidget(self.focus_button)
+        self.fit_button=QPushButton(tr('Vue complète'));bar.addWidget(self.fit_button);bar.addStretch();layout.addLayout(bar)
+        bar=QHBoxLayout();bar.addWidget(QLabel(tr('Taille des aperçus sur les tiroirs')))
+        self.thumbnail_size=QSlider(Qt.Orientation.Horizontal);self.thumbnail_size.setRange(25,100);self.thumbnail_size.setValue(db.setting('storage_thumbnail_size',100));self.thumbnail_size.setMaximumWidth(180);bar.addWidget(self.thumbnail_size)
+        self.thumbnail_size_label=QLabel(str(self.thumbnail_size.value())+' %');bar.addWidget(self.thumbnail_size_label);bar.addStretch();layout.addLayout(bar)
+        self._saved_thumbnail_size=self.thumbnail_size.value()
+        self.thumbnail_save_timer=QTimer(self);self.thumbnail_save_timer.setSingleShot(True);self.thumbnail_save_timer.setInterval(500);self.thumbnail_save_timer.timeout.connect(self.save_thumbnail_size)
         self.placement_hint=QLabel();self.placement_hint.setWordWrap(True);self.placement_hint.hide();layout.addWidget(self.placement_hint)
         split=QSplitter(Qt.Orientation.Vertical);layout.addWidget(split,1)
-        self.scene=QGraphicsScene(self);self.view=WallView(self.scene);self.view.setRenderHint(QPainter.RenderHint.Antialiasing);self.view.setMinimumHeight(180);split.addWidget(self.view)
+        self.scene=QGraphicsScene(self);self.view=WallView(self.scene);self.view.setRenderHint(QPainter.RenderHint.Antialiasing);self.view.setTransformationAnchor(QGraphicsView.ViewportAnchor.AnchorViewCenter);self.view.setMinimumHeight(180);self.view.setToolTip(tr('Molette : zoomer. Maj + molette : faire défiler. Vue complète : afficher tous les meubles.'));split.addWidget(self.view)
         details=QWidget();d=QVBoxLayout(details);self.status=QLabel(tr('Crée un meuble puis associe les références de ton stock aux tiroirs.'));self.status.setWordWrap(True);d.addWidget(self.status)
         self.results=QTableWidget(0,5);self.results.setHorizontalHeaderLabels([tr('Meuble'),tr('Emplacement'),tr('Référence'),tr('Pièce'),tr('Couleur')]);self.results.setSelectionBehavior(QAbstractItemView.SelectionBehavior.SelectRows);self.results.setEditTriggers(QAbstractItemView.EditTrigger.NoEditTriggers);self.results.horizontalHeader().setSectionResizeMode(QHeaderView.ResizeMode.Interactive);self.results.setMinimumHeight(70);self.results.setMaximumHeight(120);self.results.hide();d.addWidget(self.results)
         for column,width in enumerate((170,220,90,240,110)):self.results.setColumnWidth(column,width)
         self.table=QTableWidget(0,6);self.table.setHorizontalHeaderLabels([tr('Source'),tr('Référence'),tr('Pièce'),tr('Couleur'),tr('Stock global en vrac'),tr('Aperçu 3D / photo')]);self.table.setSelectionBehavior(QAbstractItemView.SelectionBehavior.SelectRows);self.table.setSelectionMode(QAbstractItemView.SelectionMode.ExtendedSelection);self.table.setEditTriggers(QAbstractItemView.EditTrigger.NoEditTriggers);self.table.horizontalHeader().setSectionResizeMode(QHeaderView.ResizeMode.Interactive);self.table.setMinimumHeight(140);d.addWidget(self.table,1)
         for column,width in enumerate((75,90,220,100,160,150)):self.table.setColumnWidth(column,width)
         self.thumbnails=PartThumbnails(self.table,db,engine,self.visible_parts,5,self) if engine else None
-        row=QHBoxLayout();add=QPushButton(tr('Ajouter des références du stock'));add.clicked.connect(self.pick_stock);row.addWidget(add);remove=QPushButton(tr('Retirer les références du tiroir'));remove.clicked.connect(self.unassign);row.addWidget(remove);fit=QPushButton(tr('Vue complète'));fit.clicked.connect(self.fit);row.addWidget(fit);d.addLayout(row)
+        row=QHBoxLayout();add=QPushButton(tr('Ajouter des références du stock'));add.clicked.connect(self.pick_stock);row.addWidget(add);self.remove_references=QPushButton(tr('Retirer les références du tiroir'));self.remove_references.clicked.connect(self.unassign);self.remove_references.setToolTip(tr('Retire les lignes sélectionnées. Sans sélection, propose de retirer toutes les références du tiroir. Les pièces restent dans le stock.'));row.addWidget(self.remove_references);d.addLayout(row)
         split.addWidget(details);split.setSizes([350,350]);split.setStretchFactor(0,1);split.setStretchFactor(1,1)
         self.search_timer=QTimer(self);self.search_timer.setSingleShot(True);self.search_timer.setInterval(180);self.search_timer.timeout.connect(self.search)
         self.icon_timer=QTimer(self);self.icon_timer.setSingleShot(True);self.icon_timer.setInterval(100);self.icon_timer.timeout.connect(self.load_icons)
+        self.drawer_refresh_timer=QTimer(self);self.drawer_refresh_timer.setSingleShot(True);self.drawer_refresh_timer.setInterval(0);self.drawer_refresh_timer.timeout.connect(self.finish_drawer_move)
         self.wall.currentIndexChanged.connect(self.change_wall);self.query.textChanged.connect(lambda:self.search_timer.start());self.all_walls.toggled.connect(self.overview_changed);self.arrange.toggled.connect(self.arrangement_changed)
+        self.drag_drawers.toggled.connect(self.drawer_arrangement_changed)
+        self.zoom_in.clicked.connect(lambda:self.view.zoom(1.25));self.zoom_out.clicked.connect(lambda:self.view.zoom(1/1.25));self.focus_button.clicked.connect(self.focus_wall);self.fit_button.clicked.connect(self.fit_all)
+        self.thumbnail_size.valueChanged.connect(self.change_thumbnail_size);self.thumbnail_size.sliderReleased.connect(self.save_thumbnail_size)
         self.angle.valueChanged.connect(self.redraw);self.angle.sliderReleased.connect(lambda:self.db.set_setting('storage_wall_angle',self.angle.value()));self.front.toggled.connect(self.redraw)
-        self.view.view_changed.connect(self.schedule_icons);self.view.verticalScrollBar().valueChanged.connect(self.schedule_icons);self.view.horizontalScrollBar().valueChanged.connect(self.schedule_icons)
+        self.view.view_changed.connect(self.update_zoom_label);self.view.view_changed.connect(self.schedule_icons);self.view.verticalScrollBar().valueChanged.connect(self.schedule_icons);self.view.horizontalScrollBar().valueChanged.connect(self.schedule_icons)
         self.results.itemSelectionChanged.connect(self.select_result);self.table.itemSelectionChanged.connect(self.select_piece);self.table.itemDoubleClicked.connect(self.open_piece)
         if self.thumbnails:self.table.horizontalHeader().sortIndicatorChanged.connect(lambda *_:self.thumbnails.reset())
         self.reload_walls()
@@ -200,15 +245,23 @@ class StoragePanel(QWidget):
     def arrangement_changed(self,enabled):
         if enabled:
             self.all_walls.blockSignals(True);self.all_walls.setChecked(True);self.all_walls.blockSignals(False)
+            self.drag_drawers.blockSignals(True);self.drag_drawers.setChecked(False);self.drag_drawers.blockSignals(False)
         self.arrange.setText(tr('Terminer le placement') if enabled else tr('Disposer les meubles'))
         self.placement_hint.setText(tr('Glisse un meuble pour le déplacer. Sa position est enregistrée quand tu relâches la souris. Les meubles ne peuvent pas se chevaucher.'))
         self.placement_hint.setVisible(enabled);self.redraw();self.search();self.fit()
+    def drawer_arrangement_changed(self,enabled):
+        if enabled:
+            self.arrange.blockSignals(True);self.arrange.setChecked(False);self.arrange.blockSignals(False);self.arrange.setText(tr('Disposer les meubles'))
+        self.placement_hint.setText(tr('Glisse un tiroir vers une case du même meuble ou d’un autre meuble visible. Deux tiroirs de même taille échangent leurs positions. Les références suivent le tiroir. Décoche « Déplacer les tiroirs » pour terminer.'))
+        self.placement_hint.setVisible(enabled);self.redraw();self.search()
     def redraw(self,*_):
         self.icon_token+=1;self.scene.clear();self.items={};self.cabinets={};self.wall_drawers={};self.drawers=[]
         self.arrange.setEnabled(self.wall_id is not None)
+        self.drag_drawers.setEnabled(self.wall_id is not None);self.print_action.setEnabled(self.wall_id is not None)
         if self.wall_id is None:
             self.arrange.blockSignals(True);self.arrange.setChecked(False);self.arrange.blockSignals(False)
             self.arrange.setText(tr('Disposer les meubles'));self.placement_hint.hide()
+            self.drag_drawers.blockSignals(True);self.drag_drawers.setChecked(False);self.drag_drawers.blockSignals(False)
             self.scene.setSceneRect(QRectF());return
         overview=self.all_walls.isChecked();arranging=self.arrange.isChecked()
         visible_walls=[w for w in store.walls(self.db) if overview or w['id']==self.wall_id];parts={}
@@ -219,12 +272,30 @@ class StoragePanel(QWidget):
         for wall in visible_walls:
             cabinet=CabinetItem(wall,yaw,pitch,overview,arranging);cabinet.chosen.connect(self.choose_wall);cabinet.moved.connect(self.move_wall);self.scene.addItem(cabinet);self.cabinets[wall['id']]=cabinet
             for drawer in self.wall_drawers.get(wall['id'],[]):
-                item=DrawerItem(drawer,parts.get(drawer['id'],[]),self.icons,yaw,pitch,cabinet,arranging);item.chosen.connect(self.choose_drawer);self.items[drawer['id']]=item
+                item=DrawerItem(drawer,parts.get(drawer['id'],[]),self.icons,yaw,pitch,cabinet,arranging,self.drag_drawers.isChecked(),self.thumbnail_size.value());item.chosen.connect(self.choose_drawer);item.moved.connect(self.move_drawer);self.items[drawer['id']]=item
         if self.drawer_id not in self.items:self.drawer_id=None
         self.scene.setSceneRect(self.scene.itemsBoundingRect().adjusted(-20,-20,20,20));self.highlight();self.schedule_icons()
     def fit(self):
-        if self.scene.items():self.view.fitInView(self.scene.sceneRect(),Qt.AspectRatioMode.KeepAspectRatio)
-        self.schedule_icons()
+        if self.scene.items():
+            bounds=self.scene.itemsBoundingRect().adjusted(-20,-20,20,20);self.scene.setSceneRect(bounds);self.view.fit_rect(bounds)
+        self.update_zoom_label();self.schedule_icons()
+    def fit_all(self):
+        self.all_walls.setChecked(True);self.fit()
+    def focus_wall(self):
+        self.all_walls.setChecked(False)
+        cabinet=self.cabinets.get(self.wall_id)
+        if cabinet:self.view.fit_rect(cabinet.sceneBoundingRect().united(cabinet.mapRectToScene(cabinet.childrenBoundingRect())).adjusted(-20,-20,20,20))
+    def update_zoom_label(self):
+        self.zoom_label.setText(f'{self.view.transform().m11()*100:.1f} %')
+        available=bool(self.cabinets)
+        for button in (self.zoom_in,self.zoom_out,self.fit_button,self.focus_button):button.setEnabled(available)
+    def change_thumbnail_size(self,value):
+        self.thumbnail_size_label.setText(str(value)+' %')
+        for item in self.items.values():item.thumbnail_size=value;item.update()
+        if not self.thumbnail_size.isSliderDown():self.thumbnail_save_timer.start()
+    def save_thumbnail_size(self):
+        self.thumbnail_save_timer.stop();value=self.thumbnail_size.value()
+        if value!=self._saved_thumbnail_size:self.db.set_setting('storage_thumbnail_size',value);self._saved_thumbnail_size=value
     def activate_wall(self,wall_id):
         index=self.wall.findData(wall_id)
         if index<0:return False
@@ -248,12 +319,42 @@ class StoragePanel(QWidget):
         cabinet.snap_position(x,y)
         self.placement_hint.setText(tr('Position enregistrée. Tu peux déplacer un autre meuble ou terminer le placement.'))
         self.scene.setSceneRect(self.scene.itemsBoundingRect().adjusted(-20,-20,20,20));self.schedule_icons()
+    def move_drawer(self,drawer_id,origin):
+        item=self.items.get(drawer_id)
+        if not item:return
+        try:
+            target=None
+            for wall_id,cabinet in self.cabinets.items():
+                inverse,valid=cabinet.back.inverted()
+                if not valid:continue
+                point=inverse.map(cabinet.mapFromScene(origin))
+                col=math.floor((point.x()-12)/112+.5)+1;row=math.floor((point.y()-26)/70+.5)+1
+                if 1<=col<=cabinet.wall['columns'] and 1<=row<=cabinet.wall['rows']:
+                    target=(wall_id,col,row);break
+            if target is None:raise ValueError(tr('Le tiroir doit rester entièrement dans un meuble.'))
+            changed=store.move_drawer(self.db,drawer_id,*target)
+        except (ValueError,sqlite3.Error,OSError) as e:
+            item.setPos(getattr(item,'start_position',item.pos()));self.placement_hint.setText(str(e));return
+        if not changed:item.setPos(getattr(item,'start_position',item.pos()));return
+        self.activate_wall(target[0]);self.drawer_id=drawer_id
+        self.placement_hint.setText(tr('Tiroir déplacé. Son nom et ses références ont été conservés.'))
+        # Never clear a scene from inside a graphics item's mouseReleaseEvent.
+        self.drawer_refresh_timer.start()
+    def finish_drawer_move(self):
+        self.redraw();self.load_contents();self.search()
+    def print_wall(self):
+        if self.wall_id is None:return
+        from .storage_printing import StoragePrintPreview
+        window=StoragePrintPreview(self.db,self.engine,self.wall_id,self)
+        show_window(window,self)
+        return window
     def load_contents(self):
         self.rows=store.contents(self.db,self.drawer_id) if self.drawer_id else []
         fill_table(self.table,[(p['source'],p['ref'],p['name'],p['chosen_color'],p['chosen_quantity'],tr('3D / photo à charger')) for p in self.rows])
         if self.thumbnails:self.thumbnails.reset()
         self.update_status()
     def update_status(self):
+        self.remove_references.setEnabled(self.drawer_id is not None and bool(self.rows))
         drawer=next((d for d in self.drawers if d['id']==self.drawer_id),None)
         if self.query.text().strip() and not self.matches:self.status.setText('0'+tr(' correspondance(s) dans les tiroirs.'))
         elif drawer:self.status.setText(' · '.join(value for value in (self.wall.currentText(),store.address(drawer),drawer['name']) if value)+' — '+str(len(self.rows))+tr(' référence(s). Les quantités indiquent le stock global, pas le nombre dans ce tiroir.'))
@@ -298,6 +399,22 @@ class StoragePanel(QWidget):
             except (ValueError,sqlite3.Error,OSError) as e:QMessageBox.warning(dialog,tr('Meuble invalide'),str(e));return
             self.reload_walls(identity);dialog.accept()
         buttons.accepted.connect(save);show_window(dialog,self)
+    def rename_dialog(self):
+        captured_wall=self.wall_id
+        if captured_wall is None:return
+        dialog=QDialog(self);dialog._storage_wall_id=captured_wall;dialog.setWindowTitle(tr('Renommer le meuble'));form=QFormLayout(dialog)
+        name=QLineEdit(self.wall.currentText());name.setObjectName('cabinet_name');name.selectAll();form.addRow(tr('Nom'),name)
+        buttons=QDialogButtonBox(QDialogButtonBox.StandardButton.Save|QDialogButtonBox.StandardButton.Cancel);form.addRow(buttons);buttons.rejected.connect(dialog.reject)
+        def save():
+            try:value=store.rename_wall(self.db,captured_wall,name.text())
+            except (ValueError,sqlite3.Error,OSError) as e:QMessageBox.warning(dialog,tr('Meuble invalide'),str(e));return
+            index=self.wall.findData(captured_wall)
+            if index>=0:
+                self.wall.blockSignals(True);self.wall.setItemText(index,value);self.wall.blockSignals(False)
+            cabinet=self.cabinets.get(captured_wall)
+            if cabinet:cabinet.wall['name']=value;cabinet.setToolTip(value);cabinet.update()
+            self.search();dialog.accept()
+        buttons.accepted.connect(save);show_window(dialog,self);name.setFocus();return dialog
     def position_dialog(self):
         captured_wall=self.wall_id
         current=next((w for w in store.walls(self.db) if w['id']==captured_wall),None)
@@ -363,11 +480,13 @@ class StoragePanel(QWidget):
         if not self.drawer_id:return
         dialog=StockPicker(self.db,self.engine,self.drawer_id,self,self.refresh);dialog._storage_wall_id=self.wall_id;show_window(dialog,self)
     def unassign(self):
-        if not self.drawer_id:return
+        captured_drawer=self.drawer_id
+        if captured_drawer is None or not self.rows:return
         selected=[self.rows[row_index(self.table,index.row())] for index in self.table.selectionModel().selectedRows()]
-        with self.db.connect() as c:
-            for p in selected:c.execute('DELETE FROM storage_contents WHERE drawer_id=? AND item_id=? AND color=?',(self.drawer_id,p['id'],p['chosen_color']))
-        self.refresh()
+        if not selected and QMessageBox.question(self,tr('Retirer les références du tiroir'),tr('Retirer toutes les références de ce tiroir ? Les pièces restent dans le stock.'),QMessageBox.StandardButton.Yes|QMessageBox.StandardButton.No,QMessageBox.StandardButton.No)!=QMessageBox.StandardButton.Yes:return
+        try:count=store.unassign(self.db,captured_drawer,[(p['id'],p['chosen_color']) for p in selected] if selected else None)
+        except (ValueError,sqlite3.Error,OSError) as e:QMessageBox.warning(self,tr('Retrait impossible'),str(e));return
+        self.refresh();return count
     def refresh(self):
         if not self.isVisible():return
         self.redraw();self.load_contents();self.search()
@@ -395,14 +514,7 @@ class StoragePanel(QWidget):
         def work(progress):
             for part,identity,key in wanted:
                 if token!=self.icon_token:break
-                def factory():
-                    image=None
-                    if part['kind']=='part' and key[2]=='3d' and not key[3]:
-                        try:
-                            if self.engine.renderer():image,_=self.engine.render_3d(part,(100,65),str(part['chosen_color']))
-                        except Exception:pass
-                    return image if image is not None else self.engine.photo(part,download=True,color=str(part['chosen_color']))
-                try:image=cache.get_or_create(key,factory,generation)
+                try:image,_=load_thumbnail(self.engine,part,key,generation)
                 except Exception:image=None
                 progress((identity,image))
         def delivered(data):
@@ -415,6 +527,7 @@ class StoragePanel(QWidget):
     def showEvent(self,event):
         super().showEvent(event);self.refresh();QTimer.singleShot(0,self.fit)
     def hideEvent(self,event):
+        self.save_thumbnail_size()
         self.icon_token+=1;self.icon_timer.stop();self.search_timer.stop();self.icons.clear()
         if self.thumbnails:self.thumbnails.suspend()
         super().hideEvent(event)

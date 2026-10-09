@@ -12,6 +12,40 @@ from PySide6.QtGui import QIcon
 from .ui_common import async_task,pixmap
 
 
+class ThumbnailContext:
+    """The same visual key for tables, the storage wall and A4 output."""
+    def __init__(self,db):self.db=db
+    def state(self,item):
+        from .edge_style import style_for_item
+        from .viewpoint import camera_for_item
+        visual=self.db.visual(item['id'])
+        if getattr(self,'force_3d',False):visual=dict(visual,mode='3d',image='')
+        chosen=item.get('chosen_color');color=str(chosen if chosen not in (None,'') else visual['color'])
+        from .thumbnail_cache import file_stamp
+        from .brickarchitect import model_ref,record_for
+        info=record_for(self.db,item['ref']) if item['source']=='BA' else {}
+        from .preview import VisualEngine
+        rgb=VisualEngine.color_rgb(self,item,color)
+        return (item['id'],color,visual['mode'],visual['image'],visual['color'],
+                self.db.setting('default_color','#f3d55b'),self.db.setting('ldraw',''),tuple(camera_for_item(self.db,item).values()),self.db.setting('architect_model_'+str(item['id']),''),self.db.setting('architect_photo_choice_'+str(item['id']),''),self.db.setting('edge_strength',0),file_stamp(visual['image']),file_stamp(self.db.setting('ldraw','')),file_stamp(self.db.path.parent/'brickarchitect_ldraw.zip'),file_stamp(resources_directory()/'brickarchitect_ldraw.zip'),tuple(sorted(style_for_item(self.db,item).items())),'thumb-v3-colors',rgb,item.get('image',''),model_ref(self.db,item),tuple(info.get('BL',[])),tuple(info.get('RB',[])))
+
+
+
+def load_thumbnail(engine,item,key,generation):
+    """Coalesce rendering and photo access through the shared bounded cache."""
+    note=''
+    def factory():
+        nonlocal note
+        image=None;color=key[1]
+        if item['kind']=='part' and key[2]=='3d' and not key[3]:
+            try:
+                if engine.renderer():image,_=engine.render_3d(item,(100,65),color)
+            except Exception as error:note=str(error)
+        if image is None:image=engine.photo(item,download=True,color=color)
+        return image
+    return engine.thumbnail_cache.get_or_create(key,factory,generation),note
+
+
 class PartThumbnails(QObject):
     """Load visible inventory images in a worker, retaining per-row colors."""
     def __init__(self,table,db,engine,rows,column,parent,force_3d=False):
@@ -55,19 +89,7 @@ class PartThumbnails(QObject):
     def stop(self):
         self.active=False;self.suspend()
 
-    def state(self,item):
-        from .edge_style import style_for_item
-        from .viewpoint import camera_for_item
-        visual=self.db.visual(item['id'])
-        if getattr(self,'force_3d',False):visual=dict(visual,mode='3d',image='')
-        chosen=item.get('chosen_color');color=str(chosen if chosen not in (None,'') else visual['color'])
-        from .thumbnail_cache import file_stamp
-        from .brickarchitect import model_ref,record_for
-        info=record_for(self.db,item['ref']) if item['source']=='BA' else {}
-        from .preview import VisualEngine
-        rgb=VisualEngine.color_rgb(self,item,color)
-        return (item['id'],color,visual['mode'],visual['image'],visual['color'],
-                self.db.setting('default_color','#f3d55b'),self.db.setting('ldraw',''),tuple(camera_for_item(self.db,item).values()),self.db.setting('architect_model_'+str(item['id']),''),self.db.setting('architect_photo_choice_'+str(item['id']),''),self.db.setting('edge_strength',0),file_stamp(visual['image']),file_stamp(self.db.setting('ldraw','')),file_stamp(self.db.path.parent/'brickarchitect_ldraw.zip'),file_stamp(resources_directory()/'brickarchitect_ldraw.zip'),tuple(sorted(style_for_item(self.db,item).items())),'thumb-v3-colors',rgb,item.get('image',''),model_ref(self.db,item),tuple(info.get('BL',[])),tuple(info.get('RB',[])))
+    def state(self,item):return ThumbnailContext.state(self,item)
 
     def apply(self,row,key,image,note):
         rows=self.rows()
@@ -105,17 +127,7 @@ class PartThumbnails(QObject):
         def work(progress):
             for row,item,key in pending:
                 if token!=self.token or not self.active:break
-                note=''
-                def factory():
-                    nonlocal note
-                    image=None;color=key[1]
-                    if item['kind']=='part' and key[2]=='3d' and not key[3]:
-                        try:
-                            if self.engine.renderer():image,_=self.engine.render_3d(item,(100,65),color)
-                        except Exception as error:note=str(error)
-                    if image is None:image=self.engine.photo(item,download=True,color=color)
-                    return image
-                try:image=cache.get_or_create(key,factory,generation)
+                try:image,note=load_thumbnail(self.engine,item,key,generation)
                 except Exception as error:image=None;note=str(error)
                 progress((row,key,image,note))
         def delivered(result):

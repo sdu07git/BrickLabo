@@ -81,6 +81,16 @@ def position_wall(db,wall_id,x,y):
         if (x,y)!=(wall['x'],wall['y']):c.execute('UPDATE storage_walls SET x=?,y=? WHERE id=?',(x,y,wall_id))
 
 
+def rename_wall(db,wall_id,name):
+    name=name.strip()
+    if not name:raise ValueError(tr('Nom du meuble invalide.'))
+    with db.connect() as c:
+        wall=c.execute('SELECT name FROM storage_walls WHERE id=?',(wall_id,)).fetchone()
+        if not wall:raise ValueError(tr('Meuble introuvable.'))
+        if wall['name']!=name:c.execute('UPDATE storage_walls SET name=? WHERE id=?',(name,wall_id))
+    return name
+
+
 def relative_position(db,wall_id,reference_id,direction,gap=.2):
     gap=coordinate(gap)
     if gap<0 or wall_id==reference_id:raise ValueError(tr('Position relative du meuble invalide.'))
@@ -141,6 +151,59 @@ def assign(db,drawer_id,entries):
             c.execute('INSERT OR IGNORE INTO storage_contents(drawer_id,item_id,color) VALUES(?,?,?)',(drawer_id,item_id,color))
 
 
+def unassign(db,drawer_id,entries=None):
+    """Remove location links atomically, leaving every stock quantity intact."""
+    with db.connect() as c:
+        c.execute('BEGIN IMMEDIATE')
+        if not c.execute('SELECT 1 FROM storage_drawers WHERE id=?',(drawer_id,)).fetchone():raise ValueError(tr('Tiroir introuvable.'))
+        before=c.total_changes
+        if entries is None:c.execute('DELETE FROM storage_contents WHERE drawer_id=?',(drawer_id,))
+        else:c.executemany('DELETE FROM storage_contents WHERE drawer_id=? AND item_id=? AND color=?',((drawer_id,item_id,str(color or '')) for item_id,color in entries))
+        return c.total_changes-before
+
+
+def move_drawer(db,drawer_id,wall_id,col,row):
+    """Commit a drop atomically; swap equal drawers, or use unnamed empty cells.
+
+    IDs carry their labels and stock links, including transfers between cabinets.
+    An invalid drop never deletes or truncates a neighbour. The vacated footprint
+    gets standard empty drawers so the cabinet remains usable after a large move.
+    """
+    if any(isinstance(v,bool) or not isinstance(v,int) or not 1<=v<=100 for v in (col,row)):
+        raise ValueError(tr('Position ou taille du tiroir invalide.'))
+    with db.connect() as c:
+        c.execute('BEGIN IMMEDIATE')
+        drawer=c.execute('SELECT * FROM storage_drawers WHERE id=?',(drawer_id,)).fetchone()
+        wall=c.execute('SELECT * FROM storage_walls WHERE id=?',(wall_id,)).fetchone()
+        if not drawer:raise ValueError(tr('Tiroir introuvable.'))
+        if not wall:raise ValueError(tr('Meuble introuvable.'))
+        if col+drawer['width']-1>wall['columns'] or row+drawer['height']-1>wall['rows']:
+            raise ValueError(tr('Le tiroir doit rester entièrement dans un meuble.'))
+        if (wall_id,col,row)==(drawer['wall_id'],drawer['col'],drawer['row']):return False
+        others=c.execute('SELECT * FROM storage_drawers WHERE wall_id=? AND id<>?',(wall_id,drawer_id)).fetchall()
+        overlapping=[d for d in others if col<d['col']+d['width'] and d['col']<col+drawer['width'] and row<d['row']+d['height'] and d['row']<row+drawer['height']]
+        swap=overlapping[0] if len(overlapping)==1 and (overlapping[0]['col'],overlapping[0]['row'],overlapping[0]['width'],overlapping[0]['height'])==(col,row,drawer['width'],drawer['height']) else None
+        if not swap:
+            populated={r[0] for r in c.execute('SELECT DISTINCT p.drawer_id FROM storage_contents p JOIN storage_drawers d ON d.id=p.drawer_id WHERE d.wall_id=?',(wall_id,))}
+            for other in overlapping:
+                inside=col<=other['col'] and row<=other['row'] and other['col']+other['width']<=col+drawer['width'] and other['row']+other['height']<=row+drawer['height']
+                if not inside or other['name'] or other['id'] in populated:
+                    raise ValueError(tr('Emplacement occupé : échange possible uniquement entre tiroirs de même taille.'))
+            for other in overlapping:c.execute('DELETE FROM storage_drawers WHERE id=?',(other['id'],))
+        # Reserve an off-grid coordinate inside this transaction to avoid the
+        # UNIQUE(wall_id,col,row) collision when two populated drawers exchange.
+        c.execute('UPDATE storage_drawers SET col=0,row=0 WHERE id=?',(drawer_id,))
+        if swap:
+            c.execute('UPDATE storage_drawers SET wall_id=?,col=?,row=? WHERE id=?',(drawer['wall_id'],drawer['col'],drawer['row'],swap['id']))
+        c.execute('UPDATE storage_drawers SET wall_id=?,col=?,row=? WHERE id=?',(wall_id,col,row,drawer_id))
+        if not swap:
+            occupied=c.execute('SELECT col,row,width,height FROM storage_drawers WHERE wall_id=?',(drawer['wall_id'],)).fetchall()
+            covered={(x,y) for d in occupied for y in range(max(drawer['row'],d['row']),min(drawer['row']+drawer['height'],d['row']+d['height'])) for x in range(max(drawer['col'],d['col']),min(drawer['col']+drawer['width'],d['col']+d['width']))}
+            empty=[(drawer['wall_id'],x,y) for y in range(drawer['row'],drawer['row']+drawer['height']) for x in range(drawer['col'],drawer['col']+drawer['width']) if (x,y) not in covered]
+            c.executemany('INSERT INTO storage_drawers(wall_id,col,row) VALUES(?,?,?)',empty)
+    return True
+
+
 def contents(db,drawer_id):
     return db.rows('''SELECT i.*,p.color AS chosen_color,COALESCE(s.quantity,0) AS chosen_quantity
        FROM storage_contents p JOIN items i ON i.id=p.item_id
@@ -148,10 +211,22 @@ def contents(db,drawer_id):
        WHERE p.drawer_id=? ORDER BY i.source,i.ref,p.color''',(drawer_id,))
 
 
-def wall_contents(db,wall_id=None):
-    return db.rows('''SELECT p.drawer_id,i.*,p.color AS chosen_color,COALESCE(s.quantity,0) AS chosen_quantity
+CONTENTS_SQL='''SELECT p.drawer_id,i.*,p.color AS chosen_color,COALESCE(s.quantity,0) AS chosen_quantity
       FROM storage_contents p JOIN storage_drawers d ON d.id=p.drawer_id JOIN items i ON i.id=p.item_id
-      LEFT JOIN stock s ON s.item_id=p.item_id AND s.color=p.color'''+(' WHERE d.wall_id=?' if wall_id is not None else '')+' ORDER BY d.wall_id,d.row,d.col,i.ref',(wall_id,) if wall_id is not None else ())
+      LEFT JOIN stock s ON s.item_id=p.item_id AND s.color=p.color'''
+
+
+def wall_contents(db,wall_id=None):
+    return db.rows(CONTENTS_SQL+(' WHERE d.wall_id=?' if wall_id is not None else '')+' ORDER BY d.wall_id,d.row,d.col,i.ref',(wall_id,) if wall_id is not None else ())
+
+
+def print_snapshot(db):
+    """One read-only snapshot; later preview paints never query the database."""
+    with db.read() as c:
+        c.execute('BEGIN')
+        return {'walls':[dict(r) for r in c.execute('SELECT * FROM storage_walls ORDER BY id')],
+                'drawers':[dict(r) for r in c.execute('SELECT * FROM storage_drawers ORDER BY wall_id,row,col')],
+                'parts':[dict(r) for r in c.execute(CONTENTS_SQL+' ORDER BY d.wall_id,d.row,d.col,i.ref')]}
 
 
 def search(db,query,wall_id=None):

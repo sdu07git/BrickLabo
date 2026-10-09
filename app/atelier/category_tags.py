@@ -1,7 +1,7 @@
 """Searchable category checklist and removable tags."""
 from PySide6.QtCore import Qt,Signal
-from PySide6.QtWidgets import QWidget,QVBoxLayout,QGridLayout,QLineEdit,QListWidget,QListWidgetItem,QPushButton,QScrollArea,QLabel
-from .i18n import tr
+from PySide6.QtWidgets import QWidget,QVBoxLayout,QHBoxLayout,QGridLayout,QLineEdit,QListWidget,QListWidgetItem,QPushButton,QScrollArea,QLabel
+from .i18n import tr,tf
 class TagBar(QScrollArea):
     removed=Signal(str)
     def __init__(self,parent=None):
@@ -22,10 +22,17 @@ class CategoryTags(QWidget):
         self.search=QLineEdit();self.search.setPlaceholderText(tr('Rechercher une catégorie…'));layout.addWidget(self.search)
         self.list=QListWidget();self.list.setMinimumHeight(150);self.list.setMaximumHeight(190);layout.addWidget(self.list)
         self.bar=TagBar();self.bar.removed.connect(self.remove);layout.addWidget(self.bar)
-        clear=QPushButton(tr('Effacer les catégories sélectionnées'));clear.clicked.connect(lambda:self.set_values([]));layout.addWidget(clear)
+        buttons=QHBoxLayout();layout.addLayout(buttons)
+        self.select_all=QPushButton(tr('Sélectionner toutes les catégories'));self.select_all.clicked.connect(self.check_all);buttons.addWidget(self.select_all)
+        clear=QPushButton(tr('Effacer les catégories sélectionnées'));clear.clicked.connect(lambda:self.set_values([]));buttons.addWidget(clear)
+        self.count=QLabel();layout.addWidget(self.count)
         for value in sorted(set(values),key=str.casefold):self.add(value)
-        self.list.itemChanged.connect(lambda _:self.bar.set_tags(self.values()))
-        self.search.textChanged.connect(self.filter);self.bar.set_tags([])
+        self.list.itemChanged.connect(self.update_selection)
+        self.search.textChanged.connect(self.filter);self.update_selection()
+    def update_selection(self,*_):
+        values=self.values();self.bar.set_tags(values)
+        self.count.setText(tf('{} / {} catégories sélectionnées',len(values),self.list.count()) if values else tr('Aucun filtre de catégorie : toutes les catégories.'))
+    def check_all(self):self.set_values(self.list.item(i).text() for i in range(self.list.count()))
     def add(self,value):
         item=QListWidgetItem(value);item.setFlags(item.flags()|Qt.ItemFlag.ItemIsUserCheckable);item.setCheckState(Qt.CheckState.Unchecked);self.list.addItem(item)
     def values(self):
@@ -36,7 +43,7 @@ class CategoryTags(QWidget):
         for value in sorted(values-known):self.add(value)
         for i in range(self.list.count()):
             item=self.list.item(i);item.setCheckState(Qt.CheckState.Checked if item.text() in values else Qt.CheckState.Unchecked)
-        self.list.blockSignals(False);self.filter(self.search.text());self.bar.set_tags(self.values())
+        self.list.blockSignals(False);self.filter(self.search.text());self.update_selection()
     def remove(self,value):self.set_values([v for v in self.values() if v!=value])
     def filter(self,text):
         from .data import normalize

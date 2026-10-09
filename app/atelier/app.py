@@ -6,6 +6,7 @@ from .fileio import atomic_output,error_message
 from .i18n import tr,tf,document,install_qt_language
 
 import json
+import logging
 import os
 import re
 import sys
@@ -94,6 +95,12 @@ class MainWindow(QMainWindow):
         QTimer.singleShot(0,lambda:show_report(self))
         self.import_window=None
         self.startup_timer=QTimer(self);self.startup_timer.setSingleShot(True);self.startup_timer.timeout.connect(self.first_import);self.startup_timer.start(100)
+        self.cleanup_timer=QTimer(self);self.cleanup_timer.setSingleShot(True);self.cleanup_timer.timeout.connect(self.cleanup_old_installations)
+
+    def cleanup_old_installations(self):
+        from .paths import application_root
+        from .software_updates import confirm_running_version
+        async_task(self,lambda progress:confirm_running_version(application_root(),VERSION),lambda result:None,lambda error:logging.getLogger(__name__).warning('Update cleanup: %s',error))
 
     def bind(self,cat):
         self.catalogues.append(cat);cat.selected.connect(self.item_selected);cat.opened.connect(self.open_item);cat.changed.connect(self.refresh_counts)
@@ -134,6 +141,16 @@ class MainWindow(QMainWindow):
 
     def open_item(self,item):
         show_window(RelationsDialog(self.db,self.engine,item,self),self)
+    def show_catalogue_item(self,item_id):
+        item=self.db.get_item(item_id)
+        if not item or item.get('catalogue_hidden'):return False
+        index=next((n for n,(_,source,kind,scope) in enumerate(NAV) if scope=='catalogue' and source==item['source'] and kind==item['kind']),None)
+        catalogue=next((c for c in self.catalogues if c.scope=='catalogue' and c.source==item['source'] and c.kind==item['kind']),None)
+        if index is None or catalogue is None:return False
+        self.nav.setCurrentRow(index)
+        if not catalogue.reveal_item(item_id):return False
+        if self.isMinimized():self.showNormal()
+        self.raise_();self.activateWindow();return True
     def refresh_counts(self):
         for c in self.catalogues:
             if c.scope in ('stock','stock_sets','queue','history') or c.source=='ALT':c.reload()
@@ -314,7 +331,7 @@ class MainWindow(QMainWindow):
         return True
     def closeEvent(self,event):
         if self.generating:QMessageBox.information(self,tr('Génération'),tr('Attends la fin de la génération avant de fermer.'));event.ignore();return
-        self.startup_timer.stop()
+        self.startup_timer.stop();self.cleanup_timer.stop()
         for window in list(getattr(self,'_consultation_windows',[])):window.reject()
         if hasattr(self,'storage'):self.storage.icon_token+=1;self.storage.icon_timer.stop()
         super().closeEvent(event)
@@ -326,6 +343,7 @@ def main():
     logger,logs=setup_logging()
     app=QApplication(sys.argv);install_qt_language(app);from PySide6.QtGui import QIcon;app.setWindowIcon(QIcon(str(resources_directory()/'BrickLabo.ico')));app.setApplicationName(APP_NAME);app.setApplicationVersion(VERSION);app.setOrganizationName('SDU7');app.setStyle('Fusion');app.setStyleSheet(STYLE)
     db=Database(root/'atelier.sqlite');configure_portable_database(db);window=MainWindow(db);window.show()
+    window.cleanup_timer.start(0)
     def exception(typ,value,tb):
         logger.critical(tr('Exception de l’application'),exc_info=(typ,value,tb))
         QMessageBox.critical(window,tr('Erreur'),str(value)+tr('\nDétail enregistré dans :\n')+str(logs/'BrickLabo_logs.txt'))
