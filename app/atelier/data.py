@@ -212,8 +212,10 @@ class Database:
             args.extend([pattern,pattern,pattern])
         return ('WHERE '+' AND '.join(parts) if parts else ''),args
 
-    def query(self,source=None,kind=None,search='',category='',scope='catalogue',page=1,size=100,sort='ref',descending=False,hide_decorated=False,year='',advanced=None):
+    def query(self,source=None,kind=None,search='',category='',scope='catalogue',page=1,size=100,sort='ref',descending=False,hide_decorated=False,year='',advanced=None,reference=None):
         clause,args = self.filter_clause(source,kind,search if not self.search_index_available else '',category)
+        if reference is not None:
+            clause+=(' AND ' if clause else 'WHERE ')+'i.ref=?';args.append(reference)
         from .search_index import indexed_clause, advanced_clause
         extra_parts,extra_args=indexed_clause(search) if self.search_index_available else ([],[])
         ap,aa=advanced_clause(advanced or {},scope);extra_parts+=ap;extra_args+=aa

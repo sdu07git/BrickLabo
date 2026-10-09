@@ -14,7 +14,7 @@
   "target": "Windows 10/11 64 bits",
   "launch": "BrickLabo.exe → app/pythonw.exe → app/bootstrap.py",
   "validation": "Qt/Linux et inspection PE ; lancement natif Windows à vérifier",
-  "version": "0.1.43",
+  "version": "0.1.45",
   "interface_languages": [
     "fr",
     "en"

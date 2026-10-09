@@ -1,4 +1,4 @@
-BrickLabo v0.1.43
+BrickLabo v0.1.45
 
 Extraire le ZIP entier dans un nouveau dossier accessible en ecriture.
 Fermer l ancienne version, conserver une sauvegarde et copier Donnees a cote du nouvel exe.
@@ -6,6 +6,13 @@ Lancer BrickLabo.exe ; conserver app, ressources, documentation et licences ense
 Mises a jour suivantes : Mise a jour des donnees > Rechercher une mise a jour du logiciel.
 Le ZIP complet et son SHA-256 sont verifies ; Donnees est conserve.
 Mon rangement : Disposer les meubles ou Organiser le meuble > Positionner / Supprimer le meuble.
+Filtres avances : Selectionner toutes les categories, puis decocher les categories a retirer.
+Mon rangement > Organiser le meuble : Deplacer les tiroirs ou Imprimer les meubles sur A4 (PDF possible).
+Mon rangement : molette et boutons + / - pour zoomer ; Zoom sur le meuble ; Vue complete pour tous les meubles.
+Taille des apercus sur les tiroirs : reglage conserve. Renommer le meuble dans Organiser le meuble.
+Retirer les references : selection ou, sans selection, vider les liens du tiroir apres confirmation ; stock conserve.
+Sets contenant : clic droit pour les alternatives ou pour afficher le set exact dans son catalogue.
+Apres mise a jour integree et demarrage reussi, anciennes copies du logiciel supprimees ; Donnees conserve.
 Aide : documentation/AIDE.html. Historique : documentation/NOUVEAUTES.txt.
 Diagnostic : BrickLabo.exe --self-test, puis Donnees/diagnostic.json.
 En cas d erreur de chemin, deplacer tout le logiciel vers un chemin plus court.
@@ -16,3 +23,7 @@ English guide: documentation/AIDE.en.html.
 
 Future updates: Data updates > Check for a software update.
 The complete ZIP and GitHub SHA-256 are verified; Donnees is preserved.
+
+Storage: wheel / +/- zoom, Zoom to cabinet, Full view, saved Drawer preview size and Rename cabinet.
+Sets containing: right-click for alternate builds or the exact set catalogue.
+After a successful integrated update startup, old application copies are removed; Donnees is preserved.

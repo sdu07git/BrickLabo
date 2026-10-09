@@ -53,7 +53,7 @@ class SoftwareUpdateDialog(QDialog):
         for button in (self.check_button, self.download_button, self.install_button):
             row.addWidget(button)
         layout.addLayout(row)
-        self.install_help = QLabel(tr('Installer et redémarrer ferme BrickLabo, attend la fin des tâches et remplace uniquement le logiciel. Si le remplacement échoue, l’ancienne installation est rétablie.'))
+        self.install_help = QLabel(tr('Installer et redémarrer ferme BrickLabo, attend la fin des tâches et remplace uniquement le logiciel. Si le remplacement échoue, l’ancienne installation est rétablie. Après le démarrage réussi de la nouvelle version, l’ancienne version est supprimée automatiquement. Donnees est conservé.'))
         self.install_help.setWordWrap(True)
         layout.addWidget(self.install_help)
         self.previous = previous_installation(self.root)
