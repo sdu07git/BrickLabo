@@ -1,7 +1,27 @@
-# BrickLabo — v0.1.43
+# BrickLabo — v0.1.45
 
-Windows desktop software for LEGO catalogues, stock, build searches and labels. This version uses the delivered v0.1.42 sources, based on the original v0.1.28.
+Windows desktop software for LEGO catalogues, stock, construction searches and labels. This version continues the delivered v0.1.44, based on the original v0.1.28.
 
+**v0.1.45 downloads:** [complete Windows package](https://github.com/sdu07git/BrickLabo/releases/download/v0.1.45/BrickLabo_v0.1.45_Complet.zip) · [source code with resources](https://github.com/sdu07git/BrickLabo/releases/download/v0.1.45/BrickLabo_v0.1.45_Sources.zip) · [release notes](https://github.com/sdu07git/BrickLabo/releases/tag/v0.1.45). This release combines the v0.1.44 additions and v0.1.45 fixes.
+
+## Storage, set actions and update cleanup — v0.1.45
+
+In **My storage**, use the **wheel** or **− / +** buttons to zoom; **Shift + wheel** scrolls. **Zoom to cabinet** isolates and fits the selected cabinet. **Full view** enables **All cabinets** and fits the whole layout after zooming or panning. The percentage shows the current zoom. **Drawer preview size** changes thumbnail size inside the available face; it is retained and included in other-preference backups. Names, addresses and handles stay clear, including mixed or wide drawers. These controls reuse the shared thumbnail cache.
+
+**Organise cabinet → Rename cabinet…** changes its name without moving drawers or changing their references. **Remove drawer references** removes selected rows from the lower table. With no selection, it offers to remove all references from that drawer and asks for confirmation. Parts, colours, quantities and links to other drawers are preserved in stock.
+
+In **Sets containing**, right-click a set to **Show original box**, **View alternate builds** or **Show in the set catalogue**. Alternate builds use the existing Rebrickable window and the same API-key and availability requirements. Catalogue navigation selects the correct source, clears filters hiding the set and selects its exact reference. Remove the **Exact reference: … ×** tag to return to ordinary search results. The consultation stays open and sorted table actions retain the correct set identity.
+
+After an integrated update and successful startup of the new version, old software copies created by the installer in **Donnees/maj/b…** are automatically removed in the background. Interrupted installation rollback files are preserved; a locked file is retried at the next startup. **Donnees**, personal backups and files outside the software are preserved. This does not scan the disk for other manually extracted installation folders.
+
+
+## Category selection, drawer dragging and A4 printing — v0.1.44
+
+**Categories.** In advanced filters, click **Select all categories**, then uncheck categories to exclude or remove their tags with ×. This also selects categories hidden by the search. The counter shows the selection, which can be saved as a preset. **Clear selected categories** restores a search without a category filter.
+
+**Moving drawers.** Use **My storage → Organise cabinet → Move drawers** and drag a drawer to another cell. In **All cabinets** view, it can move to another cabinet. Drawers with the same width and height swap positions, even if both contain references. A large drawer can use several unnamed empty cells; its old cells become empty standard drawers. Incompatible occupied locations and drops outside a cabinet are rejected. Names, references, colours and stock quantities are preserved; the move is saved on mouse release. Uncheck **Move drawers** to finish. This mode and **Arrange cabinets** are mutually exclusive.
+
+**A4 printing.** Use **Organise cabinet → Print cabinets on A4…**. The independent preview offers the selected cabinet, one page per cabinet or an overview preserving their positions, in portrait or landscape. The front view has a white background, names, column / drawer addresses and up to three thumbnails per drawer. Choose a printer or **Export to PDF…**. Thumbnails use the shared cache and are reused in memory for page changes, orientation changes and printing. Unavailable images fall back to references. The preview keeps the layout captured when it opened: reopen it after changing your storage.
 
 ## Cabinet arrangement and deletion — v0.1.43
 
@@ -21,7 +41,7 @@ Use **Data updates → Check for a software update** to check public stable rele
 
 **Install and restart** closes BrickLabo after running tasks and SQLite are closed. Close other instances first; complete or cancel a pending data restoration. A small isolated runtime allows replacement without using DLLs still open in the application. Personal files, stock, templates, storage locations, settings and keys in **Donnees** remain in place. A replacement error or failure to launch the executable restores the previous files. A later startup error inside the new version still needs diagnosis using logs and a compatible backup.
 
-Previous files are retained in **Donnees/maj/b…**, accessible through **Open the previous installation folder**. Work files remain in **Donnees/temp/u…**, using short names and Windows file access that supports long paths. The ZIP and unpacked copy are deleted after successful installation; inactive isolated-runtime leftovers are cleaned at the next startup or by temporary-file cleanup. Cleanup protects active installers and workspaces needed to recover interrupted transactions. Previous installations are excluded from data backups, measured in **Disk space**, and can be deleted manually after checking the new version.
+Old application files stay in **Donnees/maj/b…** during replacement. From v0.1.45, recognised old copies are deleted automatically after successful startup, while interrupted transactions retain their rollback files and locked files are retried at the next startup. **Donnees** and personal backups are preserved. Work files remain in **Donnees/temp/u…**, using short names and Windows long-path access. The ZIP and unpacked copy are deleted after successful installation; inactive isolated-runtime leftovers are cleaned at the next startup or by temporary-file cleanup. Active installers and workspaces needed to recover interrupted transactions stay protected.
 
 After a power loss during replacement, close every instance, inspect the `stage` field in `Donnees/maj/transaction.json`, open a terminal in the corresponding `Donnees/temp/u…` folder and run `r\python.exe -I -B i.py --recover`. Recovery verifies the retained plan, restores old files and restarts the application. If preparation is lost, use Explorer with all instances closed to copy the files in `Donnees/maj/b…` back into the installation folder, without moving `Donnees`. A deliberate downgrade also requires a compatible data backup if its format changed.
 
@@ -48,8 +68,6 @@ Consultation windows, construction searches, inventories, instructions, previews
 Use **Data updates → Load set inventories in batches** to list Rebrickable or BrickLink sets by reference / name / theme, select rows or enter known catalogue references. **Queue selected sets** saves a queue. Batch size ranges from 10 to 1000. **Load next batch** stops after one batch; **Continue through batches** runs until paused. Complete local inventories are skipped by default; refresh is an explicit queue option. Queues, successes and errors survive closing and restarting. **Retry failed items** requeues errors only. An interrupted inventory page is not published as a partial inventory. Downloads require the source API credentials. Rebrickable requests are spaced; authentication or throttling failures stop the batch and preserve the queue.
 
 Loaded inventories do not mark sets as owned or add parts to stock. They feed **Buildable sets** and suggestions of alternatives from rebuildable sets. Official-set inventories are not a complete MOC inventory catalogue: API v3 does not provide general MOC inventories. Exact MOC comparisons require the MOC's own inventory. For a full Rebrickable catalogue, use its existing CSV downloads.
-
-
 
 ## v0.1.39 checks and fixes
 
@@ -104,14 +122,18 @@ Read [English help](documentation/AIDE.en.html) and [component licences](documen
 | 0.1.41 | Transparent label backgrounds, exports and printing. |
 | 0.1.42 | Verified GitHub updates, installation after shutdown and rollback. |
 | 0.1.43 | Cabinet deletion and persistent arrangements alongside or above others. |
+| 0.1.44 | Select all categories, drawer dragging and swaps, A4 cabinet printing / PDF with thumbnails. |
+| 0.1.45 | Storage zoom and larger thumbnails, cabinet renaming and reference-removal fixes, containing-set actions and automatic removal of previous application copies after a successful update. |
 
 One bilingual [NOUVEAUTES.txt](documentation/NOUVEAUTES.txt) holds cumulative notes. This branch does not document a released 0.1.29. The 0.1.28b / Range variants were not used as the baseline. Test reports are excluded from the source package.
 
 ## Development and diagnostics
 
-The repository retains the source ZIP layout. `ressources/complete.zip` is excluded from Git because it exceeds GitHub’s file size limit. Copy this LDraw archive from **BrickLabo_v0.1.43_Sources.zip** or **BrickLabo_v0.1.43_Complet.zip**, available in [releases](https://github.com/sdu07git/BrickLabo/releases), to restore the shipped models and run the tests that depend on them. GitHub’s automatic “Source code” archives do not include this file.
+The repository follows the source ZIP layout. `ressources/complete.zip` is excluded from Git because it exceeds GitHub’s regular file-size limit. Copy this LDraw archive from **BrickLabo_v0.1.45_Sources.zip** or **BrickLabo_v0.1.45_Complet.zip** in the [v0.1.45 release](https://github.com/sdu07git/BrickLabo/releases/tag/v0.1.45) to restore the bundled models and run tests that use them. GitHub’s automatic “Source code” archives omit this file.
 
-Install Python 3.12 and `app/requirements.txt` in a virtual environment, then run `python app/bootstrap.py`. Run `python tools/run_tests.py` for tests. On Linux with MinGW-w64, run `python tools/build_distribution.py path/BrickLabo_v0.1.37_Complet.zip output_folder`. The tool reuses libraries from the previous complete package and also accepts the old v0.1.36 layout. `BrickLabo.exe --self-test` writes `Donnees/diagnostic.json`; console equivalent: `app/python.exe -B app/bootstrap.py --self-test`. Tests run on Qt/Linux; the compiled launcher and archive structure are inspected. Native Windows execution remains to be checked on Windows.
+**v0.1.45 validation:** 454 tests passed on Qt/Linux; archive consistency, dependency versions and embedded launcher icon resources verified. Native execution still needs verification on Windows.
+
+Install Python 3.12 and `app/requirements.txt` in a virtual environment, then run `python app/bootstrap.py`. Run `python tools/run_tests.py` for tests. On Linux with MinGW-w64, run `python tools/build_distribution.py path/BrickLabo_v0.1.43_Complet.zip output_folder`. The tool reuses libraries from the previous complete package and also accepts the old v0.1.36 layout. `BrickLabo.exe --self-test` writes `Donnees/diagnostic.json`; console equivalent: `app/python.exe -B app/bootstrap.py --self-test`. Tests run on Qt/Linux; the compiled launcher and archive structure are inspected. Native Windows execution remains to be checked on Windows.
 
 Project: https://github.com/sdu07git/BrickLabo. Keep Donnees and private backups out of public repositories.
 
