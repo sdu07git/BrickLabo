@@ -60,6 +60,9 @@ def language_dialog(db,parent):
  choice.setCurrentIndex(max(0,choice.findData(db.setting('ui_language','fr'))));layout.addWidget(choice)
  info=QLabel(tr('Le changement de langue sera appliqué au prochain démarrage. Les noms et catégories des bases restent inchangés.'));info.setWordWrap(True);layout.addWidget(info)
  buttons=QDialogButtonBox(QDialogButtonBox.StandardButton.Save|QDialogButtonBox.StandardButton.Cancel);layout.addWidget(buttons);buttons.accepted.connect(dialog.accept);buttons.rejected.connect(dialog.reject)
- if dialog.exec()==QDialog.DialogCode.Accepted:
-  db.set_setting('ui_language',choice.currentData())
-  QMessageBox.information(parent,tr('Redémarrage nécessaire'),tr('Langue enregistrée. Ferme puis relance BrickLabo pour traduire toutes les fenêtres.'))
+ def saved(result):
+  if result==QDialog.DialogCode.Accepted:
+   db.set_setting('ui_language',choice.currentData())
+   QMessageBox.information(parent,tr('Redémarrage nécessaire'),tr('Langue enregistrée. Ferme puis relance BrickLabo pour traduire toutes les fenêtres.'))
+ from .windows import show_window
+ show_window(dialog,parent,saved)

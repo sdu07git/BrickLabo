@@ -15,7 +15,7 @@ from PySide6.QtWidgets import (QDialog,QWidget,QVBoxLayout,QHBoxLayout,QSplitter
                               QFileDialog,QLabel,QScrollArea,QInputDialog,QMessageBox)
 
 from .labels import default_template,render_label,template_for_item,individual_template_key,category_outline,independent_category
-from .ui_common import pixmap
+from .ui_common import pixmap,label_pixmap,transparency_brush
 
 
 NAMES={'category':tr('Texte de catégorie'),'category_band':tr('Bandeau de catégorie'),'main':tr('Vue principale / photo'),'top':tr('Vue de dessus'),'side':tr('Vue de côté'),
@@ -74,6 +74,7 @@ class LabelEditor(QDialog):
             b=QPushButton(name);b.clicked.connect(func);lv.addWidget(b)
         split.addWidget(left)
         center=QWidget();cv=QVBoxLayout(center);self.scene=QGraphicsScene();self.view=QGraphicsView(self.scene);self.view.setRenderHint(QPainter.RenderHint.Antialiasing);cv.addWidget(self.view,1)
+        self.transparency_brush=transparency_brush()
         zoomrow=QHBoxLayout();self.snap=QCheckBox(tr('Grille / aimantation 0,5 mm'));zoomrow.addWidget(self.snap);zoomrow.addWidget(QLabel(tr('Zoom')));self.zoom=QSlider(Qt.Orientation.Horizontal);self.zoom.setRange(25,250);self.zoom.setValue(100);self.zoom.valueChanged.connect(self.zoom_changed);zoomrow.addWidget(self.zoom);cv.addLayout(zoomrow)
         self.small=QLabel();self.small.setAlignment(Qt.AlignmentFlag.AlignCenter);cv.addWidget(self.small);split.addWidget(center)
         right=QWidget();form=QFormLayout(right);self.props={}
@@ -93,8 +94,11 @@ class LabelEditor(QDialog):
         for key,label,w in [('width',tr('Largeur totale (mm)'),self.width),('height',tr('Hauteur totale (mm)'),self.height),('border',tr('Contour (mm)'),self.border),('margin',tr('Repère de marge (mm)'),self.margin)]:
             w.setRange(.1,300);w.setDecimals(2);w.setValue(self.template[key]);w.valueChanged.connect(self.format_changed);form.addRow(label,w)
             if individual and key in ('width','height'):w.setEnabled(False)
-        for name,func in [(tr('Contour de cette catégorie…'),self.category_color),(tr('Fond…'),lambda:self.format_color('background')),(tr('Contour par défaut…'),lambda:self.format_color('outline'))]:
+        self.transparent_background=QCheckBox(tr('Fond transparent'));self.transparent_background.setChecked(bool(self.template.get('transparent_background',False)));self.transparent_background.setToolTip(tr('Conserver la transparence dans les PNG, les PDF et l’impression. Les photos gardent leur propre fond.'));form.addRow(self.transparent_background)
+        for key,name,func in [('category',tr('Contour de cette catégorie…'),self.category_color),('background',tr('Fond…'),lambda:self.format_color('background')),('outline',tr('Contour par défaut…'),lambda:self.format_color('outline'))]:
             b=QPushButton(name);b.clicked.connect(func);form.addRow(b)
+            if key=='background':self.background_button=b;self.background_button.setEnabled(not self.transparent_background.isChecked())
+        self.transparent_background.toggled.connect(self.background_changed)
         self.edge_controls=None;self.edge_revision=0;self.edge_running=False;self.edge_closed=False
         self.edge_timer=QTimer(self);self.edge_timer.setSingleShot(True);self.edge_timer.setInterval(140);self.edge_timer.timeout.connect(self.render_edge_preview)
         self.edge_status=QLabel();self.edge_status.setWordWrap(True)
@@ -143,13 +147,13 @@ class LabelEditor(QDialog):
         from .label_pieces import bindings
         revision=repr(bindings(self.template))
         if revision!=self.piece_revision:self.piece_revision=revision;self.schedule_edge_preview()
-        im=render_label(self.item,self.db,self.visuals,self.template,dpi=254);self.scene.clear();self.scene.addPixmap(pixmap(im));self.scene.setSceneRect(0,0,im.width,im.height);self.handles=[]
+        im=render_label(self.item,self.db,self.visuals,self.template,dpi=254);self.view.setBackgroundBrush(self.transparency_brush if self.template.get('transparent_background',False) else QBrush());self.scene.clear();self.scene.addPixmap(pixmap(im));self.scene.setSceneRect(0,0,im.width,im.height);self.handles=[]
         margin=self.template.get('margin',1)*10
         guide=self.scene.addRect(margin,margin,max(0,im.width-2*margin),max(0,im.height-2*margin),QPen(QColor('#aab2bc'),.5,Qt.PenStyle.DashLine));guide.setZValue(50)
         for i,l in enumerate(self.template['layers']):
             if l.get('visible',True):handle=LayerHandle(self,i,l);self.scene.addItem(handle);self.handles.append(handle)
         for handle in self.handles:handle.setSelected(handle.index==self.layer_list.currentRow())
-        self.small.setPixmap(pixmap(im).scaledToWidth(300,Qt.TransformationMode.SmoothTransformation))
+        self.small.setPixmap(label_pixmap(im).scaledToWidth(300,Qt.TransformationMode.SmoothTransformation))
     def zoom_changed(self,value):self.view.resetTransform();self.view.scale(value/100,value/100)
     def add_piece(self):
         from .label_pieces import pick_piece,add_piece_layers
@@ -179,10 +183,14 @@ class LabelEditor(QDialog):
     def format_color(self,key):
         c=QColorDialog.getColor(QColor(self.template[key]),self)
         if c.isValid():self.snapshot();self.template[key]=c.name();self.refresh_canvas()
+    def background_changed(self,checked):
+        if self.updating:return
+        self.snapshot();self.template['transparent_background']=bool(checked);self.background_button.setEnabled(not checked);self.refresh_canvas()
     def reset(self):self.snapshot();self.template=default_template();self.sync_format();self.reload_layers()
     def sync_format(self):
         self.updating=True
         for k,w in [('width',self.width),('height',self.height),('border',self.border),('margin',self.margin)]:w.setValue(self.template[k])
+        self.transparent_background.setChecked(bool(self.template.get('transparent_background',False)));self.background_button.setEnabled(not self.transparent_background.isChecked())
         self.updating=False
         if self.edge_controls:
             self.edge_controls.set_settings(self.template.get('edge_settings') or general_style(self.db),self.template.get('edge_settings') is None);self.schedule_edge_preview()

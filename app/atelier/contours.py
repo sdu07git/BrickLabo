@@ -55,7 +55,7 @@ class ContourDialog(QDialog):
     def render_preview(self):
         if not self.preview_item:return
         self.label_image=render_label(self.preview_item,self.db,self.visual,self.template,dpi=160)
-        scalable(self.image,self.label_image,max(1,self.scroll.viewport().width()-20),max(1,self.scroll.viewport().height()-20))
+        scalable(self.image,self.label_image,max(1,self.scroll.viewport().width()-20),max(1,self.scroll.viewport().height()-20),show_transparency=True)
         self.swatch.setText(tr('Contour : ')+category_outline(self.category.currentText(),self.db,self.template))
     def eventFilter(self,watched,event):
         if watched is self.scroll.viewport() and event.type()==QEvent.Type.Resize:self.timer.start(35)

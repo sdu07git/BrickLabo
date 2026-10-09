@@ -1,5 +1,6 @@
 """Application temporary sessions, protected by process leases."""
 import atexit
+import json
 import os
 import re
 import shutil
@@ -21,17 +22,28 @@ def _acquire(stream):
         fcntl.flock(stream.fileno(),fcntl.LOCK_EX|fcntl.LOCK_NB)
 def is_live(folder):
     if _session and Path(folder).resolve()==_session:return True
-    lease=Path(folder)/'actif'
-    if not lease.exists():return False
-    try:
-        with lease.open('r+b') as stream:_acquire(stream)
-        return False
-    except OSError:return True
+    # A detached updater overlaps the GUI lease during a safe ownership handoff.
+    for name in ('actif','maj'):
+        lease=Path(folder)/name
+        if not lease.exists():continue
+        try:
+            with lease.open('r+b') as stream:_acquire(stream)
+        except OSError:return True
+    return False
 def purge(root,days=0,protected=(),sessions_only=False):
     root=Path(root);removed=freed=0;errors=[];cutoff=time.time()-days*86400
     if root.is_symlink() or not root.is_dir():return removed,freed,errors
     with _lock:active=set(_active)
     protected=[Path(p).resolve() for p in protected]
+    # Retain the standalone recovery helper after a crash until the transaction
+    # has been repaired, including when the user explicitly purges old temps.
+    journal=root.parent/'maj'/'transaction.json'
+    try:
+        if journal.is_file() and journal.stat().st_size<1024*1024:
+            transaction=json.loads(journal.read_text(encoding='utf-8'))
+            stage=transaction.get('stage','')
+            if transaction.get('status') in ('installing','rollback_failed') and re.fullmatch(r'u[0-9a-f]{10}',stage):protected.append((root/stage).resolve())
+    except (OSError,ValueError,TypeError):pass
     for entry in root.iterdir():
         if entry.is_symlink() or sessions_only and (not entry.is_dir() or not re.fullmatch(r's[0-9a-f]{10}',entry.name)):continue
         if entry.is_dir() and is_live(entry):continue

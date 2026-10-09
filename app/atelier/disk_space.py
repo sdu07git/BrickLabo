@@ -23,6 +23,7 @@ def locations(db):
  root=db.path.parent
  result={tr('Total du dossier Donnees'):root,tr('Base de données'):root,tr('Temporaires'):root/'temp',tr('Miniatures'):root/'cache'/'miniatures',tr('Images (locales et téléchargées)'):root/'images',tr('Notices'):root/'Notices',tr('Archives LDraw'):root,tr('Téléchargements des bases'):root/'downloads',tr('Étiquettes générées'):Path(db.setting('output',str(root/'Exports'))),tr('Fichiers fournis'):resources_directory()}
  if (root/'temporaires').is_dir():result[tr('Anciens temporaires')]=root/'temporaires'
+ if (root/'maj').is_dir():result[tr('Anciennes installations du logiciel')]=root/'maj'
  return result
 
 def usage(db):

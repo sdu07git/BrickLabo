@@ -18,6 +18,7 @@ from .services import API,request
 from .preview import Preview
 from .thumbnails import PartThumbnails
 from .boxes import BoxDialog,boxes_for_set
+from .windows import show_window,notify_changed
 
 
 class APIDialog(QDialog):
@@ -49,9 +50,19 @@ class ImportDialog(QDialog):
         apirow=QHBoxLayout();self.rb_button=QPushButton(tr('Télécharger les exports complets Rebrickable'));self.rb_button.clicked.connect(self.download_rb);apirow.addWidget(self.rb_button)
         self.api_button=QPushButton(tr('Mise à jour API de la référence sélectionnée'));self.api_button.clicked.connect(self.update_api);apirow.addWidget(self.api_button);layout.addLayout(apirow)
         self.bl_button=QPushButton(tr('Ouvrir les téléchargements du catalogue BrickLink'));self.bl_button.clicked.connect(lambda:QDesktopServices.openUrl(QUrl('https://www.bricklink.com/catalogDownload.asp')));layout.addWidget(self.bl_button)
+        batches=QPushButton(tr('Charger les inventaires de sets par lots'))
+        batches.clicked.connect(self.open_batches);layout.addWidget(batches)
+        self.software_button=QPushButton(tr('Rechercher une mise à jour du logiciel'))
+        self.software_button.clicked.connect(self.open_software_update);layout.addWidget(self.software_button)
         self.progress_label=QLabel(tr('Prêt'));self.progress_label.setWordWrap(True);layout.addWidget(self.progress_label)
         self.close_button=QPushButton(tr('Fermer'));self.close_button.clicked.connect(self.accept);layout.addWidget(self.close_button);self.refresh()
         if auto_start:__import__('PySide6.QtCore',fromlist=['QTimer']).QTimer.singleShot(0,self.start)
+    def open_batches(self):
+        from .inventory_batch_dialog import InventoryBatchDialog
+        show_window(InventoryBatchDialog(self.db,self),self)
+    def open_software_update(self):
+        from .software_update_dialog import SoftwareUpdateDialog
+        show_window(SoftwareUpdateDialog(self),self)
     def refresh(self):
         rows=self.db.rows('SELECT * FROM imports ORDER BY file');self.table.setRowCount(len(rows))
         for r,row in enumerate(rows):
@@ -63,7 +74,7 @@ class ImportDialog(QDialog):
         if paths:self.paths=paths;self.refresh()
     def busy(self,value):
         self.running=value
-        for w in [self.choose,self.run_button,self.rb_button,self.api_button,self.close_button]:w.setEnabled(not value)
+        for w in [self.choose,self.run_button,self.rb_button,self.api_button,self.close_button,self.software_button]:w.setEnabled(not value)
     def reject(self):
         if not self.running:super().reject()
     def start(self):
@@ -169,13 +180,13 @@ class RelationsDialog(QDialog):
         if not index.isValid() or index.row()>=len(self.sets):return
         item=dict(self.sets[index.row()]);self.set_table.selectRow(index.row())
         menu=QMenu(self)
-        action=menu.addAction(tr('Afficher la boîte d’origine'),lambda:BoxDialog(self.db,self.engine,item,self).exec())
+        action=menu.addAction(tr('Afficher la boîte d’origine'),lambda:show_window(BoxDialog(self.db,self.engine,item,self),self))
         action.setEnabled(bool(boxes_for_set(self.db,item)));action.setToolTip(tr('Ouvrir la boîte BrickLink du set.') if action.isEnabled() else tr('Aucune boîte répertoriée pour ce set ; importer Original Boxes.txt si nécessaire.'))
         menu.setToolTipsVisible(True);menu.exec(self.set_table.viewport().mapToGlobal(pos))
 
     def open_containing_set(self,_):
         row=self.set_table.currentRow()
-        if 0<=row<len(self.sets):RelationsDialog(self.db,self.engine,self.sets[row],self).exec()
+        if 0<=row<len(self.sets):show_window(RelationsDialog(self.db,self.engine,self.sets[row],self),self)
     def show_set_image(self,item):
         self.set_image_token+=1;token=self.set_image_token
         self.set_image_title.setText((tr('Aperçu de la mini-figure — ') if item['kind']=='minifig' else tr('Aperçu du set — '))+item['ref'])
@@ -215,7 +226,7 @@ class RelationsDialog(QDialog):
     def open_component(self,_):
         r=self.part_table.currentRow()
         if 0<=r<len(self.parts) and self.parts[r]['kind'] in ('set','minifig'):
-            RelationsDialog(self.db,self.engine,self.parts[r],self).exec()
+            show_window(RelationsDialog(self.db,self.engine,self.parts[r],self),self)
     def fetch_rb(self):
         async_task(self,lambda progress:API(self.db).rb_minifig_components(self.item),lambda parts:self.load_set(self.item),lambda e:self.progress_label.setText(e))
     def closeEvent(self,event):
@@ -234,6 +245,7 @@ class RelationsDialog(QDialog):
         try:self.db.add_many([(target,p['id'],str(p.get('chosen_color','')),p.get('chosen_quantity',1)) for p in selected])
         except Exception as error:QMessageBox.warning(self,tr('Ajout impossible'),str(error));return
         self.progress_label.setText(str(len(selected))+tr(' référence(s) ajoutée(s).'))
+        notify_changed(self)
     def import_inventory(self):
         from .set_inventory import choose_inventory
         choose_inventory(self,self.db,self.item,lambda:self.load_set(self.item))
@@ -255,4 +267,4 @@ def help_dialog(parent):
     path=document('AIDE')
     if path.exists():browser.setSource(QUrl.fromLocalFile(str(path)))
     else:browser.setHtml(tr('Consulte le fichier LISEZ-MOI.md.'))
-    b=QPushButton(tr('Fermer'));b.clicked.connect(d.accept);layout.addWidget(b);d.exec()
+    b=QPushButton(tr('Fermer'));b.clicked.connect(d.accept);layout.addWidget(b);show_window(d,parent)

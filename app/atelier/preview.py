@@ -1,4 +1,5 @@
 from __future__ import annotations
+from .windows import show_window
 import json
 import threading
 
@@ -478,7 +479,7 @@ class Preview(QWidget):
                 visual,label,note=result;self.image=visual.get('main');self.label_image=label
                 if self.image:scalable(self.photo,self.image,310,210)
                 else:self.photo.clear();self.photo.setText(tr('Visuel indisponible'))
-                if label:scalable(self.label_preview,label,310,115)
+                if label:scalable(self.label_preview,label,310,115,show_transparency=True)
                 self.note.setText(note)
             finally:finished()
         def failed(error):
@@ -491,10 +492,12 @@ class Preview(QWidget):
     def edit_camera(self):
         if not self.item:return
         from .camera import CameraDialog
-        d=CameraDialog(self.db,self.engine,self.item,self)
-        if d.exec():
-            save_camera(self.db,self.item,d.camera(),d.all_models.isChecked())
-            self.visual_changed.emit(None if d.all_models.isChecked() else self.item);self.refresh()
+        captured=dict(self.item);d=CameraDialog(self.db,self.engine,captured,self)
+        def saved(result):
+            if result:
+                save_camera(self.db,captured,d.camera(),d.all_models.isChecked())
+                self.visual_changed.emit(None if d.all_models.isChecked() else captured);self.refresh()
+        show_window(d,self,saved)
 
     def settings_changed(self):
         if self.updating or not self.item:return
@@ -658,13 +661,18 @@ class Preview(QWidget):
         self.token+=1;self.visual_changed.emit(self.item);self.refresh()
 
     def enlarge_label(self):
-        if self.label_image:image_dialog(tr('Étiquette — ')+self.item['ref'],self.label_image,self)
+        if self.label_image:image_dialog(tr('Étiquette — ')+self.item['ref'],self.label_image,self,show_transparency=True)
 
     def edit_individual(self):
         if not self.item:return
         from .editor import LabelEditor
-        if LabelEditor(self.db,self.engine,self.item,self,individual=True).exec():
-            self.token+=1;self.refresh();self.visual_changed.emit(self.item)
+        captured=dict(self.item)
+        def saved(result):
+            if result:
+                self.token+=1
+                if self.item and self.item['id']==captured['id']:self.refresh()
+                self.visual_changed.emit(captured)
+        show_window(LabelEditor(self.db,self.engine,captured,self,individual=True),self,saved)
     def reset_individual(self):
         if not self.item:return
         from .labels import individual_template_key
@@ -673,4 +681,4 @@ class Preview(QWidget):
 
     def documents(self):
         from .dialogs import DocumentsDialog
-        DocumentsDialog(self.db,self.item,self).exec()
+        show_window(DocumentsDialog(self.db,self.item,self),self)

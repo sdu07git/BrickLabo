@@ -1,6 +1,45 @@
-# BrickLabo — v0.1.39
+# BrickLabo — v0.1.42
 
-Logiciel de bureau Windows pour les catalogues LEGO, les stocks, les recherches de constructions et les étiquettes. Cette mise à jour reprend la version livrée v0.1.38, issue de la v0.1.28 d’origine ; le dépôt GitHub modifié par erreur n’a pas servi de base.
+Logiciel de bureau Windows pour les catalogues LEGO, les stocks, les recherches de constructions et les étiquettes. Cette version reprend la v0.1.41 livrée, issue de la v0.1.28 d’origine.
+
+
+## Mises à jour depuis GitHub — v0.1.42
+
+Dans **Mise à jour des données → Rechercher une mise à jour du logiciel**, consulter les versions stables publiques du dépôt BrickLabo. Les versions identiques, anciennes et les préversions sont ignorées. La recherche est manuelle et ne demande aucune clé API. Les notes de la version proposée s’affichent dans une fenêtre indépendante.
+
+**Télécharger le ZIP complet** prépare la distribution Windows et vérifie son SHA-256 fourni par GitHub, sa version, les exécutables 64 bits et son contenu. Les ZIP sources, fichiers incomplets, chemins dangereux et archives contenant `Donnees` sont refusés. **Annuler le téléchargement**, ou fermer la fenêtre avant l’installation, supprime la préparation sans changer le logiciel. La distribution Windows complète est nécessaire pour installer automatiquement ; le mode source peut consulter les releases.
+
+**Installer et redémarrer** ferme BrickLabo après les tâches en cours et la fermeture de SQLite. Fermer les autres instances ; une restauration de données en attente doit être terminée ou annulée. Un petit runtime isolé du logiciel permet de remplacer les fichiers sans utiliser les DLL encore ouvertes. Les fichiers personnels, stock, modèles, rangement, réglages et clés du dossier **Donnees** restent en place. Une erreur de remplacement ou de lancement de l’exécutable rétablit les anciens fichiers. Un démarrage qui échoue ensuite dans la nouvelle version reste à diagnostiquer avec les logs et une sauvegarde compatible.
+
+Les anciens fichiers sont conservés dans **Donnees/maj/b…**, accessibles par **Ouvrir le dossier de l’ancienne installation**. Les fichiers de travail restent dans **Donnees/temp/u…**, avec des noms courts et des accès Windows adaptés aux chemins longs. Le ZIP et la copie décompressée sont supprimés après une installation réussie ; les restes inactifs du petit runtime sont nettoyés au prochain démarrage ou par la purge. La purge protège les installations actives et les préparations nécessaires à la réparation d’une interruption. Les anciennes installations sont exclues des sauvegardes de données, mesurées dans **Espace disque**, et peuvent être supprimées manuellement après vérification.
+
+En cas de coupure pendant le remplacement, fermer toutes les instances, consulter `Donnees/maj/transaction.json` et son champ `stage`, puis ouvrir un terminal dans le dossier `Donnees/temp/u…` correspondant et exécuter `r\python.exe -I -B i.py --recover`. Cette réparation vérifie le plan conservé, remet les anciens fichiers et relance le logiciel. Si la préparation est perdue, restaurer les fichiers du dossier `Donnees/maj/b…` dans le dossier d’installation, sans déplacer `Donnees`, depuis l’Explorateur et avec toutes les instances fermées. Pour revenir volontairement à une ancienne version, utiliser aussi une sauvegarde compatible si le format des données a évolué.
+
+Pour passer d’une version antérieure à v0.1.42, installer une fois le ZIP complet dans un nouveau dossier et y recopier **Donnees**, comme indiqué ci-dessous. L’option servira ensuite pour les futures releases publiées. 
+
+## Fond transparent des étiquettes — v0.1.41
+
+Dans **Éditeur d’étiquettes** ou **Modifier cette étiquette**, cocher **Fond transparent**, puis **Appliquer**. Le réglage est conservé dans le modèle général ou individuel, les modèles JSON et la sauvegarde des modèles d’étiquette. Décocher l’option rétablit la couleur de fond choisie. Les anciens modèles gardent leur fond opaque.
+
+Les PNG conservent leur canal alpha ; les PDF et l’impression ne remplissent pas le fond de l’étiquette. Le damier de l’éditeur sert uniquement à visualiser la transparence. Les textes, contours et bandeaux restent visibles. Une photo avec un fond blanc conserve ce fond ; les rendus LDraw gardent leurs zones transparentes.
+
+Pour du vinyle autocollant, utiliser un support prévu pour une imprimante à jet d’encre, suivre les indications du fabricant et vérifier son épaisseur. Le fond transparent laisse apparaître le support ; il ne crée pas d’encre blanche. Imprimer à la taille réelle / 100 % pour conserver les dimensions. Le type de papier et la qualité se règlent dans les propriétés de l’imprimante.
+
+## Mur de rangement et inventaires par lots — v0.1.40
+
+**Mon rangement**, en bas de la navigation de gauche, représente tes meubles en volume ou de face. Dans **Organiser le meuble**, créer un meuble, ajouter un tiroir ou modifier son nom, sa position, sa largeur et sa hauteur. Une unité correspond à un tiroir standard ; agrandir un tiroir réunit les voisins vides, sans déplacer automatiquement des tiroirs contenant des références. Les meubles peuvent s’étendre à de nouvelles colonnes et rangées.
+
+Sélectionner un tiroir puis **Ajouter des références du stock** : sélectionner plusieurs lignes du stock en vrac, avec leurs couleurs. Plusieurs références et couleurs peuvent partager un tiroir ; une référence peut être liée à plusieurs tiroirs. Ces associations ne changent aucune quantité. La façade montre jusqu’à trois aperçus et un nom libre ; le tableau inférieur affiche tout le contenu. La colonne **Stock global en vrac** montre le total possédé, pas un comptage par tiroir. Une référence à zéro reste localisable.
+
+Rechercher par référence, nom, dimensions, couleur ou nom du tiroir. `1x1` et `1 x 1` sont équivalents. **Tous les meubles** recherche dans tout le rangement ; choisir un résultat affiche et surligne son tiroir, par exemple **Colonne 3 · Tiroir 5**. Régler l’angle ou la vue de face ; **Ctrl + molette** zoome et **Vue complète** recadre. Le mur utilise les miniatures partagées ; ses rotations et déplacements ne produisent aucun fichier de rendu. **Sauvegardes → Meubles et emplacements** exporte cette famille séparément ; la sauvegarde complète contient aussi le rangement.
+
+Les fenêtres de consultation, recherches de constructions, inventaires, notices, aperçus et éditeurs s’ouvrent indépendamment : le logiciel et les fenêtres précédentes restent accessibles. Lors d’un changement du stock, les anciens résultats de construction sont invalidés et demandent une nouvelle recherche. Les confirmations, choix de fichier et certaines saisies ponctuelles attendent toujours une réponse.
+
+Dans **Mise à jour des données → Charger les inventaires de sets par lots**, afficher des sets Rebrickable ou BrickLink par référence / nom / thème, sélectionner les lignes ou saisir des références connues du catalogue. **Préparer la sélection** enregistre une file. **Sets par lot** est réglable de 10 à 1000 ; **Charger le prochain lot** s’arrête après ce lot et **Enchaîner les lots** continue jusqu’à une pause. Les inventaires déjà complets sont conservés par défaut ; l’actualisation volontaire se règle à la préparation. La file, les réussites et les erreurs sont conservées après fermeture ; **Réessayer les erreurs** remet seulement les erreurs en attente. Une interruption ne publie pas une page partielle d’inventaire. Les clés API de la source sont nécessaires pour les téléchargements. Les requêtes Rebrickable sont espacées ; un refus d’authentification ou une limitation arrête le lot et conserve la file.
+
+Charger ces inventaires ne déclare pas les sets possédés et n’ajoute aucune pièce au stock. Ils alimentent **Sets réalisables**, puis les suggestions d’alternatives des sets reconstituables. Le chargement de sets officiels ne constitue pas un catalogue complet d’inventaires de MOC : l’API v3 ne fournit pas leurs inventaires généraux. La comparaison exacte d’un MOC nécessite son propre inventaire. Pour obtenir tout le catalogue Rebrickable, privilégier les fichiers CSV existants.
+
+
 
 ## Contrôle et corrections v0.1.39
 
@@ -57,17 +96,22 @@ L’aide complète se trouve dans [documentation/AIDE.html](documentation/AIDE.h
 | 0.1.37 | Stocks séparés, annulation, imports de collections, recherche MOC, étiquettes multiples, sauvegardes sélectives, caches bornés et architecture app. |
 | 0.1.38 | Photos des sets réalisables, colonnes redimensionnables et recherche globale de MOC / alternatives depuis tous les catalogues de sets, indépendamment du stock. |
 | 0.1.39 | Lectures et caches optimisés, imports atomiques, temporaires nettoyés, fermeture des tâches et icône intégrée vérifiée. |
+| 0.1.40 | Mur de rangement, fenêtres indépendantes et inventaires par lots. |
+| 0.1.41 | Fonds transparents des étiquettes, exports et impression. |
+| 0.1.42 | Mises à jour GitHub vérifiées, installation après fermeture et retour arrière. |
 
 Un seul [NOUVEAUTES.txt](documentation/NOUVEAUTES.txt) réunit les notes françaises et anglaises. Les notes de cette branche ne documentent pas de livraison 0.1.29. Les variantes 0.1.28b et Range n’ont pas servi de base. Aucun rapport de tests n’est inclus dans les sources.
 
 ## Développement et diagnostic
 
-Le dépôt utilise la même organisation que le ZIP source : `app`, `ressources`, `documentation`, `licences`, `tests` et `tools`. L'archive LDraw `ressources/complete.zip` est exclue de Git car elle dépasse sa limite de taille sur GitHub. Pour retrouver les modèles de la version livrée, copier ce fichier depuis le ZIP source ou complet v0.1.39 téléchargé. Une [archive LDraw officielle](https://library.ldraw.org/library/updates/complete.zip) peut également être placée sous ce nom ; les modèles peuvent évoluer avec sa version. Les tests de premier démarrage et le diagnostic 3D nécessitent cette archive.
+Le dépôt conserve l’organisation du ZIP source. `ressources/complete.zip` est exclu de Git car il dépasse la limite de taille de GitHub. Copier cette archive LDraw depuis **BrickLabo_v0.1.42_Sources.zip** ou **BrickLabo_v0.1.42_Complet.zip**, disponibles dans les [releases](https://github.com/sdu07git/BrickLabo/releases), pour retrouver les modèles livrés et exécuter les tests qui en dépendent. Les archives automatiques « Source code » de GitHub n’incluent pas ce fichier.
 
-Installer Python 3.12, créer un environnement virtuel puis `python -m pip install -r app/requirements.txt`. Lancer `python app/bootstrap.py`. Tester avec `python tools/run_tests.py`. Sous Linux avec MinGW-w64 : `python tools/build_distribution.py chemin/BrickLabo_v0.1.38_Complet.zip dossier_de_sortie`. L’outil reprend les bibliothèques de l’archive complète précédente ; il accepte aussi l’ancienne organisation v0.1.36.
+Installer Python 3.12, créer un environnement virtuel puis `python -m pip install -r app/requirements.txt`. Lancer `python app/bootstrap.py`. Tester avec `python tools/run_tests.py`. Sous Linux avec MinGW-w64 : `python tools/build_distribution.py chemin/BrickLabo_v0.1.39_Complet.zip dossier_de_sortie`. L’outil reprend les bibliothèques de l’archive complète précédente ; il accepte aussi l’ancienne organisation v0.1.36.
 
 Diagnostic du paquet : `BrickLabo.exe --self-test` écrit `Donnees/diagnostic.json`. En console : `app/python.exe -B app/bootstrap.py --self-test`. Les tests sont réalisés sous Qt/Linux ; le lanceur compilé et la structure des archives sont inspectés ; l’exécution native Windows reste à vérifier sur un PC Windows.
 
 Projet : https://github.com/sdu07git/BrickLabo. Ne pas publier Donnees ni les sauvegardes privées.
 
 Contrôle après fabrication : `python tools/check_distribution.py chemin/BrickLabo`.
+
+Pour publier une future mise à jour compatible : créer une release publique stable avec un tag `vX.Y.Z`, des notes de version et le fichier **BrickLabo_vX.Y.Z_Complet.zip** produit par cet outil. GitHub doit exposer le champ `digest` SHA-256 de cet asset dans son API. Les archives Sources générées automatiquement par GitHub ne sont pas installables. Le logiciel consulte au maximum les 100 releases les plus récentes et ne publie aucun fichier.

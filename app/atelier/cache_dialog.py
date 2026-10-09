@@ -77,4 +77,6 @@ class SpaceDialog(QDialog):
   if self.busy:event.ignore();return
   self.closed=True;super().closeEvent(event)
 
-def show_cache(parent):SpaceDialog(parent).exec()
+def show_cache(parent):
+    from .windows import show_window
+    show_window(SpaceDialog(parent),parent)

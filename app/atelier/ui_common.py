@@ -10,7 +10,7 @@ from pathlib import Path
 from io import BytesIO
 
 from PySide6.QtCore import QObject, QRunnable, QThreadPool, Signal, Slot, Qt
-from PySide6.QtGui import QImage, QPixmap
+from PySide6.QtGui import QImage, QPixmap, QPainter, QBrush, QColor
 from PySide6.QtWidgets import (QDialog,QVBoxLayout,QScrollArea,QWidget,QLabel,QPushButton,
                               QMessageBox,QDialogButtonBox,QFormLayout,QLineEdit,QSpinBox,QComboBox)
 
@@ -77,18 +77,29 @@ def async_task(parent,fn,done,fail=None,progress_callback=None):
 class TaskBridge(QObject):
     def __init__(self,parent,done,fail,progress_callback=None):
         super().__init__(parent);self.done=done;self.fail=fail;self.progress_callback=progress_callback
+        from .windows import task_owner
+        self.owner=task_owner(parent)
+        if self.owner:self.owner._active_tasks+=1
+    def dispose(self):
+        if self.owner:
+            self.owner._active_tasks-=1
+            if self.owner._closed_by_manager and not self.owner._active_tasks:self.owner.deleteLater()
+        self.deleteLater()
     @Slot(object)
     def complete(self,result):
-        try:self.done(result)
-        finally:self.deleteLater()
+        try:
+            if not self.owner or not self.owner._closed_by_manager:self.done(result)
+        finally:self.dispose()
     @Slot(str)
     def failed(self,error):
         try:
+            if self.owner and self.owner._closed_by_manager:return
             if self.fail:self.fail(error)
             else:QMessageBox.warning(self.parent(),tr('Opération impossible'),error)
-        finally:self.deleteLater()
+        finally:self.dispose()
     @Slot(object)
     def progress(self,text):
+        if self.owner and self.owner._closed_by_manager:return
         if self.progress_callback:self.progress_callback(text);return
         if hasattr(self.parent(),'statusBar'):self.parent().statusBar().showMessage(text)
         elif hasattr(self.parent(),'progress_label'):self.parent().progress_label.setText(text)
@@ -102,8 +113,23 @@ def pixmap(image):
     return QPixmap.fromImage(q)
 
 
-def scalable(label,image,width=330,height=230):
-    label.setPixmap(pixmap(image).scaled(width,height,Qt.AspectRatioMode.KeepAspectRatio,Qt.TransformationMode.SmoothTransformation))
+def transparency_brush():
+    tile=QPixmap(16,16);tile.fill(QColor('#edf0f3'));painter=QPainter(tile)
+    painter.fillRect(0,0,8,8,QColor('#c9cfd6'));painter.fillRect(8,8,8,8,QColor('#c9cfd6'));painter.end()
+    return QBrush(tile)
+
+
+def label_pixmap(image):
+    """GUI-only checkerboard; never modify the image used for export/printing."""
+    result=pixmap(image)
+    if image is None or image.mode!='RGBA' or image.getchannel('A').getextrema()[0]==255:return result
+    background=QPixmap(result.size());painter=QPainter(background);painter.fillRect(background.rect(),transparency_brush());painter.drawPixmap(0,0,result);painter.end()
+    return background
+
+
+def scalable(label,image,width=330,height=230,show_transparency=False):
+    image_pixmap=label_pixmap(image) if show_transparency else pixmap(image)
+    label.setPixmap(image_pixmap.scaled(width,height,Qt.AspectRatioMode.KeepAspectRatio,Qt.TransformationMode.SmoothTransformation))
 
 
 def dialog(title,parent):
@@ -114,10 +140,12 @@ def dialog(title,parent):
     return d
 
 
-def image_dialog(title,image,parent):
+def image_dialog(title,image,parent,show_transparency=False):
     d=dialog(title,parent);layout=QVBoxLayout(d);scroll=QScrollArea();scroll.setWidgetResizable(True)
-    label=QLabel();label.setAlignment(Qt.AlignmentFlag.AlignCenter);label.setPixmap(pixmap(image));scroll.setWidget(label)
-    layout.addWidget(scroll);close=QPushButton(tr('Fermer'));close.clicked.connect(d.accept);layout.addWidget(close);d.exec()
+    label=QLabel();label.setAlignment(Qt.AlignmentFlag.AlignCenter);label.setPixmap(label_pixmap(image) if show_transparency else pixmap(image));scroll.setWidget(label)
+    layout.addWidget(scroll);close=QPushButton(tr('Fermer'));close.clicked.connect(d.accept);layout.addWidget(close)
+    from .windows import show_window
+    show_window(d,parent)
 
 
 def edit_item(parent,db,item=None,kind='part'):

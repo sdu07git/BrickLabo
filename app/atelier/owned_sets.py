@@ -1,3 +1,4 @@
+from .windows import show_window
 from PySide6.QtCore import Qt
 from PySide6.QtWidgets import QWidget,QVBoxLayout,QSplitter,QTableWidget,QTableWidgetItem,QHeaderView,QLabel
 from .catalogue import Catalogue
@@ -31,4 +32,4 @@ class OwnedSetsPanel(QWidget):
     def open_part(self,row,column):
         from .dialogs import RelationsDialog
         items=self.ordered_parts()
-        if 0<=row<len(items):RelationsDialog(self.db,self.engine,items[row],self).exec()
+        if 0<=row<len(items):show_window(RelationsDialog(self.db,self.engine,items[row],self),self)

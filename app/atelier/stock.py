@@ -16,6 +16,10 @@ def prepare(db,c):
     c.executescript('''CREATE TABLE IF NOT EXISTS stock_sets(id INTEGER PRIMARY KEY,item_id INTEGER,color TEXT DEFAULT '',quantity INTEGER NOT NULL,added TEXT DEFAULT CURRENT_TIMESTAMP,UNIQUE(item_id,color));
     CREATE TABLE IF NOT EXISTS stock_undo(id INTEGER PRIMARY KEY CHECK(id=1),description TEXT NOT NULL,changes TEXT NOT NULL);
     CREATE VIEW IF NOT EXISTS stock_available AS SELECT s.id,s.item_id,s.color,s.quantity+COALESCE((SELECT SUM(p.quantity) FROM stock_set_components p JOIN stock_sets o ON o.id=p.set_entry_id WHERE p.item_id=s.item_id AND p.color=s.color),0) AS quantity,s.added FROM stock s UNION ALL SELECT -id,item_id,color,quantity,added FROM stock_sets;''')
+    c.executescript('CREATE TABLE IF NOT EXISTS stock_revision(id INTEGER PRIMARY KEY CHECK(id=1),version INTEGER NOT NULL); INSERT OR IGNORE INTO stock_revision VALUES(1,0);')
+    for table in ('stock','stock_sets','stock_set_components'):
+        for action in ('INSERT','UPDATE','DELETE'):
+            c.execute('CREATE TRIGGER IF NOT EXISTS revision_'+table+'_'+action.lower()+' AFTER '+action+' ON '+table+' BEGIN UPDATE stock_revision SET version=version+1 WHERE id=1; END')
     if c.execute("SELECT 1 FROM settings WHERE key='stock_layout_v37'").fetchone():return
     notes=[]
     for row in legacy:

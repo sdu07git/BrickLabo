@@ -20,7 +20,7 @@ def font(size,bold=False,family='Segoe UI'):
 
 
 def default_template():
-    return {'width':65,'height':23,'border':.4,'margin':1,'background':'#ffffff','outline':'#68717a','category_colors':{},'layout_schema':2,'layers':[
+    return {'width':65,'height':23,'border':.4,'margin':1,'background':'#ffffff','transparent_background':False,'outline':'#68717a','category_colors':{},'layout_schema':2,'layers':[
         {'type':'category','text':'','x':1,'y':.4,'w':63,'h':3.8,'font':2.7,'bold':True,'color':'#ffffff','visible':True,'locked':False,'align':'left'},
         {'type':'main','x':2,'y':4.7,'w':38,'h':15.2,'visible':True,'locked':False},
         {'type':'studs','x':42,'y':4.5,'w':20,'h':3,'font':2.5,'bold':True,'color':'#202020','align':'center','visible':True,'locked':False},
@@ -137,7 +137,8 @@ def render_label(item,db,visuals,template=None,dpi=300):
     template=independent_category(template or template_for_item(item,db))
     scale=dpi/25.4
     w=round(template['width']*scale);h=round(template['height']*scale)
-    result=Image.new('RGBA',(w,h),template.get('background','#ffffff'))
+    transparent=bool(template.get('transparent_background',False))
+    result=Image.new('RGBA',(w,h),(255,255,255,0) if transparent else template.get('background','#ffffff'))
     d=ImageDraw.Draw(result)
     border=category_outline(item.get('category',''),db,template)
     bw=max(1,round(template.get('border',.4)*scale))
@@ -181,7 +182,7 @@ def render_label(item,db,visuals,template=None,dpi=300):
             tile=Image.new('RGBA',(lw,lh));td=ImageDraw.Draw(tile)
             td.text((tx-x,max(0,(lh-th)/2)-box[1]),text,fill=layer.get('color','#202020'),font=ft)
             result.alpha_composite(tile,(x,y))
-    return result.convert('RGB')
+    return result if transparent else result.convert('RGB')
 
 
 def page_layout(width,height,page_w=210,page_h=297,margin=8,gap=2):

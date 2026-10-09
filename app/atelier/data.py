@@ -108,6 +108,10 @@ class Database:
             self.search_index_available=prepare_index(c)
             from .stock import prepare
             prepare(self,c)
+            from .storage_wall import prepare as prepare_storage
+            prepare_storage(c)
+            from .inventory_batches import prepare as prepare_inventories
+            prepare_inventories(c)
 
     @contextmanager
     def connect(self):
@@ -170,6 +174,7 @@ class Database:
     def get_item(self, item_id):
         r = self.rows('SELECT * FROM items WHERE id=?',(item_id,))
         return r[0] if r else None
+    def stock_revision(self):return self.rows('SELECT version FROM stock_revision WHERE id=1')[0]['version']
 
     def visual(self, item_id):
         r = self.rows('SELECT * FROM visual WHERE item_id=?',(item_id,))
@@ -337,6 +342,9 @@ class Database:
                 elif part:out.append(dict(part,chosen_color=x['color'],chosen_quantity=x['quantity'],is_spare=0))
             return out
         ref=item['ref']
+        from .inventory_batches import cached_components
+        cached=None if item['source']=='BL' and self.setting('bl_manual_inventory_'+str(item['id'])) else cached_components(self,item['source'],ref)
+        if cached is not None:return cached
         if item['source']=='BL':
             if item['kind']=='set' and self.setting('bl_manual_inventory_'+str(item['id'])):
                 from .set_inventory import components

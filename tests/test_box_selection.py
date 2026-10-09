@@ -47,7 +47,7 @@ class BoxSelectionTests(TestCase):
      def exec(menu,*args):
       action=menu.actions()[0];assert action.isEnabled();action.trigger()
     with patch('atelier.dialogs.QMenu',TestMenu),patch('atelier.dialogs.BoxDialog') as box:
-     d.set_context_menu(pos);self.assertEqual(box.call_args.args[2]['id'],b['id']);box.return_value.exec.assert_called_once()
+     d.set_context_menu(pos);self.assertEqual(box.call_args.args[2]['id'],b['id']);box.return_value.show.assert_called_once()
     d.close();d.deleteLater();app.processEvents()
  def test_containing_sets_without_box_disables_action(self):
   from atelier.dialogs import RelationsDialog

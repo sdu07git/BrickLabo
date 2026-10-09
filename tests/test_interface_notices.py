@@ -120,7 +120,7 @@ class InterfaceNoticeTests(unittest.TestCase):
         d.set_table.selectRow(1);app.processEvents();self.assertEqual(d.active_set['id'],fid);self.assertEqual(d.parts[0]['chosen_quantity'],2)
         self.assertIn('60006-1',d.set_image_title.text())
         with patch('atelier.dialogs.RelationsDialog') as window:
-            d.open_containing_set(None);self.assertEqual(window.call_args[0][2]['ref'],'60006-1');window.return_value.exec.assert_called_once()
+            d.open_containing_set(None);self.assertEqual(window.call_args[0][2]['ref'],'60006-1');window.return_value.show.assert_called_once()
     def test_bricklink_minifig_membership_absence_is_explained(self):
         fid=self.db.run('INSERT INTO items(source,kind,ref,name,category,search) VALUES(?,?,?,?,?,?)',('BL','minifig','sw-test','Test figure','Star Wars','sw-test'))
         d=self.keep(RelationsDialog(self.db,self.engine,self.db.get_item(fid),None))

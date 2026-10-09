@@ -43,7 +43,7 @@ class EdgeDialog(QDialog):
             self.running=False
             if self.closed:return
             if revision==self.revision:
-                if result:scalable(self.preview,result[0],560,350);scalable(self.label,result[1],560,200);self.status.setText(tr('Aperçu : ')+self.item['ref'])
+                if result:scalable(self.preview,result[0],560,350);scalable(self.label,result[1],560,200,show_transparency=True);self.status.setText(tr('Aperçu : ')+self.item['ref'])
                 else:self.preview.clear();self.label.clear();self.status.setText(tr('Aperçu 3D indisponible : ')+str(error))
             else:self.timer.start()
         async_task(self,work,lambda result:finish(result),lambda error:finish(error=error))

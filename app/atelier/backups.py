@@ -12,7 +12,7 @@ from .sqlite_file import connect
 
 REQUEST='restauration_en_attente.json'
 REPORT='resultat_restauration.json'
-EXCLUDED={'temp','temporaires','cache','logs','downloads'}
+EXCLUDED={'temp','temporaires','cache','logs','downloads','maj'}
 
 def _included(relative):
  return relative.parts[0] not in EXCLUDED and relative.name not in {REQUEST,REPORT,'atelier.sqlite','atelier.sqlite-wal','atelier.sqlite-shm'} and not relative.name.endswith(('.tmp','.part'))
