@@ -266,6 +266,59 @@ class InstallerTests(unittest.TestCase):
         self.assertEqual(updates.previous_installation(self.root), previous)
         self.assertEqual(installer.read_json(self.root / 'Donnees' / 'maj' / installer.JOURNAL)['status'], 'installed')
 
+    def test_successful_startup_removes_old_software_and_preserves_every_user_file(self):
+        prepared=self.prepare();previous=installer.deploy(*self.plan(prepared),restart=False)
+        result=updates.confirm_running_version(self.root,FUTURE)
+        self.assertTrue(result['confirmed']);self.assertEqual(result['removed'],[previous.name]);self.assertEqual(result['pending'],[]);self.assertFalse(previous.exists())
+        self.assertIsNone(updates.previous_installation(self.root))
+        for name,content in payload().items():self.assertEqual((self.root/name).read_bytes(),content)
+        self.assertEqual((self.root/'Donnees'/'stock.bin').read_bytes(),self.original['Donnees/stock.bin']);self.assertEqual((self.root/'personal.txt').read_bytes(),self.original['personal.txt'])
+        self.assertEqual(installer.read_json(self.root/'Donnees'/'maj'/installer.JOURNAL)['status'],'confirmed')
+        self.assertEqual(updates.confirm_running_version(self.root,FUTURE)['removed'],[])
+
+    def test_cleanup_waits_for_real_matching_successful_startup(self):
+        prepared=self.prepare();previous=installer.deploy(*self.plan(prepared),restart=False);state=self.root/'Donnees'/'maj'
+        original=installer.read_json(state/installer.JOURNAL);report=installer.read_json(state/installer.REPORT)
+        for status in ('installing','rollback_failed','rolled_back'):
+            journal=dict(original,status=status);installer.atomic_json(state/installer.JOURNAL,journal)
+            self.assertFalse(updates.confirm_running_version(self.root,FUTURE)['confirmed']);self.assertTrue(previous.exists())
+        installer.atomic_json(state/installer.JOURNAL,original)
+        self.assertFalse(updates.confirm_running_version(self.root,VERSION)['confirmed']);self.assertTrue(previous.exists())
+        for change in ({'success':False},{'version':'9.9.9'},{'previous':'../../Donnees'}):
+            installer.atomic_json(state/installer.REPORT,dict(report,**change));self.assertFalse(updates.confirm_running_version(self.root,FUTURE)['confirmed']);self.assertTrue(previous.exists())
+        installer.atomic_json(state/installer.REPORT,report)
+        with installer.acquire_lease(state/'verrou'):
+            self.assertFalse(updates.confirm_running_version(self.root,FUTURE)['confirmed']);self.assertTrue(previous.exists())
+
+    def test_cleanup_removes_older_recognised_backups_and_leaves_unrecognised_folders(self):
+        prepared=self.prepare();previous=installer.deploy(*self.plan(prepared),restart=False);state=previous.parent
+        older=state/'b1111111111';shutil.copytree(previous,older)
+        unknown=state/'b2222222222';unknown.mkdir();(unknown/'notes.txt').write_bytes(b'user notes')
+        malformed=state/'b3333333333';shutil.copytree(previous,malformed);(malformed/'app'/'structure.json').write_text('{"application":"BrickLabo","version":"invalid"}')
+        result=updates.confirm_running_version(self.root,FUTURE)
+        self.assertEqual(set(result['removed']),{previous.name,older.name});self.assertEqual((unknown/'notes.txt').read_bytes(),b'user notes');self.assertTrue(malformed.exists())
+
+    def test_partial_locked_cleanup_is_retried_without_the_old_version_marker(self):
+        prepared=self.prepare();previous=installer.deploy(*self.plan(prepared),restart=False);remove=shutil.rmtree
+        def locked(path,*args,**kwargs):
+            if Path(path)==previous:
+                remove(previous/'app');raise PermissionError('Windows file is locked')
+            return remove(path,*args,**kwargs)
+        with patch.object(shutil,'rmtree',side_effect=locked):result=updates.confirm_running_version(self.root,FUTURE)
+        self.assertTrue(result['confirmed']);self.assertEqual(result['pending'],[previous.name]);self.assertFalse((previous/'app').exists())
+        retry=updates.confirm_running_version(self.root,FUTURE);self.assertEqual(retry['removed'],[previous.name]);self.assertFalse(previous.exists())
+        self.assertEqual((self.root/'Donnees'/'stock.bin').read_bytes(),self.original['Donnees/stock.bin'])
+
+    def test_cleanup_cannot_follow_a_link_or_remove_a_backup_containing_user_data(self):
+        prepared=self.prepare();previous=installer.deploy(*self.plan(prepared),restart=False);external=Path(self.temp.name)/'Private';external.mkdir();(external/'keep.txt').write_bytes(b'keep')
+        (previous/'app'/'linked').symlink_to(external,target_is_directory=True)
+        result=updates.confirm_running_version(self.root,FUTURE);self.assertTrue(previous.exists());self.assertEqual((external/'keep.txt').read_bytes(),b'keep');self.assertNotIn(previous.name,result['removed'])
+
+    def test_cleanup_rejects_a_journal_that_targets_user_data(self):
+        prepared=self.prepare();previous=installer.deploy(*self.plan(prepared),restart=False);state=previous.parent;journal=installer.read_json(state/installer.JOURNAL)
+        journal['changes'][0]['name']='Donnees';installer.atomic_json(state/installer.JOURNAL,journal)
+        result=updates.confirm_running_version(self.root,FUTURE);self.assertFalse(result['confirmed']);self.assertTrue(previous.exists());self.assertEqual((self.root/'Donnees'/'stock.bin').read_bytes(),self.original['Donnees/stock.bin'])
+
     def test_replacement_failure_rolls_back_every_component(self):
         prepared = self.prepare()
         actual_move = installer.move
