@@ -1,4 +1,24 @@
+v0.1.42
+FR : Recherche manuelle de mises à jour depuis les releases publiques GitHub, dans Mise à jour des données ; versions stables plus récentes et notes de release. Téléchargement du ZIP complet Windows avec vérification SHA-256, version et contenu, annulation sans remplacement. Installation après fermeture des tâches et de SQLite, runtime isolé, conservation de Donnees, copie des anciens fichiers et retour arrière sur erreur de remplacement ou de lancement. Temporaires locaux à noms courts, purge protégée et réparation des transactions interrompues. Aide FR / EN actualisée.
+EN : Manual software update checks from public GitHub releases within Data updates; newer stable versions and release notes. Complete Windows ZIP downloads with SHA-256, version and content validation, and cancellation before replacement. Installation after tasks and SQLite close, isolated runtime, retained Donnees, previous files and rollback on replacement or executable-launch errors. Local temporary workspaces with short names, protected cleanup and interrupted-transaction recovery. Updated FR / EN help.
+
+v0.1.41
+- Fond transparent dans l’éditeur général et les étiquettes individuelles, avec aperçu sur damier.
+- Transparence conservée dans les PNG, PDF et l’impression ; les fonds des photos sont conservés.
+- Réglage sauvegardé dans les modèles et leurs sauvegardes ; compatibilité avec les modèles existants.
+- Aide française et anglaise actualisée pour l’impression sur vinyle à jet d’encre.
+
+v0.1.41 (English)
+- Transparent backgrounds for general and individual label templates, with a checkerboard editor preview.
+- Alpha retained in PNG/PDF exports and printing; photo backgrounds remain unchanged.
+- Setting retained in templates and backups; compatibility with existing templates.
+- French and English help updated for inkjet vinyl printing.
+
 BrickLabo — historique cumulatif / cumulative history
+
+v0.1.40
+FR : Mur de rangement dans la navigation de gauche, meubles évolutifs, tiroirs de dimensions variables et références mélangées liées au vrac ; recherche de tous les emplacements, aperçus partagés et rotation sans fichiers temporaires. Sauvegarde séparée des meubles et emplacements. Fenêtres de consultation et éditeurs indépendants, fermeture protégée des tâches et résultats invalidés après changement du stock. Chargement d’inventaires Rebrickable / BrickLink par lots réglables de 10 à 1000, files persistantes, pause, reprise et réessai des erreurs ; inventaires utilisables dans les recherches locales, sans ajout au stock. Les inventaires généraux de MOC restent soumis à leur disponibilité. Aide FR / EN actualisée.
+EN : Storage wall in left navigation, expandable cabinets, variable drawer sizes and mixed loose-stock references; location search, shared previews and rotation without temporary files. Separate storage backups. Modeless consultation windows and editors, worker-safe closing and invalidation of results after stock changes. Rebrickable / BrickLink inventory batches of 10 to 1000, persistent queues, pause, resume and error retries; inventories feed local build searches without adding owned stock. General MOC inventories remain dependent on availability. Updated FR / EN help.
 
 v0.1.39
 FR : Contrôle du code, de l'architecture et des dépendances. Connexion SQLite de lecture partagée ; réimports et visuels inchangés sans réécriture inutile ; cache RAM des photos et des textes LDraw. Aperçu limité à la dernière demande et caches protégés contre les anciennes tâches. Imports personnels atomiques, ajouts multiples annulables, fusion des couleurs du stock corrigée. Publication BrickArchitect avec retour arrière et nettoyage des téléchargements. Temporaires sous Donnees/temp ; purge protégée de l'ancien dossier temporaires et exclusion des sauvegardes. Fermeture ordonnée des tâches et archives ; notices sans création de dossiers vides. Lanceur recompilé, icône bitmap en sept tailles et liaison contrôlée dans le paquet. Aide française et anglaise actualisée.
