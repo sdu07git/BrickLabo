@@ -66,7 +66,7 @@ def launcher(root,work):
 def package(root,path):
     with ZipFile(path,'w',compression=ZIP_DEFLATED,compresslevel=6) as archive:
         for file in sorted(root.rglob('*')):
-            if not file.is_file():continue
+            if not file.is_file() or excluded(PurePosixPath('BrickLabo/'+file.relative_to(root).as_posix())):continue
             mode=ZIP_STORED if file.suffix.lower() in ('.zip','.gz','.png','.jpg','.jpeg','.webp','.gif') else ZIP_DEFLATED
             archive.write(file,'BrickLabo/'+file.relative_to(root).as_posix(),compress_type=mode)
     with ZipFile(path) as archive:
