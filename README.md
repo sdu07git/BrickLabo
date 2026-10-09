@@ -1,8 +1,25 @@
-# BrickLabo — v0.1.45
+# BrickLabo — v0.1.47
 
-Logiciel de bureau Windows pour les catalogues LEGO, les stocks, les recherches de constructions et les étiquettes. Cette version reprend la v0.1.44 livrée, issue de la v0.1.28 d’origine.
+Logiciel de bureau Windows pour les catalogues LEGO, les stocks, les recherches de constructions et les étiquettes. Cette version reprend la v0.1.46 livrée, issue de la v0.1.28 d’origine.
 
-**Téléchargements v0.1.45 :** [version complète Windows](https://github.com/sdu07git/BrickLabo/releases/download/v0.1.45/BrickLabo_v0.1.45_Complet.zip) · [code source avec ressources](https://github.com/sdu07git/BrickLabo/releases/download/v0.1.45/BrickLabo_v0.1.45_Sources.zip) · [notes de release](https://github.com/sdu07git/BrickLabo/releases/tag/v0.1.45). Cette release réunit les nouveautés de la v0.1.44 et les corrections de la v0.1.45.
+**Téléchargements v0.1.47 :** [version complète Windows](https://github.com/sdu07git/BrickLabo/releases/download/v0.1.47/BrickLabo_v0.1.47_Complet.zip) · [code source avec ressources](https://github.com/sdu07git/BrickLabo/releases/download/v0.1.47/BrickLabo_v0.1.47_Sources.zip) · [notes de release](https://github.com/sdu07git/BrickLabo/releases/tag/v0.1.47). Cette release inclut les corrections des versions v0.1.46 et v0.1.47.
+
+
+## Aperçus des arêtes, valeurs par défaut et fermeture — v0.1.47
+
+Dans **Arêtes 3D** et **Disposition de cette étiquette**, **Valeurs par défaut** remet le noir à **86,3 %** et l’épaisseur à **1 px**. Le bouton actualise le brouillon et l’aperçu ; **Appliquer comme réglage général** ou **Appliquer** enregistre le choix. **Annuler** conserve les réglages précédents. Pour une étiquette individuelle, les valeurs par défaut deviennent son réglage propre ; **Utiliser le réglage général** rétablit l’héritage des valeurs générales actuelles.
+
+Les changements de noir et d’épaisseur réutilisent la surface et la profondeur du rendu en mémoire. L’épaisseur est calculée pour l’ensemble des traits visibles ; les intersections et traits en double ne cumulent plus leur opacité. 0 % masque les arêtes ; le calcul conserve les arêtes cachées et conditionnelles. Lors de changements rapides, les anciennes demandes s’arrêtent entre les vues et l’aperçu termine sur le dernier réglage. Ces calculs ne produisent aucun fichier temporaire de rendu.
+
+À la fermeture, la fenêtre reste visible avec **Fermeture : arrêt des tâches en cours…** jusqu’à la fin des tâches. Les nouvelles requêtes et tâches en attente sont arrêtées ; une opération locale déjà commencée termine proprement. Les téléchargements interrompus ferment leurs fichiers et retirent les copies partielles. Le verrou de la session temporaire est libéré avant son nettoyage. Le nettoyage prend en charge les chemins longs et les fichiers temporaires en lecture seule. Un échec réel est inscrit dans les logs ; les anciennes sessions libres sont réessayées au démarrage suivant.
+
+Les photos de secours Rebrickable utilisent désormais **1 278 correspondances de pièces supplémentaires**, explicites et uniques, déjà vérifiées dans les données BrickArchitect fournies. Les liens officiels des pages de sets et de minifigurines peuvent confirmer une correspondance ; les petites photos BrickLink **MN/0** sont prises en charge. Références, variantes, inventaires, modèles 3D et choix de couleurs restent propres à leur catalogue. La provenance de la photo est affichée ; les références identiques ne suffisent pas à inventer une correspondance. Les cas de couleurs ambiguës gardent leur choix explicite. Les photos en cache sont réutilisées sans réécriture.
+
+## Photo du set Rebrickable 030-2 — v0.1.46
+
+Si la photo Rebrickable du set **030-2 — Building Set** est indisponible, l’aperçu utilise la photo BrickLink grâce à une correspondance vérifiée. Aucun import du catalogue BrickLink ni clé API n’est nécessaire pour ce recours. La référence **030-2**, avec son zéro initial, et les données du catalogue Rebrickable sont conservées. La provenance **Photo BrickLink : 030-2** apparaît sous l’aperçu.
+
+Les photos de sets acceptent désormais une correspondance explicite unique dans les métadonnées de photos ; des références similaires ou ambiguës ne sont pas assimilées. La photo Rebrickable garde la priorité lorsqu’elle est disponible. Le recours prend en charge les grandes images et les petites images normalisées BrickLink ; les consultations suivantes réutilisent le cache partagé sans réécrire les images.
 
 ## Rangement, actions des sets et nettoyage des mises à jour — v0.1.45
 
@@ -45,7 +62,7 @@ Les anciens fichiers restent dans **Donnees/maj/b…** pendant le remplacement. 
 
 En cas de coupure pendant le remplacement, fermer toutes les instances, consulter `Donnees/maj/transaction.json` et son champ `stage`, puis ouvrir un terminal dans le dossier `Donnees/temp/u…` correspondant et exécuter `r\python.exe -I -B i.py --recover`. Cette réparation vérifie le plan conservé, remet les anciens fichiers et relance le logiciel. Si la préparation est perdue, restaurer les fichiers du dossier `Donnees/maj/b…` dans le dossier d’installation, sans déplacer `Donnees`, depuis l’Explorateur et avec toutes les instances fermées. Pour revenir volontairement à une ancienne version, utiliser aussi une sauvegarde compatible si le format des données a évolué.
 
-Pour passer d’une version antérieure à v0.1.42, installer une fois le ZIP complet dans un nouveau dossier et y recopier **Donnees**, comme indiqué ci-dessous. L’option servira ensuite pour les futures releases publiées. 
+Pour passer d’une version antérieure à v0.1.42, installer une fois le ZIP complet dans un nouveau dossier et y recopier **Donnees**, comme indiqué ci-dessous. L’option servira ensuite pour les futures releases publiées. La v0.1.47 est disponible dans les [releases GitHub](https://github.com/sdu07git/BrickLabo/releases/tag/v0.1.47), avec le ZIP Windows complet et le ZIP des sources.
 
 ## Fond transparent des étiquettes — v0.1.41
 
@@ -68,6 +85,8 @@ Les fenêtres de consultation, recherches de constructions, inventaires, notices
 Dans **Mise à jour des données → Charger les inventaires de sets par lots**, afficher des sets Rebrickable ou BrickLink par référence / nom / thème, sélectionner les lignes ou saisir des références connues du catalogue. **Préparer la sélection** enregistre une file. **Sets par lot** est réglable de 10 à 1000 ; **Charger le prochain lot** s’arrête après ce lot et **Enchaîner les lots** continue jusqu’à une pause. Les inventaires déjà complets sont conservés par défaut ; l’actualisation volontaire se règle à la préparation. La file, les réussites et les erreurs sont conservées après fermeture ; **Réessayer les erreurs** remet seulement les erreurs en attente. Une interruption ne publie pas une page partielle d’inventaire. Les clés API de la source sont nécessaires pour les téléchargements. Les requêtes Rebrickable sont espacées ; un refus d’authentification ou une limitation arrête le lot et conserve la file.
 
 Charger ces inventaires ne déclare pas les sets possédés et n’ajoute aucune pièce au stock. Ils alimentent **Sets réalisables**, puis les suggestions d’alternatives des sets reconstituables. Le chargement de sets officiels ne constitue pas un catalogue complet d’inventaires de MOC : l’API v3 ne fournit pas leurs inventaires généraux. La comparaison exacte d’un MOC nécessite son propre inventaire. Pour obtenir tout le catalogue Rebrickable, privilégier les fichiers CSV existants.
+
+La v0.1.47 est disponible dans les [releases GitHub](https://github.com/sdu07git/BrickLabo/releases/tag/v0.1.47), avec le ZIP Windows complet et le ZIP des sources.
 
 ## Contrôle et corrections v0.1.39
 
@@ -129,15 +148,13 @@ L’aide complète se trouve dans [documentation/AIDE.html](documentation/AIDE.h
 | 0.1.42 | Mises à jour GitHub vérifiées, installation après fermeture et retour arrière. |
 | 0.1.43 | Suppression des meubles et disposition persistante côte à côte ou superposée. |
 | 0.1.44 | Sélection de toutes les catégories, glissement des tiroirs avec échanges et impression / PDF A4 des meubles avec miniatures. |
-| 0.1.45 | Zoom et miniatures du rangement, renommage des meubles et retrait des références corrigés, actions des sets contenant et suppression automatique des anciennes copies après mise à jour réussie. |
+| 0.1.45 | Zoom et miniatures du rangement, renommage et retrait des références, actions des sets contenant et nettoyage des anciennes copies après mise à jour. |
+| 0.1.46 | Photo BrickLink vérifiée pour le set Rebrickable 030-2, provenance affichée et petites photos normalisées de sets. |
+| 0.1.47 | Aperçus des arêtes accélérés en RAM, valeurs par défaut, fermeture visible et nettoyage des temporaires renforcé ; correspondances de photos vérifiées entre catalogues. |
 
 Un seul [NOUVEAUTES.txt](documentation/NOUVEAUTES.txt) réunit les notes françaises et anglaises. Les notes de cette branche ne documentent pas de livraison 0.1.29. Les variantes 0.1.28b et Range n’ont pas servi de base. Aucun rapport de tests n’est inclus dans les sources.
 
 ## Développement et diagnostic
-
-Le dépôt conserve l’organisation du ZIP source. `ressources/complete.zip` est exclu de Git car il dépasse la limite de taille de GitHub. Copier cette archive LDraw depuis **BrickLabo_v0.1.45_Sources.zip** ou **BrickLabo_v0.1.45_Complet.zip**, disponibles dans la [release v0.1.45](https://github.com/sdu07git/BrickLabo/releases/tag/v0.1.45), pour retrouver les modèles livrés et exécuter les tests qui en dépendent. Les archives automatiques « Source code » de GitHub n’incluent pas ce fichier.
-
-**Validation v0.1.45 :** 454 tests réussis sous Qt/Linux ; cohérence des archives, versions des dépendances et ressources de l’icône du lanceur vérifiées. Le lancement natif reste à vérifier sur Windows.
 
 Installer Python 3.12, créer un environnement virtuel puis `python -m pip install -r app/requirements.txt`. Lancer `python app/bootstrap.py`. Tester avec `python tools/run_tests.py`. Sous Linux avec MinGW-w64 : `python tools/build_distribution.py chemin/BrickLabo_v0.1.43_Complet.zip dossier_de_sortie`. L’outil reprend les bibliothèques de l’archive complète précédente ; il accepte aussi l’ancienne organisation v0.1.36.
 
@@ -148,3 +165,7 @@ Projet : https://github.com/sdu07git/BrickLabo. Ne pas publier Donnees ni les sa
 Contrôle après fabrication : `python tools/check_distribution.py chemin/BrickLabo`.
 
 Pour publier une future mise à jour compatible : créer une release publique stable avec un tag `vX.Y.Z`, des notes de version et le fichier **BrickLabo_vX.Y.Z_Complet.zip** produit par cet outil. GitHub doit exposer le champ `digest` SHA-256 de cet asset dans son API. Les archives Sources générées automatiquement par GitHub ne sont pas installables. Le logiciel consulte au maximum les 100 releases les plus récentes et ne publie aucun fichier.
+
+Pour développer depuis ce dépôt, reprendre `ressources/complete.zip` depuis le ZIP Sources joint à la release : cette archive LDraw dépasse la limite de taille des fichiers GitHub. Les archives automatiques « Source code » ne contiennent ni cette ressource ni le runtime Windows. Les deux ZIP joints sont ceux de la version livrée et testée ; les README du dépôt sont adaptés à la publication.
+
+**Validation v0.1.47 :** 487 tests réussis sous Qt/Linux ; cohérence des archives, versions des dépendances et icône intégrée au lanceur vérifiées. L’exécution native du paquet reste à vérifier sur Windows.

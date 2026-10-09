@@ -1,4 +1,4 @@
-BrickLabo v0.1.45
+BrickLabo v0.1.47
 
 Extraire le ZIP entier dans un nouveau dossier accessible en ecriture.
 Fermer l ancienne version, conserver une sauvegarde et copier Donnees a cote du nouvel exe.
@@ -13,6 +13,10 @@ Taille des apercus sur les tiroirs : reglage conserve. Renommer le meuble dans O
 Retirer les references : selection ou, sans selection, vider les liens du tiroir apres confirmation ; stock conserve.
 Sets contenant : clic droit pour les alternatives ou pour afficher le set exact dans son catalogue.
 Apres mise a jour integree et demarrage reussi, anciennes copies du logiciel supprimees ; Donnees conserve.
+Photo du set Rebrickable 030-2 : recours BrickLink verifie, sans cle API ; reference conservee.
+Aretes 3D : apercus acceleres ; Valeurs par defaut = noir 86,3 %, epaisseur 1 px ; Appliquer pour enregistrer.
+Fermeture visible jusqu a la fin des taches ; temporaires nettoyes, erreurs eventuelles dans les logs.
+Photos de secours : correspondances de pieces verifiees BrickArchitect reutilisees, liens officiels des sets/minifigurines.
 Aide : documentation/AIDE.html. Historique : documentation/NOUVEAUTES.txt.
 Diagnostic : BrickLabo.exe --self-test, puis Donnees/diagnostic.json.
 En cas d erreur de chemin, deplacer tout le logiciel vers un chemin plus court.
@@ -27,3 +31,9 @@ The complete ZIP and GitHub SHA-256 are verified; Donnees is preserved.
 Storage: wheel / +/- zoom, Zoom to cabinet, Full view, saved Drawer preview size and Rename cabinet.
 Sets containing: right-click for alternate builds or the exact set catalogue.
 After a successful integrated update startup, old application copies are removed; Donnees is preserved.
+
+Rebrickable set 030-2: verified BrickLink photo fallback without an API key; reference preserved.
+
+3D edges: faster previews; Default values = 86.3% black, 1 px width; Apply saves.
+Shutdown stays visible until workers finish; temporary cleanup failures are logged.
+Photo fallbacks reuse verified BrickArchitect part links and official set/minifigure links.

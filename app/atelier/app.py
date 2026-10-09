@@ -12,6 +12,7 @@ import re
 import sys
 import time
 import traceback
+import threading
 from pathlib import Path
 
 from PySide6.QtCore import Qt,QTimer,QUrl
@@ -42,7 +43,8 @@ NAV=[(tr('Catalogue Rebrickable'),'RB','part','catalogue'),(tr('Catalogue BrickL
 
 class MainWindow(QMainWindow):
     def __init__(self,db):
-        super().__init__();self.db=db;self.engine=VisualEngine(db);self.current_item=None;self.catalogues=[];self.owned_panels=[];self.generating=False;self._stock_revision=db.stock_revision()
+        super().__init__();self.db=db;self.engine=VisualEngine(db);self.current_item=None;self.catalogues=[];self.owned_panels=[];self.generating=False;self._stock_revision=db.stock_revision();self._closing=False;self._request_cancel=threading.Event()
+        self.close_timer=QTimer(self);self.close_timer.setInterval(50);self.close_timer.timeout.connect(self.close)
         self.setWindowTitle(f'{APP_NAME} — v{VERSION}');self.resize(1500,900);self.setMinimumSize(950,650)
         outer=QWidget();self.setCentralWidget(outer);root=QVBoxLayout(outer)
         top=QHBoxLayout();root.addLayout(top)
@@ -152,6 +154,7 @@ class MainWindow(QMainWindow):
         if self.isMinimized():self.showNormal()
         self.raise_();self.activateWindow();return True
     def refresh_counts(self):
+        if self._closing:return
         for c in self.catalogues:
             if c.scope in ('stock','stock_sets','queue','history') or c.source=='ALT':c.reload()
         for panel in self.owned_panels:panel.refresh()
@@ -331,9 +334,22 @@ class MainWindow(QMainWindow):
         return True
     def closeEvent(self,event):
         if self.generating:QMessageBox.information(self,tr('Génération'),tr('Attends la fin de la génération avant de fermer.'));event.ignore();return
-        self.startup_timer.stop();self.cleanup_timer.stop()
-        for window in list(getattr(self,'_consultation_windows',[])):window.reject()
-        if hasattr(self,'storage'):self.storage.icon_token+=1;self.storage.icon_timer.stop()
+        from PySide6.QtCore import QThreadPool
+        from .thumbnails import PartThumbnails
+        if not self._closing:
+            self._closing=True;self._request_cancel.set();self.centralWidget().setEnabled(False)
+            for timer in self.findChildren(QTimer):timer.stop()
+            for widget in self.findChildren(QWidget):
+                for name in ('cancel','cancelled','cancel_event'):
+                    cancel=getattr(widget,name,None)
+                    if isinstance(cancel,threading.Event):cancel.set()
+            for preview in self.findChildren(Preview):preview.stop()
+            for thumbnails in self.findChildren(PartThumbnails):thumbnails.stop()
+            for window in list(getattr(self,'_consultation_windows',[])):window.reject();window.hide()
+            if hasattr(self,'storage'):self.storage.icon_token+=1
+        if not QThreadPool.globalInstance().waitForDone(0):
+            self.statusBar().showMessage(tr('Fermeture : arrêt des tâches en cours…'));self.close_timer.start();event.ignore();return
+        self.close_timer.stop()
         super().closeEvent(event)
 
 

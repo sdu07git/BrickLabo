@@ -221,18 +221,18 @@ class LabelEditor(QDialog):
         if self.edge_controls.inherit.isChecked():self.edge_controls.set_settings(general_style(self.db),True)
         self.schedule_edge_preview()
     def schedule_edge_preview(self):
-        self.edge_revision+=1;self.edge_status.setText(tr('Actualisation des arêtes…'));self.edge_timer.start()
+        self.edge_revision+=1;self.edge_status.setText(tr('Actualisation des arêtes…'));self.edge_timer.start(140)
     def render_edge_preview(self):
         if self.edge_closed or self.edge_running:return
         revision=self.edge_revision;template=copy.deepcopy(self.template);item=dict(self.item);self.edge_running=True
-        def work(progress):return self.engine.visuals(item,item.get('chosen_color'),False,template=template)
+        def work(progress):return self.engine.visuals(item,item.get('chosen_color'),False,template=template,cancelled=lambda:self.edge_closed or revision!=self.edge_revision)
         def finish(result=None,error=None):
             self.edge_running=False
             if self.edge_closed:return
             if revision==self.edge_revision:
                 if result:self.visuals,note=result;self.edge_status.setText(note);self.refresh_canvas()
                 else:self.edge_status.setText(tr('Aperçu indisponible : ')+str(error))
-            else:self.edge_timer.start()
+            else:self.edge_timer.start(0)
         async_task(self,work,lambda result:finish(result),lambda error:finish(error=error))
     def done(self,result):self.edge_closed=True;self.edge_revision+=1;self.edge_timer.stop();super().done(result)
     def apply(self):self.db.set_setting(self.template_key,self.template);self.accept()

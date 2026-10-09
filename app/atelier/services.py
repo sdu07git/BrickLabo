@@ -13,6 +13,7 @@ import urllib.parse
 import urllib.request
 import uuid
 import threading
+from contextlib import contextmanager
 from pathlib import Path
 
 from PIL import Image
@@ -21,6 +22,23 @@ from .fileio import compact_digest,atomic_output
 
 _rb_lock=threading.Lock()
 _rb_last_call=0.0
+_request_context=threading.local()
+
+
+class RequestCancelled(ValueError):
+    pass
+
+
+@contextmanager
+def request_scope(cancel):
+    previous=getattr(_request_context,'cancel',None);_request_context.cancel=cancel
+    try:yield
+    finally:_request_context.cancel=previous
+
+
+def check_request_cancelled():
+    cancel=getattr(_request_context,'cancel',None)
+    if cancel is not None and cancel.is_set():raise RequestCancelled(tr('Chargement arrêté.'))
 
 
 def rebrickable_set_photo(html,ref,page_url):
@@ -48,15 +66,27 @@ def rebrickable_set_photo(html,ref,page_url):
 
 
 def request(url,headers=None,destination=None,timeout=45):
+    check_request_cancelled()
     if urllib.parse.urlsplit(url).scheme not in ('http','https'):raise ValueError(tr('Lien HTTP ou HTTPS requis'))
     req=urllib.request.Request(url,headers={'User-Agent':'BrickLabo/'+VERSION,**(headers or {})})
     if destination:
         destination=Path(destination);destination.parent.mkdir(parents=True,exist_ok=True)
         with atomic_output(destination) as temp:
             with urllib.request.urlopen(req,timeout=timeout) as r,temp.open('wb') as f:
-                shutil.copyfileobj(r,f,length=1024*1024)
+                read=getattr(r,'read1',r.read)
+                while True:
+                    check_request_cancelled();chunk=read(128*1024)
+                    if not chunk:break
+                    f.write(chunk)
+                check_request_cancelled()
         return destination
-    with urllib.request.urlopen(req,timeout=timeout) as r:return r.read()
+    with urllib.request.urlopen(req,timeout=timeout) as r:
+        read=getattr(r,'read1',r.read);chunks=[]
+        while True:
+            check_request_cancelled();chunk=read(128*1024)
+            if not chunk:break
+            chunks.append(chunk)
+        check_request_cancelled();return b''.join(chunks)
 
 
 def oauth_header(url,credentials):
@@ -78,6 +108,7 @@ class API:
 
     def rb(self,path):
         global _rb_last_call
+        check_request_cancelled()
         key=self.db.setting('api_rb','')
         if not key:raise ValueError(tr('Clé Rebrickable manquante'))
         url=path if path.startswith('https://rebrickable.com/api/') else 'https://rebrickable.com/api/v3/lego/'+path
