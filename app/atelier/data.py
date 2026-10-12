@@ -88,6 +88,14 @@ CREATE TABLE IF NOT EXISTS visual(item_id INTEGER PRIMARY KEY,mode TEXT DEFAULT 
  color TEXT DEFAULT '',image TEXT DEFAULT '',links TEXT DEFAULT '[]');
 CREATE TABLE IF NOT EXISTS brickarchitect(ref TEXT PRIMARY KEY,rank INTEGER,models TEXT,data TEXT NOT NULL);
 CREATE TABLE IF NOT EXISTS imports(file TEXT PRIMARY KEY,path TEXT,date TEXT,rows INTEGER);
+CREATE TABLE IF NOT EXISTS stock_import_jobs(
+ id TEXT PRIMARY KEY,filename TEXT NOT NULL,source TEXT NOT NULL,destination TEXT NOT NULL,
+ target_entry INTEGER,name TEXT NOT NULL DEFAULT '',created TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP);
+CREATE TABLE IF NOT EXISTS stock_import_rows(
+ job_id TEXT NOT NULL,ordinal INTEGER NOT NULL,payload TEXT NOT NULL,original TEXT NOT NULL,
+ PRIMARY KEY(job_id,ordinal));
+CREATE TABLE IF NOT EXISTS stock_import_applied(
+ job_id TEXT NOT NULL,ordinal INTEGER NOT NULL,PRIMARY KEY(job_id,ordinal));
 '''
 
 

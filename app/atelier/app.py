@@ -30,7 +30,7 @@ from .dialogs import APIDialog,ImportDialog,RelationsDialog,help_dialog
 from .editor import LabelEditor
 from .labels import default_template,render_label,export_pdf,template_for_item,category_outline
 from .printing import PrintPreview
-from .ui_common import STYLE,async_task,dialog
+from .ui_common import STYLE,async_task,dialog,FlowLayout
 from .windows import show_window
 
 
@@ -48,13 +48,13 @@ class MainWindow(QMainWindow):
         self.setWindowTitle(f'{APP_NAME} — v{VERSION}');self.resize(1500,900);self.setMinimumSize(950,650)
         outer=QWidget();self.setCentralWidget(outer);root=QVBoxLayout(outer)
         top=QHBoxLayout();root.addLayout(top)
-        edit=QGroupBox(tr('Édition de l’étiquette'));erow=QHBoxLayout(edit)
+        edit=QGroupBox(tr('Édition de l’étiquette'));erow=FlowLayout(edit)
         for name,func in [(tr('Contours'),self.category_colors),(tr('Couleur 3D'),self.default_color),(tr('Arêtes 3D'),self.edge_settings),(tr('Éditeur d’étiquettes'),self.editor),(tr('Taille par défaut'),self.label_size)]:
             b=QPushButton(name);b.clicked.connect(func);erow.addWidget(b)
         top.addWidget(edit,1)
-        tools=QGroupBox(tr('Données et réglages'));trow=QGridLayout(tools)
+        tools=QGroupBox(tr('Données et réglages'));trow=FlowLayout(tools)
         for index,(name,func) in enumerate([(tr('Langue'),self.language_settings),(tr('Clés API'),self.api),(tr('Aide'),lambda:help_dialog(self)),(tr('Mise à jour des données'),self.imports),(tr('Dossier PNG / PDF'),self.output_folder),(tr('Logs'),self.open_logs),(tr('Espace disque'),self.cache_settings),(tr('Sauvegardes'),self.backup_settings),(tr('Sources et licences'),self.sources_licenses)]):
-            b=QPushButton(name);b.clicked.connect(func);trow.addWidget(b,index//5,index%5)
+            b=QPushButton(name);b.clicked.connect(func);trow.addWidget(b)
         top.addWidget(tools,1)
         self.undo_button=QPushButton(tr('Annuler la dernière action'));self.undo_button.clicked.connect(self.undo_stock);root.addWidget(self.undo_button)
         self.undo_shortcut=QAction(self);self.undo_shortcut.setShortcut('Ctrl+Z');self.undo_shortcut.triggered.connect(self.undo_stock);self.addAction(self.undo_shortcut)
@@ -67,7 +67,7 @@ class MainWindow(QMainWindow):
                 from .storage_panel import StoragePanel
                 self.storage=StoragePanel(db,self.engine);self.storage.selected.connect(self.item_selected);self.stack.addWidget(self.storage);continue
             if scope in ('stock','stock_sets'):
-                widget=QWidget();vl=QVBoxLayout(widget);vl.setContentsMargins(0,0,0,0);row=QHBoxLayout();vl.addLayout(row)
+                widget=QWidget();vl=QVBoxLayout(widget);vl.setContentsMargins(0,0,0,0);row=FlowLayout();vl.addLayout(row)
                 for name,func in [(tr('Importer une collection'),lambda _,s=scope:self.import_stock(s)),(tr('Exporter vers Rebrickable'),self.export_stock_rebrickable),(tr('Sets réalisables'),self.build_from_stock),(tr('Rechercher des MOC / alternatives'),self.search_mocs)]:
                     button=QPushButton(name);button.clicked.connect(func);row.addWidget(button)
                 if scope=='stock_sets':
@@ -81,7 +81,7 @@ class MainWindow(QMainWindow):
                 widget=QWidget();vl=QVBoxLayout(widget);vl.setContentsMargins(0,0,0,0)
                 if scope=='queue':self.queue_toolbar(vl)
                 if scope=='history':
-                    row=QHBoxLayout();clear=QPushButton(tr('Supprimer tout l’historique'));clear.clicked.connect(self.clear_history);row.addWidget(clear);dates=QPushButton(tr('Supprimer avant une date…'));dates.clicked.connect(self.clear_before);row.addWidget(dates);row.addStretch();vl.addLayout(row)
+                    row=FlowLayout();clear=QPushButton(tr('Supprimer tout l’historique'));clear.clicked.connect(self.clear_history);row.addWidget(clear);dates=QPushButton(tr('Supprimer avant une date…'));dates.clicked.connect(self.clear_before);row.addWidget(dates);vl.addLayout(row)
                 if source=='BA':
                     from .brickarchitect import BrickArchitectCatalogue
                     cat=BrickArchitectCatalogue(db)
@@ -89,7 +89,7 @@ class MainWindow(QMainWindow):
                 vl.addWidget(cat);self.bind(cat)
                 if scope=='queue':self.queue=cat
                 self.stack.addWidget(widget)
-        self.right_scroll=QScrollArea();self.right_scroll.setWidgetResizable(True);self.preview=Preview(db,self.engine);self.preview.visual_changed.connect(self.visual_changed);self.right_scroll.setWidget(self.preview);self.right_scroll.setMinimumWidth(290);split.addWidget(self.right_scroll);split.setSizes([235,920,345])
+        self.right_scroll=QScrollArea();self.right_scroll.setWidgetResizable(True);self.preview=Preview(db,self.engine);self.preview.visual_changed.connect(self.visual_changed);self.right_scroll.setWidget(self.preview);self.right_scroll.setMinimumWidth(380);split.addWidget(self.right_scroll);split.setSizes([235,835,430]);split.setChildrenCollapsible(False)
         self.nav.currentRowChanged.connect(self.stack.setCurrentIndex);self.nav.setCurrentRow(0)
         self.statusBar().showMessage(tr('Prêt — importe les ressources pour remplir les catalogues.'))
         self.export_path=db.setting('output',str(db.path.parent/'Exports'))
@@ -249,11 +249,11 @@ class MainWindow(QMainWindow):
                 QMessageBox.information(self,tr('Dossier des fichiers'),tr('Choisis un dossier à l’intérieur du dossier BrickLabo pour conserver tous les fichiers avec le logiciel.'));return
             self.export_path=path;self.db.set_setting('output',path)
     def queue_toolbar(self,layout):
-        row=QHBoxLayout();self.format=QComboBox();self.format.addItems(['PDF + PNG','PDF','PNG']);row.addWidget(self.format)
+        row=FlowLayout();self.format=QComboBox();self.format.addItems(['PDF + PNG','PDF','PNG']);row.addWidget(self.format)
         self.single_file=QCheckBox(tr('Un fichier PDF par étiquette'));row.addWidget(self.single_file)
         b=QPushButton(tr('Générer'));b.clicked.connect(lambda:self.generate('export'));row.addWidget(b)
         b=QPushButton(tr('Aperçu avant impression'));b.clicked.connect(lambda:self.generate('preview'));row.addWidget(b)
-        b=QPushButton(tr('Imprimer les étiquettes'));b.setProperty('primary',True);b.clicked.connect(lambda:self.generate('print'));row.addWidget(b);row.addStretch();layout.addLayout(row)
+        b=QPushButton(tr('Imprimer les étiquettes'));b.setProperty('primary',True);b.clicked.connect(lambda:self.generate('print'));row.addWidget(b);layout.addLayout(row)
     def generate(self,mode):
         if self.generating:return
         entries=self.queue.selection()

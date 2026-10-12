@@ -1,4 +1,4 @@
-"""Validated, all-or-nothing collection imports from Rebrickable and BrickLink."""
+"""Read collection lists and apply validated rows as one undoable action."""
 import csv
 import io
 import json
@@ -11,25 +11,26 @@ from .i18n import tr
 def _header(value):
     return re.sub(r'[^a-z0-9]','',str(value).lower())
 
-def _row(raw, source):
+def _row(raw, source, strict=True):
     values={_header(k):str(v or '').strip() for k,v in raw.items() if k is not None}
     def get(*keys,default=''):
         return next((values[k] for k in keys if values.get(k)),default)
     if get('alternate','alternateitem','alternateflag').upper() in ('Y','YES','TRUE','1') or get('counterpart','counterpartitem').upper() in ('Y','YES','TRUE','1'):return None
-    src=source if source!='auto' else ('BL' if any(k in values for k in ('itemno','itemid','itemtype','colorid')) else 'RB')
+    src=source if source!='auto' else ('BL' if any(k in values for k in ('itemno','itemid','itemtype')) else 'RB')
     typ=get('itemtype','type').upper()
     kind={'S':'set','SET':'set','P':'part','PART':'part','M':'minifig','MINIFIG':'minifig','MINIFIGURE':'minifig'}.get(typ)
-    if typ and kind is None:raise ValueError(tr('Type de référence non pris en charge : ')+typ)
-    kind=kind or ('set' if get('set','setnum') else 'part')
+    if typ and kind is None and strict:raise ValueError(tr('Type de référence non pris en charge : ')+typ)
+    kind=kind or (typ.lower() if typ else 'set' if get('set','setnum') else 'part')
     ref=get('itemno','itemid','part','partnum','set','setnum','fig','fignum')
-    if not re.fullmatch(r'[A-Za-z0-9][A-Za-z0-9_.-]{0,79}',ref):raise ValueError(tr('Référence invalide : ')+ref)
+    if strict and not re.fullmatch(r'[A-Za-z0-9][A-Za-z0-9_.-]{0,79}',ref):raise ValueError(tr('Référence invalide : ')+ref)
     amount=get('quantity','qty','minqty',default='1')
-    if not re.fullmatch(r'[0-9]+',amount) or not 1<=int(amount)<=10_000_000:raise ValueError(tr('Quantité invalide : ')+amount)
+    valid_amount=bool(re.fullmatch(r'[0-9]{1,10}',amount)) and 1<=int(amount)<=10_000_000
+    if strict and not valid_amount:raise ValueError(tr('Quantité invalide : ')+amount)
     color='' if kind!='part' else get('color','colorid',default='')
-    if kind=='part' and (not color.isdigit() or int(color)>100000):raise ValueError(tr('Code couleur numérique requis pour ')+ref)
-    return {'source':src,'kind':kind,'ref':ref,'color':color,'quantity':int(amount)}
+    if strict and kind=='part' and (not re.fullmatch(r'[0-9]{1,6}',color) or int(color)>100000):raise ValueError(tr('Code couleur numérique requis pour ')+ref)
+    return {'source':src,'kind':kind,'ref':ref,'color':color,'quantity':int(amount) if valid_amount else amount}
 
-def read_list(path,source='auto'):
+def read_list(path,source='auto',strict=True):
     if source not in ('auto','RB','BL'):raise ValueError(tr('Source inconnue'))
     path=Path(path)
     if path.stat().st_size>50*1024*1024:raise ValueError(tr('Fichier trop volumineux (50 Mo maximum).'))
@@ -47,28 +48,51 @@ def read_list(path,source='auto'):
     rows=[]
     for index,record in enumerate(records,1):
         if not any(str(v or '').strip() for v in record.values()):continue
-        try:row=_row(record,source)
+        try:row=_row(record,source,strict)
         except ValueError as error:raise ValueError(tr('Ligne ')+str(index)+' : '+str(error)) from error
-        if row:rows.append(row)
+        if row:
+            if not strict:row.update(line_number=index,original=record)
+            rows.append(row)
     if not rows:raise ValueError(tr('Aucune pièce ou aucun set à importer.'))
     return rows
 
 def resolve_rows(db,rows):
-    result=[]
+    from .color_links import rb_palette,bl_palette
+    palettes={'BL':set(bl_palette(db.setting)),'RB':set(rb_palette())|{str(r['id']) for r in db.rows('SELECT id FROM colors')}}
+    result=[];items={};inventories={}
     for row in rows:
-        found=db.rows('SELECT * FROM items WHERE source=? AND kind=? AND ref=?',(row['source'],row['kind'],row['ref']))
-        if not found and row['source']=='RB' and row['kind']=='set' and '-' not in row['ref']:
-            found=db.rows("SELECT * FROM items WHERE source='RB' AND kind='set' AND ref=?",(row['ref']+'-1',))
-        item=found[0] if found else None
-        result.append(dict(row,item=item,issue='' if item else tr('Référence absente du catalogue local')))
+        item=None;issue='';source=row.get('source','');kind=row.get('kind','');ref=str(row.get('ref',''));color=str(row.get('color',''));amount=str(row.get('quantity',''))
+        if source not in ('RB','BL','ALT','BA'):issue=tr('Source inconnue')
+        elif kind not in ('part','set','minifig'):issue=tr('Type de référence non pris en charge : ')+kind
+        elif not re.fullmatch(r'[A-Za-z0-9][A-Za-z0-9_.-]{0,79}',ref):issue=tr('Référence invalide : ')+ref
+        elif not re.fullmatch(r'[0-9]{1,10}',amount) or not 1<=int(amount)<=10_000_000:issue=tr('Quantité invalide : ')+amount
+        if not issue:
+            key=(source,kind,ref)
+            if key not in items:
+                found=db.rows('SELECT * FROM items WHERE source=? AND kind=? AND ref=? AND catalogue_hidden=0',key)
+                if not found and source=='RB' and kind=='set' and '-' not in ref:
+                    found=db.rows("SELECT * FROM items WHERE source='RB' AND kind='set' AND ref=? AND catalogue_hidden=0",(ref+'-1',))
+                items[key]=found[0] if found else None
+            item=items[key]
+            if not item:issue=tr('Référence absente du catalogue local')
+            elif kind=='part' and (not re.fullmatch(r'[0-9]{1,6}',color) or int(color)>100000 or color not in palettes['BL' if source=='BL' else 'RB']):issue=tr('Couleur absente de la palette de la source : ')+color
+            elif kind=='set':
+                if item['id'] not in inventories:
+                    try:db.stock_action('stock_sets',item['id']);inventories[item['id']]=''
+                    except ValueError as error:inventories[item['id']]=str(error)
+                issue=inventories[item['id']]
+        valid_amount=bool(re.fullmatch(r'[0-9]{1,10}',amount)) and 1<=int(amount)<=10_000_000
+        result.append(dict(row,item=item,issue=issue,quantity=int(amount) if valid_amount else row.get('quantity','')))
     return result
 
-def import_rows(db,rows,destination='stock',target_entry=None,name=''):
+def import_rows(db,rows,destination='stock',target_entry=None,name='',connection=None,completion=None):
+    from contextlib import nullcontext
     from .stock import mutate
     if destination not in ('stock','stock_sets'):raise ValueError(tr('Destination inconnue'))
     resolved=resolve_rows(db,rows)
-    missing=[r['ref'] for r in resolved if r['issue']]
-    if missing:raise ValueError(tr('Aucun ajout. Références absentes : ')+', '.join(missing[:20]))
+    missing=[r['ref']+' : '+r['issue'] for r in resolved if r['issue']]
+    if missing:raise ValueError(tr('Aucun ajout. Lignes à corriger : ')+', '.join(missing[:20]))
+    if not resolved:return 0
     actions=[];parts=[]
     for row in resolved:
         item=row['item']
@@ -81,8 +105,9 @@ def import_rows(db,rows,destination='stock',target_entry=None,name=''):
         else:parts.append({'item_id':item['id'],'color':row['color'],'quantity':row['quantity']})
 
     if parts and not target_entry and not name.strip():raise ValueError(tr('Donne un nom à cet inventaire de pièces.'))
-    with db.connect() as c:
-        c.execute('BEGIN IMMEDIATE')
+    with (db.connect() if connection is None else nullcontext(connection)) as c:
+        if not c.in_transaction:c.execute('BEGIN IMMEDIATE')
+        target_item=None
         if parts:
             if target_entry:
                 if not c.execute('SELECT 1 FROM stock_sets WHERE id=?',(int(target_entry),)).fetchone():raise ValueError(tr('Set absent du stock'))
@@ -93,6 +118,8 @@ def import_rows(db,rows,destination='stock',target_entry=None,name=''):
                 iid=c.execute("INSERT INTO items(source,kind,ref,name,category,search) VALUES('ALT','set',?,?,?,?)",(ref,name.strip(),tr('Inventaires personnels'),normalize(ref+' '+name.strip()))).lastrowid
                 c.execute('INSERT INTO settings VALUES(?,?)',('alt_components_'+str(iid),json.dumps(parts,ensure_ascii=False)))
                 actions.append({'op':'add','scope':'stock_sets','item_id':iid,'color':'','quantity':1,'components':parts})
+                target_item=iid
+        if completion:actions.append(dict(completion,target_item_id=target_item))
         mutate(db,actions,tr('Import de collection'),connection=c)
 
     return len(resolved)

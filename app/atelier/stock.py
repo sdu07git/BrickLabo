@@ -5,7 +5,7 @@ from contextlib import closing,nullcontext
 from .i18n import tr
 from .sqlite_file import connect
 
-TABLES={'stock':('id',),'stock_sets':('id',),'stock_set_components':('set_entry_id','item_id','color'),'queue':('id',),'settings':('key',)}
+TABLES={'stock':('id',),'stock_sets':('id',),'stock_set_components':('set_entry_id','item_id','color'),'queue':('id',),'settings':('key',),'stock_import_jobs':('id',),'stock_import_applied':('job_id','ordinal')}
 
 def prepare(db,c):
     legacy=list(c.execute("SELECT s.* FROM stock s JOIN items i ON i.id=s.item_id WHERE i.kind='set'"))
@@ -58,6 +58,14 @@ def _loose(c,iid,color,amount):
 
 def _apply(c,action):
     scope=action.get('scope','stock');op=action['op']
+    if op=='import_complete':
+        job=action['job_id']
+        for ordinal in action['ordinals']:
+            c.execute('INSERT INTO stock_import_applied(job_id,ordinal) VALUES(?,?)',(job,ordinal))
+        if action.get('target_item_id'):
+            entry=c.execute('SELECT id FROM stock_sets WHERE item_id=? AND color=\'\'',(action['target_item_id'],)).fetchone()
+            c.execute('UPDATE stock_import_jobs SET target_entry=? WHERE id=?',(entry['id'],job))
+        return
     if scope not in ('stock','stock_sets','queue'):raise ValueError(tr('Destination inconnue'))
     if op=='add':
         iid=action['item_id'];qty=int(action['quantity']);color=str(action.get('color',''))

@@ -7,9 +7,9 @@ from PySide6.QtCore import Qt,Signal,QTimer,QItemSelectionModel
 from PySide6.QtGui import QAction
 from PySide6.QtWidgets import (QWidget,QVBoxLayout,QHBoxLayout,QLabel,QLineEdit,QComboBox,
                               QPushButton,QTableWidget,QTableWidgetItem,QAbstractItemView,QMenu,
-                              QMessageBox,QInputDialog,QSizePolicy,QSplitter,QGroupBox)
+                              QMessageBox,QInputDialog,QSizePolicy,QSplitter,QGroupBox,QScrollArea)
 
-from .ui_common import edit_item,async_task,pixmap
+from .ui_common import edit_item,async_task,pixmap,FlowLayout
 
 
 COLUMNS=[('architect_rank',tr('Classement')),('ldraw_model',tr('Modèles LDraw')),('ref',tr('Référence')),('name',tr('Nom')),('category',tr('Catégorie')),('has_print',tr('Sérigraphie')),('has_sticker',tr('Sticker')),('image',tr('Aperçu 3D / photo')),
@@ -36,8 +36,8 @@ class Catalogue(QWidget):
         if not self.db.setting('import_date_column_added_'+self.key,False):
             if 'imported_at' not in self.visible_columns:self.visible_columns.insert(self.visible_columns.index('image') if 'image' in self.visible_columns else len(self.visible_columns),'imported_at')
             self.db.set_setting(self.key,self.visible_columns);self.db.set_setting('import_date_column_added_'+self.key,True)
-        layout=QVBoxLayout(self);layout.setContentsMargins(0,0,0,0)
-        filters=QHBoxLayout();self.search=QLineEdit();self.search.setMinimumWidth(260);self.search.setPlaceholderText(tr('Rechercher : référence, nom, catégorie, 1x1 ou 1 x 1…'));filters.addWidget(self.search,1)
+        outer=QVBoxLayout(self);outer.setContentsMargins(0,0,0,0);self.controls_scroll=QScrollArea();self.controls_scroll.setWidgetResizable(True);body=QWidget();layout=QVBoxLayout(body);layout.setContentsMargins(0,0,0,0);layout.setSizeConstraint(QVBoxLayout.SizeConstraint.SetMinimumSize);self.controls_scroll.setWidget(body);outer.addWidget(self.controls_scroll)
+        filters=FlowLayout();self.search=QLineEdit();self.search.setMinimumWidth(260);self.search.setPlaceholderText(tr('Rechercher : référence, nom, catégorie, 1x1 ou 1 x 1…'));layout.addWidget(self.search)
         self.category=QComboBox();self.category.setMinimumWidth(150);self.category.setMaximumWidth(260);self.category.setSizeAdjustPolicy(QComboBox.SizeAdjustPolicy.AdjustToMinimumContentsLengthWithIcon);self.category.setMinimumContentsLength(18);filters.addWidget(self.category)
         self.year=None
         if kind=='set' and scope=='catalogue':
@@ -50,8 +50,8 @@ class Catalogue(QWidget):
         layout.addLayout(filters)
         from .category_tags import TagBar
         self.category_tags=TagBar();self.category_tags.removed.connect(self.remove_category_tag);self.category_tags.set_tags([]);layout.addWidget(self.category_tags)
-        filter_row=QHBoxLayout();self.filters_button=QPushButton(tr('Filtres avancés…'));self.filters_button.clicked.connect(self.advanced_filters);filter_row.addWidget(self.filters_button)
-        self.reference_tag=QPushButton();self.reference_tag.setToolTip(tr('Retirer le filtre de référence exacte'));self.reference_tag.clicked.connect(self.reset);self.reference_tag.hide();filter_row.addWidget(self.reference_tag);filter_row.addStretch();layout.addLayout(filter_row)
+        filter_row=FlowLayout();self.filters_button=QPushButton(tr('Filtres avancés…'));self.filters_button.clicked.connect(self.advanced_filters);filter_row.addWidget(self.filters_button)
+        self.reference_tag=QPushButton();self.reference_tag.setToolTip(tr('Retirer le filtre de référence exacte'));self.reference_tag.clicked.connect(self.reset);self.reference_tag.hide();filter_row.addWidget(self.reference_tag);layout.addLayout(filter_row)
         if kind=='set' and scope=='catalogue':
             self.moc_search_button=QPushButton(tr('MOC par mot clé / créateur'));self.moc_search_button.setToolTip(tr('Rechercher sur Rebrickable dans tous les MOC et alternatives, sans filtre de stock.'));self.moc_search_button.clicked.connect(self.search_mocs);filter_row.addWidget(self.moc_search_button)
         if kind!='set':
@@ -69,13 +69,13 @@ class Catalogue(QWidget):
             vertical=QSplitter(Qt.Orientation.Vertical);vertical.addWidget(self.table)
             self.documents=DocumentsPanel(db);vertical.addWidget(self.documents);vertical.setSizes([600,210]);layout.addWidget(vertical,1)
         else:layout.addWidget(self.table,1)
-        footer=QHBoxLayout();self.count=QLabel();footer.addWidget(self.count,1)
+        footer=QHBoxLayout();self.count=QLabel();self.count.setWordWrap(True);footer.addWidget(self.count,1)
         self.back=QPushButton('‹');self.back.clicked.connect(lambda:self.go_page(self.page-1));footer.addWidget(self.back)
         self.pages=QComboBox();self.pages.currentIndexChanged.connect(lambda i:self.go_page(i+1) if not self.loading else None);footer.addWidget(self.pages)
         self.next=QPushButton('›');self.next.clicked.connect(lambda:self.go_page(self.page+1));footer.addWidget(self.next)
         self.page_size=QComboBox();self.page_size.addItems(['50','100','200']);self.page_size.setCurrentText('100');self.page_size.currentTextChanged.connect(lambda _:self.reset());footer.addWidget(self.page_size)
         layout.addLayout(footer)
-        buttons=QHBoxLayout()
+        buttons=FlowLayout()
         for label,target in [(tr('Ajouter au stock'),'stock'),(tr('Ajouter aux étiquettes à imprimer'),'queue')]:
             b=QPushButton(label);b.clicked.connect(lambda checked=False,t=target:self.add_selected(t));buttons.addWidget(b)
         b=QPushButton(tr('Copier vers catalogue alternatif'));b.clicked.connect(self.copy_selected);buttons.addWidget(b);layout.addLayout(buttons)

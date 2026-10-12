@@ -9,10 +9,56 @@ from .fileio import error_message
 from pathlib import Path
 from io import BytesIO
 
-from PySide6.QtCore import QObject, QRunnable, QThreadPool, Signal, Slot, Qt
-from PySide6.QtGui import QImage, QPixmap, QPainter, QBrush, QColor
+from PySide6.QtCore import QObject, QRunnable, QThreadPool, Signal, Slot, Qt, QSize, QRect
+from PySide6.QtGui import QImage, QPixmap, QPainter, QBrush, QColor, QPalette
 from PySide6.QtWidgets import (QDialog,QVBoxLayout,QScrollArea,QWidget,QLabel,QPushButton,
-                              QMessageBox,QDialogButtonBox,QFormLayout,QLineEdit,QSpinBox,QComboBox)
+                              QMessageBox,QDialogButtonBox,QFormLayout,QLineEdit,QSpinBox,QComboBox,QLayout,
+                              QStylePainter,QStyleOptionButton,QStyle)
+
+
+class FlowLayout(QLayout):
+    """Keep controls at their full text width and wrap them when space runs out."""
+    def __init__(self,parent=None,spacing=6):
+        super().__init__(parent);self.items=[];self.setContentsMargins(0,0,0,0);self.setSpacing(spacing)
+    def addItem(self,item):self.items.append(item)
+    def count(self):return len(self.items)
+    def itemAt(self,index):return self.items[index] if 0<=index<len(self.items) else None
+    def takeAt(self,index):return self.items.pop(index) if 0<=index<len(self.items) else None
+    def expandingDirections(self):return Qt.Orientation(0)
+    def hasHeightForWidth(self):return True
+    def heightForWidth(self,width):return self.arrange(QRect(0,0,width,0),False)
+    def setGeometry(self,rect):super().setGeometry(rect);self.arrange(rect,True)
+    def sizeHint(self):return self.minimumSize()
+    def minimumSize(self):
+        size=QSize()
+        for item in self.items:
+            if not item.isEmpty():size=size.expandedTo(item.minimumSize())
+        left,top,right,bottom=self.getContentsMargins();return size+QSize(left+right,top+bottom)
+    def arrange(self,rect,apply):
+        left,top,right,bottom=self.getContentsMargins();area=rect.adjusted(left,top,-right,-bottom);x=area.x();y=area.y();height=0;space=self.spacing()
+        for item in self.items:
+            if item.isEmpty():continue
+            size=item.sizeHint().expandedTo(item.minimumSize())
+            if x>area.x() and x+size.width()>area.right()+1:y+=height+space;x=area.x();height=0
+            if apply:item.setGeometry(QRect(x,y,size.width(),size.height()))
+            x+=size.width()+space;height=max(height,size.height())
+        return y+height-rect.y()+bottom
+
+
+class WrappedButton(QPushButton):
+    """A long action label that remains readable in a narrow panel."""
+    def hasHeightForWidth(self):return True
+    def heightForWidth(self,width):
+        text=self.fontMetrics().boundingRect(QRect(0,0,max(1,width-24),10000),Qt.TextFlag.TextWordWrap,self.text())
+        return max(self.fontMetrics().lineSpacing()+16,text.height()+16)
+    def sizeHint(self):
+        width=min(300,super().sizeHint().width());return QSize(width,self.heightForWidth(width))
+    def minimumSizeHint(self):
+        width=min(200,super().sizeHint().width());return QSize(width,self.heightForWidth(width))
+    def paintEvent(self,event):
+        option=QStyleOptionButton();self.initStyleOption(option);option.text='';painter=QStylePainter(self);painter.drawControl(QStyle.ControlElement.CE_PushButton,option)
+        group=QPalette.ColorGroup.Active if self.isEnabled() else QPalette.ColorGroup.Disabled
+        painter.setPen(self.palette().color(group,QPalette.ColorRole.ButtonText));painter.drawText(self.rect().adjusted(12,7,-12,-7),Qt.AlignmentFlag.AlignCenter|Qt.TextFlag.TextWordWrap,self.text())
 
 
 STYLE='''
