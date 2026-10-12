@@ -1,9 +1,19 @@
-# BrickLabo — v0.1.47
+# BrickLabo — v0.1.48
 
-Logiciel de bureau Windows pour les catalogues LEGO, les stocks, les recherches de constructions et les étiquettes. Cette version reprend la v0.1.46 livrée, issue de la v0.1.28 d’origine.
+Logiciel de bureau Windows pour les catalogues LEGO, les stocks, les recherches de constructions et les étiquettes. Cette version reprend la v0.1.47 livrée, issue de la v0.1.28 d’origine.
 
-**Téléchargements v0.1.47 :** [version complète Windows](https://github.com/sdu07git/BrickLabo/releases/download/v0.1.47/BrickLabo_v0.1.47_Complet.zip) · [code source avec ressources](https://github.com/sdu07git/BrickLabo/releases/download/v0.1.47/BrickLabo_v0.1.47_Sources.zip) · [notes de release](https://github.com/sdu07git/BrickLabo/releases/tag/v0.1.47). Cette release inclut les corrections des versions v0.1.46 et v0.1.47.
 
+**Téléchargements v0.1.48 :** [version complète Windows](https://github.com/sdu07git/BrickLabo/releases/download/v0.1.48/BrickLabo_v0.1.48_Complet.zip) · [sources avec ressources](https://github.com/sdu07git/BrickLabo/releases/download/v0.1.48/BrickLabo_v0.1.48_Sources.zip) · [notes de release](https://github.com/sdu07git/BrickLabo/releases/tag/v0.1.48).
+
+## Assistant de correction des imports et boutons lisibles — v0.1.48
+
+Dans **Mon stock** ou **Mon stock set → Importer une collection**, ouvrir une liste Rebrickable CSV ou BrickLink CSV / TXT / XML. Le logiciel enregistre un travail d’import dans **Donnees**, avec les lignes d’origine. **Ajouter les lignes prêtes** ajoute les références, couleurs et quantités valides ; les autres lignes restent en attente. Une référence inconnue, une quantité incorrecte, une couleur absente de la palette ou un inventaire de set incomplet ne bloque plus les lignes valides.
+
+Sélectionner une ligne en attente, corriger **Source / type**, **Référence**, **Couleur** et **Quantité**, puis **Enregistrer la correction**. **Rechercher dans le catalogue…** permet de choisir une référence locale par nom, référence ou catégorie. Le changement de source demande un nouveau choix de couleur : les codes BrickLink et Rebrickable restent distincts. Les variantes ne sont pas assimilées automatiquement. Si l’inventaire d’un set est chargé entre-temps, utiliser **Revérifier les lignes**.
+
+Fermer et rouvrir l’assistant, choisir le travail dans **Imports en attente…**, puis **Reprendre cet import**. Le fichier d’origine n’est plus nécessaire. Les lignes déjà ajoutées sont marquées et ne sont pas ajoutées une seconde fois ; les pièces corrigées plus tard rejoignent le même inventaire personnel. La destination est conservée après le premier ajout. Si seuls des sets ont été ajoutés, la destination des pièces en attente peut encore être choisie. Si l’inventaire de destination a été supprimé, choisir explicitement un autre inventaire ou en créer un nouveau ; les lignes déjà ajoutées ne sont pas réimportées. **Annuler la dernière action / Ctrl+Z** rétablit ensemble les quantités et les lignes en attente du dernier ajout. Les travaux sont inclus dans la sauvegarde complète de **Donnees**.
+
+Le volet droit est plus large. Les actions longues sont réparties sur plusieurs rangées selon la largeur disponible ; les boutons de liens photo sont séparés. Les catalogues, notices, imports et meubles gardent un défilement sur les petites fenêtres pour atteindre toutes les commandes. Le bouton des notices Rebrickable affiche son texte sur plusieurs lignes si nécessaire. Les contrôles de rangement restent accessibles à **950 × 650** et **1366 × 768**.
 
 ## Aperçus des arêtes, valeurs par défaut et fermeture — v0.1.47
 
@@ -62,7 +72,7 @@ Les anciens fichiers restent dans **Donnees/maj/b…** pendant le remplacement. 
 
 En cas de coupure pendant le remplacement, fermer toutes les instances, consulter `Donnees/maj/transaction.json` et son champ `stage`, puis ouvrir un terminal dans le dossier `Donnees/temp/u…` correspondant et exécuter `r\python.exe -I -B i.py --recover`. Cette réparation vérifie le plan conservé, remet les anciens fichiers et relance le logiciel. Si la préparation est perdue, restaurer les fichiers du dossier `Donnees/maj/b…` dans le dossier d’installation, sans déplacer `Donnees`, depuis l’Explorateur et avec toutes les instances fermées. Pour revenir volontairement à une ancienne version, utiliser aussi une sauvegarde compatible si le format des données a évolué.
 
-Pour passer d’une version antérieure à v0.1.42, installer une fois le ZIP complet dans un nouveau dossier et y recopier **Donnees**, comme indiqué ci-dessous. L’option servira ensuite pour les futures releases publiées. La v0.1.47 est disponible dans les [releases GitHub](https://github.com/sdu07git/BrickLabo/releases/tag/v0.1.47), avec le ZIP Windows complet et le ZIP des sources.
+Pour passer d’une version antérieure à v0.1.42, installer une fois le ZIP complet dans un nouveau dossier et y recopier **Donnees**, comme indiqué ci-dessous. L’option servira ensuite pour les futures releases publiées. La v0.1.48 est publiée sur GitHub, avec les ZIP complets et sources livrés et vérifiés.
 
 ## Fond transparent des étiquettes — v0.1.41
 
@@ -86,7 +96,7 @@ Dans **Mise à jour des données → Charger les inventaires de sets par lots**,
 
 Charger ces inventaires ne déclare pas les sets possédés et n’ajoute aucune pièce au stock. Ils alimentent **Sets réalisables**, puis les suggestions d’alternatives des sets reconstituables. Le chargement de sets officiels ne constitue pas un catalogue complet d’inventaires de MOC : l’API v3 ne fournit pas leurs inventaires généraux. La comparaison exacte d’un MOC nécessite son propre inventaire. Pour obtenir tout le catalogue Rebrickable, privilégier les fichiers CSV existants.
 
-La v0.1.47 est disponible dans les [releases GitHub](https://github.com/sdu07git/BrickLabo/releases/tag/v0.1.47), avec le ZIP Windows complet et le ZIP des sources.
+La v0.1.48 est publiée sur GitHub, avec les ZIP complets et sources livrés et vérifiés.
 
 ## Contrôle et corrections v0.1.39
 
@@ -110,7 +120,7 @@ La migration conserve les quantités observées et sépare les pièces en vrac d
 
 - **Mon stock** contient le vrac et les mini-figures. **Mon stock set** contient les sets et leurs composants enregistrés. Le tableau inférieur affiche les quantités totales possédées, les aperçus, le tri par en-tête et le double-clic d’une pièce. Retirer un set peut supprimer ses composants ou les déplacer vers le vrac.
 - **Annuler la dernière action / Ctrl+Z** annule le dernier ajout, import, retrait ou changement de quantité / couleur dans les stocks ou la file d’étiquettes. Un import forme une seule action. Le journal survit au redémarrage ; une restauration du stock le réinitialise. Une modification ultérieure incompatible bloque l’annulation.
-- **Importer une collection** accepte les listes de pièces ou de sets Rebrickable CSV, et BrickLink CSV, TXT tabulé ou XML. Choisir la source et le stock de destination. Un set destiné au vrac est décomposé ; des pièces destinées au stock set s’attachent à un set existant ou à un inventaire personnel nommé. Les références et inventaires doivent être disponibles localement. Toute référence inconnue ou inventaire incomplet interrompt le lot avant de modifier les quantités.
+- **Importer une collection** accepte les listes de pièces ou de sets Rebrickable CSV, et BrickLink CSV, TXT tabulé ou XML. Choisir la source et le stock de destination. Un set destiné au vrac est décomposé ; des pièces destinées au stock set s’attachent à un set existant ou à un inventaire personnel nommé. Les lignes valides sont ajoutées ; les références inconnues, couleurs ou quantités incorrectes et inventaires incomplets restent en attente dans l’assistant de correction. Enregistrer les corrections puis reprendre les lignes prêtes, même après fermeture.
 - **Exporter vers Rebrickable** produit deux CSV, sets possédés et pièces en vrac, sans compter deux fois les composants des sets. Vérifier les correspondances de références et couleurs. Les inventaires personnels ALT ne sont pas assimilés à des sets officiels.
 - **Sets réalisables** combine le vrac et les pièces des sets autorisés. Le tableau du haut affiche la photo du set ; toutes ses colonnes, dont **Set**, se redimensionnent en faisant glisser le bord de l’en-tête. Les photos suivent les références lors d’un tri et utilisent le cache partagé. **Choisir le stock utilisable** réserve des sets ou des pièces sans les supprimer. Les résultats sont évalués séparément : ils ne garantissent pas de construire tous les sets simultanément.
 - **MOC par mot clé / créateur** est accessible dans les catalogues de sets Rebrickable, BrickLink et alternatifs, ainsi que depuis les écrans de stock. Le bouton reprend le mot clé de la recherche du catalogue : saisir `falcon`, ouvrir cette recherche puis cliquer sur **Rechercher**. Elle consulte tous les MOC et alternatives publiés sur Rebrickable, indépendamment des sets possédés. Le nom exact du profil d’un créateur peut être ajouté ou utilisé seul. Les MOC et alternatives sont inclus par défaut ; **Constructions alternatives uniquement** et **Notices gratuites uniquement** restent facultatifs. Le mode public en ligne charge une page à la fois ; **Charger la suite** continue. Sélectionner un résultat affiche sa photo et les sets de départ indiqués par Rebrickable, avec leurs liens pour préparer un achat. Un MOC original peut ne pas avoir de set de départ. Le mode des résultats déjà consultés est une liste locale non exhaustive. Le bouton Rebrickable ouvre la même recherche dans le navigateur si la page ne peut pas être lue.
@@ -150,9 +160,10 @@ L’aide complète se trouve dans [documentation/AIDE.html](documentation/AIDE.h
 | 0.1.44 | Sélection de toutes les catégories, glissement des tiroirs avec échanges et impression / PDF A4 des meubles avec miniatures. |
 | 0.1.45 | Zoom et miniatures du rangement, renommage et retrait des références, actions des sets contenant et nettoyage des anciennes copies après mise à jour. |
 | 0.1.46 | Photo BrickLink vérifiée pour le set Rebrickable 030-2, provenance affichée et petites photos normalisées de sets. |
+| 0.1.48 | Imports partiels avec correction, sauvegarde et reprise, protection contre les doublons et annulation ; boutons et défilement adaptés aux petites fenêtres. |
 | 0.1.47 | Aperçus des arêtes accélérés en RAM, valeurs par défaut, fermeture visible et nettoyage des temporaires renforcé ; correspondances de photos vérifiées entre catalogues. |
 
-Un seul [NOUVEAUTES.txt](documentation/NOUVEAUTES.txt) réunit les notes françaises et anglaises. Les notes de cette branche ne documentent pas de livraison 0.1.29. Les variantes 0.1.28b et Range n’ont pas servi de base. Aucun rapport de tests n’est inclus dans les sources.
+Un seul [NOUVEAUTES.txt](documentation/NOUVEAUTES.txt) réunit les notes françaises et anglaises. Les notes de cette branche ne documentent pas de livraison 0.1.29. Les variantes 0.1.28b et Range n’ont pas servi de base. Le contrôle de cette version figure dans [CONTROLE_v0.1.48.txt](documentation/CONTROLE_v0.1.48.txt).
 
 ## Développement et diagnostic
 
@@ -168,4 +179,4 @@ Pour publier une future mise à jour compatible : créer une release publique st
 
 Pour développer depuis ce dépôt, reprendre `ressources/complete.zip` depuis le ZIP Sources joint à la release : cette archive LDraw dépasse la limite de taille des fichiers GitHub. Les archives automatiques « Source code » ne contiennent ni cette ressource ni le runtime Windows. Les deux ZIP joints sont ceux de la version livrée et testée ; les README du dépôt sont adaptés à la publication.
 
-**Validation v0.1.47 :** 487 tests réussis sous Qt/Linux ; cohérence des archives, versions des dépendances et icône intégrée au lanceur vérifiées. L’exécution native du paquet reste à vérifier sur Windows.
+**Validation v0.1.48 :** 506 tests réussis sous Qt/Linux ; archives, dépendances et icône intégrée vérifiées. Exécution native Windows à confirmer.
