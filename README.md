@@ -1,9 +1,29 @@
-# BrickLabo — v0.1.48
+# BrickLabo — v0.1.50
 
-Logiciel de bureau Windows pour les catalogues LEGO, les stocks, les recherches de constructions et les étiquettes. Cette version reprend la v0.1.47 livrée, issue de la v0.1.28 d’origine.
+Logiciel de bureau Windows pour les catalogues LEGO, les stocks, les recherches de constructions et les étiquettes. Cette version reprend la v0.1.49 livrée, issue de la v0.1.28 d’origine.
+
+**Téléchargements v0.1.50 :** [version complète Windows](https://github.com/sdu07git/BrickLabo/releases/download/v0.1.50/BrickLabo_v0.1.50_Complet.zip) · [sources avec ressources](https://github.com/sdu07git/BrickLabo/releases/download/v0.1.50/BrickLabo_v0.1.50_Sources.zip) · [notes de release](https://github.com/sdu07git/BrickLabo/releases/tag/v0.1.50).
 
 
-**Téléchargements v0.1.48 :** [version complète Windows](https://github.com/sdu07git/BrickLabo/releases/download/v0.1.48/BrickLabo_v0.1.48_Complet.zip) · [sources avec ressources](https://github.com/sdu07git/BrickLabo/releases/download/v0.1.48/BrickLabo_v0.1.48_Sources.zip) · [notes de release](https://github.com/sdu07git/BrickLabo/releases/tag/v0.1.48).
+## Associer directement les catalogues aux tiroirs — v0.1.50
+
+Dans un catalogue de pièces ou de mini-figs, sélectionner une ou plusieurs références puis cliquer **Associer à un tiroir…**, dans les boutons ou le menu du clic droit. Choisir le meuble et le tiroir, puis **Associer les références au tiroir**. Cette opération crée des liens de rangement sans ajouter les pièces au stock, sans demander de quantité et sans imposer de couleur. Elle permet de préparer un tiroir même pour une référence que l’on ne possède pas encore.
+
+Dans **Mon rangement → Pièces à ranger**, le choix **Origine des pièces à ranger** donne accès au **Stock en vrac**, à **Tous les catalogues**, ou aux catalogues Rebrickable, BrickLink, BrickArchitect, Briques Alternatives et Mini-Figs. Rechercher ou filtrer, sélectionner des lignes, puis les glisser sur un tiroir. **Ajouter depuis un catalogue** ouvre aussi cette vue. La colonne de quantité est masquée en mode catalogue. **Sans emplacement uniquement** masque les références déjà associées ; décocher cette option pour les placer dans plusieurs tiroirs.
+
+Le contenu des tiroirs reste déplaçable, recherchable, imprimable et sauvegardé même sans stock possédé. Les variantes et sources restent distinctes. La colonne de stock du contenu reste informative et ne crée aucune possession. Sans couleur imposée, elle montre le total possédé toutes couleurs confondues. Une catégorie déjà liée à ce meuble peut être réorganisée par taille en tenons même sans quantité en stock. L’onglet **Stock en vrac** garde sa validation des références et couleurs réellement possédées.
+
+## Commandes espacées, exports libres et rangement assisté — v0.1.49
+
+Les boutons supérieurs sont plus espacés, avec des marges dans leurs groupes. **Dossier PNG / PDF** accepte un dossier sur n’importe quel disque du PC ; ce choix est conservé au redémarrage. Un disque momentanément indisponible ne bloque pas l’ouverture du logiciel : une erreur d’écriture est indiquée lors de la génération.
+
+Les réglages de noir et d’épaisseur des arêtes s’appliquent aux grands rendus, à l’aperçu de droite et aux étiquettes. Les miniatures des tableaux et des tiroirs conservent des arêtes fines, même après redémarrage ou un changement d’étiquette individuelle. Modifier seulement les arêtes ne relance pas les tableaux.
+
+Dans **Mon rangement → Pièces à ranger**, rechercher et filtrer le stock, sélectionner plusieurs lignes avec Ctrl ou Maj, puis les glisser sur un tiroir dans la vue du meuble. Le tiroir cible est surligné. Les pièces déjà rangées sont masquées par défaut ; décocher **Sans emplacement uniquement** pour les afficher. Le bouton **Associer au tiroir sélectionné** offre aussi une commande au clavier. Depuis **Contenu du tiroir**, glisser une sélection vers un autre tiroir déplace uniquement ses liens de rangement. Les autres emplacements et toutes les quantités sont conservés.
+
+**Ranger par catégorie et taille…** propose des tiroirs par catégorie puis par dimensions en tenons écrites dans les noms des pièces : par exemple 1 × 1, 1 × 2, 2 × 2, puis les plus grandes. Les dimensions en hauteur restent distinctes lorsqu’elles sont indiquées. Choisir **Bricks** / **Briques**, selon le catalogue, pour un meuble de 30 tiroirs ; chaque taille partage ses couleurs et ses variantes, avec l’option **Séparer les couleurs**. Les références restent distinctes. Ajuster les tiroirs dans le tableau avant **Appliquer le rangement proposé**.
+
+La proposition utilise par défaut les pièces sans emplacement et les tiroirs vides sans nom. Elle montre les groupes qui manquent de place ; ils restent sans emplacement. Les pièces sans dimensions sont à ranger manuellement. **Réorganiser cette catégorie dans ce meuble** peut refaire ses associations dans les tiroirs contenant uniquement cette catégorie ; elle exige que tous les contenus existants trouvent une place. Les tiroirs mixtes et les autres meubles sont préservés. Si le stock ou le rangement change après la prévisualisation, préparer une nouvelle proposition. Les pièces physiques restent à déplacer selon le plan choisi.
 
 ## Assistant de correction des imports et boutons lisibles — v0.1.48
 
@@ -72,7 +92,7 @@ Les anciens fichiers restent dans **Donnees/maj/b…** pendant le remplacement. 
 
 En cas de coupure pendant le remplacement, fermer toutes les instances, consulter `Donnees/maj/transaction.json` et son champ `stage`, puis ouvrir un terminal dans le dossier `Donnees/temp/u…` correspondant et exécuter `r\python.exe -I -B i.py --recover`. Cette réparation vérifie le plan conservé, remet les anciens fichiers et relance le logiciel. Si la préparation est perdue, restaurer les fichiers du dossier `Donnees/maj/b…` dans le dossier d’installation, sans déplacer `Donnees`, depuis l’Explorateur et avec toutes les instances fermées. Pour revenir volontairement à une ancienne version, utiliser aussi une sauvegarde compatible si le format des données a évolué.
 
-Pour passer d’une version antérieure à v0.1.42, installer une fois le ZIP complet dans un nouveau dossier et y recopier **Donnees**, comme indiqué ci-dessous. L’option servira ensuite pour les futures releases publiées. La v0.1.48 est publiée sur GitHub, avec les ZIP complets et sources livrés et vérifiés.
+Pour passer d’une version antérieure à v0.1.42, installer une fois le ZIP complet dans un nouveau dossier et y recopier **Donnees**, comme indiqué ci-dessous. L’option servira ensuite pour les futures releases publiées. La v0.1.50 est publiée sur GitHub, avec les ZIP complets et sources livrés et vérifiés.
 
 ## Fond transparent des étiquettes — v0.1.41
 
@@ -96,7 +116,7 @@ Dans **Mise à jour des données → Charger les inventaires de sets par lots**,
 
 Charger ces inventaires ne déclare pas les sets possédés et n’ajoute aucune pièce au stock. Ils alimentent **Sets réalisables**, puis les suggestions d’alternatives des sets reconstituables. Le chargement de sets officiels ne constitue pas un catalogue complet d’inventaires de MOC : l’API v3 ne fournit pas leurs inventaires généraux. La comparaison exacte d’un MOC nécessite son propre inventaire. Pour obtenir tout le catalogue Rebrickable, privilégier les fichiers CSV existants.
 
-La v0.1.48 est publiée sur GitHub, avec les ZIP complets et sources livrés et vérifiés.
+La v0.1.50 est publiée sur GitHub, avec les ZIP complets et sources livrés et vérifiés.
 
 ## Contrôle et corrections v0.1.39
 
@@ -160,10 +180,12 @@ L’aide complète se trouve dans [documentation/AIDE.html](documentation/AIDE.h
 | 0.1.44 | Sélection de toutes les catégories, glissement des tiroirs avec échanges et impression / PDF A4 des meubles avec miniatures. |
 | 0.1.45 | Zoom et miniatures du rangement, renommage et retrait des références, actions des sets contenant et nettoyage des anciennes copies après mise à jour. |
 | 0.1.46 | Photo BrickLink vérifiée pour le set Rebrickable 030-2, provenance affichée et petites photos normalisées de sets. |
-| 0.1.48 | Imports partiels avec correction, sauvegarde et reprise, protection contre les doublons et annulation ; boutons et défilement adaptés aux petites fenêtres. |
 | 0.1.47 | Aperçus des arêtes accélérés en RAM, valeurs par défaut, fermeture visible et nettoyage des temporaires renforcé ; correspondances de photos vérifiées entre catalogues. |
+| 0.1.48 | Imports partiels avec correction, sauvegarde et reprise, protection contre les doublons et annulation ; boutons et défilement adaptés aux petites fenêtres. |
+| 0.1.49 | Commandes supérieures espacées, exports externes, miniatures à arêtes fines, glissement des pièces et rangement assisté par catégorie et taille. |
+| 0.1.50 | Association directe de références des catalogues aux tiroirs, sans ajout au stock ni quantité ; choix des catalogues dans Pièces à ranger. |
 
-Un seul [NOUVEAUTES.txt](documentation/NOUVEAUTES.txt) réunit les notes françaises et anglaises. Les notes de cette branche ne documentent pas de livraison 0.1.29. Les variantes 0.1.28b et Range n’ont pas servi de base. Le contrôle de cette version figure dans [CONTROLE_v0.1.48.txt](documentation/CONTROLE_v0.1.48.txt).
+Un seul [NOUVEAUTES.txt](documentation/NOUVEAUTES.txt) réunit les notes françaises et anglaises. Les notes de cette branche ne documentent pas de livraison 0.1.29. Les variantes 0.1.28b et Range n’ont pas servi de base. Le [rapport de contrôle v0.1.50](documentation/CONTROLE_v0.1.50.txt) décrit les vérifications de cette livraison.
 
 ## Développement et diagnostic
 
@@ -179,4 +201,5 @@ Pour publier une future mise à jour compatible : créer une release publique st
 
 Pour développer depuis ce dépôt, reprendre `ressources/complete.zip` depuis le ZIP Sources joint à la release : cette archive LDraw dépasse la limite de taille des fichiers GitHub. Les archives automatiques « Source code » ne contiennent ni cette ressource ni le runtime Windows. Les deux ZIP joints sont ceux de la version livrée et testée ; les README du dépôt sont adaptés à la publication.
 
-**Validation v0.1.48 :** 506 tests réussis sous Qt/Linux ; archives, dépendances et icône intégrée vérifiées. Exécution native Windows à confirmer.
+**Validation v0.1.50 :** 540 tests réussis sous Qt/Linux ; archives, dépendances et icône intégrée vérifiées. Exécution native Windows et glisser-déposer Windows à confirmer.
+

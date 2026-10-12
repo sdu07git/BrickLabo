@@ -680,13 +680,12 @@ class Preview(QWidget):
             if result:
                 self.token+=1
                 if self.item and self.item['id']==captured['id']:self.refresh()
-                self.visual_changed.emit(captured)
-        show_window(LabelEditor(self.db,self.engine,captured,self,individual=True),self,saved)
+        show_window(LabelEditor(self.db,self.engine,captured,self,individual=True),self,saved,refresh_counts=False)
     def reset_individual(self):
         if not self.item:return
         from .labels import individual_template_key
         self.db.set_setting(individual_template_key(self.item),{'use_general':True})
-        self.token+=1;self.refresh();self.visual_changed.emit(self.item)
+        self.token+=1;self.refresh()
 
     def documents(self):
         from .dialogs import DocumentsDialog

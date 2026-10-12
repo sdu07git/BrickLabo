@@ -27,9 +27,9 @@ class EdgeTests(unittest.TestCase):
    hidden,_=renderer.render('b',(180,150),view='top',edge_strength=level);self.assertEqual(im.tobytes(),hidden.tobytes())
   self.assertLess(counts[0],counts[1]);self.assertLess(counts[1],counts[2]);np.testing.assert_array_equal(bounds[0],bounds[2])
   default,_=renderer.render('a',(180,150),view='top');normal,_=renderer.render('a',(180,150),view='top',edge_strength=0);self.assertEqual(default.tobytes(),normal.tobytes())
- def test_setting_is_persistent_shared_by_views_and_invalidates_thumbnails(self):
+ def test_setting_is_persistent_shared_by_large_views_and_keeps_thumbnails(self):
   before=PartThumbnails.state(SimpleNamespace(db=self.db),self.item);self.db.set_setting('edge_strength',2)
-  self.assertNotEqual(before,PartThumbnails.state(SimpleNamespace(db=self.db),self.item));self.assertEqual(Database(self.db.path).setting('edge_strength'),2)
+  self.assertEqual(before,PartThumbnails.state(SimpleNamespace(db=self.db),self.item));self.assertEqual(Database(self.db.path).setting('edge_strength'),2)
   renderer=self.engine.renderer()
   with patch.object(renderer,'render',wraps=renderer.render) as render:
    self.engine.visuals(self.item,download=False)

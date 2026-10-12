@@ -1,4 +1,4 @@
-BrickLabo v0.1.48
+BrickLabo v0.1.50
 
 Extraire le ZIP entier dans un nouveau dossier accessible en ecriture.
 Fermer l ancienne version, conserver une sauvegarde et copier Donnees a cote du nouvel exe.
@@ -40,3 +40,14 @@ Rebrickable set 030-2: verified BrickLink photo fallback without an API key; ref
 3D edges: faster previews; Default values = 86.3% black, 1 px width; Apply saves.
 Shutdown stays visible until workers finish; temporary cleanup failures are logged.
 Photo fallbacks reuse verified BrickArchitect part links and official set/minifigure links.
+
+Nouveautes v0.1.49 :
+Dossier PNG / PDF : choisir librement un dossier sur le PC.
+Mon rangement > Pieces a ranger : glisser une selection sur un tiroir.
+Mon rangement > Ranger par categorie et taille : preparer et ajuster une proposition, puis appliquer.
+Les miniatures gardent des aretes fines ; les reglages des aretes concernent les grands apercus et etiquettes.
+
+Nouveautes v0.1.50 :
+Catalogue > selection > Associer a un tiroir : choisir meuble et tiroir, sans ajout au stock ni quantite.
+Mon rangement > Pieces a ranger : choisir Stock en vrac ou un catalogue, puis glisser les references vers un tiroir.
+Les references et leurs variantes restent distinctes.

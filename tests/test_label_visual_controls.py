@@ -30,7 +30,7 @@ class LabelControlsTests(unittest.TestCase):
   self.db.set_setting('edge_settings',{'black':90,'width':1.2});before=PartThumbnails.state(SimpleNamespace(db=self.db),a)
   self.assertEqual(style_for_item(self.db,b),{'black':90.,'width':1.2});self.db.set_setting('edge_settings',{'black':70,'width':.8})
   self.assertEqual(style_for_item(self.db,a),{'black':64.2,'width':2.1});self.assertEqual(style_for_item(self.db,b)['width'],.8)
-  self.assertEqual(before,PartThumbnails.state(SimpleNamespace(db=self.db),a));self.assertNotEqual(before,PartThumbnails.state(SimpleNamespace(db=self.db),b))
+  self.assertEqual(before,PartThumbnails.state(SimpleNamespace(db=self.db),a));self.assertEqual(before,PartThumbnails.state(SimpleNamespace(db=self.db),b))
  def test_slider_and_numeric_values_are_synchronized(self):
   controls=EdgeControls({'black':90,'width':1});controls.sliders['width'].setValue(23);self.assertEqual(controls.settings()['width'],2.3);controls.spins['black'].setValue(62.4);self.assertEqual(controls.sliders['black'].value(),624);controls.deleteLater();app.processEvents()
  def test_continuous_renderer_accepts_fractions_and_zero_intensity_hides_edges(self):

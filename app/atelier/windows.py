@@ -12,7 +12,7 @@ def application_owner(widget):
     return widget
 
 
-def show_window(window,parent=None,on_finished=None):
+def show_window(window,parent=None,on_finished=None,refresh_counts=True):
     owner=application_owner(parent or window.parent())
     if owner is None:owner=window
     flags=Qt.WindowType.Window|Qt.WindowType.WindowMinimizeButtonHint|Qt.WindowType.WindowMaximizeButtonHint|Qt.WindowType.WindowCloseButtonHint
@@ -29,7 +29,7 @@ def show_window(window,parent=None,on_finished=None):
         window._closed_by_manager=True
         if window in owner._consultation_windows:owner._consultation_windows.remove(window)
         if on_finished:on_finished(result)
-        if hasattr(owner,'refresh_counts'):owner.refresh_counts()
+        if refresh_counts and hasattr(owner,'refresh_counts'):owner.refresh_counts()
         if not window._active_tasks:window.deleteLater()
     window.finished.connect(finished)
     window.show()

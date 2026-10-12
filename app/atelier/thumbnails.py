@@ -16,7 +16,6 @@ class ThumbnailContext:
     """The same visual key for tables, the storage wall and A4 output."""
     def __init__(self,db):self.db=db
     def state(self,item):
-        from .edge_style import style_for_item
         from .viewpoint import camera_for_item
         visual=self.db.visual(item['id'])
         if getattr(self,'force_3d',False):visual=dict(visual,mode='3d',image='')
@@ -27,7 +26,7 @@ class ThumbnailContext:
         from .preview import VisualEngine
         rgb=VisualEngine.color_rgb(self,item,color)
         return (item['id'],color,visual['mode'],visual['image'],visual['color'],
-                self.db.setting('default_color','#f3d55b'),self.db.setting('ldraw',''),tuple(camera_for_item(self.db,item).values()),self.db.setting('architect_model_'+str(item['id']),''),self.db.setting('architect_photo_choice_'+str(item['id']),''),self.db.setting('edge_strength',0),file_stamp(visual['image']),file_stamp(self.db.setting('ldraw','')),file_stamp(self.db.path.parent/'brickarchitect_ldraw.zip'),file_stamp(resources_directory()/'brickarchitect_ldraw.zip'),tuple(sorted(style_for_item(self.db,item).items())),'thumb-v4-edges',rgb,item.get('image',''),model_ref(self.db,item),tuple(info.get('BL',[])),tuple(info.get('RB',[])))
+                self.db.setting('default_color','#f3d55b'),self.db.setting('ldraw',''),tuple(camera_for_item(self.db,item).values()),self.db.setting('architect_model_'+str(item['id']),''),self.db.setting('architect_photo_choice_'+str(item['id']),''),0,file_stamp(visual['image']),file_stamp(self.db.setting('ldraw','')),file_stamp(self.db.path.parent/'brickarchitect_ldraw.zip'),file_stamp(resources_directory()/'brickarchitect_ldraw.zip'),('fixed-thin-edges',),'thumb-v5-fixed-edges',rgb,item.get('image',''),model_ref(self.db,item),tuple(info.get('BL',[])),tuple(info.get('RB',[])))
 
 
 
@@ -39,7 +38,7 @@ def load_thumbnail(engine,item,key,generation):
         image=None;color=key[1]
         if item['kind']=='part' and key[2]=='3d' and not key[3]:
             try:
-                if engine.renderer():image,_=engine.render_3d(item,(100,65),color)
+                if engine.renderer():image,_=engine.render_3d(item,(100,65),color,edge_strength=0)
             except Exception as error:note=str(error)
         if image is None:image=engine.photo(item,download=True,color=color)
         return image

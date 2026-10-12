@@ -1,3 +1,18 @@
+BrickLabo v0.1.50
+- Bouton et clic droit Associer a un tiroir depuis les catalogues de pieces et mini-figs, sans ajout au stock ni quantite.
+- Pieces a ranger : selection du stock, de tous les catalogues ou d’une source precise ; glissement multiselection.
+- Couleur non precisee pour les associations de catalogues. Aucune possession creee ; variantes et sources conservees.
+- Recherche, deplacement et sauvegarde de ces associations sans stock ; reorganisation des categories deja associees.
+
+BrickLabo v0.1.49
+- Boutons du bandeau supérieur espacés et groupes aérés.
+- Dossier PNG / PDF libre sur les disques du PC, conservé au redémarrage.
+- Miniatures des tableaux et tiroirs à arêtes fines, indépendantes des grands rendus et des étiquettes.
+- Tableau Pièces à ranger : recherche, catégorie, multisélection et glisser-déposer sur un tiroir.
+- Déplacement des références depuis un tiroir vers un autre, sans modifier les quantités.
+- Proposition par catégorie puis dimensions en tenons, couleurs ensemble ou séparées ; prévisualisation et destinations ajustables.
+- Réorganisation limitée à une catégorie du meuble, validation du plan et opération atomique.
+
 v0.1.48
 FR : Assistant de correction des imports de collections : ajout des lignes valides, conservation des références / couleurs / quantités problématiques et des inventaires incomplets. Correction explicite par source, type, référence, couleur et quantité ; recherche locale paginée dans le catalogue. Travaux et lignes d’origine conservés dans Donnees, reprise sans le fichier source. Lignes déjà importées protégées contre les doublons, y compris avec deux assistants ouverts ; destination conservée et ajout progressif au même inventaire personnel. Chaque ajout est atomique et annulable avec ses marqueurs d’import. Volet droit élargi, boutons répartis selon la largeur, liens photo séparés, notices sur plusieurs lignes et défilement dans les petits catalogues, notices, meubles et imports. Aide FR / EN actualisée. Exécution native Windows à confirmer.
 EN : Collection import correction assistant: import valid rows and retain problematic references / colours / quantities and incomplete inventories. Explicit source, type, reference, colour and quantity corrections with paginated local catalogue lookup. Jobs and original rows saved in Donnees; resume without the source file. Applied rows cannot be duplicated, including from two open assistants; destination retained and later corrections attach to the same personal inventory. Each addition is atomic and undo restores its import markers. Wider preview panel, wrapping action bars, separate photo-link buttons, multiline instructions button and scrolling in smaller catalogues, notices, cabinets and import windows. Updated FR / EN help. Native Windows execution remains to be confirmed.

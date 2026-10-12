@@ -204,14 +204,17 @@ def move_drawer(db,drawer_id,wall_id,col,row):
     return True
 
 
+STOCK_QUANTITY="CASE WHEN p.color='' THEN COALESCE((SELECT SUM(g.quantity) FROM stock g WHERE g.item_id=i.id),0) ELSE COALESCE(s.quantity,0) END"
+
+
 def contents(db,drawer_id):
-    return db.rows('''SELECT i.*,p.color AS chosen_color,COALESCE(s.quantity,0) AS chosen_quantity
+    return db.rows(f'''SELECT i.*,p.color AS chosen_color,{STOCK_QUANTITY} AS chosen_quantity
        FROM storage_contents p JOIN items i ON i.id=p.item_id
        LEFT JOIN stock s ON s.item_id=p.item_id AND s.color=p.color
        WHERE p.drawer_id=? ORDER BY i.source,i.ref,p.color''',(drawer_id,))
 
 
-CONTENTS_SQL='''SELECT p.drawer_id,i.*,p.color AS chosen_color,COALESCE(s.quantity,0) AS chosen_quantity
+CONTENTS_SQL=f'''SELECT p.drawer_id,i.*,p.color AS chosen_color,{STOCK_QUANTITY} AS chosen_quantity
       FROM storage_contents p JOIN storage_drawers d ON d.id=p.drawer_id JOIN items i ON i.id=p.item_id
       LEFT JOIN stock s ON s.item_id=p.item_id AND s.color=p.color'''
 
@@ -233,8 +236,8 @@ def search(db,query,wall_id=None):
     words=normalize(query).split()
     if not words:return []
     clause=' AND d.wall_id=?' if wall_id is not None else ''
-    rows=db.rows('''SELECT d.*,w.name AS wall_name,i.id AS item_id,i.source,i.ref,i.name AS piece_name,
-      i.category,i.dimensions,p.color,COALESCE(s.quantity,0) AS stock_quantity,COALESCE(c.name,'') AS color_name
+    rows=db.rows(f'''SELECT d.*,w.name AS wall_name,i.id AS item_id,i.source,i.ref,i.name AS piece_name,
+      i.category,i.dimensions,p.color,{STOCK_QUANTITY} AS stock_quantity,COALESCE(c.name,'') AS color_name
       FROM storage_contents p JOIN storage_drawers d ON d.id=p.drawer_id JOIN storage_walls w ON w.id=d.wall_id
       JOIN items i ON i.id=p.item_id LEFT JOIN stock s ON s.item_id=p.item_id AND s.color=p.color
       LEFT JOIN colors c ON i.source='RB' AND CAST(c.id AS TEXT)=p.color WHERE 1=1'''+clause+' ORDER BY w.id,d.row,d.col,i.ref',(wall_id,) if wall_id is not None else ())

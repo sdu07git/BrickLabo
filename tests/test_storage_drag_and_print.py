@@ -147,7 +147,7 @@ class PrintTests(Fixture):
         class FakeEngine:
             def __init__(inner):inner.thumbnail_cache=ThumbnailCache(Path(self.temp.name)/'cache');inner.calls=[]
             def renderer(inner):return True
-            def render_3d(inner,part,size,color):
+            def render_3d(inner,part,size,color,**options):
                 inner.calls.append((part['id'],color));image=Image.new('RGBA',size,'white')
                 ImageDraw.Draw(image).rectangle((15,10,85,55),fill='#ee3333',outline='black');return image,''
             def photo(inner,*args,**kwargs):return None
@@ -190,14 +190,14 @@ class PrintTests(Fixture):
     def test_close_cancels_loading_suppresses_callbacks_and_defers_delete(self):
         a,b=self.seed();engine=self.engine();release=threading.Event();started=threading.Event()
         original=engine.render_3d
-        def blocked(*args):started.set();release.wait(3);return original(*args)
+        def blocked(*args,**kwargs):started.set();release.wait(3);return original(*args,**kwargs)
         engine.render_3d=blocked;root=self.keep(QWidget());window=StoragePrintPreview(self.db,engine,a,root);show_window(window,root)
         self.assertTrue(started.wait(2));window.reject();QCoreApplication.sendPostedEvents(None,QEvent.Type.DeferredDelete)
         self.assertTrue(shiboken6.isValid(window));release.set();QThreadPool.globalInstance().waitForDone(4000);app.processEvents();QCoreApplication.sendPostedEvents(None,QEvent.Type.DeferredDelete)
         self.assertFalse(shiboken6.isValid(window));self.assertEqual(len(engine.calls),1)
     def test_scope_change_during_loading_uses_latest_selection_and_cached_result(self):
         a,b=self.seed();engine=self.engine();release=threading.Event();started=threading.Event();original=engine.render_3d
-        def blocked(*args):started.set();release.wait(3);return original(*args)
+        def blocked(*args,**kwargs):started.set();release.wait(3);return original(*args,**kwargs)
         engine.render_3d=blocked;window=self.keep(StoragePrintPreview(self.db,engine,a))
         self.assertTrue(started.wait(2));window.scope.setCurrentIndex(0)
         self.assertFalse(window.print_button.isEnabled());self.assertTrue(window.pending)

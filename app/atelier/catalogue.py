@@ -78,6 +78,8 @@ class Catalogue(QWidget):
         buttons=FlowLayout()
         for label,target in [(tr('Ajouter au stock'),'stock'),(tr('Ajouter aux étiquettes à imprimer'),'queue')]:
             b=QPushButton(label);b.clicked.connect(lambda checked=False,t=target:self.add_selected(t));buttons.addWidget(b)
+        if scope=='catalogue' and kind!='set':
+            self.drawer_button=QPushButton(tr('Associer à un tiroir…'));self.drawer_button.clicked.connect(self.assign_drawer);buttons.addWidget(self.drawer_button)
         b=QPushButton(tr('Copier vers catalogue alternatif'));b.clicked.connect(self.copy_selected);buttons.addWidget(b);layout.addLayout(buttons)
         self.timer=QTimer(self);self.timer.setSingleShot(True);self.timer.setInterval(250);self.timer.timeout.connect(self.reset)
         self.search.textChanged.connect(lambda _:self.timer.start());self.category.currentIndexChanged.connect(self.category_changed)
@@ -294,11 +296,24 @@ class Catalogue(QWidget):
         for row in self.selection():self.db.copy_alternative(row)
         self.changed.emit()
 
+    def assign_drawer(self):
+        selected=self.selection()
+        if not selected:QMessageBox.information(self,tr('Sélection'),tr('Sélectionne une ou plusieurs lignes.'));return
+        if any(p['kind'] not in ('part','minifig') for p in selected):
+            QMessageBox.information(self,tr('Rangement'),tr('Seules les pièces et les mini-figs peuvent être associées à un tiroir.'));return
+        from .storage_tools import CatalogueToDrawerDialog
+        from .windows import application_owner
+        def changed():
+            owner=application_owner(self)
+            if hasattr(owner,'storage'):owner.storage.refresh()
+        window=CatalogueToDrawerDialog(self.db,selected,self,changed);show_window(window,self,refresh_counts=False);return window
+
     def context_menu(self,pos):
         index=self.table.indexAt(pos)
         if index.isValid() and not self.table.selectionModel().isRowSelected(index.row(),index.parent()):self.table.selectRow(index.row())
         menu=QMenu(self);menu.addAction(tr('Ouvrir'),self.open_current)
         menu.addAction(tr('Ajouter aux étiquettes'),lambda:self.add_selected('queue'));menu.addAction(tr('Ajouter au stock'),lambda:self.add_selected('stock'))
+        if self.scope=='catalogue' and self.kind!='set':menu.addAction(tr('Associer à un tiroir…'),self.assign_drawer)
         menu.addAction(tr('Colonnes…'),self.column_menu)
         item=dict(self.rows[index.row()]) if index.isValid() and index.row()<len(self.rows) else None
         if item and item.get('kind')=='set':

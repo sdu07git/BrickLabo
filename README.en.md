@@ -1,9 +1,29 @@
-# BrickLabo — v0.1.48
+# BrickLabo — v0.1.50
 
-Windows desktop software for LEGO catalogues, stock, construction searches and labels. This version continues the delivered v0.1.47, based on the original v0.1.28.
+Windows desktop software for LEGO catalogues, stock, construction searches and labels. This version continues the delivered v0.1.49, based on the original v0.1.28.
+
+**Downloads v0.1.50:** [complete Windows package](https://github.com/sdu07git/BrickLabo/releases/download/v0.1.50/BrickLabo_v0.1.50_Complet.zip) · [sources with resources](https://github.com/sdu07git/BrickLabo/releases/download/v0.1.50/BrickLabo_v0.1.50_Sources.zip) · [release notes](https://github.com/sdu07git/BrickLabo/releases/tag/v0.1.50).
 
 
-**v0.1.48 downloads:** [complete Windows version](https://github.com/sdu07git/BrickLabo/releases/download/v0.1.48/BrickLabo_v0.1.48_Complet.zip) · [sources with resources](https://github.com/sdu07git/BrickLabo/releases/download/v0.1.48/BrickLabo_v0.1.48_Sources.zip) · [release notes](https://github.com/sdu07git/BrickLabo/releases/tag/v0.1.48).
+## Assign catalogue references directly to drawers — v0.1.50
+
+In a part or minifigure catalogue, select one or more references and click **Assign to a drawer…**, using the button or right-click menu. Choose the cabinet and drawer, then **Assign references to drawer**. This creates storage links without adding stock, asking for a quantity or specifying a colour. It can reserve a drawer for a reference you do not own yet.
+
+In **My storage → Parts to store**, **Source of parts to store** offers **Loose stock**, **All catalogues**, or Rebrickable, BrickLink, BrickArchitect, Alternative Bricks and Minifigures. Search or filter, select rows and drag them onto a drawer. **Add from a catalogue** also opens this view. Quantity is hidden in catalogue mode. **Unassigned only** hides references already assigned; clear it to assign a reference to multiple drawers.
+
+Drawer contents can still be moved, searched, printed and backed up without owned stock. Variants and sources remain distinct. Stock shown in drawer contents remains informational and never creates ownership. With no specified colour, it shows total owned stock across all colours. A category already assigned to this cabinet can be reorganised by stud dimensions even with no owned quantity. **Loose stock** keeps its validation of actual owned references and colours.
+
+## Spaced controls, external exports and assisted storage — v0.1.49
+
+Top buttons have wider gaps and group margins. **PNG / PDF folder** accepts a folder on any PC drive and keeps it after restart. An offline external drive does not prevent startup; export reports a write error when needed.
+
+Edge strength and width affect large renders, the right-hand preview and labels. Table and drawer thumbnails retain thin edges, including after restart or individual label changes. Changing only edges no longer reloads tables.
+
+In **My storage → Parts to store**, search or filter loose stock, select multiple rows with Ctrl / Shift, then drag them onto a drawer in the cabinet view. The target is highlighted. Assigned parts are hidden by default; clear **Unassigned only** to show them. **Assign to selected drawer** also supports keyboard use. Dragging from **Drawer contents** moves only selected location links, preserving stock quantities and other locations.
+
+**Store by category and size…** proposes drawers by category and dimensions in studs written in part names, from small to large: for example 1 × 1, 1 × 2, then 2 × 2. Explicit heights remain separate. Choose **Bricks** for a 30-drawer cabinet. Colours and variants share a size group unless **Separate colours** is selected; references retain their identities. Adjust the proposed drawers before applying.
+
+By default, the proposal uses unassigned parts and empty unnamed drawers. Groups exceeding capacity and references without dimensions remain for manual assignment. **Reorganise this category in this cabinet** can replace associations in drawers containing only that category, provided every existing reference receives a proposed location. Mixed drawers and other cabinets remain intact. A stock or storage change invalidates the preview. Physical parts still need to be moved according to the selected plan.
 
 ## Import correction assistant and readable buttons — v0.1.48
 
@@ -72,7 +92,7 @@ Old application files stay in **Donnees/maj/b…** during replacement. From v0.1
 
 After a power loss during replacement, close every instance, inspect the `stage` field in `Donnees/maj/transaction.json`, open a terminal in the corresponding `Donnees/temp/u…` folder and run `r\python.exe -I -B i.py --recover`. Recovery verifies the retained plan, restores old files and restarts the application. If preparation is lost, use Explorer with all instances closed to copy the files in `Donnees/maj/b…` back into the installation folder, without moving `Donnees`. A deliberate downgrade also requires a compatible data backup if its format changed.
 
-To move from a version older than v0.1.42, install this complete ZIP in a new folder and copy **Donnees** into it once, as described below. The new option will then handle future published releases. Version v0.1.48 is published on GitHub with the delivered and verified complete and source ZIP files.
+To move from a version older than v0.1.42, install this complete ZIP in a new folder and copy **Donnees** into it once, as described below. The new option will then handle future published releases. Version v0.1.50 is published on GitHub with the complete and source ZIPs already delivered and verified.
 
 ## Transparent label backgrounds — v0.1.41
 
@@ -96,7 +116,7 @@ Use **Data updates → Load set inventories in batches** to list Rebrickable or 
 
 Loaded inventories do not mark sets as owned or add parts to stock. They feed **Buildable sets** and suggestions of alternatives from rebuildable sets. Official-set inventories are not a complete MOC inventory catalogue: API v3 does not provide general MOC inventories. Exact MOC comparisons require the MOC's own inventory. For a full Rebrickable catalogue, use its existing CSV downloads.
 
-Version v0.1.48 is published on GitHub with the delivered and verified complete and source ZIP files.
+Version v0.1.50 is published on GitHub with the complete and source ZIPs already delivered and verified.
 
 ## v0.1.39 checks and fixes
 
@@ -154,10 +174,12 @@ Read [English help](documentation/AIDE.en.html) and [component licences](documen
 | 0.1.44 | Select all categories, drawer dragging and swaps, A4 cabinet printing / PDF with thumbnails. |
 | 0.1.45 | Storage zoom and preview sizing, cabinet rename and reference removal, containing-set actions and old update-copy cleanup. |
 | 0.1.46 | Verified BrickLink photo for Rebrickable set 030-2, source caption and normalised small set images. |
-| 0.1.48 | Partial imports with saved corrections, resumption, duplicate prevention and undo; buttons and scrolling adapted to small windows. |
 | 0.1.47 | Faster RAM-based edge previews, default-value buttons, visible worker shutdown and stronger temporary cleanup; verified catalogue photo links. |
+| 0.1.48 | Partial imports with saved corrections, resumption, duplicate prevention and undo; buttons and scrolling adapted to small windows. |
+| 0.1.49 | Spaced top controls, external exports, stable thin-edge thumbnails, part drag-and-drop and assisted storage by category and size. |
+| 0.1.50 | Direct catalogue-to-drawer associations without stock or quantities; catalogue choices in Parts to store. |
 
-One bilingual [NOUVEAUTES.txt](documentation/NOUVEAUTES.txt) holds cumulative notes. This branch does not document a released 0.1.29. The 0.1.28b / Range variants were not used as the baseline. The version check is recorded in [CONTROLE_v0.1.48.txt](documentation/CONTROLE_v0.1.48.txt).
+One bilingual [NOUVEAUTES.txt](documentation/NOUVEAUTES.txt) holds cumulative notes. This branch does not document a released 0.1.29. The 0.1.28b / Range variants were not used as the baseline. The [v0.1.50 validation report](documentation/CONTROLE_v0.1.50.txt) describes the checks for this delivery.
 
 ## Development and diagnostics
 
@@ -169,6 +191,7 @@ Check a built distribution: `python tools/check_distribution.py path/BrickLabo`.
 
 For a compatible future update, publish a public stable release with tag `vX.Y.Z`, release notes and the **BrickLabo_vX.Y.Z_Complet.zip** file produced by this tool. GitHub must expose the asset’s SHA-256 `digest` in its API. GitHub’s automatically generated source archives cannot be installed. The application checks up to the 100 most recent releases and never publishes files.
 
-For development from this repository, restore `ressources/complete.zip` from the release Sources ZIP: the LDraw archive exceeds GitHub’s regular file-size limit. Automatic GitHub source archives contain neither that resource nor the Windows runtime. The attached ZIP files are the delivered and tested builds; repository README files are adapted for publication.
+To develop from this repository, take `ressources/complete.zip` from the source ZIP attached to the release: this LDraw archive exceeds GitHub's regular file size limit. GitHub's automatic source archives contain neither this resource nor the Windows runtime. Both attached ZIPs are the delivered and tested version; the repository READMEs are adapted for publication.
 
-**v0.1.48 validation:** 506 Qt/Linux tests passed; archives, dependencies and embedded icon verified. Native Windows execution remains to be confirmed.
+**Validation v0.1.50:** 540 tests passed on Qt/Linux; archives, dependencies and embedded icon checked. Native Windows execution and Windows drag-and-drop remain to be confirmed.
+

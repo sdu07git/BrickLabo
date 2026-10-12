@@ -6,13 +6,15 @@ from PySide6.QtCore import Qt,Signal,QRectF,QPointF,QTimer,QEvent
 from PySide6.QtGui import QColor,QPainter,QPen,QPolygonF,QTransform,QFont
 from PySide6.QtWidgets import (QWidget,QDialog,QVBoxLayout,QHBoxLayout,QFormLayout,QLabel,QPushButton,QComboBox,
     QLineEdit,QSpinBox,QDoubleSpinBox,QCheckBox,QTableWidget,QHeaderView,QAbstractItemView,QSplitter,QSlider,
-    QGraphicsObject,QGraphicsScene,QGraphicsView,QMessageBox,QDialogButtonBox,QMenu,QScrollArea)
+    QGraphicsObject,QGraphicsScene,QGraphicsView,QMessageBox,QDialogButtonBox,QMenu,QScrollArea,QTabWidget)
 from .i18n import tr,tf
 from . import storage_wall as store
 from .ui_common import async_task,pixmap,FlowLayout
 from .windows import show_window,notify_changed,application_owner
 from .result_tables import fill_table,row_index
 from .thumbnails import PartThumbnails,load_thumbnail
+from .storage_tools import StorageDragTable,StockToDrawers,StoragePlanDialog,read_drag
+from .storage_assignment import place_entries
 
 
 def face_transforms(yaw,pitch):
@@ -69,7 +71,7 @@ class DrawerItem(QGraphicsObject):
     moved=Signal(int,object)
     def __init__(self,drawer,parts,icons,yaw,pitch,parent=None,arranging=False,dragging=False,thumbnail_size=100):
         super().__init__(parent)
-        self.drawer=drawer;self.parts=parts;self.icons=icons;self.selected=False;self.match=False;self.thumbnail_size=thumbnail_size
+        self.drawer=drawer;self.parts=parts;self.icons=icons;self.selected=False;self.match=False;self.drop_active=False;self.thumbnail_size=thumbnail_size
         self.w=drawer['width']*112-6;self.h=drawer['height']*70-6
         self.back,self.transform_face=face_transforms(yaw,pitch)
         x=(drawer['col']-1)*112+(12 if parent else 0);y=(drawer['row']-1)*70+(26 if parent else 0)
@@ -90,8 +92,8 @@ class DrawerItem(QGraphicsObject):
         painter.setPen(QPen(QColor('#172231'),1));painter.setBrush(QColor('#34475c'));painter.drawPolygon(self.top)
         painter.setBrush(QColor('#223449'));painter.drawPolygon(self.side)
         painter.save();painter.setTransform(self.transform_face,True)
-        painter.setBrush(QColor('#284e73' if self.match else '#344359'))
-        painter.setPen(QPen(QColor('#7dc8ff' if self.match or self.selected else '#54677e'),2 if self.match or self.selected else 1))
+        painter.setBrush(QColor('#28705b' if self.drop_active else '#284e73' if self.match else '#344359'))
+        painter.setPen(QPen(QColor('#7deac0' if self.drop_active else '#7dc8ff' if self.match or self.selected else '#54677e'),2 if self.match or self.selected or self.drop_active else 1))
         painter.drawRoundedRect(QRectF(0,0,self.w,self.h),3,3)
         painter.setFont(QFont('Segoe UI',8));painter.setPen(QColor('#e8edf5'))
         label=self.drawer['name'] or (self.parts[0]['ref'] if self.parts else tr('Vide'))
@@ -129,7 +131,35 @@ class DrawerItem(QGraphicsObject):
 
 class WallView(QGraphicsView):
     view_changed=Signal()
+    def __init__(self,*args):
+        super().__init__(*args);self._fit_bounds=None;self._fitting=False
+        self.fit_timer=QTimer(self);self.fit_timer.setSingleShot(True);self.fit_timer.setInterval(0);self.fit_timer.timeout.connect(self.repeat_fit)
+    def drag_payload(self,event):
+        db=getattr(self,'drop_db',None)
+        return read_drag(event.mimeData(),db) if db is not None else None
+    def drop_target(self,event):
+        item=self.itemAt(event.position().toPoint())
+        return item if isinstance(item,DrawerItem) else None
+    def clear_drop(self):
+        for item in self.scene().items():
+            if isinstance(item,DrawerItem) and item.drop_active:item.drop_active=False;item.update()
+    def dragEnterEvent(self,event):
+        if self.drag_payload(event):event.acceptProposedAction()
+        else:event.ignore()
+    def dragMoveEvent(self,event):
+        self.clear_drop();target=self.drop_target(event) if self.drag_payload(event) else None
+        if target:
+            target.drop_active=True;target.update();event.acceptProposedAction()
+        else:event.ignore()
+    def dragLeaveEvent(self,event):self.clear_drop();event.accept()
+    def dropEvent(self,event):
+        payload=self.drag_payload(event);target=self.drop_target(event) if payload else None
+        identity=target.drawer['id'] if target else None;self.clear_drop()
+        if identity is not None and self.place_drop(identity,payload):
+            event.setDropAction(Qt.DropAction.MoveAction if payload['origin'] is not None else Qt.DropAction.CopyAction);event.accept()
+        else:event.ignore()
     def zoom(self,factor,position=None):
+        self._fit_bounds=None;self.fit_timer.stop()
         current=self.transform().m11()
         if current<=0:return
         target=min(16,max(.000001,current*factor))
@@ -140,9 +170,15 @@ class WallView(QGraphicsView):
         self.view_changed.emit()
     def fit_rect(self,bounds):
         if bounds.isEmpty():return
-        self.resetTransform();self.fitInView(bounds,Qt.AspectRatioMode.KeepAspectRatio);self.centerOn(bounds.center());self.view_changed.emit()
+        self._fit_bounds=QRectF(bounds);self.repeat_fit()
+    def repeat_fit(self):
+        if self._fit_bounds is None or self._fitting:return
+        self._fitting=True
+        try:self.resetTransform();self.fitInView(self._fit_bounds,Qt.AspectRatioMode.KeepAspectRatio);self.centerOn(self._fit_bounds.center());self.view_changed.emit()
+        finally:self._fitting=False
     def resizeEvent(self,event):
         super().resizeEvent(event);self.view_changed.emit()
+        if self._fit_bounds is not None:self.fit_timer.start()
     def wheelEvent(self,event):
         if event.modifiers()&Qt.KeyboardModifier.ShiftModifier:return super().wheelEvent(event)
         delta=event.angleDelta().y() or event.pixelDelta().y()
@@ -155,7 +191,7 @@ class StockPicker(QDialog):
         super().__init__(parent);self.db=db;self.drawer_id=drawer_id;self.changed=changed;self.rows=[]
         self.setWindowTitle(tr('Ajouter des références du stock au tiroir'));self.resize(900,580)
         layout=QVBoxLayout(self);self.search=QLineEdit();self.search.setPlaceholderText(tr('Référence, nom ou catégorie'));layout.addWidget(self.search)
-        self.table=QTableWidget(0,6);self.table.setHorizontalHeaderLabels([tr('Source'),tr('Référence'),tr('Pièce'),tr('Couleur'),tr('Stock en vrac'),tr('Aperçu')]);layout.addWidget(self.table,1)
+        self.table=StorageDragTable(db,lambda:self.rows,lambda:None,0,6);self.table.setHorizontalHeaderLabels([tr('Source'),tr('Référence'),tr('Pièce'),tr('Couleur'),tr('Stock en vrac'),tr('Aperçu')]);layout.addWidget(self.table,1)
         self.table.setSelectionBehavior(QAbstractItemView.SelectionBehavior.SelectRows);self.table.setSelectionMode(QAbstractItemView.SelectionMode.ExtendedSelection);self.table.setEditTriggers(QAbstractItemView.EditTrigger.NoEditTriggers)
         self.table.horizontalHeader().setSectionResizeMode(QHeaderView.ResizeMode.Interactive);self.table.setColumnWidth(2,300)
         self.thumbs=PartThumbnails(self.table,db,engine,self.visible_rows,5,self) if engine else None
@@ -190,8 +226,10 @@ class StoragePanel(QWidget):
         for name,fn in [(tr('Créer un meuble'),self.new_wall),(tr('Renommer le meuble…'),self.rename_dialog),(tr('Positionner le meuble…'),self.position_dialog),(tr('Supprimer le meuble'),self.remove_wall),(tr('Ajouter un tiroir'),lambda:self.edit_drawer(True)),(tr('Modifier le tiroir'),self.edit_drawer),(tr('Supprimer le tiroir'),self.remove_drawer)]:menu.addAction(name,fn)
         menu.addSeparator();self.drag_drawers=menu.addAction(tr('Déplacer les tiroirs'));self.drag_drawers.setCheckable(True)
         self.print_action=menu.addAction(tr('Imprimer les meubles sur A4…'),self.print_wall)
+        self.plan_action=menu.addAction(tr('Ranger par catégorie et taille…'),self.plan_storage)
         organise.setMenu(menu);bar.addWidget(organise)
         self.arrange=QPushButton(tr('Disposer les meubles'));self.arrange.setCheckable(True);bar.addWidget(self.arrange)
+        self.plan_button=QPushButton(tr('Ranger par catégorie et taille…'));self.plan_button.clicked.connect(self.plan_storage);bar.addWidget(self.plan_button)
         layout.addLayout(bar);self.query=QLineEdit();self.query.setPlaceholderText(tr('Pièce, référence, dimensions, couleur ou nom du tiroir'));layout.addWidget(self.query);bar=QHBoxLayout()
         self.all_walls=QCheckBox(tr('Tous les meubles'));self.all_walls.setChecked(True);bar.addWidget(self.all_walls)
         self.front=QCheckBox(tr('Vue de face'));bar.addWidget(self.front);bar.addWidget(QLabel(tr('Angle')))
@@ -208,16 +246,21 @@ class StoragePanel(QWidget):
         self._saved_thumbnail_size=self.thumbnail_size.value()
         self.thumbnail_save_timer=QTimer(self);self.thumbnail_save_timer.setSingleShot(True);self.thumbnail_save_timer.setInterval(500);self.thumbnail_save_timer.timeout.connect(self.save_thumbnail_size)
         self.placement_hint=QLabel();self.placement_hint.setWordWrap(True);self.placement_hint.hide();layout.addWidget(self.placement_hint)
-        split=QSplitter(Qt.Orientation.Vertical);layout.addWidget(split,1)
+        split=QSplitter(Qt.Orientation.Vertical);self.content_split=split;layout.addWidget(split,1)
         self.scene=QGraphicsScene(self);self.view=WallView(self.scene);self.view.setRenderHint(QPainter.RenderHint.Antialiasing);self.view.setTransformationAnchor(QGraphicsView.ViewportAnchor.AnchorViewCenter);self.view.setMinimumHeight(180);self.view.setToolTip(tr('Molette : zoomer. Maj + molette : faire défiler. Vue complète : afficher tous les meubles.'));split.addWidget(self.view)
-        details=QWidget();d=QVBoxLayout(details);self.details=details;self.details_layout=d;details.installEventFilter(self);self.status=QLabel(tr('Crée un meuble puis associe les références de ton stock aux tiroirs.'));self.status.setWordWrap(True);d.addWidget(self.status)
+        self.view.setAcceptDrops(True);self.view.drop_db=db;self.view.place_drop=self.drop_parts
+        details=QWidget();d=QVBoxLayout(details);self.details=details;self.details_layout=d;details.installEventFilter(self);self.status=QLabel(tr('Crée un meuble puis associe les références de tes catalogues ou de ton stock aux tiroirs.'));self.status.setWordWrap(True);d.addWidget(self.status)
         self.results=QTableWidget(0,5);self.results.setHorizontalHeaderLabels([tr('Meuble'),tr('Emplacement'),tr('Référence'),tr('Pièce'),tr('Couleur')]);self.results.setSelectionBehavior(QAbstractItemView.SelectionBehavior.SelectRows);self.results.setEditTriggers(QAbstractItemView.EditTrigger.NoEditTriggers);self.results.horizontalHeader().setSectionResizeMode(QHeaderView.ResizeMode.Interactive);self.results.setMinimumHeight(70);self.results.setMaximumHeight(120);self.results.hide();d.addWidget(self.results)
         for column,width in enumerate((170,220,90,240,110)):self.results.setColumnWidth(column,width)
-        self.table=QTableWidget(0,6);self.table.setHorizontalHeaderLabels([tr('Source'),tr('Référence'),tr('Pièce'),tr('Couleur'),tr('Stock global en vrac'),tr('Aperçu 3D / photo')]);self.table.setSelectionBehavior(QAbstractItemView.SelectionBehavior.SelectRows);self.table.setSelectionMode(QAbstractItemView.SelectionMode.ExtendedSelection);self.table.setEditTriggers(QAbstractItemView.EditTrigger.NoEditTriggers);self.table.horizontalHeader().setSectionResizeMode(QHeaderView.ResizeMode.Interactive);self.table.setMinimumHeight(140);d.addWidget(self.table,1)
+        self.table=StorageDragTable(db,lambda:self.rows,lambda:self.drawer_id,0,6);self.table.setHorizontalHeaderLabels([tr('Source'),tr('Référence'),tr('Pièce'),tr('Couleur'),tr('Stock global en vrac'),tr('Aperçu 3D / photo')]);self.table.setSelectionBehavior(QAbstractItemView.SelectionBehavior.SelectRows);self.table.setSelectionMode(QAbstractItemView.SelectionMode.ExtendedSelection);self.table.setEditTriggers(QAbstractItemView.EditTrigger.NoEditTriggers);self.table.horizontalHeader().setSectionResizeMode(QHeaderView.ResizeMode.Interactive);self.table.setMinimumHeight(140);d.addWidget(self.table,1)
         for column,width in enumerate((75,90,220,100,160,150)):self.table.setColumnWidth(column,width)
         self.thumbnails=PartThumbnails(self.table,db,engine,self.visible_parts,5,self) if engine else None
         row=FlowLayout();add=QPushButton(tr('Ajouter des références du stock'));add.clicked.connect(self.pick_stock);row.addWidget(add);self.remove_references=QPushButton(tr('Retirer les références du tiroir'));self.remove_references.clicked.connect(self.unassign);self.remove_references.setToolTip(tr('Retire les lignes sélectionnées. Sans sélection, propose de retirer toutes les références du tiroir. Les pièces restent dans le stock.'));row.addWidget(self.remove_references);d.addLayout(row)
-        split.addWidget(details);split.setSizes([350,350]);split.setStretchFactor(0,1);split.setStretchFactor(1,1);split.setChildrenCollapsible(False)
+        catalogue=QPushButton(tr('Ajouter depuis un catalogue'));catalogue.clicked.connect(self.pick_catalogue);row.addWidget(catalogue)
+        self.details_tabs=QTabWidget();self.details_tabs.addTab(details,tr('Contenu du tiroir'))
+        self.stock_browser=StockToDrawers(db,engine,self.place_selected,self);self.stock_browser.selected.connect(self.selected.emit);self.stock_browser.opened.connect(self.open_stock_piece);self.details_tabs.addTab(self.stock_browser,tr('Pièces à ranger'))
+        self.details_tabs.currentChanged.connect(self.parts_mode_changed)
+        split.addWidget(self.details_tabs);split.setSizes([350,350]);split.setStretchFactor(0,1);split.setStretchFactor(1,1);split.setChildrenCollapsible(False)
         self.search_timer=QTimer(self);self.search_timer.setSingleShot(True);self.search_timer.setInterval(180);self.search_timer.timeout.connect(self.search)
         self.icon_timer=QTimer(self);self.icon_timer.setSingleShot(True);self.icon_timer.setInterval(100);self.icon_timer.timeout.connect(self.load_icons)
         self.drawer_refresh_timer=QTimer(self);self.drawer_refresh_timer.setSingleShot(True);self.drawer_refresh_timer.setInterval(0);self.drawer_refresh_timer.timeout.connect(self.finish_drawer_move)
@@ -237,6 +280,10 @@ class StoragePanel(QWidget):
         return super().eventFilter(watched,event)
 
     def visible_parts(self):return [self.rows[row_index(self.table,r)] for r in range(self.table.rowCount())]
+    def parts_mode_changed(self,index):
+        side_by_side=self.details_tabs.currentWidget() is self.stock_browser
+        self.content_split.setOrientation(Qt.Orientation.Horizontal if side_by_side else Qt.Orientation.Vertical)
+        self.content_split.setSizes([350,450] if side_by_side else [350,350]);QTimer.singleShot(0,self.fit)
     def reload_walls(self,preferred=None):
         current=preferred or self.wall.currentData();self.wall.blockSignals(True);self.wall.clear()
         for wall in store.walls(self.db):self.wall.addItem(wall['name'],wall['id'])
@@ -264,6 +311,7 @@ class StoragePanel(QWidget):
         self.icon_token+=1;self.scene.clear();self.items={};self.cabinets={};self.wall_drawers={};self.drawers=[]
         self.arrange.setEnabled(self.wall_id is not None)
         self.drag_drawers.setEnabled(self.wall_id is not None);self.print_action.setEnabled(self.wall_id is not None)
+        self.plan_action.setEnabled(self.wall_id is not None);self.plan_button.setEnabled(self.wall_id is not None)
         if self.wall_id is None:
             self.arrange.blockSignals(True);self.arrange.setChecked(False);self.arrange.blockSignals(False)
             self.arrange.setText(tr('Disposer les meubles'));self.placement_hint.hide()
@@ -313,7 +361,7 @@ class StoragePanel(QWidget):
     def choose_drawer(self,drawer_id):
         item=self.items.get(drawer_id)
         if not item or not self.activate_wall(item.drawer['wall_id']):return
-        self.drawer_id=drawer_id;self.load_contents();self.highlight()
+        self.drawer_id=drawer_id;self.details_tabs.setCurrentWidget(self.details);self.load_contents();self.highlight()
     def move_wall(self,wall_id,x,y):
         cabinet=self.cabinets.get(wall_id)
         if not cabinet:return
@@ -348,6 +396,26 @@ class StoragePanel(QWidget):
         self.drawer_refresh_timer.start()
     def finish_drawer_move(self):
         self.redraw();self.load_contents();self.search()
+        self.stock_browser.reload()
+    def place_selected(self,payload):
+        if self.drawer_id is None:
+            QMessageBox.information(self,tr('Rangement'),tr('Sélectionne un tiroir ou glisse directement les pièces sur sa façade.'));return False
+        return self.drop_parts(self.drawer_id,payload)
+    def drop_parts(self,drawer_id,payload):
+        target=self.items.get(drawer_id)
+        if target is None:return False
+        try:place_entries(self.db,drawer_id,payload['entries'],payload.get('origin'),payload.get('catalogue',False))
+        except (ValueError,sqlite3.Error,OSError) as error:
+            self.placement_hint.setText(str(error));self.placement_hint.show();return False
+        self.activate_wall(target.drawer['wall_id']);self.drawer_id=drawer_id
+        self.placement_hint.setText(tr('Références rangées. Les quantités du stock sont conservées.'));self.placement_hint.show()
+        self.drawer_refresh_timer.start();return True
+    def open_stock_piece(self,item):
+        from .dialogs import RelationsDialog
+        show_window(RelationsDialog(self.db,self.engine,item,self),self)
+    def plan_storage(self):
+        if self.wall_id is None:return
+        window=StoragePlanDialog(self.db,self.wall_id,self,self.refresh);show_window(window,self,refresh_counts=False);return window
     def print_wall(self):
         if self.wall_id is None:return
         from .storage_printing import StoragePrintPreview
@@ -356,7 +424,7 @@ class StoragePanel(QWidget):
         return window
     def load_contents(self):
         self.rows=store.contents(self.db,self.drawer_id) if self.drawer_id else []
-        fill_table(self.table,[(p['source'],p['ref'],p['name'],p['chosen_color'],p['chosen_quantity'],tr('3D / photo à charger')) for p in self.rows])
+        fill_table(self.table,[(p['source'],p['ref'],p['name'],p['chosen_color'] or tr('Non précisée'),p['chosen_quantity'],tr('3D / photo à charger')) for p in self.rows])
         if self.thumbnails:self.thumbnails.reset()
         self.update_status()
     def update_status(self):
@@ -366,7 +434,7 @@ class StoragePanel(QWidget):
         elif drawer:self.status.setText(' · '.join(value for value in (self.wall.currentText(),store.address(drawer),drawer['name']) if value)+' — '+str(len(self.rows))+tr(' référence(s). Les quantités indiquent le stock global, pas le nombre dans ce tiroir.'))
         elif self.query.text().strip():self.status.setText(str(len(self.matches))+tr(' correspondance(s) dans les tiroirs.'))
         elif self.wall_id is not None:self.status.setText(self.wall.currentText()+' — '+tr('Sélectionne un tiroir pour afficher ses références.'))
-        else:self.status.setText(tr('Crée un meuble puis associe les références de ton stock aux tiroirs.'))
+        else:self.status.setText(tr('Crée un meuble puis associe les références de tes catalogues ou de ton stock aux tiroirs.'))
     def highlight(self):
         hits={r['id'] for r in self.matches};searching=bool(self.query.text().strip())
         for identity,item in self.items.items():
@@ -485,6 +553,8 @@ class StoragePanel(QWidget):
     def pick_stock(self):
         if not self.drawer_id:return
         dialog=StockPicker(self.db,self.engine,self.drawer_id,self,self.refresh);dialog._storage_wall_id=self.wall_id;show_window(dialog,self)
+    def pick_catalogue(self):
+        self.stock_browser.origin.setCurrentIndex(self.stock_browser.origin.findData('catalogue'));self.details_tabs.setCurrentWidget(self.stock_browser)
     def unassign(self):
         captured_drawer=self.drawer_id
         if captured_drawer is None or not self.rows:return
@@ -496,6 +566,7 @@ class StoragePanel(QWidget):
     def refresh(self):
         if not self.isVisible():return
         self.redraw();self.load_contents();self.search()
+        self.stock_browser.reload_categories();self.stock_browser.reload()
     def invalidate(self,item=None):
         if item is None:self.icons.clear()
         else:

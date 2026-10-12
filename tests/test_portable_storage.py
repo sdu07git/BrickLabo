@@ -46,10 +46,10 @@ class PortableStorageTests(unittest.TestCase):
             root=prepare_portable_storage();db=Database(root/'atelier.sqlite');configure_portable_database(db)
             self.assertEqual(db.setting('ldraw'),str(root/'ldraw.zip'));self.assertEqual(db.setting('output'),str(root/'Exports'));self.assertEqual(db.rows('SELECT image FROM visual')[0]['image'],str(root/'images'/'import.png'))
             self.assertFalse(self.source.exists())
-    def test_external_output_is_reset_to_portable_exports(self):
+    def test_external_output_is_preserved_without_creating_it_at_startup(self):
         db=Database(self.target/'atelier.sqlite');db.set_setting('output',str(self.profile/'Exports'))
         with patch('atelier.storage.application_directory',return_value=self.app):configure_portable_database(db)
-        self.assertEqual(db.setting('output'),str(self.target/'Exports'));self.assertFalse((self.profile/'Exports').exists())
+        self.assertEqual(db.setting('output'),str(self.profile/'Exports'));self.assertFalse((self.profile/'Exports').exists())
     def test_new_default_and_individual_views(self):
         db=Database(self.target/'atelier.sqlite');item={'id':1}
         self.assertEqual(DEFAULT_CAMERA,{'yaw':180,'pitch':-23,'roll':-3});self.assertEqual(camera_for_item(db,item),DEFAULT_CAMERA)
