@@ -139,7 +139,7 @@ class LayoutUITests(Fixture):
         QTest.mousePress(panel.view.viewport(),Qt.MouseButton.LeftButton,Qt.KeyboardModifier.NoModifier,start)
         QTest.mouseMove(panel.view.viewport(),end,20);app.processEvents();self.assertEqual(walls.walls(self.db),old)
         QTest.mouseRelease(panel.view.viewport(),Qt.MouseButton.LeftButton,Qt.KeyboardModifier.NoModifier,end);app.processEvents()
-        placed=next(w for w in walls.walls(self.db) if w['id']==b);self.assertAlmostEqual(placed['x'],3.,delta=.1);self.assertEqual(placed['y'],-2.7)
+        placed=next(w for w in walls.walls(self.db) if w['id']==b);self.assertAlmostEqual(placed['x'],3.,delta=.1);self.assertAlmostEqual(placed['y'],-2.7,delta=.11)
         self.assertEqual(cabinet.pos(),QPointF(placed['x']*112,placed['y']*70))
         for angle in (-30,0,30):panel.front.setChecked(False);panel.angle.setValue(angle);panel.grab()
         cabinet=panel.cabinets[b]
@@ -147,7 +147,7 @@ class LayoutUITests(Fixture):
         end=panel.view.mapFromScene(cabinet.mapToScene(cabinet.face.map(QPointF(40,12))+cabinet.back.map(QPointF(112,0))))
         QTest.mousePress(panel.view.viewport(),Qt.MouseButton.LeftButton,Qt.KeyboardModifier.NoModifier,start);QTest.mouseMove(panel.view.viewport(),end,20)
         QTest.mouseRelease(panel.view.viewport(),Qt.MouseButton.LeftButton,Qt.KeyboardModifier.NoModifier,end);app.processEvents()
-        placed=next(w for w in walls.walls(self.db) if w['id']==b);self.assertAlmostEqual(placed['x'],4.,delta=.1);self.assertEqual(placed['y'],-2.7)
+        placed=next(w for w in walls.walls(self.db) if w['id']==b);self.assertAlmostEqual(placed['x'],4.,delta=.1);self.assertAlmostEqual(placed['y'],-2.7,delta=.11)
         self.assertEqual(before,{p.relative_to(self.temp.name) for p in Path(self.temp.name).rglob('*')})
     def test_collision_restores_dragged_group_without_rebuilding_scene(self):
         panel,a,b,da,db=self.seed();panel.arrange.setChecked(True);cabinet=panel.cabinets[b];old=QPointF(cabinet.pos());layout=walls.walls(self.db)

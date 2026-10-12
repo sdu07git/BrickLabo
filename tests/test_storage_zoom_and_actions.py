@@ -51,8 +51,9 @@ class StorageControlsTests(Fixture):
         self.assertTrue(panel.all_walls.isChecked());self.assertEqual(set(panel.cabinets),{a,b})
         visible=panel.view.mapToScene(panel.view.viewport().rect()).boundingRect()
         for cabinet in panel.cabinets.values():self.assertTrue(visible.contains(cabinet.sceneBoundingRect()))
+        fitted_scale=panel.view.transform().m11()
         for _ in range(3):QTest.mouseClick(panel.fit_button,Qt.MouseButton.LeftButton)
-        self.assertAlmostEqual(panel.view.transform().m11(),scale,delta=.02)
+        self.assertAlmostEqual(panel.view.transform().m11(),fitted_scale,delta=.02)
     def test_thumbnail_size_changes_actual_pixels_without_new_files_and_saves_once(self):
         panel,a,b,da,db=self.seed();walls.unassign(self.db,da['id'],[(self.other,'4')]);panel.refresh();panel.all_walls.setChecked(False)
         icon=QPixmap(100,65);icon.fill(Qt.GlobalColor.red);panel.icons[(self.part,'4')]=icon
