@@ -1,9 +1,19 @@
-# BrickLabo — v0.1.47
+# BrickLabo — v0.1.48
 
-Windows desktop software for LEGO catalogues, stock, construction searches and labels. This version continues the delivered v0.1.46, based on the original v0.1.28.
+Windows desktop software for LEGO catalogues, stock, construction searches and labels. This version continues the delivered v0.1.47, based on the original v0.1.28.
 
-**v0.1.47 downloads:** [complete Windows version](https://github.com/sdu07git/BrickLabo/releases/download/v0.1.47/BrickLabo_v0.1.47_Complet.zip) · [source code with resources](https://github.com/sdu07git/BrickLabo/releases/download/v0.1.47/BrickLabo_v0.1.47_Sources.zip) · [release notes](https://github.com/sdu07git/BrickLabo/releases/tag/v0.1.47). This release includes v0.1.46 and v0.1.47 fixes.
 
+**v0.1.48 downloads:** [complete Windows version](https://github.com/sdu07git/BrickLabo/releases/download/v0.1.48/BrickLabo_v0.1.48_Complet.zip) · [sources with resources](https://github.com/sdu07git/BrickLabo/releases/download/v0.1.48/BrickLabo_v0.1.48_Sources.zip) · [release notes](https://github.com/sdu07git/BrickLabo/releases/tag/v0.1.48).
+
+## Import correction assistant and readable buttons — v0.1.48
+
+In **My stock** or **My set stock → Import collection**, open a Rebrickable CSV or BrickLink CSV / TXT / XML list. The application saves a correction job and its original rows inside **Donnees**. **Add ready rows** imports valid references, colours and quantities; other rows remain pending. Unknown references, invalid quantities, colours absent from their source palette and incomplete set inventories no longer block valid rows.
+
+Select a pending row, edit **Source / type**, **Reference**, **Colour** and **Quantity**, then **Save correction**. **Search the catalogue…** chooses a local reference by name, reference or category. Changing source requires a new colour choice: BrickLink and Rebrickable colour IDs remain separate. Variants are never merged automatically. If a set inventory has been loaded in the meantime, use **Recheck rows**.
+
+Close and reopen the assistant, choose the job in **Pending imports…**, then **Resume this import**. The original file is no longer required. Applied rows are marked and cannot be added twice; later corrected parts join the same personal inventory. The destination is retained after the first addition. If only sets have been added, the inventory for pending parts can still be chosen. A deleted destination inventory can be replaced explicitly, without reimporting earlier rows. **Undo last action / Ctrl+Z** restores both stock quantities and pending markers from the latest addition. Full **Donnees** backups include these jobs.
+
+The right preview panel is wider. Long action bars wrap according to available width, and photo-link buttons use separate rows. Catalogues, notices, imports and cabinets scroll in smaller windows so their controls remain accessible. The Rebrickable instructions button wraps its label where needed. Cabinet controls remain accessible at **950 × 650** and **1366 × 768**.
 
 ## Edge previews, default values and shutdown — v0.1.47
 
@@ -62,7 +72,7 @@ Old application files stay in **Donnees/maj/b…** during replacement. From v0.1
 
 After a power loss during replacement, close every instance, inspect the `stage` field in `Donnees/maj/transaction.json`, open a terminal in the corresponding `Donnees/temp/u…` folder and run `r\python.exe -I -B i.py --recover`. Recovery verifies the retained plan, restores old files and restarts the application. If preparation is lost, use Explorer with all instances closed to copy the files in `Donnees/maj/b…` back into the installation folder, without moving `Donnees`. A deliberate downgrade also requires a compatible data backup if its format changed.
 
-To move from a version older than v0.1.42, install this complete ZIP in a new folder and copy **Donnees** into it once, as described below. The new option will then handle future published releases. Version v0.1.47 is available in [GitHub releases](https://github.com/sdu07git/BrickLabo/releases/tag/v0.1.47), with the complete Windows ZIP and source ZIP.
+To move from a version older than v0.1.42, install this complete ZIP in a new folder and copy **Donnees** into it once, as described below. The new option will then handle future published releases. Version v0.1.48 is published on GitHub with the delivered and verified complete and source ZIP files.
 
 ## Transparent label backgrounds — v0.1.41
 
@@ -86,7 +96,7 @@ Use **Data updates → Load set inventories in batches** to list Rebrickable or 
 
 Loaded inventories do not mark sets as owned or add parts to stock. They feed **Buildable sets** and suggestions of alternatives from rebuildable sets. Official-set inventories are not a complete MOC inventory catalogue: API v3 does not provide general MOC inventories. Exact MOC comparisons require the MOC's own inventory. For a full Rebrickable catalogue, use its existing CSV downloads.
 
-Version v0.1.47 is available in [GitHub releases](https://github.com/sdu07git/BrickLabo/releases/tag/v0.1.47), with the complete Windows ZIP and source ZIP.
+Version v0.1.48 is published on GitHub with the delivered and verified complete and source ZIP files.
 
 ## v0.1.39 checks and fixes
 
@@ -106,7 +116,7 @@ Extract the entire complete ZIP into a new writable folder. Close the old versio
 
 - **My stock** contains loose parts and minifigures. **My set stock** contains sets and their saved total component quantities. The lower table supports previews, header sorting and double-click opening. Removing a set can discard components or move them to loose stock.
 - **Undo last action / Ctrl+Z** reverses the latest stock or print-queue add, import, removal, quantity or colour change. Imports are single actions; the journal survives restarts and stock restores reset it. Later conflicting changes prevent undo.
-- **Import collection** accepts Rebrickable parts / sets CSV and BrickLink CSV, tab-separated TXT or XML. Select the source and destination. Sets going to loose stock are decomposed; parts going to set stock attach to an owned set or a named personal inventory. References and complete inventories must exist locally. Validation errors stop the batch before stock quantities change.
+- **Import collection** accepts Rebrickable parts / sets CSV and BrickLink CSV, tab-separated TXT or XML. Select the source and destination. Sets going to loose stock are decomposed; parts going to set stock attach to an owned set or a named personal inventory. Valid rows are added; unknown references, invalid colours or quantities and incomplete inventories remain pending in the correction assistant. Save corrections and resume ready rows, even after closing.
 - Rebrickable exports produce owned sets and loose parts CSV lists without double-counting tracked set components. Review colour and reference mappings. Personal ALT inventories are not official sets.
 - Build searches combine loose stock and enabled set components. The upper table shows set photos; drag a header boundary to resize any column, including **Set**. Photos stay with their references after sorting and use the shared cache. Reserve sets or coloured parts without deleting them. Each proposal uses the same stock independently.
 - **MOCs by keyword / creator** is available in the Rebrickable, BrickLink and alternative set catalogues, as well as stock screens. The button carries over the catalogue keyword: enter `falcon`, open this search and click **Search**. It searches all MOCs and alternate builds published on Rebrickable independently of owned sets. Enter an exact creator profile name on its own or with a keyword. Both original MOCs and alternatives are included by default; alternatives-only and free-only filters are optional. Public online search reads one page at a time; **Load more** continues. Selecting a result loads its photo and the base sets published by Rebrickable, with links to help plan a purchase. Original MOCs may have no base set. Previously viewed results form a non-exhaustive local cache. Open the same search on Rebrickable if a page cannot be read.
@@ -144,9 +154,10 @@ Read [English help](documentation/AIDE.en.html) and [component licences](documen
 | 0.1.44 | Select all categories, drawer dragging and swaps, A4 cabinet printing / PDF with thumbnails. |
 | 0.1.45 | Storage zoom and preview sizing, cabinet rename and reference removal, containing-set actions and old update-copy cleanup. |
 | 0.1.46 | Verified BrickLink photo for Rebrickable set 030-2, source caption and normalised small set images. |
+| 0.1.48 | Partial imports with saved corrections, resumption, duplicate prevention and undo; buttons and scrolling adapted to small windows. |
 | 0.1.47 | Faster RAM-based edge previews, default-value buttons, visible worker shutdown and stronger temporary cleanup; verified catalogue photo links. |
 
-One bilingual [NOUVEAUTES.txt](documentation/NOUVEAUTES.txt) holds cumulative notes. This branch does not document a released 0.1.29. The 0.1.28b / Range variants were not used as the baseline. Test reports are excluded from the source package.
+One bilingual [NOUVEAUTES.txt](documentation/NOUVEAUTES.txt) holds cumulative notes. This branch does not document a released 0.1.29. The 0.1.28b / Range variants were not used as the baseline. The version check is recorded in [CONTROLE_v0.1.48.txt](documentation/CONTROLE_v0.1.48.txt).
 
 ## Development and diagnostics
 
@@ -158,6 +169,6 @@ Check a built distribution: `python tools/check_distribution.py path/BrickLabo`.
 
 For a compatible future update, publish a public stable release with tag `vX.Y.Z`, release notes and the **BrickLabo_vX.Y.Z_Complet.zip** file produced by this tool. GitHub must expose the asset’s SHA-256 `digest` in its API. GitHub’s automatically generated source archives cannot be installed. The application checks up to the 100 most recent releases and never publishes files.
 
-When developing from this repository, copy `ressources/complete.zip` from the attached Sources ZIP: this LDraw archive exceeds GitHub’s file-size limit. GitHub’s automatic “Source code” archives include neither that resource nor the Windows runtime. The two attached ZIPs are the delivered and tested version; repository READMEs are adapted for publication.
+For development from this repository, restore `ressources/complete.zip` from the release Sources ZIP: the LDraw archive exceeds GitHub’s regular file-size limit. Automatic GitHub source archives contain neither that resource nor the Windows runtime. The attached ZIP files are the delivered and tested builds; repository README files are adapted for publication.
 
-**v0.1.47 validation:** 487 tests passed under Qt/Linux; archive consistency, dependency versions and the launcher’s embedded icon were verified. Native Windows execution remains to be checked.
+**v0.1.48 validation:** 506 Qt/Linux tests passed; archives, dependencies and embedded icon verified. Native Windows execution remains to be confirmed.

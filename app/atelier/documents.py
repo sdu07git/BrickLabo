@@ -14,9 +14,9 @@ import urllib.parse
 from pathlib import Path
 from PySide6.QtCore import Qt,QUrl
 from PySide6.QtGui import QDesktopServices
-from PySide6.QtWidgets import QWidget,QVBoxLayout,QHBoxLayout,QLabel,QPushButton,QTableWidget,QTableWidgetItem,QFileDialog,QLineEdit,QMenu,QAbstractItemView
+from PySide6.QtWidgets import QWidget,QVBoxLayout,QHBoxLayout,QLabel,QPushButton,QTableWidget,QTableWidgetItem,QFileDialog,QLineEdit,QMenu,QAbstractItemView,QScrollArea
 from .services import request
-from .ui_common import async_task
+from .ui_common import async_task,FlowLayout,WrappedButton
 
 
 def enable_header_menu(table,db,key):
@@ -130,15 +130,15 @@ def discover_notices(content,url,ref,fetch=None,max_pages=5):
 class DocumentsPanel(QWidget):
     def __init__(self,db,parent=None):
         super().__init__(parent);self.db=db;self.item=None;self.token=0;self.entries=[]
-        layout=QVBoxLayout(self);layout.addWidget(QLabel(tr('Notices disponibles pour le set sélectionné')))
-        row=QHBoxLayout()
+        outer=QVBoxLayout(self);outer.setContentsMargins(0,0,0,0);self.controls_scroll=QScrollArea();self.controls_scroll.setWidgetResizable(True);body=QWidget();layout=QVBoxLayout(body);layout.setSizeConstraint(QVBoxLayout.SizeConstraint.SetMinimumSize);self.controls_scroll.setWidget(body);outer.addWidget(self.controls_scroll);title=QLabel(tr('Notices disponibles pour le set sélectionné'));title.setWordWrap(True);layout.addWidget(title)
+        row=FlowLayout()
         for label,func in [(tr('Rechercher en ligne'),self.search),(tr('Ajouter des PDF locaux'),self.local),(tr('Ouvrir'),self.open_selected),(tr('Télécharger'),self.download_selected)]:
             button=QPushButton(label);button.clicked.connect(func);row.addWidget(button)
             if label==tr('Télécharger'):self.download_button=button
             if label==tr('Ouvrir'):self.open_button=button
         layout.addLayout(row)
-        self.rb_page_button=QPushButton(tr('Ouvrir les notices Rebrickable dans le navigateur'));self.rb_page_button.clicked.connect(self.open_rebrickable_page);layout.addWidget(self.rb_page_button)
-        row=QHBoxLayout();self.url=QLineEdit();self.url.setPlaceholderText(tr('Lien PDF ou page de notice Manuall / Rebrickable…'));row.addWidget(self.url,1);b=QPushButton(tr('Ajouter le lien'));b.clicked.connect(self.add_url);row.addWidget(b);self.remove_button=QPushButton(tr('Supprimer le lien ajouté'));self.remove_button.clicked.connect(self.remove_manual);self.remove_button.setEnabled(False);row.addWidget(self.remove_button);layout.addLayout(row)
+        self.rb_page_button=WrappedButton(tr('Ouvrir les notices Rebrickable dans le navigateur'));self.rb_page_button.clicked.connect(self.open_rebrickable_page);layout.addWidget(self.rb_page_button)
+        self.url=QLineEdit();self.url.setPlaceholderText(tr('Lien PDF ou page de notice Manuall / Rebrickable…'));layout.addWidget(self.url);row=FlowLayout();b=QPushButton(tr('Ajouter le lien'));b.clicked.connect(self.add_url);row.addWidget(b);self.remove_button=QPushButton(tr('Supprimer le lien ajouté'));self.remove_button.clicked.connect(self.remove_manual);self.remove_button.setEnabled(False);row.addWidget(self.remove_button);layout.addLayout(row)
         self.table=QTableWidget(0,3);self.table.setHorizontalHeaderLabels([tr('Notice / document'),tr('Source'),tr('Disponibilité')]);self.table.setSelectionBehavior(QAbstractItemView.SelectionBehavior.SelectRows);self.table.setSelectionMode(QAbstractItemView.SelectionMode.ExtendedSelection);self.table.itemSelectionChanged.connect(self.update_remove_button);self.table.setEditTriggers(QAbstractItemView.EditTrigger.NoEditTriggers);self.table.horizontalHeader().setStretchLastSection(True);self.table.itemDoubleClicked.connect(lambda _:self.open_selected());layout.addWidget(self.table,1);enable_header_menu(self.table,db,'documents');self.table.setContextMenuPolicy(Qt.ContextMenuPolicy.CustomContextMenu);self.table.customContextMenuRequested.connect(self.context_menu)
         self.progress_label=QLabel(tr('Sélectionne un set.'));self.progress_label.setWordWrap(True);layout.addWidget(self.progress_label)
     def folder(self,item=None,create=True):

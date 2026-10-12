@@ -48,7 +48,7 @@ class Update37UiTests(unittest.TestCase):
 
     def test_import_preview_choice_and_missing_reference_gate(self):
         window=self.keep(StockImportDialog(self.db,destination='stock_sets'));self.assertEqual(window.destination.currentData(),'stock_sets');self.assertTrue(window.target.isEnabled());self.assertTrue(window.name.isEnabled())
-        path=Path(self.temp.name)/'parts.csv';path.write_text('Part,Color,Quantity\n3001,4,2\n');window.path=path;window.load();self.assertEqual(window.table.rowCount(),1);self.assertTrue(window.commit.isEnabled());window.destination.setCurrentIndex(0);self.assertFalse(window.target.isEnabled())
+        path=Path(self.temp.name)/'parts.csv';path.write_text('Part,Color,Quantity\n3001,4,2\n');window.path=path;window.load();self.assertEqual(window.table.rowCount(),1);self.assertFalse(window.commit.isEnabled());window.name.setText('Mes pièces');self.assertTrue(window.commit.isEnabled());window.destination.setCurrentIndex(0);self.assertFalse(window.target.isEnabled())
         path.write_text('Part,Color,Quantity\nmissing,4,2\n');window.load();self.assertFalse(window.commit.isEnabled());self.assertEqual(self.db.query(scope='stock')[1],0)
 
     def test_backup_defaults_seven_separate_families_without_api(self):

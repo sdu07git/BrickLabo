@@ -259,7 +259,7 @@ class Preview(QWidget):
     def __init__(self,db,engine,parent=None):
         super().__init__(parent);self.db=db;self.engine=engine;self.item=None;self.token=0;self.image=None;self.label_image=None;self.updating=False;self.color_requests=set();self.architect_requests=set();self.render_running=False;self.render_dirty=False;self.stopped=False
         layout=QVBoxLayout(self);layout.setSizeConstraint(QVBoxLayout.SizeConstraint.SetMinimumSize)
-        self.title=QLabel(tr('Aperçu'));layout.addWidget(self.title)
+        self.title=QLabel(tr('Aperçu'));self.title.setWordWrap(True);layout.addWidget(self.title)
         self.photo=QLabel(tr('Sélectionne une ligne'));self.photo.setMinimumHeight(170);self.photo.setAlignment(Qt.AlignmentFlag.AlignCenter);layout.addWidget(self.photo)
         self.expand=QPushButton(tr('Agrandir l’aperçu'));self.expand.clicked.connect(self.enlarge);layout.addWidget(self.expand)
         self.camera_button=QPushButton(tr('Modifier l’angle du rendu 3D…'));self.camera_button.clicked.connect(self.edit_camera);layout.addWidget(self.camera_button)
@@ -276,7 +276,7 @@ class Preview(QWidget):
         self.gallery_box=QGroupBox(tr('Photos'));self.gallery_box.setMinimumHeight(155);gallery_layout=QVBoxLayout(self.gallery_box);self.gallery=QComboBox();gallery_layout.addWidget(self.gallery)
         self.find_rb_photos_button=QPushButton(tr('Rechercher les photos Rebrickable'));self.find_rb_photos_button.clicked.connect(self.find_rb_photos);gallery_layout.addWidget(self.find_rb_photos_button)
         self.find_photos_button=QPushButton(tr('Rechercher les photos BrickLink'));self.find_photos_button.clicked.connect(self.find_photos);gallery_layout.addWidget(self.find_photos_button)
-        row=QHBoxLayout();b=QPushButton(tr('Ajouter un lien image'));b.clicked.connect(self.add_photo);row.addWidget(b);self.remove_photo_button=QPushButton(tr('Supprimer ce lien image'));self.remove_photo_button.clicked.connect(self.remove_photo);row.addWidget(self.remove_photo_button);gallery_layout.addLayout(row);layout.addWidget(self.gallery_box)
+        b=QPushButton(tr('Ajouter un lien image'));b.clicked.connect(self.add_photo);gallery_layout.addWidget(b);self.remove_photo_button=QPushButton(tr('Supprimer ce lien image'));self.remove_photo_button.clicked.connect(self.remove_photo);gallery_layout.addWidget(self.remove_photo_button);layout.addWidget(self.gallery_box)
         self.gallery.currentIndexChanged.connect(self.choose_photo)
         self.color=QComboBox();self.color.addItem(tr('Couleur 3D par défaut'),'');self.color.addItem(tr('Choisir une couleur…'),'custom');self.color_title=QLabel(tr('Couleur du rendu 3D / palette'));layout.addWidget(self.color_title);layout.addWidget(self.color)
         self.color_link=QPushButton(tr('Correspondances des couleurs…'));self.color_link.clicked.connect(self.choose_color_link);layout.addWidget(self.color_link)
@@ -288,6 +288,9 @@ class Preview(QWidget):
         self.notice=QPushButton(tr('Notices et documents du set'));self.notice.clicked.connect(self.documents);layout.addWidget(self.notice)
         self.inventory_button=QPushButton(tr('Ajouter l’inventaire depuis un fichier TXT'));self.inventory_button.clicked.connect(self.import_inventory);layout.addWidget(self.inventory_button)
         self.note=QLabel();self.note.setWordWrap(True);layout.addWidget(self.note);layout.addStretch()
+        for combo in self.findChildren(QComboBox):
+            combo.setSizeAdjustPolicy(QComboBox.SizeAdjustPolicy.AdjustToMinimumContentsLengthWithIcon);combo.setMinimumContentsLength(20)
+        for label in (self.model_title,self.photo_variant_title,self.color_title,self.available_title):label.setWordWrap(True)
         self.mode.currentIndexChanged.connect(self.settings_changed);self.color.currentIndexChanged.connect(self.color_changed);self.available.currentIndexChanged.connect(self.available_changed)
 
     def choose_color_link(self):

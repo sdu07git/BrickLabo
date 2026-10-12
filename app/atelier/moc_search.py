@@ -126,7 +126,7 @@ def local_rows(db,keyword='',creator='',alternates=True):
 from PySide6.QtCore import Qt,QUrl
 from PySide6.QtGui import QDesktopServices
 from PySide6.QtWidgets import QDialog,QVBoxLayout,QHBoxLayout,QLabel,QLineEdit,QComboBox,QCheckBox,QPushButton,QTableWidget,QAbstractItemView,QHeaderView
-from .ui_common import async_task,scalable
+from .ui_common import async_task,scalable,FlowLayout
 from .result_tables import fill_table,row_index
 
 class MocSearchDialog(QDialog):
@@ -142,7 +142,7 @@ class MocSearchDialog(QDialog):
         self.table=QTableWidget(0,5);self.table.setHorizontalHeaderLabels([tr('Référence'),tr('Construction'),tr('Créateur'),tr('Pièces'),tr('Sets de départ')]);self.table.setSelectionBehavior(QAbstractItemView.SelectionBehavior.SelectRows);self.table.setSelectionMode(QAbstractItemView.SelectionMode.SingleSelection);self.table.setEditTriggers(QAbstractItemView.EditTrigger.NoEditTriggers);self.table.horizontalHeader().setSectionResizeMode(QHeaderView.ResizeMode.Interactive);self.table.horizontalHeader().setStretchLastSection(False);layout.addWidget(self.table,1)
         for column,width in enumerate((110,350,170,75,280)):self.table.setColumnWidth(column,width)
         self.photo=QLabel();self.photo.setMinimumHeight(150);self.photo.setAlignment(Qt.AlignmentFlag.AlignCenter);layout.addWidget(self.photo);self.origins=QLabel();self.origins.setWordWrap(True);self.origins.setTextFormat(Qt.TextFormat.RichText);self.origins.setOpenExternalLinks(True);layout.addWidget(self.origins)
-        buttons=QHBoxLayout();layout.addLayout(buttons);self.more=QPushButton(tr('Charger la suite'));self.more.setEnabled(False);self.more.clicked.connect(lambda:self.load(False));buttons.addWidget(self.more);self.open=QPushButton(tr('Voir la construction / les notices'));self.open.clicked.connect(self.open_selected);self.open.setEnabled(False);buttons.addWidget(self.open);web=QPushButton(tr('Ouvrir la recherche sur Rebrickable'));web.clicked.connect(self.open_search);buttons.addWidget(web);close=QPushButton(tr('Fermer'));close.clicked.connect(self.reject);buttons.addWidget(close);self.table.itemSelectionChanged.connect(self.select);self.table.itemDoubleClicked.connect(lambda _:self.open_selected())
+        buttons=FlowLayout();layout.addLayout(buttons);self.more=QPushButton(tr('Charger la suite'));self.more.setEnabled(False);self.more.clicked.connect(lambda:self.load(False));buttons.addWidget(self.more);self.open=QPushButton(tr('Voir la construction / les notices'));self.open.clicked.connect(self.open_selected);self.open.setEnabled(False);buttons.addWidget(self.open);web=QPushButton(tr('Ouvrir la recherche sur Rebrickable'));web.clicked.connect(self.open_search);buttons.addWidget(web);close=QPushButton(tr('Fermer'));close.clicked.connect(self.reject);buttons.addWidget(close);self.table.itemSelectionChanged.connect(self.select);self.table.itemDoubleClicked.connect(lambda _:self.open_selected())
     def controls(self,busy):
         self.busy=busy
         for widget in (self.run,self.keyword,self.creator,self.mode,self.free,self.alternates):widget.setEnabled(not busy)
