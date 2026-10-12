@@ -46,13 +46,13 @@ class MainWindow(QMainWindow):
         super().__init__();self.db=db;self.engine=VisualEngine(db);self.current_item=None;self.catalogues=[];self.owned_panels=[];self.generating=False;self._stock_revision=db.stock_revision();self._closing=False;self._request_cancel=threading.Event()
         self.close_timer=QTimer(self);self.close_timer.setInterval(50);self.close_timer.timeout.connect(self.close)
         self.setWindowTitle(f'{APP_NAME} — v{VERSION}');self.resize(1500,900);self.setMinimumSize(950,650)
-        outer=QWidget();self.setCentralWidget(outer);root=QVBoxLayout(outer)
-        top=QHBoxLayout();root.addLayout(top)
-        edit=QGroupBox(tr('Édition de l’étiquette'));erow=FlowLayout(edit)
+        outer=QWidget();self.setCentralWidget(outer);root=QVBoxLayout(outer);root.setSpacing(10)
+        top=QHBoxLayout();top.setSpacing(14);root.addLayout(top)
+        edit=QGroupBox(tr('Édition de l’étiquette'));erow=FlowLayout(edit,spacing=12);erow.setContentsMargins(12,24,12,12)
         for name,func in [(tr('Contours'),self.category_colors),(tr('Couleur 3D'),self.default_color),(tr('Arêtes 3D'),self.edge_settings),(tr('Éditeur d’étiquettes'),self.editor),(tr('Taille par défaut'),self.label_size)]:
             b=QPushButton(name);b.clicked.connect(func);erow.addWidget(b)
         top.addWidget(edit,1)
-        tools=QGroupBox(tr('Données et réglages'));trow=FlowLayout(tools)
+        tools=QGroupBox(tr('Données et réglages'));trow=FlowLayout(tools,spacing=12);trow.setContentsMargins(12,24,12,12)
         for index,(name,func) in enumerate([(tr('Langue'),self.language_settings),(tr('Clés API'),self.api),(tr('Aide'),lambda:help_dialog(self)),(tr('Mise à jour des données'),self.imports),(tr('Dossier PNG / PDF'),self.output_folder),(tr('Logs'),self.open_logs),(tr('Espace disque'),self.cache_settings),(tr('Sauvegardes'),self.backup_settings),(tr('Sources et licences'),self.sources_licenses)]):
             b=QPushButton(name);b.clicked.connect(func);trow.addWidget(b)
         top.addWidget(tools,1)
@@ -214,13 +214,13 @@ class MainWindow(QMainWindow):
     def api(self):show_window(APIDialog(self.db,self),self)
     def editor(self):
         d=LabelEditor(self.db,self.engine,self.current_item,self)
-        show_window(d,self,lambda result:self.preview.refresh() if result and self.current_item else None)
+        show_window(d,self,lambda result:self.preview.refresh() if result and self.current_item else None,refresh_counts=False)
     def edge_settings(self):
         from .edges import EdgeDialog
         d=EdgeDialog(self.db,self.engine,self.current_item,self)
         def saved(result):
-            if result:self.db.set_setting('edge_settings',d.settings());self.preview.refresh();self.visual_changed(None)
-        show_window(d,self,saved)
+            if result:self.db.set_setting('edge_settings',d.settings());self.preview.refresh()
+        show_window(d,self,saved,refresh_counts=False)
 
     def default_color(self):
         c=QColorDialog.getColor(QColor(self.db.setting('default_color','#f3d55b')),self,tr('Couleur par défaut des pièces en 3D'))
@@ -244,10 +244,8 @@ class MainWindow(QMainWindow):
     def output_folder(self):
         path=QFileDialog.getExistingDirectory(self,tr('Dossier des fichiers PNG et PDF'),self.export_path)
         if path:
-            from .storage import application_directory
-            if not Path(path).resolve().is_relative_to(application_directory()):
-                QMessageBox.information(self,tr('Dossier des fichiers'),tr('Choisis un dossier à l’intérieur du dossier BrickLabo pour conserver tous les fichiers avec le logiciel.'));return
-            self.export_path=path;self.db.set_setting('output',path)
+            self.export_path=str(Path(path).resolve());self.db.set_setting('output',self.export_path)
+            self.statusBar().showMessage(tr('Dossier PNG / PDF : ')+self.export_path)
     def queue_toolbar(self,layout):
         row=FlowLayout();self.format=QComboBox();self.format.addItems(['PDF + PNG','PDF','PNG']);row.addWidget(self.format)
         self.single_file=QCheckBox(tr('Un fichier PDF par étiquette'));row.addWidget(self.single_file)

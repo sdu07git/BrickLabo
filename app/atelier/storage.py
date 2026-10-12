@@ -112,5 +112,8 @@ def prepare_portable_storage():
 
 def configure_portable_database(db):
     root=db.path.parent;output=Path(db.setting('output',str(root/'Exports')))
-    if not output.is_absolute() or not output.is_relative_to(application_directory()):output=root/'Exports'
-    output.mkdir(parents=True,exist_ok=True);db.set_setting('output',str(output))
+    if not output.is_absolute():output=root/'Exports'
+    # A chosen external drive may be offline. Keep the choice and report write
+    # errors only when exporting; opening the application must remain possible.
+    if output==root/'Exports':output.mkdir(parents=True,exist_ok=True)
+    db.set_setting('output',str(output))
