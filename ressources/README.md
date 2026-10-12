@@ -1,9 +1,7 @@
-# Ressources BrickLabo v0.1.48
+# Ressources BrickLabo v0.1.50
 
-Les catalogues et autres ressources livrées sont conservés dans ce dossier. Catalogue BrickArchitect : `brickarchitect.json` ; supplément : `brickarchitect_ldraw.zip`. Origines et droits : [SOURCES_ET_LICENCES.html](../documentation/SOURCES_ET_LICENCES.html).
+Le catalogue BrickArchitect se trouve dans `brickarchitect.json` et son supplément LDraw dans `brickarchitect_ldraw.zip`. Les couleurs, correspondances et traductions livrées restent dans ce dossier.
 
-`complete.zip` (LDraw) dépasse la limite de taille de GitHub et reste exclu de Git. Il est inclus dans **BrickLabo_v0.1.48_Sources.zip** et **BrickLabo_v0.1.48_Complet.zip**, disponibles dans la [release v0.1.48](https://github.com/sdu07git/BrickLabo/releases/tag/v0.1.48). Copier cette archive ici pour retrouver les modèles livrés. Les archives automatiques « Source code » de GitHub ne l’incluent pas.
+L’archive LDraw `complete.zip` est incluse dans les deux ZIP de la [release v0.1.50](https://github.com/sdu07git/BrickLabo/releases/tag/v0.1.50). Elle dépasse la limite des fichiers du dépôt GitHub ; pour développer depuis Git, la reprendre dans le ZIP Sources et la placer ici. Les bases Rebrickable et BrickLink sont importées dans le logiciel par l’utilisateur.
 
-## English
-
-The shipped catalogues and other resources are retained in this folder. The LDraw `complete.zip` exceeds GitHub’s regular file-size limit and is excluded from Git. It is included in **BrickLabo_v0.1.48_Sources.zip** and **BrickLabo_v0.1.48_Complet.zip** from the release above. Copy it here to restore the bundled models; automatic GitHub “Source code” archives omit it.
+Origines et droits : [SOURCES_ET_LICENCES.html](../documentation/SOURCES_ET_LICENCES.html).
