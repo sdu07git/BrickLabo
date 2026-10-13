@@ -5,6 +5,7 @@ from .paths import resources_directory
 from .i18n import tr,tf
 
 import traceback
+import threading
 from .fileio import error_message
 from pathlib import Path
 from io import BytesIO
@@ -124,7 +125,8 @@ class Signals(QObject):
 
 class Task(QRunnable):
     def __init__(self,fn,cancel=None):
-        super().__init__();self.fn=fn;self.cancel=cancel;self.signals=Signals()
+        super().__init__();self.setAutoDelete(False)
+        self.fn=fn;self.cancel=cancel;self.signals=Signals();self.finished=threading.Event()
     def run(self):
         from .services import request_scope,RequestCancelled
         try:
@@ -133,34 +135,44 @@ class Task(QRunnable):
                 self.signals.result.emit(result)
         except RequestCancelled:self.signals.result.emit(None)
         except Exception as e:self.signals.error.emit(error_message(e));traceback.print_exc()
+        finally:self.finished.set()
 
 
 def async_task(parent,fn,done,fail=None,progress_callback=None):
     from .windows import application_owner
+    from .task_lifetime import lifetime
+    manager=lifetime()
     t=Task(fn,getattr(application_owner(parent),'_request_cancel',None))
     # Les connexions vers QObject sont mises en file vers le thread UI.
     bridge=TaskBridge(parent,done,fail,progress_callback)
-    t.signals.result.connect(bridge.complete)
-    t.signals.error.connect(bridge.failed)
-    t.signals.progress.connect(bridge.progress)
-    QThreadPool.globalInstance().start(t)
+    t.signals.result.connect(bridge.complete,Qt.ConnectionType.QueuedConnection)
+    t.signals.error.connect(bridge.failed,Qt.ConnectionType.QueuedConnection)
+    t.signals.progress.connect(bridge.progress,Qt.ConnectionType.QueuedConnection)
+    manager.hold(t,bridge)
+    try:QThreadPool.globalInstance().start(t)
+    except BaseException:
+        manager.abort(t)
+        raise
     return t
 
 
 class TaskBridge(QObject):
     def __init__(self,parent,done,fail,progress_callback=None):
-        super().__init__(parent);self.done=done;self.fail=fail;self.progress_callback=progress_callback
+        super().__init__(parent);self.done=done;self.fail=fail;self.progress_callback=progress_callback;self._disposed=False
         from .windows import task_owner
         self.owner=task_owner(parent)
         from .windows import application_owner
         self.application=application_owner(parent)
         if self.owner:self.owner._active_tasks+=1
     def blocked(self):
-        return bool(getattr(self.application,'_closing',False) or self.owner and self.owner._closed_by_manager)
+        return bool(self._disposed or getattr(self.application,'_closing',False) or self.owner and self.owner._closed_by_manager)
     def dispose(self):
+        if self._disposed:return
+        self._disposed=True
         if self.owner:
             self.owner._active_tasks-=1
             if self.owner._closed_by_manager and not self.owner._active_tasks:self.owner.deleteLater()
+        self.done=None;self.fail=None;self.progress_callback=None
         self.deleteLater()
     @Slot(object)
     def complete(self,result):

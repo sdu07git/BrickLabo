@@ -17,7 +17,7 @@ from PySide6.QtCore import QUrl
 from PySide6.QtWidgets import (QWidget,QVBoxLayout,QLabel,QGroupBox,QPushButton,QComboBox,
                               QFileDialog,QColorDialog,QInputDialog,QMessageBox,QHBoxLayout)
 
-from .render import LDraw,RenderError
+from .render import LDraw,RenderError,DEFAULT_PART_COLOR
 from .viewpoint import camera_for_item,save_camera
 from .labels import render_label
 from .services import Images,API,request,bricklink_photo_links,rebrickable_set_photo,rebrickable_photos
@@ -61,7 +61,7 @@ class VisualEngine:
             self.ldraw=None;self.render_cache.clear();self.images.decoded.clear()
 
     def color_rgb(self,item,chosen=''):
-        rgb=self.db.setting('default_color','#f3d55b')
+        rgb=self.db.setting('default_color',DEFAULT_PART_COLOR)
         if chosen.startswith('#'):rgb=chosen
         elif chosen:
             if item['source']=='BL':
@@ -528,7 +528,7 @@ class Preview(QWidget):
         if self.updating or not self.item:return
         value=self.color.currentData()
         if value=='custom':
-            c=QColorDialog.getColor(QColor(self.db.setting('default_color','#f3d55b')),self,tr('Couleur du rendu'))
+            c=QColorDialog.getColor(QColor(self.db.setting('default_color',DEFAULT_PART_COLOR)),self,tr('Couleur du rendu'))
             if not c.isValid():return
             value=c.name()
         self.save_color(value or '');self.refresh()
