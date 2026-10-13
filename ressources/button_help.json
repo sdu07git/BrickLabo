@@ -937,6 +937,14 @@
     "MocSearchDialog|Rechercher": {
       "fr": "Cherche les MOC selon le mot-clé et le créateur, sans clé API.",
       "en": "Finds MOCs using the keyword and creator, without an API key."
+    },
+    "DefaultColorDialog|Valeurs par défaut": {
+      "fr": "Remet le jaune d’origine dans le réglage. Clique sur Appliquer pour l’enregistrer.",
+      "en": "Restores the original yellow in the colour setting. Click Apply to save it."
+    },
+    "DefaultColorDialog|Appliquer": {
+      "fr": "Enregistre la couleur générale des pièces en 3D et actualise leurs aperçus.",
+      "en": "Saves the general 3D part colour and refreshes its previews."
     }
   }
 }

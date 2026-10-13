@@ -16,10 +16,10 @@ import threading
 from pathlib import Path
 
 from PySide6.QtCore import Qt,QTimer,QUrl
-from PySide6.QtGui import QAction,QDesktopServices,QColor
+from PySide6.QtGui import QAction,QDesktopServices
 from PySide6.QtWidgets import (QApplication,QMainWindow,QWidget,QVBoxLayout,QHBoxLayout,QSplitter,
     QListWidget,QStackedWidget,QScrollArea,QPushButton,QLabel,QComboBox,QFileDialog,QMessageBox,
-    QMenu,QInputDialog,QColorDialog,QCheckBox,QGroupBox,QDoubleSpinBox,QFormLayout,QDialog,QGridLayout,QFrame)
+    QMenu,QInputDialog,QCheckBox,QGroupBox,QDoubleSpinBox,QFormLayout,QDialog,QGridLayout,QFrame)
 
 from .version import APP_NAME,VERSION
 from .diagnostics import setup_logging,log_directory
@@ -253,8 +253,14 @@ class MainWindow(QMainWindow):
         show_window(d,self,saved,refresh_counts=False)
 
     def default_color(self):
-        c=QColorDialog.getColor(QColor(self.db.setting('default_color','#f3d55b')),self,tr('Couleur par défaut des pièces en 3D'))
-        if c.isValid():self.db.set_setting('default_color',c.name());self.preview.refresh();self.visual_changed(None)
+        from .base_color import DefaultColorDialog
+        from .render import DEFAULT_PART_COLOR
+        d=DefaultColorDialog(self.db.setting('default_color',DEFAULT_PART_COLOR),self)
+        def saved(result):
+            if not result:return
+            c=d.selectedColor()
+            if c.isValid():self.db.set_setting('default_color',c.name());self.preview.refresh();self.visual_changed(None)
+        show_window(d,self,saved,refresh_counts=False)
     def category_colors(self):
         from .contours import ContourDialog
         d=ContourDialog(self.db,self.engine,self.current_item,self)
@@ -401,6 +407,8 @@ def main():
         for preview in window.findChildren(Preview):preview.stop()
         for thumbnails in window.findChildren(PartThumbnails):thumbnails.stop()
         QThreadPool.globalInstance().waitForDone()
+        from .task_lifetime import drain_tasks
+        drain_tasks()
         window.engine.close();db.close()
     logger.info(tr('Fermeture de l’application, code %s'),status)
     prepared=getattr(window,'_pending_software_update',None)

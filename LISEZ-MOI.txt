@@ -1,4 +1,4 @@
-BrickLabo v0.1.54
+BrickLabo v0.1.55
 
 Survoler un bouton pendant deux secondes affiche une breve aide, dans les differentes fenetres.
 Les cles API servent uniquement aux acces API ; catalogues locaux, etiquettes et rangement restent disponibles sans cles.
@@ -74,3 +74,9 @@ Nouveautes v0.1.54 :
 Recherche et filtres des catalogues sur une ligne compacte, avec defilement horizontal si necessaire.
 Glisser la bordure sous les boutons superieurs pour regler la hauteur du volet ; ce choix est memorise.
 Tous les boutons restent accessibles par defilement quand le volet est reduit.
+
+CORRECTION v0.1.55
+Durée de vie des tâches et signaux Qt sécurisée pour éviter leur destruction dans les threads de travail. Les données personnelles sont conservées.
+
+Couleur 3D → Valeurs par défaut : remettre le jaune d’origine puis Appliquer ; Annuler conserve le réglage précédent.
+Les roues et pneus utilisent leur face arrière pour la vue du dessous, y compris les anciennes références tournées.

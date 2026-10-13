@@ -19,6 +19,7 @@ from .memory_cache import MemoryCache
 
 
 _RENDER_SLOTS=threading.BoundedSemaphore(2)
+DEFAULT_PART_COLOR='#f3d55b'
 
 class RenderError(Exception):
     pass
@@ -157,10 +158,10 @@ class LDraw:
         bounds=np.ptp(xyz,axis=0)
         return triangles,edges,conditional,bounds
 
-    def render(self,ref,size=(500,330),color='#f3d55b',view='perspective',outlines=True,camera=None,edge_strength=0,edge_settings=None):
+    def render(self,ref,size=(500,330),color=DEFAULT_PART_COLOR,view='perspective',outlines=True,camera=None,edge_strength=0,edge_settings=None):
         with _RENDER_SLOTS:return self._render(ref,size,color,view,outlines,camera,edge_strength,edge_settings)
 
-    def _render(self,ref,size=(500,330),color='#f3d55b',view='perspective',outlines=True,camera=None,edge_strength=0,edge_settings=None):
+    def _render(self,ref,size=(500,330),color=DEFAULT_PART_COLOR,view='perspective',outlines=True,camera=None,edge_strength=0,edge_settings=None):
         angles=tuple(normalize_camera(camera).values()) if camera is not None and view not in ('top','side','bottom') else None
         key=(self.frame_cache.generation,ref,tuple(size),color,view,angles)
         frame=self.frame_cache.get_or_create(key,lambda:self._frame(ref,size,color,view,camera))
@@ -180,6 +181,33 @@ class LDraw:
                     old[:,3]=combined*255;rgba[covered]=np.rint(old).astype(np.uint8)
         return Image.fromarray(rgba).resize(size,Image.Resampling.LANCZOS),frame['bounds']
 
+    def _wheel_axis(self,name,bounds,stack=frozenset()):
+        """Wheel back faces follow their axle, including rotated historical aliases."""
+        if name in stack or len(stack)>=16:return None
+        lines=self.read(name).splitlines()
+        description=lines[0] if lines else ''
+        if re.match(r'0\s+~?Moved to\b',description,re.I):
+            geometry=[line.split() for line in lines if re.match(r'^[1-5]\s',line)]
+            if len(geometry)==1 and geometry[0][0]=='1' and len(geometry[0])>=15:
+                fields=geometry[0];child=' '.join(fields[14:]).replace('\\','/').lower()
+                axis=self._wheel_axis(child,self.mesh(child)[3],stack|{name})
+                if axis is not None:
+                    transformed=np.array([float(v) for v in fields[5:14]]).reshape(3,3)@axis
+                    length=np.linalg.norm(transformed)
+                    if length:return transformed/length
+            return None
+        category=next((line[12:].strip() for line in lines if line.startswith('0 !CATEGORY ')),'')
+        wheel=bool(re.match(r'0\s+[~_=]?(?:(?:Train|Duplo|Fabuland)\s+)?(?:Wheel|Tyre)\b|0\s+[~_=]?Technic\s+(?:Wedge Belt|Pulley)\s+Wheel\b',description,re.I))
+        holder=bool(re.match(r'0\s+[~_=]?(?:(?:Train|Duplo|Fabuland)\s+)?Wheel\s+(?:Holder|Holding|Bearing)\b',description,re.I))
+        if holder or not (wheel or category in ('Wheel','Tyre')):return None
+        # The two radial spans are alike. Prefer the library's usual Z axle
+        # when all three spans coincide; aliases above retain the signed transform.
+        def difference(axis):
+            radial=[float(bounds[i]) for i in range(3) if i!=axis]
+            return abs(radial[0]-radial[1])/max(max(radial),1e-8)
+        axis=min((2,1,0),key=difference)
+        return np.eye(3)[axis]
+
     def _frame(self,ref,size,color,view,camera):
         """The surface, depth and projected edges do not depend on the ink style."""
         triangles,edges,conditional,bounds=self.mesh(ref)
@@ -188,6 +216,15 @@ class LDraw:
             right=np.array([1.,0,0]);up=np.array([0.,0,-1]);depth=np.array([0.,-1,0])
         elif view=='bottom':
             right=np.array([1.,0,0]);up=np.array([0.,0,1]);depth=np.array([0.,1,0])
+            axle=self._wheel_axis(self.resolve(ref),bounds)
+            if axle is not None:
+                depth=axle
+                if abs(depth[1])>.9:
+                    right=np.array([1.,0,0]);right-=depth*(right@depth);right/=np.linalg.norm(right)
+                    up=np.cross(right,depth)
+                else:
+                    up=np.array([0.,-1,0]);up-=depth*(up@depth);up/=np.linalg.norm(up)
+                    right=np.cross(up,depth)
         elif view=='side':
             right=np.array([1.,0,0]);up=np.array([0.,-1,0]);depth=np.array([0.,0,-1])
         else:
