@@ -249,6 +249,7 @@ class StoragePanel(QWidget):
         split=QSplitter(Qt.Orientation.Vertical);self.content_split=split;layout.addWidget(split,1)
         self.scene=QGraphicsScene(self);self.view=WallView(self.scene);self.view.setRenderHint(QPainter.RenderHint.Antialiasing);self.view.setTransformationAnchor(QGraphicsView.ViewportAnchor.AnchorViewCenter);self.view.setMinimumHeight(180);self.view.setToolTip(tr('Molette : zoomer. Maj + molette : faire défiler. Vue complète : afficher tous les meubles.'));split.addWidget(self.view)
         self.view.setAcceptDrops(True);self.view.drop_db=db;self.view.place_drop=self.drop_parts
+        self.view.setContextMenuPolicy(Qt.ContextMenuPolicy.CustomContextMenu);self.view.customContextMenuRequested.connect(self.drawer_context_menu)
         details=QWidget();d=QVBoxLayout(details);self.details=details;self.details_layout=d;details.installEventFilter(self);self.status=QLabel(tr('Crée un meuble puis associe les références de tes catalogues ou de ton stock aux tiroirs.'));self.status.setWordWrap(True);d.addWidget(self.status)
         self.results=QTableWidget(0,5);self.results.setHorizontalHeaderLabels([tr('Meuble'),tr('Emplacement'),tr('Référence'),tr('Pièce'),tr('Couleur')]);self.results.setSelectionBehavior(QAbstractItemView.SelectionBehavior.SelectRows);self.results.setEditTriggers(QAbstractItemView.EditTrigger.NoEditTriggers);self.results.horizontalHeader().setSectionResizeMode(QHeaderView.ResizeMode.Interactive);self.results.setMinimumHeight(70);self.results.setMaximumHeight(120);self.results.hide();d.addWidget(self.results)
         for column,width in enumerate((170,220,90,240,110)):self.results.setColumnWidth(column,width)
@@ -259,6 +260,8 @@ class StoragePanel(QWidget):
         catalogue=QPushButton(tr('Ajouter depuis un catalogue'));catalogue.clicked.connect(self.pick_catalogue);row.addWidget(catalogue)
         self.details_tabs=QTabWidget();self.details_tabs.addTab(details,tr('Contenu du tiroir'))
         self.stock_browser=StockToDrawers(db,engine,self.place_selected,self);self.stock_browser.selected.connect(self.selected.emit);self.stock_browser.opened.connect(self.open_stock_piece);self.details_tabs.addTab(self.stock_browser,tr('Pièces à ranger'))
+        self.stock_browser.plan_requested.connect(lambda:self.plan_storage(True))
+        self.stock_browser.target_wall_changed.connect(self.choose_storage_destination)
         self.details_tabs.currentChanged.connect(self.parts_mode_changed)
         split.addWidget(self.details_tabs);split.setSizes([350,350]);split.setStretchFactor(0,1);split.setStretchFactor(1,1);split.setChildrenCollapsible(False)
         self.search_timer=QTimer(self);self.search_timer.setSingleShot(True);self.search_timer.setInterval(180);self.search_timer.timeout.connect(self.search)
@@ -288,8 +291,12 @@ class StoragePanel(QWidget):
         current=preferred or self.wall.currentData();self.wall.blockSignals(True);self.wall.clear()
         for wall in store.walls(self.db):self.wall.addItem(wall['name'],wall['id'])
         index=self.wall.findData(current);self.wall.setCurrentIndex(max(0,index));self.wall.blockSignals(False);self.change_wall()
+    def choose_storage_destination(self,identity):
+        index=self.wall.findData(identity)
+        if index<0:return
+        self.wall.setCurrentIndex(index);self.focus_wall();self.details_tabs.setCurrentWidget(self.stock_browser)
     def change_wall(self,*_):
-        self.wall_id=self.wall.currentData();self.drawer_id=None;self.redraw();self.load_contents();self.search();self.fit()
+        self.wall_id=self.wall.currentData();self.drawer_id=None;self.stock_browser.reload_target_walls(self.wall_id);self.stock_browser.auto_sort.setEnabled(self.wall_id is not None);self.redraw();self.load_contents();self.search();self.fit()
     def overview_changed(self,*_):
         if not self.all_walls.isChecked() and self.arrange.isChecked():
             self.arrange.blockSignals(True);self.arrange.setChecked(False);self.arrange.blockSignals(False)
@@ -355,7 +362,7 @@ class StoragePanel(QWidget):
         if index<0:return False
         # Item mouse handlers must keep their scene objects alive until release.
         self.wall.blockSignals(True);self.wall.setCurrentIndex(index);self.wall.blockSignals(False)
-        self.wall_id=wall_id;self.drawers=self.wall_drawers.get(wall_id,[]);return True
+        self.wall_id=wall_id;self.stock_browser.set_target_wall(wall_id);self.drawers=self.wall_drawers.get(wall_id,[]);return True
     def choose_wall(self,wall_id):
         if self.activate_wall(wall_id):self.drawer_id=None;self.load_contents();self.highlight()
     def choose_drawer(self,drawer_id):
@@ -413,9 +420,13 @@ class StoragePanel(QWidget):
     def open_stock_piece(self,item):
         from .dialogs import RelationsDialog
         show_window(RelationsDialog(self.db,self.engine,item,self),self)
-    def plan_storage(self):
+    def plan_storage(self,from_parts=False):
         if self.wall_id is None:return
-        window=StoragePlanDialog(self.db,self.wall_id,self,self.refresh);show_window(window,self,refresh_counts=False);return window
+        options={}
+        if from_parts:
+            rows=self.stock_browser.selection() or self.stock_browser.rows
+            options={'entries':[(p['id'],p['chosen_color']) for p in rows],'from_catalogue':self.stock_browser.catalogue_mode(),'category':self.stock_browser.category.currentData() or ''}
+        window=StoragePlanDialog(self.db,self.wall_id,self,self.refresh,**options);window._storage_wall_id=self.wall_id;show_window(window,self,refresh_counts=False);return window
     def print_wall(self):
         if self.wall_id is None:return
         from .storage_printing import StoragePrintPreview
@@ -559,10 +570,24 @@ class StoragePanel(QWidget):
         captured_drawer=self.drawer_id
         if captured_drawer is None or not self.rows:return
         selected=[self.rows[row_index(self.table,index.row())] for index in self.table.selectionModel().selectedRows()]
-        if not selected and QMessageBox.question(self,tr('Retirer les références du tiroir'),tr('Retirer toutes les références de ce tiroir ? Les pièces restent dans le stock.'),QMessageBox.StandardButton.Yes|QMessageBox.StandardButton.No,QMessageBox.StandardButton.No)!=QMessageBox.StandardButton.Yes:return
-        try:count=store.unassign(self.db,captured_drawer,[(p['id'],p['chosen_color']) for p in selected] if selected else None)
+        return self.remove_drawer_references(captured_drawer,[(p['id'],p['chosen_color']) for p in selected] if selected else None)
+    def remove_drawer_references(self,drawer_id,entries=None):
+        if entries is None and QMessageBox.question(self,tr('Retirer les références du tiroir'),tr('Retirer toutes les références de ce tiroir ? Les pièces restent dans le stock.'),QMessageBox.StandardButton.Yes|QMessageBox.StandardButton.No,QMessageBox.StandardButton.No)!=QMessageBox.StandardButton.Yes:return
+        try:count=store.unassign(self.db,drawer_id,entries)
         except (ValueError,sqlite3.Error,OSError) as e:QMessageBox.warning(self,tr('Retrait impossible'),str(e));return
         self.refresh();return count
+    def drawer_context_menu(self,pos):
+        item=self.view.itemAt(pos)
+        if not isinstance(item,DrawerItem):return
+        drawer_id=item.drawer['id'];self.choose_drawer(drawer_id);parts=store.contents(self.db,drawer_id)
+        menu=QMenu(self);references=menu.addMenu(tr('Retirer une référence du tiroir'));references.setEnabled(bool(parts))
+        for part in parts[:30]:
+            label=part['source']+' '+part['ref']+' — '+part['name']+' · '+(part['chosen_color'] or tr('Non précisée'))
+            references.addAction(label,lambda checked=False,p=part:self.remove_drawer_references(drawer_id,[(p['id'],p['chosen_color'])]))
+        if len(parts)>30:
+            menu.addAction(tr('Choisir les références dans le tableau'),lambda:self.choose_drawer(drawer_id))
+        remove=menu.addAction(tr('Retirer toutes les références du tiroir…'),lambda:self.remove_drawer_references(drawer_id));remove.setEnabled(bool(parts))
+        menu.exec(self.view.viewport().mapToGlobal(pos))
     def refresh(self):
         if not self.isVisible():return
         self.redraw();self.load_contents();self.search()

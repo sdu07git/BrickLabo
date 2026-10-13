@@ -81,7 +81,11 @@ class Catalogue(QWidget):
         if kind!='set' and scope!='stock_sets':
             self.edit_labels_button=QPushButton(tr('Disposition de la sélection…'));self.edit_labels_button.clicked.connect(self.edit_selected_labels);buttons.addWidget(self.edit_labels_button)
         for label,target in [(tr('Ajouter au stock'),'stock'),(tr('Ajouter aux étiquettes à imprimer'),'queue')]:
-            b=QPushButton(label);b.clicked.connect(lambda checked=False,t=target:self.add_selected(t));buttons.addWidget(b)
+            b=QPushButton(label)
+            if kind=='set' and target=='stock':
+                b.setText(tr('Ajouter au stock…'));choices=QMenu(b);self.set_stock_choices(choices);b.setMenu(choices)
+            else:b.clicked.connect(lambda checked=False,t=target:self.add_selected(t))
+            buttons.addWidget(b)
         if scope=='catalogue' and kind!='set':
             self.drawer_button=QPushButton(tr('Associer à un tiroir…'));self.drawer_button.clicked.connect(self.assign_drawer);buttons.addWidget(self.drawer_button)
         b=QPushButton(tr('Copier vers catalogue alternatif'));b.clicked.connect(self.copy_selected);buttons.addWidget(b);layout.addLayout(buttons)
@@ -298,14 +302,28 @@ class Catalogue(QWidget):
         entries=[]
         try:
             for item in selected:
-                if item['kind']=='set' and target=='queue':
+                if target=='set_parts_stock':
+                    if item['kind']!='set':raise ValueError(tr('Sélectionne uniquement des sets.'))
+                    components=self.db.components(item,strict=True)
+                    if not components:raise ValueError(tr('Inventaire indisponible pour ')+item['ref'])
+                    multiplier=int(item.get('chosen_quantity',1))
+                    if multiplier<1:raise ValueError(tr('Quantité positive requise'))
+                    for part in components:
+                        native=self.db.get_item(part.get('id'));quantity=int(part.get('chosen_quantity',1))
+                        if not native or native['kind'] not in ('part','minifig') or quantity<1:raise ValueError(tr('Inventaire incomplet : ')+item['ref'])
+                        entries.append(('stock',native['id'],part.get('chosen_color',''),quantity*multiplier))
+                elif item['kind']=='set' and target=='queue':
                     components=self.db.components(item,strict=True)
                     if not components:raise ValueError(tr('Inventaire indisponible pour ')+item['ref'])
                     entries.extend((target,p['id'],p.get('chosen_color',''),p.get('chosen_quantity',1)) for p in components)
                 else:entries.append((target,item['id'],item.get('chosen_color',self.db.visual(item['id'])['color']),item.get('chosen_quantity',1)))
-            count=self.db.add_many(entries)
+            count=self.db.add_many(entries,tr('Ajout des inventaires de sets à Mon stock')) if target=='set_parts_stock' else self.db.add_many(entries)
         except ValueError as error:QMessageBox.warning(self,tr('Ajout interrompu'),str(error));return
         self.changed.emit();self.update_count();self.count.setText(self.count.text()+tf(' · {1} ajoutée(s)', None, count, None))
+
+    def set_stock_choices(self,menu):
+        menu.addAction(tr('Ajouter l’inventaire à Mon stock'),lambda:self.add_selected('set_parts_stock'))
+        menu.addAction(tr('Ajouter le set à Mon stock set'),lambda:self.add_selected('stock_sets'))
 
     def copy_selected(self):
         for row in self.selection():self.db.copy_alternative(row)
@@ -327,7 +345,9 @@ class Catalogue(QWidget):
         index=self.table.indexAt(pos)
         if index.isValid() and not self.table.selectionModel().isRowSelected(index.row(),index.parent()):self.table.selectRow(index.row())
         menu=QMenu(self);menu.addAction(tr('Ouvrir'),self.open_current)
-        menu.addAction(tr('Ajouter aux étiquettes'),lambda:self.add_selected('queue'));menu.addAction(tr('Ajouter au stock'),lambda:self.add_selected('stock'))
+        menu.addAction(tr('Ajouter aux étiquettes'),lambda:self.add_selected('queue'))
+        if self.kind=='set':self.set_stock_choices(menu)
+        else:menu.addAction(tr('Ajouter au stock'),lambda:self.add_selected('stock'))
         if self.kind!='set' and self.scope!='stock_sets':menu.addAction(tr('Disposition des étiquettes sélectionnées…'),self.edit_selected_labels)
         if self.scope=='catalogue' and self.kind!='set':menu.addAction(tr('Associer à un tiroir…'),self.assign_drawer)
         menu.addAction(tr('Colonnes…'),self.column_menu)
