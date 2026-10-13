@@ -45,6 +45,8 @@ class VisualEngine:
             stamp=(file_stamp(path),file_stamp(self.db.path.parent/'brickarchitect_ldraw.zip'),file_stamp(resources_directory()/'brickarchitect_ldraw.zip'))
             if path and (path!=self.ldraw_path or stamp!=self.ldraw_stamp):
                 renderer=LDraw(path,self.db.path.parent/'brickarchitect_ldraw.zip');renderer.cache_identity=(path,stamp)
+                links=self.db.setting('ldraw_header_links',{})
+                renderer.header_links=links if links.get('path')==path else {}
                 self.ldraw=renderer;self.ldraw_path=path;self.ldraw_stamp=stamp
             if not path:self.ldraw=None;self.ldraw_path='';self.ldraw_stamp=()
             return self.ldraw
@@ -197,6 +199,11 @@ class VisualEngine:
         camera=camera_for_item(self.db,item) if camera is None else camera
         from .brickarchitect import model_ref
         ref=model_ref(self.db,item)
+        if item['source'] in ('RB','BL'):
+            links=getattr(renderer,'header_links',{});source=item['source'];key=item['ref'].lower()
+            linked=links.get('models',{}).get(source,{}).get(key)
+            if linked:ref=linked
+            elif key in links.get('ambiguous',{}).get(source,[]):ref=item['ref']
         from .edge_style import style_for_item
         style=edge_settings if edge_settings is not None else style_for_item(self.db,item)
         options={'edge_strength':edge_strength if edge_strength is not None else style.get('legacy',0)}
@@ -208,8 +215,9 @@ class VisualEngine:
 
     def visuals(self,item,color=None,download=False,template=None,mode=None,_composition=True,cancelled=None):
         if cancelled and cancelled():return {},''
-        from .labels import template_for_item
+        from .labels import template_for_item,required_views
         template=template or template_for_item(item,self.db)
+        wanted=required_views(template)
         from .edge_style import style_for_item
         style=style_for_item(self.db,item,template)
         v=self.db.visual(item['id'])
@@ -224,7 +232,8 @@ class VisualEngine:
             try:
                 r=self.renderer()
                 if r:
-                    for view,key,sz in [('perspective','main',(620,420)),('top','top',(240,180)),('side','side',(240,160))]:
+                    for view,key,sz in [('perspective','main',(620,420)),('top','top',(240,180)),('side','side',(240,160)),('bottom','bottom',(240,180))]:
+                        if key not in wanted:continue
                         if cancelled and cancelled():return {},''
                         out[key],out['bounds']=self.render_3d(item,sz,chosen,view,edge_settings=style)
                 else:note=tr('LDraw non importé : photo si disponible.')
@@ -233,6 +242,8 @@ class VisualEngine:
         if 'main' not in out:
             try:out['main']=self.photo(item,download,chosen)
             except Exception as e:note=tr('Photo inaccessible : ')+str(e)
+        if 'bottom' in wanted and 'bottom' not in out:
+            note+=(('\n' if note else '')+tr('Vue de dessous indisponible sans modèle 3D LDraw.'))
         provenance=out.get('main').info.get('bricklabo_photo_source') if out.get('main') is not None else None
         if provenance:
             source={'BL':'BrickLink','RB':'Rebrickable'}[provenance['source']]
@@ -264,7 +275,7 @@ class Preview(QWidget):
         self.expand=QPushButton(tr('Agrandir l’aperçu'));self.expand.clicked.connect(self.enlarge);layout.addWidget(self.expand)
         self.camera_button=QPushButton(tr('Modifier l’angle du rendu 3D…'));self.camera_button.clicked.connect(self.edit_camera);layout.addWidget(self.camera_button)
         self.edit_one=QPushButton(tr('Modifier cette étiquette'));self.edit_one.clicked.connect(self.edit_individual);layout.addWidget(self.edit_one)
-        self.reset_one=QPushButton(tr('Réinitialiser la disposition'));self.reset_one.clicked.connect(self.reset_individual);self.reset_one.setToolTip(tr('Supprime la disposition et les arêtes personnalisées de cette étiquette pour suivre le modèle général.'));layout.addWidget(self.reset_one)
+        self.reset_one=QPushButton(tr('Réinitialiser la disposition'));self.reset_one.clicked.connect(self.reset_individual);self.reset_one.setToolTip(tr('Supprime la disposition et les arêtes personnalisées de cette étiquette pour suivre le modèle de sa catégorie ou le modèle général.'));layout.addWidget(self.reset_one)
         self.label_title=QLabel(tr('Aperçu de l’étiquette'));layout.addWidget(self.label_title)
         self.label_preview=LabelPreview();self.label_preview.double_clicked.connect(self.enlarge_label);self.label_preview.setToolTip(tr('Double-clic : agrandir l’étiquette'));self.label_preview.setMinimumHeight(100);self.label_preview.setAlignment(Qt.AlignmentFlag.AlignCenter);layout.addWidget(self.label_preview)
         self.mode=QComboBox();self.mode.addItem(tr('Rendu 3D LDraw'),'3d');self.mode.addItem(tr('Photo Rebrickable'),'photo_rb');self.mode.addItem(tr('Photo BrickLink'),'photo_bl');self.mode.addItem(tr('Image locale'),'local')

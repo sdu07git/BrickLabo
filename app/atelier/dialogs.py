@@ -51,6 +51,8 @@ class ImportDialog(QDialog):
         apirow=QHBoxLayout();self.rb_button=QPushButton(tr('Télécharger les exports complets Rebrickable'));self.rb_button.clicked.connect(self.download_rb);apirow.addWidget(self.rb_button)
         self.api_button=QPushButton(tr('Mise à jour API de la référence sélectionnée'));self.api_button.clicked.connect(self.update_api);apirow.addWidget(self.api_button);layout.addLayout(apirow)
         self.bl_button=QPushButton(tr('Ouvrir les téléchargements du catalogue BrickLink'));self.bl_button.clicked.connect(lambda:QDesktopServices.openUrl(QUrl('https://www.bricklink.com/catalogDownload.asp')));layout.addWidget(self.bl_button)
+        self.ldraw_button=QPushButton(tr('Mettre à jour LDraw (complete.zip)'));self.ldraw_button.clicked.connect(self.download_ldraw);layout.addWidget(self.ldraw_button)
+        self.ldraw_button.setToolTip(tr('Télécharge la bibliothèque officielle et vérifie l’archive avant de l’activer. Les fichiers externes et l’archive fournie avec le logiciel sont conservés.'))
         batches=QPushButton(tr('Charger les inventaires de sets par lots'))
         batches.clicked.connect(self.open_batches);layout.addWidget(batches)
         self.software_button=QPushButton(tr('Rechercher une mise à jour du logiciel'))
@@ -75,7 +77,7 @@ class ImportDialog(QDialog):
         if paths:self.paths=paths;self.refresh()
     def busy(self,value):
         self.running=value
-        for w in [self.choose,self.run_button,self.rb_button,self.api_button,self.close_button,self.software_button]:w.setEnabled(not value)
+        for w in [self.choose,self.run_button,self.rb_button,self.api_button,self.close_button,self.software_button,self.ldraw_button]:w.setEnabled(not value)
     def reject(self):
         if not self.running:super().reject()
     def start(self):
@@ -110,6 +112,17 @@ class ImportDialog(QDialog):
         if not item:QMessageBox.information(self,'API',tr('Sélectionne d’abord une référence dans le catalogue.'));return
         self.busy(True)
         async_task(self,lambda progress:API(self.db).enrich(item),lambda r:(self.busy(False),self.progress_label.setText(tr('Référence mise à jour.')),self.finished_import.emit()),lambda e:(self.busy(False),self.progress_label.setText(e)))
+
+    def download_ldraw(self):
+        from .ldraw_updates import update_library
+        self.busy(True)
+        def done(result):
+            self.busy(False);self.refresh();self.finished_import.emit()
+            note=tf('Bibliothèque LDraw mise à jour : {0} modèles.',result['parts'])
+            if result['removed_previous']:note+='\n'+tr('Ancienne archive gérée supprimée.')
+            if result['warnings']:note+='\n'+tr('Ancienne archive conservée : ')+ ' ; '.join(result['warnings'])
+            self.progress_label.setText(note)
+        async_task(self,lambda progress:update_library(self.db,progress),done,lambda error:(self.busy(False),self.progress_label.setText(tr('Mise à jour LDraw impossible : ')+error)),self.progress_label.setText)
 
 
 class DocumentsDialog(QDialog):

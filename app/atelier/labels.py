@@ -11,6 +11,14 @@ from pathlib import Path
 from PIL import Image, ImageDraw, ImageFont, ImageOps
 
 
+VISUAL_LAYER_TYPES = ('main', 'top', 'side', 'bottom')
+LABEL_PRESETS = (
+    ('classic', 'Vue principale, dessus et côté'),
+    ('main_centered', 'Vue principale centrée'),
+    ('main_bottom', 'Vue principale et vue de dessous'),
+)
+
+
 def font(size,bold=False,family='Segoe UI'):
     names=[Path(os.environ.get('WINDIR','C:/Windows'))/'Fonts'/('segoeuib.ttf' if bold else 'segoeui.ttf'),Path('/usr/share/fonts/truetype/dejavu')/('DejaVuSans-Bold.ttf' if bold else 'DejaVuSans.ttf')]
     if family and family.lower()!='segoe ui':names.insert(0,Path(family))
@@ -31,6 +39,43 @@ def default_template():
         {'type':'references','x':1,'y':20.6,'w':63,'h':1.8,'font':1.4,'bold':True,'color':'#202020','align':'center','visible':True,'locked':False},
         {'type':'category_band','x':1,'y':.4,'w':63,'h':3.8,'visible':True,'locked':False},
         {'type':'divider','x':41,'y':4.2,'w':.08,'h':15.8,'visible':True,'locked':False}]}
+
+
+def preset_template(preset, base=None):
+    """Replace the layout while retaining the chosen format and visual settings."""
+    import copy
+    if preset not in dict(LABEL_PRESETS):raise ValueError(tr('Modèle inconnu'))
+    defaults=default_template()
+    template=copy.deepcopy(base) if base is not None else copy.deepcopy(defaults)
+    layers={layer['type']:copy.deepcopy(layer) for layer in defaults['layers'] if layer['type']!='free'}
+    if preset=='main_centered':
+        layers['main'].update(x=2,y=4.7,w=61,h=15.2,auto_crop=True)
+        layers['category']['w']=46
+        layers['studs'].update(x=47.5,y=.4,w=16.5,h=3.8,font=2.2,color='#ffffff')
+        selected=[layers[k] for k in ('category','main','studs','references','category_band')]
+    elif preset=='main_bottom':
+        bottom={'type':'bottom','x':43,'y':8.1,'w':19,'h':9.9,'visible':True,'locked':False,'auto_crop':True}
+        caption={'type':'free','text':tr('Vue de dessous'),'x':42,'y':18.3,'w':21,'h':1.8,
+                 'font':1.2,'align':'center','color':'#202020','visible':True,'locked':False}
+        selected=[layers['category'],layers['main'],layers['studs'],bottom,caption,
+                  layers['references'],layers['category_band'],layers['divider']]
+    else:
+        selected=copy.deepcopy(defaults['layers'])
+        for layer in selected:
+            if layer['type']=='free':layer['text']=tr(layer['text'])
+    sx=template['width']/defaults['width'];sy=template['height']/defaults['height']
+    for layer in selected:
+        for key in ('x','w'):layer[key]*=sx
+        for key in ('y','h'):layer[key]*=sy
+    template.pop('model_name',None)
+    template.update(layers=selected,layout_schema=2,preset_id=preset)
+    return template
+
+
+def required_views(template):
+    """The large preview always needs main; hidden label views need no rendering."""
+    wanted={'main'}|{layer['type'] for layer in template.get('layers',[]) if layer.get('visible',True)}
+    return tuple(kind for kind in VISUAL_LAYER_TYPES if kind in wanted)
 
 
 def category_outline(category,db,template=None):
@@ -118,11 +163,16 @@ def independent_category(template):
     return template
 
 
-def template_for_item(item,db,base=None):
-    import copy
-    base=base or db.setting('template',default_template())
-    personal=db.setting(individual_template_key(item)) or db.setting('label_layout_item_'+str(item['id']))
-    if not personal or personal.get('use_general'):return independent_category(base)
+def template_for_item(item,db,base=None,read_setting=None):
+    setting=read_setting or db.setting
+    base=base or setting('template',default_template())
+    personal=setting(individual_template_key(item)) or setting('label_layout_item_'+str(item['id']))
+    if not personal or personal.get('use_general'):
+        category=setting('label_layout_categories',{}).get(item.get('category',''))
+        if category:
+            from .label_models import merge_layout
+            return merge_layout(base,category)
+        return independent_category(base)
     personal=independent_category(personal)
     # Keep one physical label format for a sheet; scale layouts when global size changes.
     sx=base['width']/personal['width'];sy=base['height']/personal['height']
@@ -155,11 +205,11 @@ def render_label(item,db,visuals,template=None,dpi=300):
             d.rectangle((x,y,x+lw,y+lh),fill=border);continue
         if layer['type']=='category_band':
             d.rounded_rectangle((max(bw,x-scale*.6),max(bw,y),min(w-bw,x+lw+scale*.6),y+lh),radius=.5*scale,fill=border);continue
-        if layer['type'] in ('main','top','side'):
+        if layer['type'] in VISUAL_LAYER_TYPES:
             im=active_visuals.get(layer['type'])
             if im:
                 im=im.convert('RGBA')
-                if layer.get('auto_crop',layer['type'] in ('top','side')):
+                if layer.get('auto_crop',layer['type'] in ('top','side','bottom')):
                     bbox=im.getchannel('A').getbbox()
                     if bbox:im=im.crop(bbox)
                 im=ImageOps.contain(im,(lw,lh),Image.Resampling.LANCZOS)

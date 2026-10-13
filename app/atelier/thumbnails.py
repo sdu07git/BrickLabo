@@ -26,7 +26,7 @@ class ThumbnailContext:
         from .preview import VisualEngine
         rgb=VisualEngine.color_rgb(self,item,color)
         return (item['id'],color,visual['mode'],visual['image'],visual['color'],
-                self.db.setting('default_color','#f3d55b'),self.db.setting('ldraw',''),tuple(camera_for_item(self.db,item).values()),self.db.setting('architect_model_'+str(item['id']),''),self.db.setting('architect_photo_choice_'+str(item['id']),''),0,file_stamp(visual['image']),file_stamp(self.db.setting('ldraw','')),file_stamp(self.db.path.parent/'brickarchitect_ldraw.zip'),file_stamp(resources_directory()/'brickarchitect_ldraw.zip'),('fixed-thin-edges',),'thumb-v5-fixed-edges',rgb,item.get('image',''),model_ref(self.db,item),tuple(info.get('BL',[])),tuple(info.get('RB',[])))
+                self.db.setting('default_color','#f3d55b'),self.db.setting('ldraw',''),tuple(camera_for_item(self.db,item).values()),self.db.setting('architect_model_'+str(item['id']),''),self.db.setting('architect_photo_choice_'+str(item['id']),''),0,file_stamp(visual['image']),file_stamp(self.db.setting('ldraw','')),file_stamp(self.db.path.parent/'brickarchitect_ldraw.zip'),file_stamp(resources_directory()/'brickarchitect_ldraw.zip'),('fixed-thin-edges',),'thumb-v6-ldraw-links',rgb,item.get('image',''),model_ref(self.db,item),tuple(info.get('BL',[])),tuple(info.get('RB',[])))
 
 
 

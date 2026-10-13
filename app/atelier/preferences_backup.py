@@ -26,7 +26,7 @@ def _portable_key(db,key):
 
 def _view_key(key):return key.startswith(('camera_','architect_model_','architect_photo_choice_','photo_choices_','edge_')) or key=='default_color'
 def _label_key(key):return key in ('template','templates') or key.startswith('label_layout_')
-def _private_or_cache(key):return key.startswith(('api_','stock_mocs_','moc_search_','rb_','bl_','alt_components_','export_rb_','stock_layout_','stock_migration_','downloads')) or key in ('build_excluded_entries','ldraw','output')
+def _private_or_cache(key):return key.startswith(('api_','stock_mocs_','moc_search_','rb_','bl_','alt_components_','export_rb_','stock_layout_','stock_migration_','downloads')) or key in ('build_excluded_entries','ldraw','ldraw_header_links','output')
 
 def _settings(db,predicate,strip_colors=False):
     result=[]
@@ -37,7 +37,7 @@ def _settings(db,predicate,strip_colors=False):
         value=json.loads(row['value'])
         if strip_colors and isinstance(value,dict):
             value=copy.deepcopy(value);value.pop('category_colors',None)
-            if row['key']=='templates':
+            if row['key'] in ('templates','label_layout_categories'):
                 for template in value.values():
                     if isinstance(template,dict):template.pop('category_colors',None)
         result.append({'target':target,'value':value})
@@ -57,7 +57,7 @@ def collect_family(db,family):
         return {'entries':entries}
     if family=='labels':return {'settings':_settings(db,_label_key,True)}
     if family=='colors':
-        templates=_settings(db,lambda key:key=='template' or key.startswith('label_layout_'))
+        templates=_settings(db,lambda key:key=='template' or key.startswith('label_layout_') and key!='label_layout_categories')
         colors=[{'target':r['target'],'value':r['value'].get('category_colors',{})} for r in templates if isinstance(r['value'],dict)]
         named=db.setting('templates',{})
         if isinstance(named,dict):colors.append({'target':{'key':'templates'},'named':True,'value':{name:t.get('category_colors',{}) for name,t in named.items() if isinstance(t,dict)}})

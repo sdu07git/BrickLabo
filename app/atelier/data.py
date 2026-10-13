@@ -434,12 +434,8 @@ class Database:
             from .set_inventory import import_inventory
             return import_inventory(self,selected[0],path,progress)['rows']
         if path.name.lower()=='complete.zip':
-            with zipfile.ZipFile(path) as z:
-                if 'ldraw/LDConfig.ldr' not in z.namelist(): raise ValueError(tr('Archive LDraw non reconnue'))
-            from .disk_space import reuse_ldraw
-            target=reuse_ldraw(self,path)
-            self.set_setting('ldraw',str(target))
-            self.run('INSERT OR REPLACE INTO imports VALUES(?,?,?,?)',('LDraw',str(target),time.strftime('%Y-%m-%d %H:%M'),0))
+            from .ldraw_updates import install_library
+            install_library(self,path,progress=lambda message:progress(message,0))
             return 0
         if path.suffix.lower()=='.zip':
             with zipfile.ZipFile(path) as z:
