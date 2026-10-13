@@ -1,4 +1,4 @@
-# Ressources BrickLabo v0.1.55
+# Ressources BrickLabo v0.1.56
 
 Le catalogue BrickArchitect se trouve dans `brickarchitect.json` et son supplément LDraw dans `brickarchitect_ldraw.zip`. Les couleurs, correspondances et traductions livrées restent dans ce dossier.
 
@@ -8,4 +8,4 @@ Origines et droits : [SOURCES_ET_LICENCES.html](../documentation/SOURCES_ET_LICE
 
 `button_help.json` contient les explications courtes des boutons en francais et anglais, avec les contextes particuliers.
 
-Téléchargements de la [release v0.1.55](https://github.com/sdu07git/BrickLabo/releases/tag/v0.1.55) : les ZIP Windows et Sources contiennent la bibliothèque officielle complete.zip.
+Téléchargements de la [release v0.1.56](https://github.com/sdu07git/BrickLabo/releases/tag/v0.1.56) : les ZIP Windows et Sources contiennent la bibliothèque officielle complete.zip.

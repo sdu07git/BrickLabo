@@ -57,8 +57,8 @@
       "en": "Shows the origins and licences of bundled resources."
     },
     "Annuler la dernière action": {
-      "fr": "Annule la dernière opération enregistrée sur le stock ou la file d’étiquettes.",
-      "en": "Undoes the last recorded stock or label-queue operation."
+      "fr": "Annule la dernière modification du stock, des étiquettes, de la couleur 3D ou du contenu des tiroirs.",
+      "en": "Undoes the last change to stock, labels, 3D colour or drawer contents."
     },
     "Importer une collection": {
       "fr": "Ouvre l’import de stock et la correction des lignes à vérifier.",
@@ -871,6 +871,10 @@
     "Rangement automatique…": {
       "fr": "Propose des tiroirs par catégorie et taille, les plus petites pièces en haut, à vérifier puis appliquer.",
       "en": "Proposes drawers by category and size, smallest parts at the top, to review then apply."
+    },
+    "Regrouper la sélection…": {
+      "fr": "Choisis le regroupement libre, sélectionne les références avec Ctrl ou Maj, puis choisis leur tiroir commun.",
+      "en": "Choose free grouping, select references using Ctrl or Shift, then choose their shared drawer."
     }
   },
   "contexts": {
@@ -945,6 +949,10 @@
     "DefaultColorDialog|Appliquer": {
       "fr": "Enregistre la couleur générale des pièces en 3D et actualise leurs aperçus.",
       "en": "Saves the general 3D part colour and refreshes its previews."
+    },
+    "StorageProposalPreview|Vue complète": {
+      "fr": "Recadre l’aperçu du meuble avec tous ses tiroirs proposés.",
+      "en": "Fits the proposed cabinet preview and all its drawers."
     }
   }
 }

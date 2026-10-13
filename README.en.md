@@ -1,8 +1,18 @@
-# BrickLabo — v0.1.55
+# BrickLabo — v0.1.56
 
-Windows desktop software for LEGO catalogues, stock, construction searches and labels. This version continues the published v0.1.54, based on the original v0.1.28.
+Windows desktop software for LEGO catalogues, stock, construction searches and labels. This version continues the published v0.1.55, based on the original v0.1.28.
 
-**Downloads v0.1.55 :** [complete Windows package](https://github.com/sdu07git/BrickLabo/releases/download/v0.1.55/BrickLabo_v0.1.55_Complet.zip) · [sources with resources](https://github.com/sdu07git/BrickLabo/releases/download/v0.1.55/BrickLabo_v0.1.55_Sources.zip) · [release notes](https://github.com/sdu07git/BrickLabo/releases/tag/v0.1.55).
+**Downloads v0.1.56 :** [complete Windows package](https://github.com/sdu07git/BrickLabo/releases/download/v0.1.56/BrickLabo_v0.1.56_Complet.zip) · [sources with resources](https://github.com/sdu07git/BrickLabo/releases/download/v0.1.56/BrickLabo_v0.1.56_Sources.zip) · [release notes](https://github.com/sdu07git/BrickLabo/releases/tag/v0.1.56).
+
+## Cabinet proposal preview, references per drawer and undo — v0.1.56
+
+In **My storage → Store by category and size in studs**, choose **By category and size**, **One reference per drawer** or **Free reference grouping**. The first keeps the smallest-to-largest size order. The second gives each reference its own drawer: sources and variants stay distinct; colours of the same reference stay together unless **Separate colours** is checked. In free mode, select several rows with Ctrl or Shift, then **Group the selection…** to choose their shared drawer. The **Proposed drawer** lists also allow individual adjustments. Reference and free modes include parts and minifigures with unknown dimensions without inventing their sizes.
+
+**Proposed cabinet** displays the cabinet front and proposed contents before saving. Assigned drawers are green; conflicts are red and prevent applying. Clicking a drawer selects its groups; double-clicking opens **Drawer contents**, with references, categories, colours, thumbnails and quantities. Quantities show global loose stock, not a physical distribution across drawers; an unowned catalogue reference shows 0. Reserved and mixed drawers remain visible. Zoom or drag the divider between the table and preview to inspect the cabinet. **Category** is also added to drawer contents in the main window.
+
+The **Parts to store** selection is captured when this window opens; without a selection, displayed references are used. **Prepare a proposal** recalculates the draft. Groups without space remain reported and unassigned. **Close** discards the draft; only **Apply proposed storage layout** writes assignments. Prepare a new proposal if stock or storage has changed meanwhile. Stock quantities remain unchanged.
+
+**Undo last action / Ctrl+Z** now also handles general 3D colour, individual reference colour, drawer assignments, reference moves between drawers, removals and applied storage proposals. The journal keeps one latest action and survives restarts. Storage undo restores affected drawer names and contents without changing stock. A new stock action becomes the latest action; incompatible later edits prevent undo instead of overwriting data.
 
 ## Background-task memory-crash fix — v0.1.55
 
@@ -195,7 +205,7 @@ The launcher is rebuilt with the original icon in seven classic Windows bitmap s
 Extract the entire complete ZIP into a new writable folder. Close the old version, keep a backup and copy **Donnees** beside the new **BrickLabo.exe**. Do not overlay installations. Migration preserves observed part totals and separates loose stock from tracked set components. It retains `Donnees/sauvegardes/avant_v37.sqlite` before moving legacy sets and never invents inventories for untracked sets.
 
 - **My stock** contains loose parts and minifigures. **My set stock** contains sets and their saved total component quantities. The lower table supports previews, header sorting and double-click opening. Removing a set can discard components or move them to loose stock.
-- **Undo last action / Ctrl+Z** reverses the latest stock or print-queue add, import, removal, quantity or colour change. Imports are single actions; the journal survives restarts and stock restores reset it. Later conflicting changes prevent undo.
+- **Undo last action / Ctrl+Z** reverses the latest stock or print-queue add, import, removal, quantity or colour change, as well as general or individual 3D colour and reference assignments to drawers. Imports are single actions; the journal survives restarts and stock restores reset it. Later conflicting changes prevent undo.
 - **Import collection** accepts Rebrickable parts / sets CSV and BrickLink CSV, tab-separated TXT or XML. Select the source and destination. Sets going to loose stock are decomposed; parts going to set stock attach to an owned set or a named personal inventory. Valid rows are added; unknown references, invalid colours or quantities and incomplete inventories remain pending in the correction assistant. Save corrections and resume ready rows, even after closing.
 - Rebrickable exports produce owned sets and loose parts CSV lists without double-counting tracked set components. Review colour and reference mappings. Personal ALT inventories are not official sets.
 - Build searches combine loose stock and enabled set components. The upper table shows set photos; drag a header boundary to resize any column, including **Set**. Photos stay with their references after sorting and use the shared cache. Reserve sets or coloured parts without deleting them. Each proposal uses the same stock independently.
@@ -239,8 +249,13 @@ Read [English help](documentation/AIDE.en.html) and [component licences](documen
 | 0.1.49 | Spaced top controls, external exports, stable thin-edge thumbnails, part drag-and-drop and assisted storage by category and size. |
 | 0.1.50 | Direct catalogue-to-drawer associations without stock or quantities; catalogue choices in Parts to store. |
 | 0.1.51 | Centred main view and main plus bottom view label presets; editable LDraw underside and rendering of requested views only. |
+| 0.1.52 | Named layouts with previews, categories and selections; official LDraw update. |
+| 0.1.53 | Two-second button help and API access documentation. |
+| 0.1.54 | Small screens, categories, set stock and destination cabinet for storage. |
+| 0.1.55 | Qt task lifetime, factory colour and wheel back faces. |
+| 0.1.56 | Cabinet proposal preview, one reference per drawer or free grouping, Category column and undo for 3D colours and assignments. |
 
-One bilingual [NOUVEAUTES.txt](documentation/NOUVEAUTES.txt) holds cumulative notes. This branch does not document a released 0.1.29. The 0.1.28b / Range variants were not used as the baseline. The [v0.1.51 validation report](documentation/CONTROLE_v0.1.51.txt) describes the checks for this delivery.
+One bilingual [NOUVEAUTES.txt](documentation/NOUVEAUTES.txt) holds cumulative notes. This branch does not document a released 0.1.29. The 0.1.28b / Range variants were not used as the baseline. The [v0.1.56 validation report](documentation/CONTROLE_v0.1.56.txt) describes the checks for this delivery.
 
 ## Development and diagnostics
 
@@ -254,7 +269,7 @@ For a compatible future update, publish a public stable release with tag `vX.Y.Z
 
 To develop from this repository, take `ressources/complete.zip` from the source ZIP attached to the release: this LDraw archive exceeds GitHub's regular file size limit. GitHub's automatic source archives contain neither this resource nor the Windows runtime. Both attached ZIPs are the delivered and tested version; the repository READMEs are adapted for publication.
 
-The [v0.1.51 validation report](documentation/CONTROLE_v0.1.51.txt) describes the checks for this delivery. Native Windows execution remains to be confirmed.
+The [v0.1.56 validation report](documentation/CONTROLE_v0.1.56.txt) describes the checks for this delivery. Native Windows execution remains to be confirmed.
 
 
 
@@ -262,3 +277,6 @@ The [v0.1.51 validation report](documentation/CONTROLE_v0.1.51.txt) describes th
 
 
 **Validation v0.1.55:** 627 stabilisation tests passed on Qt/Linux, followed by 141 targeted tests after the colour / wheel additions, including 11 new regressions; 800 additional tasks checked in eight processes. Signals are destroyed on the GUI thread with no remaining wrappers after cleanup. Launcher, dependencies and ZIPs checked. The exact Windows crash still needs a retest on the affected PC.
+
+
+**Validation v0.1.56:** 657 full-suite tests passed, followed by 86 targeted tests after individual colour undo was added and 49 after the final visual and help adjustments. The 21 new tests cover proposals, grouping, thumbnails, Category and persistent undo. Visual checks at 1360 × 790 and 800 × 540. Windows launcher and both ZIPs checked; native Windows execution remains to be confirmed.

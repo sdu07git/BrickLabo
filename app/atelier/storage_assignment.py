@@ -5,7 +5,8 @@ import re
 from fractions import Fraction
 
 from .data import normalize
-from .i18n import tr
+from .i18n import tr,tf
+from .action_undo import storage_change
 
 
 def stock_rows(db,query='',category='',unlocated=False,limit=None):
@@ -52,11 +53,13 @@ def place_entries(db,drawer_id,entries,source_drawer=None,from_catalogue=False):
             elif not c.execute("SELECT 1 FROM stock s JOIN items i ON i.id=s.item_id WHERE s.item_id=? AND s.color=? AND s.quantity>0 AND i.kind IN ('part','minifig')",(identity,color)).fetchone():
                 raise ValueError(tr('Cette référence n’est plus dans le stock en vrac.'))
         if source_drawer==drawer_id:return 0
-        before=c.total_changes
-        c.executemany('INSERT OR IGNORE INTO storage_contents(drawer_id,item_id,color) VALUES(?,?,?)',[(drawer_id,identity,color) for identity,color in entries])
-        if source_drawer is not None:
-            c.executemany('DELETE FROM storage_contents WHERE drawer_id=? AND item_id=? AND color=?',[(source_drawer,identity,color) for identity,color in entries])
-        return c.total_changes-before
+        with storage_change(c,[drawer_id]+([source_drawer] if source_drawer is not None else []),tr('Placement de pièces dans les tiroirs')):
+            before=c.total_changes
+            c.executemany('INSERT OR IGNORE INTO storage_contents(drawer_id,item_id,color) VALUES(?,?,?)',[(drawer_id,identity,color) for identity,color in entries])
+            if source_drawer is not None:
+                c.executemany('DELETE FROM storage_contents WHERE drawer_id=? AND item_id=? AND color=?',[(source_drawer,identity,color) for identity,color in entries])
+            changed=c.total_changes-before
+    return changed
 
 
 _NUMBER=r'(?:\d+\s+\d+/\d+|\d+/\d+|\d+(?:[.,]\d+)?)'
@@ -98,14 +101,29 @@ def _state(c,wall_id,entries=None,from_catalogue=False):
     return state
 
 
-def _fingerprint(state):return hashlib.sha256(json.dumps(state,sort_keys=True,ensure_ascii=False).encode()).hexdigest()
+def _fingerprint(state):return hashlib.sha256(json.dumps({k:v for k,v in state.items() if k!='preview'},sort_keys=True,ensure_ascii=False).encode()).hexdigest()
 
 
-def propose(db,wall_id,category='',split_colors=False,reorganize=False,entries=None,from_catalogue=False):
+def _preview_state(c,state,entries,category,from_catalogue):
+    drawers=state['drawers'];drawer_ids={d['id'] for d in drawers}
+    links=[link for link in state['links'] if link['drawer_id'] in drawer_ids]
+    candidates=state['catalogue'] if from_catalogue else state['stock']
+    wanted={(identity,str(color)) for identity,color in entries} if entries is not None else None
+    ids={item['id'] for item in candidates if (not category or item['category']==category) and (wanted is None or from_catalogue or (item['id'],item['color']) in wanted)}
+    ids|={link['item_id'] for link in links};items={};ordered=sorted(ids)
+    for start in range(0,len(ordered),800):
+        chunk=ordered[start:start+800]
+        items.update((row['id'],dict(row)) for row in c.execute('SELECT * FROM items WHERE id IN ('+','.join('?' for _ in chunk)+')',chunk))
+    return {'wall':state['wall'],'drawers':drawers,'links':links,'items':items,'stock':[row for row in state['stock'] if row['id'] in ids]}
+
+
+def propose(db,wall_id,category='',split_colors=False,reorganize=False,entries=None,from_catalogue=False,grouping='size'):
     """One group per category and footprint, ordered from few to many studs."""
     if reorganize and not category:raise ValueError(tr('Choisis une catégorie pour réorganiser ses tiroirs.'))
+    if grouping not in ('size','reference','manual'):raise ValueError(tr('Mode de rangement invalide.'))
     with db.read() as c:
         c.execute('BEGIN');state=_state(c,wall_id,entries,from_catalogue)
+        state['preview']=_preview_state(c,state,entries,category,from_catalogue)
     occupied={}
     for link in state['links']:occupied.setdefault(link['drawer_id'],[]).append(link)
     available=[];replaced=[]
@@ -129,15 +147,16 @@ def propose(db,wall_id,category='',split_colors=False,reorganize=False,entries=N
         if category and item['category']!=category:continue
         if (item['id'],item['color']) in located and (item['id'],item['color']) not in existing:continue
         dimensions=stud_dimensions(item['name'])
-        if not dimensions:unknown.append(item);continue
-        key=(item['category'],dimensions,item['source'] if split_colors else '',item['color'] if split_colors else '')
+        if not dimensions and grouping=='size':unknown.append(item);continue
+        dimensions=dimensions or ()
+        key=(item['category'],dimensions,item['id'] if grouping!='size' else None,item['source'] if split_colors else '',item['color'] if split_colors else '')
         group=groups.setdefault(key,{'category':item['category'],'dimensions':dimensions,'color':(item['source']+' '+item['color']) if split_colors else '', 'entries':[],'references':[]})
         group['entries'].append((item['id'],item['color']));group['references'].append(item['source']+' '+item['ref'])
-    ordered=sorted(groups.values(),key=lambda g:(normalize(g['category']),g['dimensions'][0]*g['dimensions'][1],g['dimensions'][1],g['dimensions'][0],g['dimensions'][2:],g['color']))
+    ordered=sorted(groups.values(),key=lambda g:(normalize(g['category']),not bool(g['dimensions']),g['dimensions'][0]*g['dimensions'][1] if g['dimensions'] else 0,g['dimensions'][1:] if g['dimensions'] else (),g['dimensions'][:1],g['references'][0] if grouping!='size' else '',g['color']))
     for index,group in enumerate(ordered):
-        group['drawer_id']=available[index]['id'] if index<len(available) else None
-        group['name']=' · '.join(v for v in (group['category'],dimensions_text(group['dimensions']),group['color']) if v)
-    return {'wall_id':wall_id,'fingerprint':_fingerprint(state),'available':available,'replaced':replaced,'groups':ordered,'unknown':unknown,'reorganize':reorganize,'entries':list(entries) if entries is not None else None,'from_catalogue':from_catalogue}
+        group['drawer_id']=available[index]['id'] if grouping!='manual' and index<len(available) else None
+        group['name']=' · '.join(v for v in ((group['references'][0] if grouping!='size' else ''),group['category'],dimensions_text(group['dimensions']),group['color']) if v)
+    return {'wall_id':wall_id,'fingerprint':_fingerprint(state),'available':available,'replaced':replaced,'groups':ordered,'unknown':unknown,'reorganize':reorganize,'entries':list(entries) if entries is not None else None,'from_catalogue':from_catalogue,'grouping':grouping,'shared_drawers':grouping=='manual','preview':state['preview']}
 
 
 def apply_proposal(db,plan,targets=None):
@@ -145,7 +164,7 @@ def apply_proposal(db,plan,targets=None):
     groups=plan['groups'];targets=list(targets if targets is not None else [g['drawer_id'] for g in groups])
     if len(targets)!=len(groups):raise ValueError(tr('Proposition de rangement invalide.'))
     chosen=[target for target in targets if target is not None];allowed={d['id'] for d in plan['available']}
-    if any(type(target) is not int or target not in allowed for target in chosen) or len(chosen)!=len(set(chosen)):
+    if any(type(target) is not int or target not in allowed for target in chosen) or not plan.get('shared_drawers') and len(chosen)!=len(set(chosen)):
         raise ValueError(tr('Choisis un tiroir disponible différent pour chaque groupe.'))
     if not chosen:raise ValueError(tr('Aucun tiroir choisi.'))
     placed={tuple(entry) for group,target in zip(groups,targets) if target is not None for entry in group['entries']}
@@ -155,13 +174,17 @@ def apply_proposal(db,plan,targets=None):
         c.execute('BEGIN IMMEDIATE')
         if _fingerprint(_state(c,plan['wall_id'],plan.get('entries'),plan.get('from_catalogue',False)))!=plan['fingerprint']:
             raise ValueError(tr('Le stock ou le rangement a changé. Prépare une nouvelle proposition.'))
-        if plan['reorganize']:
-            ids=sorted({link['drawer_id'] for link in plan['replaced']})
-            for identity in ids:
-                c.execute('DELETE FROM storage_contents WHERE drawer_id=?',(identity,))
-                c.execute("UPDATE storage_drawers SET name='' WHERE id=?",(identity,))
-        for group,target in zip(groups,targets):
-            if target is None:continue
-            c.execute('UPDATE storage_drawers SET name=? WHERE id=?',(group['name'],target))
-            c.executemany('INSERT OR IGNORE INTO storage_contents(drawer_id,item_id,color) VALUES(?,?,?)',[(target,identity,color) for identity,color in group['entries']])
-    return len(chosen),len(placed)
+        ids=sorted({link['drawer_id'] for link in plan['replaced']})
+        with storage_change(c,set(chosen)|set(ids),tr('Application d’une proposition de rangement')):
+            if plan['reorganize']:
+                for identity in ids:
+                    c.execute('DELETE FROM storage_contents WHERE drawer_id=?',(identity,))
+                    c.execute("UPDATE storage_drawers SET name='' WHERE id=?",(identity,))
+            buckets={}
+            for group,target in zip(groups,targets):
+                if target is not None:buckets.setdefault(target,[]).append(group)
+            for target,bucket in buckets.items():
+                name=bucket[0]['name'] if len(bucket)==1 else ' / '.join(dict.fromkeys(g['category'] for g in bucket))+' · '+tf('{0} référence(s)',len({identity for g in bucket for identity,color in g['entries']}))
+                c.execute('UPDATE storage_drawers SET name=? WHERE id=?',(name,target))
+                c.executemany('INSERT OR IGNORE INTO storage_contents(drawer_id,item_id,color) VALUES(?,?,?)',[(target,identity,color) for group in bucket for identity,color in group['entries']])
+    return len(set(chosen)),len(placed)

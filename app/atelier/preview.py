@@ -545,7 +545,10 @@ class Preview(QWidget):
                 updated=self.db.rows(f'SELECT id,quantity FROM {scope} WHERE item_id=? AND color=?',(self.item['id'],value))
                 if updated:self.item.update(entry_id=updated[0]['id'],chosen_quantity=updated[0]['quantity'])
             except Exception as e:QMessageBox.warning(self,tr('Couleur'),str(e));return
-        self.db.save_visual(self.item['id'],color=value)
+        if self.item.get('_scope') in ('stock','queue') and 'entry_id' in self.item:self.db.save_visual(self.item['id'],color=value)
+        else:
+            from .action_undo import set_visual_color
+            set_visual_color(self.db,self.item['id'],value)
         if 'chosen_color' in self.item:self.item['chosen_color']=value
         self.token+=1;self.visual_changed.emit(self.item)
 
