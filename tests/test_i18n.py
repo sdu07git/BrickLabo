@@ -57,6 +57,7 @@ class TranslationTests(unittest.TestCase):
   with tempfile.TemporaryDirectory() as folder:
    root=Path(folder);shutil.copytree(Path(i18n.__file__).parent,root/'atelier',ignore=shutil.ignore_patterns('__pycache__'))
    (root/'ressources'/'langues').mkdir(parents=True);shutil.copy(i18n.ROOT/'ressources'/'langues'/'en.json',root/'ressources'/'langues'/'en.json')
+   shutil.copy(i18n.ROOT/'ressources'/'button_help.json',root/'ressources'/'button_help.json')
    db=Database(root/'Donnees'/'atelier.sqlite');db.set_setting('ui_language','en');db.run("INSERT INTO items(source,kind,ref,name,category,search) VALUES('RB','part','3037','Slope original','Original category','slope')");db.add('stock',1,quantity=4)
    code='''import json
 from atelier.i18n import language,install_qt_language
@@ -69,11 +70,13 @@ from pathlib import Path
 app=QApplication([]);install_qt_language(app);db=Database(Path('Donnees/atelier.sqlite'))
 with patch('atelier.catalogue.Catalogue.load_thumbnails'),patch('atelier.preview.Preview.refresh'):
  w=MainWindow(db);w.startup_timer.stop()
+ w.show();app.processEvents()
  assert language()=='en'
  assert NAV[0][0]=='Rebrickable catalogue'
  assert dict(COLUMNS)['category']=='Category'
  assert 'Language' in [b.text() for b in w.findChildren(QPushButton)]
  assert 'Data updates' in [b.text() for b in w.findChildren(QPushButton)]
+ assert 'Opens catalogue imports' in next(b for b in w.findChildren(QPushButton) if b.text()=='Data updates').toolTip()
  assert 'Print labels' in [b.text() for b in w.findChildren(QPushButton)]
  assert db.get_item(1)['category']=='Original category'
  assert db.rows('SELECT quantity FROM stock')[0]['quantity']==4

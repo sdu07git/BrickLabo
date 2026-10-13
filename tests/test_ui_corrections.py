@@ -49,7 +49,7 @@ class CorrectionsTests(unittest.TestCase):
         self.assertTrue(d.is_set);self.assertEqual(d.parts[0]['ref'],'3005');self.assertEqual(d.parts[0]['chosen_quantity'],2);self.assertFalse(d.set_table.isHidden())
     def test_header_context_menu_and_search_width(self):
         cat=self.keep(Catalogue(self.db,kind='minifig'));cat.resize(800,550);cat.show();app.processEvents()
-        self.assertGreaterEqual(cat.search.width(),260);self.assertLessEqual(cat.category.width(),260)
+        self.assertGreaterEqual(cat.search.width(),130);self.assertLessEqual(cat.search.width(),240);self.assertLessEqual(cat.category.width(),210)
         def select_action():
             menu=app.activePopupWidget();self.assertIsInstance(menu,QMenu)
             action=next(a for a in menu.actions() if a.text()=='Année');action.trigger();menu.close()

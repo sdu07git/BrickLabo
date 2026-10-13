@@ -14,11 +14,11 @@ from PySide6.QtWidgets import (QDialog,QWidget,QVBoxLayout,QHBoxLayout,QSplitter
                               QFormLayout,QDoubleSpinBox,QCheckBox,QLineEdit,QColorDialog,QSlider,
                               QFileDialog,QLabel,QScrollArea,QInputDialog,QMessageBox)
 
-from .labels import default_template,render_label,template_for_item,individual_template_key,category_outline,independent_category
+from .labels import default_template,render_label,template_for_item,individual_template_key,category_outline,independent_category,preset_template,required_views,LABEL_PRESETS,VISUAL_LAYER_TYPES
 from .ui_common import pixmap,label_pixmap,transparency_brush
 
 
-NAMES={'category':tr('Texte de catégorie'),'category_band':tr('Bandeau de catégorie'),'main':tr('Vue principale / photo'),'top':tr('Vue de dessus'),'side':tr('Vue de côté'),
+NAMES={'category':tr('Texte de catégorie'),'category_band':tr('Bandeau de catégorie'),'main':tr('Vue principale / photo'),'top':tr('Vue de dessus'),'side':tr('Vue de côté'),'bottom':tr('Vue de dessous'),
        'reference':tr('Référence'),'references':tr('Références et dimensions'),'name':tr('Nom'),'studs':tr('Dimensions en tenons'),
        'dimensions':tr('Dimensions physiques'),'free':tr('Texte libre'),'divider':tr('Séparateur')}
 
@@ -54,17 +54,40 @@ class LayerHandle(QGraphicsRectItem):
 
 
 class LabelEditor(QDialog):
-    def __init__(self,db,engine,item,parent=None,individual=False):
+    def __init__(self,db,engine,item,parent=None,individual=False,targets=None,selection_mode=False):
         super().__init__(parent);self.db=db;self.engine=engine;self.item=item or {'id':0,'ref':'3001','name':'Brick 2 x 4','category':'Brick','source':'RB','kind':'part','image':''}
+        self.targets=[dict(target) for target in targets or []];self.selection_mode=selection_mode
         self.individual=individual;self.template_key=individual_template_key(self.item) if individual else 'template'
-        self.template=template_for_item(self.item,db) if individual else independent_category(db.setting('template',default_template()));self.updating=False;self.undo_stack=[];self.redo_stack=[]
-        try:self.visuals,_=engine.visuals(self.item,download=False,template=self.template)
-        except Exception:self.visuals={}
-        self.setWindowTitle(tr('Disposition de cette étiquette — ')+self.item['ref'] if individual else tr('Éditeur d’étiquettes'));self.setWindowFlags(self.windowFlags()|Qt.WindowType.WindowMaximizeButtonHint|Qt.WindowType.WindowMinimizeButtonHint);self.resize(1250,790)
+        self.template=template_for_item(self.item,db) if individual or selection_mode else independent_category(db.setting('template',default_template()));self.updating=False;self.undo_stack=[];self.redo_stack=[]
+        try:self.visuals,visual_note=engine.visuals(self.item,self.item.get('chosen_color'),download=False,template=self.template)
+        except Exception as error:self.visuals={};visual_note=tr('Aperçu indisponible : ')+str(error)
+        self.setWindowTitle(tf('Disposition de {0} étiquettes',len(self.targets)) if selection_mode else tr('Disposition de cette étiquette — ')+self.item['ref'] if individual else tr('Éditeur d’étiquettes'));self.setWindowFlags(self.windowFlags()|Qt.WindowType.WindowMaximizeButtonHint|Qt.WindowType.WindowMinimizeButtonHint);self.resize(1250,790)
         outer=QVBoxLayout(self);toolbar=QHBoxLayout();outer.addLayout(toolbar)
         for name,func in [(tr('Ajouter une pièce'),self.add_piece),(tr('Modèle de base'),self.reset),(tr('Charger…'),self.load),(tr('Enregistrer sous…'),self.save_as),(tr('Annuler'),self.undo),(tr('Rétablir'),self.redo)]:
             b=QPushButton(name);b.clicked.connect(func);toolbar.addWidget(b)
         toolbar.addStretch()
+        models=QHBoxLayout();outer.addLayout(models);models.addWidget(QLabel(tr('Modèles d’étiquette')))
+        from .model_selector import ModelSelector
+        self.presets=ModelSelector(self);self.presets.setObjectName('labelPresets');self.populate_models()
+        self.presets.setMinimumContentsLength(20);self.presets.setSizeAdjustPolicy(QComboBox.SizeAdjustPolicy.AdjustToMinimumContentsLengthWithIcon)
+        self.presets.setToolTip(tr('Survoler un modèle pour voir son étiquette à côté du menu. Cliquer modifie le brouillon ; Appliquer enregistre.'))
+        self.presets.setItemData(self.presets.findData('main_bottom'),tr('La vue de dessous nécessite un modèle 3D LDraw.'),Qt.ItemDataRole.ToolTipRole)
+        models.addWidget(self.presets,1);self.presets.currentIndexChanged.connect(self.select_preset)
+        self.save_model_button=QPushButton(tr('Enregistrer un modèle…'));self.save_model_button.clicked.connect(self.save_model);models.addWidget(self.save_model_button)
+        self.delete_model_button=QPushButton(tr('Supprimer ce modèle'));self.delete_model_button.clicked.connect(self.delete_model);models.addWidget(self.delete_model_button);self.update_model_button()
+        destination=QHBoxLayout();outer.addLayout(destination);destination.addWidget(QLabel(tr('Appliquer à')))
+        self.destination=QComboBox();self.destination.setObjectName('labelDestination')
+        self.destination.addItem(tr('Modèle général'),'general');self.destination.addItem(tr('Catégorie'),'category')
+        if self.targets:self.destination.addItem(tf('Sélection ({0} étiquettes)',len(self.targets)),'selection')
+        if individual:self.destination.addItem(tr('Cette étiquette'),'individual')
+        self.destination.setCurrentIndex(self.destination.findData('selection' if selection_mode else 'individual' if individual else 'general'));destination.addWidget(self.destination)
+        self.categories=QComboBox();self.categories.setObjectName('labelCategory')
+        self.categories.setMinimumContentsLength(18);self.categories.setSizeAdjustPolicy(QComboBox.SizeAdjustPolicy.AdjustToMinimumContentsLengthWithIcon)
+        categories={r['category'] for r in db.rows("SELECT DISTINCT category FROM items")}|{self.item.get('category','')}
+        for category in sorted(categories):self.categories.addItem(category or tr('Non classée'),category)
+        self.categories.setCurrentIndex(max(0,self.categories.findData(self.item.get('category',''))));destination.addWidget(self.categories,1)
+        self.reset_category_button=QPushButton(tr('Suivre le modèle général'));self.reset_category_button.clicked.connect(self.reset_category);destination.addWidget(self.reset_category_button)
+        self.destination_note=QLabel();self.destination_note.setWordWrap(True);outer.addWidget(self.destination_note)
         split=QSplitter();outer.addWidget(split,1)
         left=QWidget();lv=QVBoxLayout(left);lv.addWidget(QLabel(tr('Calques — premier plan en haut')));self.layer_list=QListWidget();lv.addWidget(self.layer_list,1)
         self.types=QComboBox()
@@ -93,27 +116,32 @@ class LabelEditor(QDialog):
         self.width=QDoubleSpinBox();self.height=QDoubleSpinBox();self.border=QDoubleSpinBox();self.margin=QDoubleSpinBox()
         for key,label,w in [('width',tr('Largeur totale (mm)'),self.width),('height',tr('Hauteur totale (mm)'),self.height),('border',tr('Contour (mm)'),self.border),('margin',tr('Repère de marge (mm)'),self.margin)]:
             w.setRange(.1,300);w.setDecimals(2);w.setValue(self.template[key]);w.valueChanged.connect(self.format_changed);form.addRow(label,w)
-            if individual and key in ('width','height'):w.setEnabled(False)
+            if (individual or selection_mode) and key in ('width','height'):w.setEnabled(False)
         self.transparent_background=QCheckBox(tr('Fond transparent'));self.transparent_background.setChecked(bool(self.template.get('transparent_background',False)));self.transparent_background.setToolTip(tr('Conserver la transparence dans les PNG, les PDF et l’impression. Les photos gardent leur propre fond.'));form.addRow(self.transparent_background)
         for key,name,func in [('category',tr('Contour de cette catégorie…'),self.category_color),('background',tr('Fond…'),lambda:self.format_color('background')),('outline',tr('Contour par défaut…'),lambda:self.format_color('outline'))]:
             b=QPushButton(name);b.clicked.connect(func);form.addRow(b)
+            if key=='category':self.category_color_button=b
             if key=='background':self.background_button=b;self.background_button.setEnabled(not self.transparent_background.isChecked())
         self.transparent_background.toggled.connect(self.background_changed)
         self.edge_controls=None;self.edge_revision=0;self.edge_running=False;self.edge_closed=False
         self.edge_timer=QTimer(self);self.edge_timer.setSingleShot(True);self.edge_timer.setInterval(140);self.edge_timer.timeout.connect(self.render_edge_preview)
-        self.edge_status=QLabel();self.edge_status.setWordWrap(True)
+        self.edge_status=QLabel(visual_note);self.edge_status.setWordWrap(True)
         if individual:
             form.addRow(QLabel(tr('Arêtes 3D de cette étiquette')))
-            self.edge_controls=EdgeControls(self.template.get('edge_settings') or general_style(db),inherit=True);self.edge_controls.set_settings(self.template.get('edge_settings') or general_style(db),self.template.get('edge_settings') is None);self.edge_controls.changed.connect(self.edge_changed);form.addRow(self.edge_controls);form.addRow(self.edge_status)
+            self.edge_controls=EdgeControls(self.template.get('edge_settings') or general_style(db),inherit=True);self.edge_controls.set_settings(self.template.get('edge_settings') or general_style(db),self.template.get('edge_settings') is None);self.edge_controls.changed.connect(self.edge_changed);form.addRow(self.edge_controls)
+        form.addRow(self.edge_status)
         scroll=QScrollArea();scroll.setWidgetResizable(True);scroll.setWidget(right);split.addWidget(scroll);split.setSizes([220,650,320])
         bottom=QHBoxLayout();bottom.addWidget(QLabel(tr('Déplace un champ ; tire son coin inférieur droit pour le redimensionner.')),1)
-        apply=QPushButton(tr('Appliquer'));apply.clicked.connect(self.apply);bottom.addWidget(apply);close=QPushButton(tr('Fermer'));close.clicked.connect(self.reject);bottom.addWidget(close);outer.addLayout(bottom)
+        self.apply_button=QPushButton(tr('Appliquer'));self.apply_button.clicked.connect(self.apply);bottom.addWidget(self.apply_button);close=QPushButton(tr('Fermer'));close.clicked.connect(self.reject);bottom.addWidget(close);outer.addLayout(bottom)
         self.layer_list.currentRowChanged.connect(self.fill_properties)
         from .label_pieces import bindings
-        self.piece_revision=repr(bindings(self.template));self.reload_layers()
+        self.piece_revision=repr((bindings(self.template),required_views(self.template)));self.reload_layers()
+        self.destination.currentIndexChanged.connect(self.destination_changed);self.categories.currentIndexChanged.connect(lambda:self.refresh_canvas());self.destination_changed()
 
     def snapshot(self):
         self.undo_stack.append(copy.deepcopy(self.template));self.redo_stack.clear()
+        self.template.pop('preset_id',None);self.template.pop('model_name',None)
+        self.presets.blockSignals(True);self.presets.setCurrentIndex(0);self.presets.blockSignals(False);self.update_model_button()
     def current(self):
         index=self.layer_list.currentRow();return self.template['layers'][index] if 0<=index<len(self.template['layers']) else None
     def reload_layers(self):
@@ -127,8 +155,8 @@ class LabelEditor(QDialog):
         self.updating=True
         for k,w in self.props.items():w.setValue(l.get(k,1.8))
         self.free.setText(l.get('text',''));self.family.setText(l.get('family','Segoe UI'));self.align.setCurrentText(l.get('align','left'))
-        image_layer=l['type'] in ('main','top','side');self.auto_crop.setEnabled(image_layer);self.image_zoom.setEnabled(image_layer);self.image_zoom_value.setEnabled(image_layer)
-        self.auto_crop.setChecked(l.get('auto_crop',l['type'] in ('top','side')));self.image_zoom_value.setValue(l.get('image_zoom',100))
+        image_layer=l['type'] in VISUAL_LAYER_TYPES;self.auto_crop.setEnabled(image_layer);self.image_zoom.setEnabled(image_layer);self.image_zoom_value.setEnabled(image_layer)
+        self.auto_crop.setChecked(l.get('auto_crop',l['type'] in ('top','side','bottom')));self.image_zoom_value.setValue(l.get('image_zoom',100))
         self.bold.setChecked(l.get('bold',False));self.visible.setChecked(l.get('visible',True));self.locked.setChecked(l.get('locked',False));self.updating=False
         for handle in getattr(self,'handles',[]):handle.setSelected(handle.index==self.layer_list.currentRow())
     def property_changed(self,*_):
@@ -136,7 +164,7 @@ class LabelEditor(QDialog):
         l=self.current()
         if not l:return
         self.snapshot();l.update({k:w.value() for k,w in self.props.items()});l.update(text=self.free.text(),family=self.family.text(),align=self.align.currentText(),bold=self.bold.isChecked(),visible=self.visible.isChecked(),locked=self.locked.isChecked());
-        if l['type'] in ('main','top','side'):l.update(auto_crop=self.auto_crop.isChecked(),image_zoom=self.image_zoom_value.value())
+        if l['type'] in VISUAL_LAYER_TYPES:l.update(auto_crop=self.auto_crop.isChecked(),image_zoom=self.image_zoom_value.value())
         self.refresh_canvas()
     def format_changed(self,*_):
         if self.updating:return
@@ -145,9 +173,9 @@ class LabelEditor(QDialog):
         self.refresh_canvas()
     def refresh_canvas(self):
         from .label_pieces import bindings
-        revision=repr(bindings(self.template))
+        revision=repr((bindings(self.template),required_views(self.template)))
         if revision!=self.piece_revision:self.piece_revision=revision;self.schedule_edge_preview()
-        im=render_label(self.item,self.db,self.visuals,self.template,dpi=254);self.view.setBackgroundBrush(self.transparency_brush if self.template.get('transparent_background',False) else QBrush());self.scene.clear();self.scene.addPixmap(pixmap(im));self.scene.setSceneRect(0,0,im.width,im.height);self.handles=[]
+        im=render_label(self.preview_item(),self.db,self.visuals,self.template,dpi=254);self.view.setBackgroundBrush(self.transparency_brush if self.template.get('transparent_background',False) else QBrush());self.scene.clear();self.scene.addPixmap(pixmap(im));self.scene.setSceneRect(0,0,im.width,im.height);self.handles=[]
         margin=self.template.get('margin',1)*10
         guide=self.scene.addRect(margin,margin,max(0,im.width-2*margin),max(0,im.height-2*margin),QPen(QColor('#aab2bc'),.5,Qt.PenStyle.DashLine));guide.setZValue(50)
         for i,l in enumerate(self.template['layers']):
@@ -186,12 +214,21 @@ class LabelEditor(QDialog):
     def background_changed(self,checked):
         if self.updating:return
         self.snapshot();self.template['transparent_background']=bool(checked);self.background_button.setEnabled(not checked);self.refresh_canvas()
-    def reset(self):self.snapshot();self.template=default_template();self.sync_format();self.reload_layers()
+    def select_preset(self,index):
+        if self.updating:return
+        key=self.presets.itemData(index)
+        if key:
+            model=self.model_template(key);self.snapshot();self.template=model;self.sync_format();self.reload_layers()
+        self.update_model_button()
+    def reset(self):
+        self.snapshot();self.template=preset_template('classic',self.template if self.destination.currentData()!='general' else None);self.sync_format();self.reload_layers()
     def sync_format(self):
         self.updating=True
         for k,w in [('width',self.width),('height',self.height),('border',self.border),('margin',self.margin)]:w.setValue(self.template[k])
         self.transparent_background.setChecked(bool(self.template.get('transparent_background',False)));self.background_button.setEnabled(not self.transparent_background.isChecked())
+        self.presets.setCurrentIndex(max(0,self.presets.findData('custom:'+self.template['model_name'] if self.template.get('model_name') else self.template.get('preset_id'))))
         self.updating=False
+        self.update_model_button()
         if self.edge_controls:
             self.edge_controls.set_settings(self.template.get('edge_settings') or general_style(self.db),self.template.get('edge_settings') is None);self.schedule_edge_preview()
     def undo(self):
@@ -212,8 +249,10 @@ class LabelEditor(QDialog):
         if path:
             try:
                 with open(path,encoding='utf-8') as f:t=json.load(f)
-                if not all(k in t for k in ('width','height','layers','category_colors','outline','background')):raise ValueError(tr('Modèle invalide'))
-                self.snapshot();self.template=independent_category(t);self.sync_format();self.reload_layers()
+                from .label_models import validate_template,merge_layout
+                t=validate_template(t)
+                if self.destination.currentData()!='general':t=merge_layout(self.template,t)
+                self.snapshot();self.template=t;self.sync_format();self.reload_layers()
             except Exception as e:QMessageBox.warning(self,tr('Modèle'),str(e))
     def edge_changed(self):
         if self.updating:return
@@ -221,7 +260,7 @@ class LabelEditor(QDialog):
         if self.edge_controls.inherit.isChecked():self.edge_controls.set_settings(general_style(self.db),True)
         self.schedule_edge_preview()
     def schedule_edge_preview(self):
-        self.edge_revision+=1;self.edge_status.setText(tr('Actualisation des arêtes…'));self.edge_timer.start(140)
+        self.edge_revision+=1;self.edge_status.setText(tr('Actualisation de l’aperçu…'));self.edge_timer.start(140)
     def render_edge_preview(self):
         if self.edge_closed or self.edge_running:return
         revision=self.edge_revision;template=copy.deepcopy(self.template);item=dict(self.item);self.edge_running=True
@@ -234,5 +273,74 @@ class LabelEditor(QDialog):
                 else:self.edge_status.setText(tr('Aperçu indisponible : ')+str(error))
             else:self.edge_timer.start(0)
         async_task(self,work,lambda result:finish(result),lambda error:finish(error=error))
-    def done(self,result):self.edge_closed=True;self.edge_revision+=1;self.edge_timer.stop();super().done(result)
-    def apply(self):self.db.set_setting(self.template_key,self.template);self.accept()
+    def populate_models(self):
+        self.presets.blockSignals(True);self.presets.clear();self.presets.addItem(tr('Disposition actuelle / personnalisée'),None)
+        for key,name in LABEL_PRESETS:self.presets.addItem(tr(name),key)
+        for name in sorted(self.db.setting('templates',{})):self.presets.addItem(tr('Personnalisé : ')+name,'custom:'+name)
+        key='custom:'+self.template['model_name'] if self.template.get('model_name') else self.template.get('preset_id')
+        self.presets.setCurrentIndex(max(0,self.presets.findData(key)));self.presets.blockSignals(False)
+
+    def model_template(self,key):
+        if key in dict(LABEL_PRESETS):return preset_template(key,self.template)
+        if isinstance(key,str) and key.startswith('custom:'):
+            from .label_models import merge_layout
+            model=self.db.setting('templates',{}).get(key[7:])
+            if model:return merge_layout(self.template,model)
+        return copy.deepcopy(self.template)
+
+    def update_model_button(self):
+        if hasattr(self,'delete_model_button'):self.delete_model_button.setEnabled(str(self.presets.currentData()).startswith('custom:'))
+
+    def save_model(self):
+        name,ok=QInputDialog.getText(self,tr('Enregistrer un modèle'),tr('Nom du modèle'),text=self.template.get('model_name',''))
+        if not ok:return
+        name=name.strip()
+        if name in self.db.setting('templates',{}) and QMessageBox.question(self,tr('Modèle'),tr('Remplacer ce modèle personnalisé ?'))!=QMessageBox.StandardButton.Yes:return
+        from .label_models import save_named_model
+        try:name=save_named_model(self.db,name,self.template)
+        except ValueError as error:QMessageBox.warning(self,tr('Modèle'),str(error));return
+        self.template['model_name']=name;self.template.pop('preset_id',None);self.populate_models();self.update_model_button()
+
+    def delete_model(self):
+        key=self.presets.currentData()
+        if not isinstance(key,str) or not key.startswith('custom:'):return
+        if QMessageBox.question(self,tr('Modèle'),tr('Supprimer ce modèle du menu ? Les étiquettes déjà réglées sont conservées.'))!=QMessageBox.StandardButton.Yes:return
+        from .label_models import delete_named_model
+        delete_named_model(self.db,key[7:]);self.template.pop('model_name',None);self.populate_models();self.update_model_button()
+
+    def preview_item(self):
+        item=dict(self.item)
+        if hasattr(self,'destination') and self.destination.currentData()=='category':item['category']=self.categories.currentData() or ''
+        return item
+
+    def destination_changed(self):
+        scope=self.destination.currentData();category=scope=='category';self.categories.setVisible(category);self.reset_category_button.setVisible(category)
+        if scope!='general':
+            base=self.db.setting('template',default_template())
+            if (self.template['width'],self.template['height'])!=(base['width'],base['height']):
+                from .label_models import merge_layout
+                current=copy.deepcopy(self.template);current.update(width=base['width'],height=base['height'])
+                self.template=merge_layout(current,self.template);self.sync_format();self.reload_layers()
+        self.width.setEnabled(scope=='general');self.height.setEnabled(scope=='general')
+        self.category_color_button.setEnabled(scope in ('general','individual'))
+        if self.edge_controls:self.edge_controls.setEnabled(scope=='individual')
+        notes={'general':tr('Modifie les étiquettes qui suivent le modèle général.'),'category':tr('Modifie toutes les étiquettes de cette catégorie. Les dispositions individuelles restent prioritaires.'),'selection':tr('Brouillon commun à la sélection capturée à l’ouverture. Couleurs, quantités, angles et arêtes propres à chaque étiquette conservés.'),'individual':tr('Modifie uniquement cette étiquette.')}
+        self.destination_note.setText(notes[scope]);self.refresh_canvas()
+
+    def reset_category(self):
+        from .label_models import set_category_model
+        set_category_model(self.db,self.categories.currentData(),None);self.accept()
+
+    def done(self,result):
+        self.presets.close_preview();self.edge_closed=True;self.edge_revision+=1;self.edge_timer.stop();super().done(result)
+
+    def apply(self):
+        from .label_models import apply_selection,set_category_model,validate_template,merge_layout
+        try:
+            scope=self.destination.currentData();template=validate_template(self.template)
+            if scope=='selection':self.applied_count=apply_selection(self.db,self.targets,template)
+            elif scope=='category':set_category_model(self.db,self.categories.currentData(),template)
+            elif scope=='individual':self.db.set_setting(individual_template_key(self.item),template)
+            else:self.db.set_setting('template',template)
+        except (ValueError,OSError) as error:QMessageBox.warning(self,tr('Application impossible'),str(error));return
+        self.accept()

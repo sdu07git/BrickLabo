@@ -9,7 +9,7 @@ from PySide6.QtWidgets import (QWidget,QVBoxLayout,QHBoxLayout,QLabel,QLineEdit,
                               QPushButton,QTableWidget,QTableWidgetItem,QAbstractItemView,QMenu,
                               QMessageBox,QInputDialog,QSizePolicy,QSplitter,QGroupBox,QScrollArea)
 
-from .ui_common import edit_item,async_task,pixmap,FlowLayout
+from .ui_common import edit_item,async_task,pixmap,FlowLayout,HorizontalControls
 
 
 COLUMNS=[('architect_rank',tr('Classement')),('ldraw_model',tr('Modèles LDraw')),('ref',tr('Référence')),('name',tr('Nom')),('category',tr('Catégorie')),('has_print',tr('Sérigraphie')),('has_sticker',tr('Sticker')),('image',tr('Aperçu 3D / photo')),
@@ -37,25 +37,27 @@ class Catalogue(QWidget):
             if 'imported_at' not in self.visible_columns:self.visible_columns.insert(self.visible_columns.index('image') if 'image' in self.visible_columns else len(self.visible_columns),'imported_at')
             self.db.set_setting(self.key,self.visible_columns);self.db.set_setting('import_date_column_added_'+self.key,True)
         outer=QVBoxLayout(self);outer.setContentsMargins(0,0,0,0);self.controls_scroll=QScrollArea();self.controls_scroll.setWidgetResizable(True);body=QWidget();layout=QVBoxLayout(body);layout.setContentsMargins(0,0,0,0);layout.setSizeConstraint(QVBoxLayout.SizeConstraint.SetMinimumSize);self.controls_scroll.setWidget(body);outer.addWidget(self.controls_scroll)
-        filters=FlowLayout();self.search=QLineEdit();self.search.setMinimumWidth(260);self.search.setPlaceholderText(tr('Rechercher : référence, nom, catégorie, 1x1 ou 1 x 1…'));layout.addWidget(self.search)
-        self.category=QComboBox();self.category.setMinimumWidth(150);self.category.setMaximumWidth(260);self.category.setSizeAdjustPolicy(QComboBox.SizeAdjustPolicy.AdjustToMinimumContentsLengthWithIcon);self.category.setMinimumContentsLength(18);filters.addWidget(self.category)
+        self.filter_scroll=HorizontalControls();layout.addWidget(self.filter_scroll);filters=self.filter_scroll.row
+        self.filter_scroll.setAccessibleName(tr('Recherche et filtres du catalogue'))
+        self.search=QLineEdit();self.search.setMinimumWidth(130);self.search.setMaximumWidth(240);self.search.setPlaceholderText(tr('Rechercher…'));self.search.setAccessibleName(tr('Rechercher dans le catalogue'));self.search.setToolTip(tr('Rechercher : référence, nom, catégorie, 1x1 ou 1 x 1…'));filters.addWidget(self.search)
+        from .category_tags import CheckableCategoryBox
+        self.category=CheckableCategoryBox();self.category.setMinimumWidth(190);self.category.setMaximumWidth(210);self.category.setSizeAdjustPolicy(QComboBox.SizeAdjustPolicy.AdjustToMinimumContentsLengthWithIcon);self.category.setMinimumContentsLength(14);filters.addWidget(self.category)
         self.year=None
         if kind=='set' and scope=='catalogue':
             self.year=QComboBox();self.year.setMinimumWidth(150);self.year.setMaximumWidth(200);self.year.setAccessibleName(tr('Année de sortie du set'));self.year.setToolTip(tr('Afficher les sets de l’année choisie'));filters.addWidget(self.year)
         columns=QPushButton(tr('Colonnes'));columns.clicked.connect(self.column_menu);filters.addWidget(columns)
+        self.filters_button=QPushButton(tr('Filtres avancés…'));self.filters_button.clicked.connect(self.advanced_filters);filters.addWidget(self.filters_button)
+        if kind!='set':
+            self.decorated_button=QPushButton();self.decorated_button.setCheckable(True);self.decorated_button.setChecked(self.hide_decorated);self.update_decorated_button();self.decorated_button.toggled.connect(self.toggle_decorated);filters.addWidget(self.decorated_button)
         if source=='ALT':
             b=QPushButton(tr('Ajouter'));b.clicked.connect(self.new_alternative);filters.addWidget(b)
             if scope=='catalogue':
                 b=QPushButton(tr('Supprimer'));b.clicked.connect(self.delete_selected);filters.addWidget(b)
-        layout.addLayout(filters)
-        from .category_tags import TagBar
-        self.category_tags=TagBar();self.category_tags.removed.connect(self.remove_category_tag);self.category_tags.set_tags([]);layout.addWidget(self.category_tags)
-        filter_row=FlowLayout();self.filters_button=QPushButton(tr('Filtres avancés…'));self.filters_button.clicked.connect(self.advanced_filters);filter_row.addWidget(self.filters_button)
+        filter_row=FlowLayout()
         self.reference_tag=QPushButton();self.reference_tag.setToolTip(tr('Retirer le filtre de référence exacte'));self.reference_tag.clicked.connect(self.reset);self.reference_tag.hide();filter_row.addWidget(self.reference_tag);layout.addLayout(filter_row)
         if kind=='set' and scope=='catalogue':
-            self.moc_search_button=QPushButton(tr('MOC par mot clé / créateur'));self.moc_search_button.setToolTip(tr('Rechercher sur Rebrickable dans tous les MOC et alternatives, sans filtre de stock.'));self.moc_search_button.clicked.connect(self.search_mocs);filter_row.addWidget(self.moc_search_button)
-        if kind!='set':
-            row=QHBoxLayout();self.decorated_button=QPushButton(tr('Masquer stickers et sérigraphies'));self.decorated_button.setCheckable(True);self.decorated_button.setChecked(self.hide_decorated);self.decorated_button.setText(tr('Réafficher stickers et sérigraphies') if self.hide_decorated else tr('Masquer stickers et sérigraphies'));self.decorated_button.toggled.connect(self.toggle_decorated);row.addWidget(self.decorated_button);row.addStretch();layout.addLayout(row)
+            self.moc_search_button=QPushButton(tr('MOC par mot clé / créateur'));self.moc_search_button.setToolTip(tr('Rechercher sur Rebrickable dans tous les MOC et alternatives, sans filtre de stock.'));self.moc_search_button.clicked.connect(self.search_mocs);filters.addWidget(self.moc_search_button)
+        filters.addStretch()
         self.table=QTableWidget();self.table.setSelectionBehavior(QAbstractItemView.SelectionBehavior.SelectRows);self.table.setSelectionMode(QAbstractItemView.SelectionMode.ExtendedSelection)
         self.table.setEditTriggers(QAbstractItemView.EditTrigger.NoEditTriggers);self.table.setAlternatingRowColors(True);self.table.verticalHeader().hide()
         self.table.horizontalHeader().setSectionsMovable(True);self.table.horizontalHeader().setStretchLastSection(True)
@@ -76,27 +78,43 @@ class Catalogue(QWidget):
         self.page_size=QComboBox();self.page_size.addItems(['50','100','200']);self.page_size.setCurrentText('100');self.page_size.currentTextChanged.connect(lambda _:self.reset());footer.addWidget(self.page_size)
         layout.addLayout(footer)
         buttons=FlowLayout()
+        if kind!='set' and scope!='stock_sets':
+            self.edit_labels_button=QPushButton(tr('Disposition de la sélection…'));self.edit_labels_button.clicked.connect(self.edit_selected_labels);buttons.addWidget(self.edit_labels_button)
         for label,target in [(tr('Ajouter au stock'),'stock'),(tr('Ajouter aux étiquettes à imprimer'),'queue')]:
-            b=QPushButton(label);b.clicked.connect(lambda checked=False,t=target:self.add_selected(t));buttons.addWidget(b)
+            b=QPushButton(label)
+            if kind=='set' and target=='stock':
+                b.setText(tr('Ajouter au stock…'));choices=QMenu(b);self.set_stock_choices(choices);b.setMenu(choices)
+            else:b.clicked.connect(lambda checked=False,t=target:self.add_selected(t))
+            buttons.addWidget(b)
         if scope=='catalogue' and kind!='set':
             self.drawer_button=QPushButton(tr('Associer à un tiroir…'));self.drawer_button.clicked.connect(self.assign_drawer);buttons.addWidget(self.drawer_button)
         b=QPushButton(tr('Copier vers catalogue alternatif'));b.clicked.connect(self.copy_selected);buttons.addWidget(b);layout.addLayout(buttons)
         self.timer=QTimer(self);self.timer.setSingleShot(True);self.timer.setInterval(250);self.timer.timeout.connect(self.reset)
         self.search.textChanged.connect(lambda _:self.timer.start());self.category.currentIndexChanged.connect(self.category_changed)
+        self.category.values_changed.connect(self.categories_checked)
         if self.year is not None:self.year.currentIndexChanged.connect(lambda _:self.reset() if not self.loading else None)
         self.reload_categories();self.reload()
 
     def category_changed(self):
         if self.loading:return
         self.advanced.pop('categories',None);self.refresh_filter_tags();self.reset()
+    def categories_checked(self,values):
+        if self.loading:return
+        if values:self.advanced['categories']=list(values)
+        else:self.advanced.pop('categories',None)
+        self.refresh_filter_tags();self.reset()
+    def update_decorated_button(self):
+        self.decorated_button.setText(tr('Réafficher pièces décorées') if self.hide_decorated else tr('Masquer pièces décorées'))
+        self.decorated_button.setToolTip(tr('Réafficher les pièces avec stickers et sérigraphies dans le tableau.') if self.hide_decorated else tr('Masquer les pièces avec stickers et sérigraphies dans le tableau.'))
     def refresh_filter_tags(self):
-        values=self.advanced.get('categories',[]);self.category_tags.set_tags(values)
-        self.category.setItemText(0,tr('Catégories sélectionnées : ')+str(len(values)) if values else tr('Toutes les catégories'))
+        values=self.advanced.get('categories') or ([self.category.currentData()] if self.category.currentData() else [])
+        self.category.set_values(values)
         self.filters_button.setText(tr('Filtres avancés…')+(' ('+str(len(self.advanced))+')' if self.advanced else ''))
     def remove_category_tag(self,value):
         values=[v for v in self.advanced.get('categories',[]) if v!=value]
         if values:self.advanced['categories']=values
         else:self.advanced.pop('categories',None)
+        self.category.set_values(values)
         self.refresh_filter_tags();self.reset()
 
     def advanced_filters(self):
@@ -121,7 +139,7 @@ class Catalogue(QWidget):
         self.hide_decorated=bool(state.get('hide_decorated',False))
         if hasattr(self,'decorated_button'):
             self.decorated_button.blockSignals(True);self.decorated_button.setChecked(self.hide_decorated);self.decorated_button.blockSignals(False)
-            self.decorated_button.setText(tr('Réafficher stickers et sérigraphies') if self.hide_decorated else tr('Masquer stickers et sérigraphies'))
+            self.update_decorated_button()
         self.db.set_setting('hide_decorated_'+self.key,self.hide_decorated)
         self.advanced=dict(state.get('advanced',{}))
         if self.advanced.get('categories'):self.category.setCurrentIndex(0)
@@ -135,6 +153,7 @@ class Catalogue(QWidget):
         if self.advanced.get('categories'):self.category.setItemText(0,tr('Catégories sélectionnées : ')+str(len(self.advanced['categories'])))
         idx=self.category.findText(current)
         if idx>=0:self.category.setCurrentIndex(idx)
+        self.refresh_filter_tags()
         if self.year is not None:
             selected=self.year.currentData();self.year.clear();self.year.addItem(tr('Toutes les années'),'')
             for year in self.db.years(self.source,self.kind):
@@ -145,7 +164,7 @@ class Catalogue(QWidget):
 
     def toggle_decorated(self,checked):
         self.hide_decorated=checked;self.db.set_setting('hide_decorated_'+self.key,checked)
-        self.decorated_button.setText(tr('Réafficher stickers et sérigraphies') if checked else tr('Masquer stickers et sérigraphies'));self.reset()
+        self.update_decorated_button();self.reset()
 
     def reset(self):self.reference_filter=None;self.reference_tag.hide();self.page=1;self.ids.clear();self.reload()
 
@@ -283,14 +302,28 @@ class Catalogue(QWidget):
         entries=[]
         try:
             for item in selected:
-                if item['kind']=='set' and target=='queue':
+                if target=='set_parts_stock':
+                    if item['kind']!='set':raise ValueError(tr('Sélectionne uniquement des sets.'))
+                    components=self.db.components(item,strict=True)
+                    if not components:raise ValueError(tr('Inventaire indisponible pour ')+item['ref'])
+                    multiplier=int(item.get('chosen_quantity',1))
+                    if multiplier<1:raise ValueError(tr('Quantité positive requise'))
+                    for part in components:
+                        native=self.db.get_item(part.get('id'));quantity=int(part.get('chosen_quantity',1))
+                        if not native or native['kind'] not in ('part','minifig') or quantity<1:raise ValueError(tr('Inventaire incomplet : ')+item['ref'])
+                        entries.append(('stock',native['id'],part.get('chosen_color',''),quantity*multiplier))
+                elif item['kind']=='set' and target=='queue':
                     components=self.db.components(item,strict=True)
                     if not components:raise ValueError(tr('Inventaire indisponible pour ')+item['ref'])
                     entries.extend((target,p['id'],p.get('chosen_color',''),p.get('chosen_quantity',1)) for p in components)
                 else:entries.append((target,item['id'],item.get('chosen_color',self.db.visual(item['id'])['color']),item.get('chosen_quantity',1)))
-            count=self.db.add_many(entries)
+            count=self.db.add_many(entries,tr('Ajout des inventaires de sets à Mon stock')) if target=='set_parts_stock' else self.db.add_many(entries)
         except ValueError as error:QMessageBox.warning(self,tr('Ajout interrompu'),str(error));return
         self.changed.emit();self.update_count();self.count.setText(self.count.text()+tf(' · {1} ajoutée(s)', None, count, None))
+
+    def set_stock_choices(self,menu):
+        menu.addAction(tr('Ajouter l’inventaire à Mon stock'),lambda:self.add_selected('set_parts_stock'))
+        menu.addAction(tr('Ajouter le set à Mon stock set'),lambda:self.add_selected('stock_sets'))
 
     def copy_selected(self):
         for row in self.selection():self.db.copy_alternative(row)
@@ -312,7 +345,10 @@ class Catalogue(QWidget):
         index=self.table.indexAt(pos)
         if index.isValid() and not self.table.selectionModel().isRowSelected(index.row(),index.parent()):self.table.selectRow(index.row())
         menu=QMenu(self);menu.addAction(tr('Ouvrir'),self.open_current)
-        menu.addAction(tr('Ajouter aux étiquettes'),lambda:self.add_selected('queue'));menu.addAction(tr('Ajouter au stock'),lambda:self.add_selected('stock'))
+        menu.addAction(tr('Ajouter aux étiquettes'),lambda:self.add_selected('queue'))
+        if self.kind=='set':self.set_stock_choices(menu)
+        else:menu.addAction(tr('Ajouter au stock'),lambda:self.add_selected('stock'))
+        if self.kind!='set' and self.scope!='stock_sets':menu.addAction(tr('Disposition des étiquettes sélectionnées…'),self.edit_selected_labels)
         if self.scope=='catalogue' and self.kind!='set':menu.addAction(tr('Associer à un tiroir…'),self.assign_drawer)
         menu.addAction(tr('Colonnes…'),self.column_menu)
         item=dict(self.rows[index.row()]) if index.isValid() and index.row()<len(self.rows) else None
@@ -326,6 +362,18 @@ class Catalogue(QWidget):
             menu.addAction(tr('Changer la quantité'),self.change_quantity);menu.addAction(tr('Changer la couleur'),self.change_color)
         if self.source=='ALT':menu.addAction(tr('Modifier la référence'),self.edit_alternative)
         menu.exec(self.table.viewport().mapToGlobal(pos))
+
+    def edit_selected_labels(self):
+        selected=self.selection()
+        if not selected:QMessageBox.information(self,tr('Sélection'),tr('Sélectionne une ou plusieurs lignes.'));return
+        if not self.engine:return
+        from .editor import LabelEditor
+        from .windows import application_owner
+        owner=application_owner(self)
+        def saved(result):
+            if result and hasattr(owner,'preview'):owner.preview.refresh()
+        window=LabelEditor(self.db,self.engine,selected[0],self,targets=selected,selection_mode=True)
+        show_window(window,self,saved,refresh_counts=False);return window
 
     def show_alternates(self,item):
         from .alternates import AlternatesDialog

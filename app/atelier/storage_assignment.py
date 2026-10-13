@@ -81,23 +81,31 @@ def dimensions_text(dimensions):
     return ' × '.join(format(value,'g').replace('.',',') for value in dimensions)
 
 
-def _state(c,wall_id):
+def _state(c,wall_id,entries=None,from_catalogue=False):
     wall=c.execute('SELECT * FROM storage_walls WHERE id=?',(wall_id,)).fetchone()
     if not wall:raise ValueError(tr('Meuble introuvable.'))
-    return {'wall':dict(wall),
+    state={'wall':dict(wall),
             'drawers':[dict(r) for r in c.execute('SELECT * FROM storage_drawers WHERE wall_id=? ORDER BY row,col',(wall_id,))],
             'links':[dict(r) for r in c.execute('SELECT p.*,i.category,i.source,i.ref,i.name FROM storage_contents p JOIN items i ON i.id=p.item_id ORDER BY p.drawer_id,p.item_id,p.color')],
             'stock':[dict(r) for r in c.execute("SELECT i.id,i.source,i.ref,i.name,i.category,s.color,s.quantity FROM stock s JOIN items i ON i.id=s.item_id WHERE i.kind IN ('part','minifig') AND s.quantity>0 ORDER BY i.id,s.color")]}
+    if from_catalogue:
+        identities=sorted({identity for identity,color in entries or []});items=[]
+        for start in range(0,len(identities),900):
+            chunk=identities[start:start+900]
+            items.extend(dict(row,color='',quantity=0) for row in c.execute("SELECT id,source,kind,ref,name,category,catalogue_hidden FROM items WHERE id IN ("+','.join('?' for _ in chunk)+') ORDER BY id',chunk))
+        if len(items)!=len(identities) or any(item['kind'] not in ('part','minifig') or item['catalogue_hidden'] for item in items):raise ValueError(tr('Une référence de catalogue a changé ou n’est plus disponible. Prépare une nouvelle proposition.'))
+        state['catalogue']=sorted(items,key=lambda item:item['id'])
+    return state
 
 
 def _fingerprint(state):return hashlib.sha256(json.dumps(state,sort_keys=True,ensure_ascii=False).encode()).hexdigest()
 
 
-def propose(db,wall_id,category='',split_colors=False,reorganize=False):
+def propose(db,wall_id,category='',split_colors=False,reorganize=False,entries=None,from_catalogue=False):
     """One group per category and footprint, ordered from few to many studs."""
     if reorganize and not category:raise ValueError(tr('Choisis une catégorie pour réorganiser ses tiroirs.'))
     with db.read() as c:
-        c.execute('BEGIN');state=_state(c,wall_id)
+        c.execute('BEGIN');state=_state(c,wall_id,entries,from_catalogue)
     occupied={}
     for link in state['links']:occupied.setdefault(link['drawer_id'],[]).append(link)
     available=[];replaced=[]
@@ -109,7 +117,11 @@ def propose(db,wall_id,category='',split_colors=False,reorganize=False):
     eligible={d['id'] for d in available}
     located={ (link['item_id'],link['color']) for link in state['links'] if link['drawer_id'] not in eligible }
     if not reorganize:located|={(link['item_id'],link['color']) for link in state['links']}
-    groups={};unknown=[];candidates=list(state['stock']);known={(item['id'],item['color']) for item in candidates};existing={(link['item_id'],link['color']) for link in replaced}
+    groups={};unknown=[];candidates=list(state['catalogue'] if from_catalogue else state['stock'])
+    if entries is not None and not from_catalogue:
+        wanted={(identity,str(color)) for identity,color in entries};candidates=[item for item in candidates if (item['id'],item['color']) in wanted]
+        if wanted-{(item['id'],item['color']) for item in candidates}:raise ValueError(tr('Le stock ou le rangement a changé. Prépare une nouvelle proposition.'))
+    known={(item['id'],item['color']) for item in candidates};existing={(link['item_id'],link['color']) for link in replaced}
     for link in replaced:
         if (link['item_id'],link['color']) not in known:
             candidates.append(dict(link,id=link['item_id'],quantity=0));known.add((link['item_id'],link['color']))
@@ -125,7 +137,7 @@ def propose(db,wall_id,category='',split_colors=False,reorganize=False):
     for index,group in enumerate(ordered):
         group['drawer_id']=available[index]['id'] if index<len(available) else None
         group['name']=' · '.join(v for v in (group['category'],dimensions_text(group['dimensions']),group['color']) if v)
-    return {'wall_id':wall_id,'fingerprint':_fingerprint(state),'available':available,'replaced':replaced,'groups':ordered,'unknown':unknown,'reorganize':reorganize}
+    return {'wall_id':wall_id,'fingerprint':_fingerprint(state),'available':available,'replaced':replaced,'groups':ordered,'unknown':unknown,'reorganize':reorganize,'entries':list(entries) if entries is not None else None,'from_catalogue':from_catalogue}
 
 
 def apply_proposal(db,plan,targets=None):
@@ -141,7 +153,7 @@ def apply_proposal(db,plan,targets=None):
         raise ValueError(tr('Tous les contenus existants doivent avoir un tiroir proposé avant la réorganisation.'))
     with db.connect() as c:
         c.execute('BEGIN IMMEDIATE')
-        if _fingerprint(_state(c,plan['wall_id']))!=plan['fingerprint']:
+        if _fingerprint(_state(c,plan['wall_id'],plan.get('entries'),plan.get('from_catalogue',False)))!=plan['fingerprint']:
             raise ValueError(tr('Le stock ou le rangement a changé. Prépare une nouvelle proposition.'))
         if plan['reorganize']:
             ids=sorted({link['drawer_id'] for link in plan['replaced']})

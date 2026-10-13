@@ -19,8 +19,8 @@ class FilterDialog(QDialog):
         form=QFormLayout();layout.addLayout(form);self.fields={}
         self.search=QLineEdit();form.addRow(tr('Recherche'),self.search)
         from .category_tags import CategoryTags
-        self.categories=CategoryTags([catalogue.category.itemData(i) for i in range(catalogue.category.count()) if catalogue.category.itemData(i)])
-        form.addRow(tr('Catégories (tags)'),self.categories)
+        self.categories=CategoryTags([catalogue.category.itemData(i) for i in range(catalogue.category.count()) if catalogue.category.itemData(i)],show_tags=False)
+        form.addRow(tr('Catégories'),self.categories)
         if catalogue.source is None:
             combo=QComboBox();combo.addItem(tr('Toutes les sources'),'')
             for source in ('RB','BL','BA','ALT'):combo.addItem(source,source)

@@ -1,0 +1,62 @@
+{
+  "source": "https://library.ldraw.org/library/updates/complete.zip",
+  "update": "2026-09",
+  "downloaded_utc": "2026-10-13T01:09:49.077536+00:00",
+  "archive": "ressources/complete.zip",
+  "bytes": 146075744,
+  "sha256": "f3e496d0ede69ca7942fa4aa198e661ee2d22723906101e2e339d8917a4dd5f2",
+  "example": {
+    "87552d02.dat": {
+      "header": [
+        "0 Panel  1 x  2 x  2 Reinforced with Logos on Red Background Right Sticker",
+        "0 Name: 87552d02.dat",
+        "0 Author: Vincent Messenet [Cheenzo]",
+        "0 !LDRAW_ORG Shortcut UPDATE 2026-09",
+        "0 !LICENSE Licensed under CC BY 4.0 : see CAreadme.txt",
+        "",
+        "0 BFC CERTIFY CCW",
+        "",
+        "0 !CATEGORY Sticker Shortcut",
+        "0 !KEYWORDS Bricklink 87552pb065R, Set 75879",
+        "",
+        "0 !PREVIEW 16 0 0 0 -1 0 0 0 1 0 0 0 -1"
+      ],
+      "sha256": "fd12aed5c45f401f80d949d935c94efee43bfdf5bd46a939f3fab47a14c2fd92"
+    },
+    "87552.dat": {
+      "header": [
+        "0 Panel  1 x  2 x  2 Reinforced",
+        "0 Name: 87552.dat",
+        "0 Author: J.C. Tchang [tchang]",
+        "0 !LDRAW_ORG Part UPDATE 2026-09",
+        "0 !LICENSE Licensed under CC BY 4.0 : see CAreadme.txt",
+        "",
+        "0 BFC CERTIFY CCW",
+        "",
+        "0 !CATEGORY Panel",
+        "0 !KEYWORDS Brickowl 915460",
+        "",
+        "0 !HISTORY 2011-12-29 [PTadmin] Official Update 2011-02"
+      ],
+      "sha256": "0e5f75467121336c5b7874381e1eda4d411af863fb9260fc43533649b754396b"
+    },
+    "6177954b.dat": {
+      "header": [
+        "0 Sticker  1.8 x  2.2 with Logos on Red Background Right",
+        "0 Name: 6177954b.dat",
+        "0 Author: Massimo Maso [Sirio]",
+        "0 !LDRAW_ORG Part UPDATE 2026-07",
+        "0 !LICENSE Licensed under CC BY 4.0 : see CAreadme.txt",
+        "",
+        "0 BFC CERTIFY CCW",
+        "",
+        "0 !CATEGORY Sticker",
+        "0 !KEYWORDS Bricklink 75879stk01, Brickowl 956194, Ferrari, Rebrickable 30895",
+        "0 !KEYWORDS Scuderia, Set 75879, SF16-H, Speed Champions",
+        ""
+      ],
+      "sha256": "7731f22e2fd4676a884e1f81a68917c00070204a2604dc551d270c5a4a601bf8"
+    }
+  },
+  "modified": false
+}

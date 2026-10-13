@@ -13,6 +13,8 @@ def application_owner(widget):
 
 
 def show_window(window,parent=None,on_finished=None,refresh_counts=True):
+    from .button_help import install_button_help
+    install_button_help()
     owner=application_owner(parent or window.parent())
     if owner is None:owner=window
     flags=Qt.WindowType.Window|Qt.WindowType.WindowMinimizeButtonHint|Qt.WindowType.WindowMaximizeButtonHint|Qt.WindowType.WindowCloseButtonHint

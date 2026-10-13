@@ -1,0 +1,942 @@
+{
+  "buttons": {
+    "Contours": {
+      "fr": "Choisit la couleur du contour et du bandeau de chaque catégorie.",
+      "en": "Chooses the border and header colour for each category."
+    },
+    "Couleur 3D": {
+      "fr": "Choisit la couleur par défaut des pièces rendues en 3D.",
+      "en": "Chooses the default colour for 3D parts."
+    },
+    "Arêtes 3D": {
+      "fr": "Règle le noir et l’épaisseur des traits des grands rendus et des étiquettes.",
+      "en": "Adjusts line strength and width for large renders and labels."
+    },
+    "Éditeur d’étiquettes": {
+      "fr": "Ouvre les modèles et les réglages de disposition des étiquettes.",
+      "en": "Opens label models and layout settings."
+    },
+    "Taille par défaut": {
+      "fr": "Choisit la largeur et la hauteur communes des étiquettes.",
+      "en": "Chooses the shared width and height of labels."
+    },
+    "Langue": {
+      "fr": "Choisit la langue de l’interface pour le prochain démarrage.",
+      "en": "Chooses the interface language for the next launch."
+    },
+    "Clés API": {
+      "fr": "Enregistre les identifiants Rebrickable et BrickLink utilisés par les fonctions API.",
+      "en": "Saves the Rebrickable and BrickLink credentials used by API functions."
+    },
+    "Aide": {
+      "fr": "Ouvre le guide des commandes et des fonctions de BrickLabo.",
+      "en": "Opens the guide to BrickLabo’s controls and features."
+    },
+    "Mise à jour des données": {
+      "fr": "Ouvre les imports de catalogues, les inventaires et les mises à jour.",
+      "en": "Opens catalogue imports, inventories and updates."
+    },
+    "Dossier PNG / PDF": {
+      "fr": "Choisit le dossier où enregistrer les étiquettes générées.",
+      "en": "Chooses the folder for generated labels."
+    },
+    "Logs": {
+      "fr": "Ouvre le dossier des journaux pour consulter les erreurs du logiciel.",
+      "en": "Opens the log folder to inspect application errors."
+    },
+    "Espace disque": {
+      "fr": "Affiche l’espace utilisé et les commandes de nettoyage des caches.",
+      "en": "Shows disk usage and cache cleanup controls."
+    },
+    "Sauvegardes": {
+      "fr": "Sauvegarde ou restaure les données et les réglages de BrickLabo.",
+      "en": "Backs up or restores BrickLabo data and settings."
+    },
+    "Sources et licences": {
+      "fr": "Affiche les origines et les licences des ressources fournies.",
+      "en": "Shows the origins and licences of bundled resources."
+    },
+    "Annuler la dernière action": {
+      "fr": "Annule la dernière opération enregistrée sur le stock ou la file d’étiquettes.",
+      "en": "Undoes the last recorded stock or label-queue operation."
+    },
+    "Importer une collection": {
+      "fr": "Ouvre l’import de stock et la correction des lignes à vérifier.",
+      "en": "Opens stock import and correction of rows requiring review."
+    },
+    "Exporter vers Rebrickable": {
+      "fr": "Prépare les CSV de pièces et de sets à importer sur Rebrickable.",
+      "en": "Prepares part and set CSV files for import into Rebrickable."
+    },
+    "Sets réalisables": {
+      "fr": "Compare les inventaires des sets avec les pièces de ton stock.",
+      "en": "Compares set inventories with the parts in your stock."
+    },
+    "Rechercher des MOC / alternatives": {
+      "fr": "Ouvre la recherche publique de MOC par mot-clé ou créateur, sans clé API.",
+      "en": "Opens public MOC search by keyword or creator, without an API key."
+    },
+    "Rapport de migration du stock": {
+      "fr": "Affiche les corrections et vérifications proposées lors de la migration du stock.",
+      "en": "Shows corrections and checks proposed during stock migration."
+    },
+    "Supprimer tout l’historique": {
+      "fr": "Efface l’historique des étiquettes après confirmation.",
+      "en": "Clears label history after confirmation."
+    },
+    "Supprimer avant une date…": {
+      "fr": "Retire de l’historique les entrées antérieures à la date choisie.",
+      "en": "Removes history entries older than the chosen date."
+    },
+    "Un fichier PDF par étiquette": {
+      "fr": "Crée un PDF séparé pour chaque étiquette au lieu d’une planche commune.",
+      "en": "Creates one PDF per label instead of a shared sheet."
+    },
+    "Générer": {
+      "fr": "Enregistre les étiquettes en PNG, PDF ou les deux, selon le format choisi.",
+      "en": "Saves labels as PNG, PDF or both, using the selected format."
+    },
+    "Aperçu avant impression": {
+      "fr": "Affiche les planches d’étiquettes avant de les imprimer.",
+      "en": "Shows label sheets before printing."
+    },
+    "Imprimer les étiquettes": {
+      "fr": "Prépare les planches puis ouvre le choix de l’imprimante.",
+      "en": "Prepares the sheets and opens the printer selection."
+    },
+    "Colonnes": {
+      "fr": "Choisit les colonnes à afficher dans ce tableau.",
+      "en": "Chooses which columns to display in this table."
+    },
+    "Filtres avancés…": {
+      "fr": "Ouvre les filtres détaillés et les recherches enregistrées.",
+      "en": "Opens detailed filters and saved searches."
+    },
+    "Copier vers catalogue alternatif": {
+      "fr": "Copie les références sélectionnées dans le catalogue alternatif.",
+      "en": "Copies selected references to the alternative catalogue."
+    },
+    "Disposition de la sélection…": {
+      "fr": "Règle une disposition commune pour les étiquettes des lignes sélectionnées.",
+      "en": "Edits a shared label layout for selected rows."
+    },
+    "Masquer stickers et sérigraphies": {
+      "fr": "Cache les pièces décorées dans les résultats du catalogue.",
+      "en": "Hides decorated parts from catalogue results."
+    },
+    "Réafficher stickers et sérigraphies": {
+      "fr": "Réaffiche les pièces décorées dans les résultats du catalogue.",
+      "en": "Shows decorated parts in catalogue results again."
+    },
+    "Ajouter au stock": {
+      "fr": "Ajoute la sélection au stock ; un set ajoute aussi ses pièces connues.",
+      "en": "Adds the selection to stock; a set also adds its known parts."
+    },
+    "Ajouter aux étiquettes à imprimer": {
+      "fr": "Ajoute les références sélectionnées à la file d’impression.",
+      "en": "Adds selected references to the print queue."
+    },
+    "Associer à un tiroir…": {
+      "fr": "Associe les références à un tiroir sans créer de quantité en stock.",
+      "en": "Links references to a drawer without creating stock quantities."
+    },
+    "‹": {
+      "fr": "Affiche la page précédente du tableau.",
+      "en": "Shows the previous table page."
+    },
+    "›": {
+      "fr": "Affiche la page suivante du tableau.",
+      "en": "Shows the next table page."
+    },
+    "Précédent": {
+      "fr": "Affiche la page précédente des résultats.",
+      "en": "Shows the previous page of results."
+    },
+    "Suivant": {
+      "fr": "Affiche la page suivante des résultats.",
+      "en": "Shows the next page of results."
+    },
+    "Page précédente": {
+      "fr": "Affiche la page précédente de l’aperçu.",
+      "en": "Shows the previous preview page."
+    },
+    "Page suivante": {
+      "fr": "Affiche la page suivante de l’aperçu.",
+      "en": "Shows the next preview page."
+    },
+    "Page entière": {
+      "fr": "Ajuste le zoom pour voir toute la page.",
+      "en": "Fits the entire page in the preview."
+    },
+    "Exporter en PDF…": {
+      "fr": "Enregistre les pages affichées dans un fichier PDF.",
+      "en": "Saves the displayed pages to a PDF file."
+    },
+    "Choisir l’imprimante et imprimer…": {
+      "fr": "Ouvre les options d’impression puis envoie les pages à l’imprimante choisie.",
+      "en": "Opens print options and sends pages to the selected printer."
+    },
+    "Fermer": {
+      "fr": "Ferme cette fenêtre.",
+      "en": "Closes this window."
+    },
+    "Valider": {
+      "fr": "Valide les choix de cette fenêtre.",
+      "en": "Confirms the choices in this window."
+    },
+    "Appliquer": {
+      "fr": "Enregistre les réglages choisis dans cette fenêtre.",
+      "en": "Saves the settings chosen in this window."
+    },
+    "Annuler": {
+      "fr": "Ferme la fenêtre sans valider les modifications en cours.",
+      "en": "Closes the window without confirming the current changes."
+    },
+    "Rétablir": {
+      "fr": "Rétablit la dernière modification annulée.",
+      "en": "Redoes the last undone change."
+    },
+    "Oui": {
+      "fr": "Confirme l’opération proposée.",
+      "en": "Confirms the proposed operation."
+    },
+    "Non": {
+      "fr": "Refuse l’opération proposée.",
+      "en": "Declines the proposed operation."
+    },
+    "Enregistrer": {
+      "fr": "Enregistre les valeurs saisies dans cette fenêtre.",
+      "en": "Saves the values entered in this window."
+    },
+    "Ouvrir": {
+      "fr": "Ouvre l’élément sélectionné.",
+      "en": "Opens the selected item."
+    },
+    "Ajouter": {
+      "fr": "Ajoute une entrée dans cette fenêtre.",
+      "en": "Adds an entry in this window."
+    },
+    "Supprimer": {
+      "fr": "Retire l’élément sélectionné de cette fenêtre.",
+      "en": "Removes the selected item from this window."
+    },
+    "Charger": {
+      "fr": "Charge le réglage enregistré sélectionné.",
+      "en": "Loads the selected saved settings."
+    },
+    "Charger…": {
+      "fr": "Ouvre un fichier de réglages enregistré.",
+      "en": "Opens a saved settings file."
+    },
+    "Enregistrer…": {
+      "fr": "Enregistre les réglages actuels sous un nom.",
+      "en": "Saves the current settings under a name."
+    },
+    "Enregistrer sous…": {
+      "fr": "Enregistre une copie des réglages actuels.",
+      "en": "Saves a copy of the current settings."
+    },
+    "Renommer…": {
+      "fr": "Change le nom du réglage enregistré sélectionné.",
+      "en": "Renames the selected saved settings."
+    },
+    "Valeurs par défaut": {
+      "fr": "Rétablit les valeurs initiales de ces réglages.",
+      "en": "Restores the initial values for these settings."
+    },
+    "Utiliser le réglage général": {
+      "fr": "Utilise les arêtes générales à la place d’un réglage individuel.",
+      "en": "Uses general edge settings instead of individual settings."
+    },
+    "Appliquer comme réglage général": {
+      "fr": "Enregistre ces arêtes pour les étiquettes qui suivent le réglage général.",
+      "en": "Saves these edges for labels following the general settings."
+    },
+    "Agrandir l’aperçu": {
+      "fr": "Ouvre le visuel sélectionné dans une fenêtre plus grande.",
+      "en": "Opens the selected visual in a larger window."
+    },
+    "Modifier l’angle du rendu 3D…": {
+      "fr": "Ouvre les rotations et les points de vue du modèle 3D.",
+      "en": "Opens rotations and saved viewpoints for the 3D model."
+    },
+    "Modifier cette étiquette": {
+      "fr": "Modifie la disposition de cette étiquette uniquement.",
+      "en": "Edits only this label’s layout."
+    },
+    "Réinitialiser la disposition": {
+      "fr": "Retire le réglage individuel pour suivre la catégorie ou le modèle général.",
+      "en": "Removes the individual layout to follow the category or general model."
+    },
+    "Rechercher les photos Rebrickable": {
+      "fr": "Cherche les photos de cette référence ; l’API complète la recherche si une clé est configurée.",
+      "en": "Finds photos for this reference; the API supplements the search when a key is configured."
+    },
+    "Rechercher les photos BrickLink": {
+      "fr": "Cherche les photos BrickLink de la référence sélectionnée.",
+      "en": "Finds BrickLink photos for the selected reference."
+    },
+    "Ajouter un lien image": {
+      "fr": "Ajoute une adresse d’image aux photos de cette référence.",
+      "en": "Adds an image URL to this reference’s photos."
+    },
+    "Supprimer ce lien image": {
+      "fr": "Retire le lien de la photo sélectionnée.",
+      "en": "Removes the selected photo link."
+    },
+    "Correspondances des couleurs…": {
+      "fr": "Vérifie et règle la correspondance des couleurs Rebrickable et BrickLink.",
+      "en": "Checks and configures Rebrickable and BrickLink colour matches."
+    },
+    "Charger via l’API BrickLink (facultatif)": {
+      "fr": "Charge les couleurs disponibles pour cette référence. Identifiants BrickLink requis.",
+      "en": "Loads colours available for this reference. BrickLink credentials are required."
+    },
+    "Importer une image locale": {
+      "fr": "Choisit une image du PC comme visuel de cette référence.",
+      "en": "Chooses a PC image as this reference’s visual."
+    },
+    "Ajouter un lien de site": {
+      "fr": "Ajoute un lien web à cette référence.",
+      "en": "Adds a web link to this reference."
+    },
+    "Notices et documents du set": {
+      "fr": "Ouvre les notices et documents du set sélectionné.",
+      "en": "Opens instructions and documents for the selected set."
+    },
+    "Ajouter l’inventaire depuis un fichier TXT": {
+      "fr": "Importe un inventaire BrickLink local pour le set sélectionné, sans API.",
+      "en": "Imports a local BrickLink inventory for the selected set, without an API."
+    },
+    "Image": {
+      "fr": "Utilise ce lien comme photo de la référence.",
+      "en": "Uses this link as the reference’s photo."
+    },
+    "Choisir les fichiers…": {
+      "fr": "Sélectionne les fichiers de catalogues ou complete.zip à importer.",
+      "en": "Selects catalogue files or complete.zip for import."
+    },
+    "Importer les fichiers choisis": {
+      "fr": "Importe les fichiers sélectionnés dans les bases locales.",
+      "en": "Imports the selected files into the local databases."
+    },
+    "Télécharger les exports complets Rebrickable": {
+      "fr": "Télécharge puis importe les CSV publics Rebrickable. Aucune clé API nécessaire.",
+      "en": "Downloads and imports public Rebrickable CSV files. No API key is needed."
+    },
+    "Mise à jour API de la référence sélectionnée": {
+      "fr": "Actualise la photo via l’API du catalogue de la référence. Clés de cette source requises.",
+      "en": "Updates the photo through the reference’s catalogue API. That source’s credentials are required."
+    },
+    "Ouvrir les téléchargements du catalogue BrickLink": {
+      "fr": "Ouvre la page BrickLink des fichiers de catalogue dans le navigateur.",
+      "en": "Opens BrickLink’s catalogue download page in your browser."
+    },
+    "Mettre à jour LDraw (complete.zip)": {
+      "fr": "Télécharge et vérifie la bibliothèque officielle LDraw avant de l’activer.",
+      "en": "Downloads and validates the official LDraw library before activation."
+    },
+    "Charger les inventaires de sets par lots": {
+      "fr": "Prépare le téléchargement des inventaires par API, selon la source choisie.",
+      "en": "Prepares API inventory downloads for the chosen source."
+    },
+    "Rechercher une mise à jour du logiciel": {
+      "fr": "Vérifie les nouvelles versions de BrickLabo publiées sur GitHub.",
+      "en": "Checks for new BrickLabo versions published on GitHub."
+    },
+    "Afficher les clés": {
+      "fr": "Affiche ou masque les identifiants saisis dans cette fenêtre.",
+      "en": "Shows or hides the credentials entered in this window."
+    },
+    "Charger l’inventaire depuis l’API BrickLink": {
+      "fr": "Télécharge les pièces du set ou de la mini-figurine. Identifiants BrickLink requis.",
+      "en": "Downloads set or minifigure parts. BrickLink credentials are required."
+    },
+    "Charger les pièces depuis l’API Rebrickable": {
+      "fr": "Télécharge les pièces de la mini-figurine. Clé Rebrickable requise.",
+      "en": "Downloads minifigure parts. A Rebrickable key is required."
+    },
+    "Ajouter une pièce à ce set alternatif": {
+      "fr": "Choisit une pièce à ajouter à l’inventaire du set alternatif.",
+      "en": "Chooses a part to add to the alternative set inventory."
+    },
+    "Toutes les pièces → stock": {
+      "fr": "Ajoute au stock toutes les pièces de cet inventaire.",
+      "en": "Adds every part in this inventory to stock."
+    },
+    "Toutes les pièces → étiquettes": {
+      "fr": "Ajoute toutes les pièces de cet inventaire à la file d’étiquettes.",
+      "en": "Adds every part in this inventory to the label queue."
+    },
+    "Sélection → stock": {
+      "fr": "Ajoute au stock les pièces sélectionnées dans cet inventaire.",
+      "en": "Adds selected inventory parts to stock."
+    },
+    "Sélection → étiquettes": {
+      "fr": "Ajoute les pièces sélectionnées à la file d’étiquettes.",
+      "en": "Adds selected parts to the label queue."
+    },
+    "Ajouter une pièce": {
+      "fr": "Ajoute les vues ou informations d’une autre pièce à l’étiquette.",
+      "en": "Adds views or details of another part to the label."
+    },
+    "Ajouter la pièce": {
+      "fr": "Ajoute la pièce choisie au brouillon de l’étiquette.",
+      "en": "Adds the chosen part to the label draft."
+    },
+    "Modèle de base": {
+      "fr": "Remet la disposition initiale dans le brouillon de l’étiquette.",
+      "en": "Restores the initial layout in the label draft."
+    },
+    "Enregistrer un modèle…": {
+      "fr": "Enregistre cette disposition dans le menu des modèles personnalisés.",
+      "en": "Saves this layout in the custom model menu."
+    },
+    "Supprimer ce modèle": {
+      "fr": "Retire le modèle du menu et conserve les dispositions déjà appliquées.",
+      "en": "Removes the model from the menu while preserving applied layouts."
+    },
+    "Suivre le modèle général": {
+      "fr": "Retire le modèle associé à cette catégorie.",
+      "en": "Removes the model assigned to this category."
+    },
+    "Ajouter une information": {
+      "fr": "Ajoute un calque du type choisi au brouillon.",
+      "en": "Adds a layer of the chosen type to the draft."
+    },
+    "Ajouter un texte libre": {
+      "fr": "Ajoute un texte que tu peux saisir et placer sur l’étiquette.",
+      "en": "Adds text that you can enter and position on the label."
+    },
+    "Dupliquer": {
+      "fr": "Crée une copie du calque sélectionné.",
+      "en": "Creates a copy of the selected layer."
+    },
+    "Monter le calque": {
+      "fr": "Place ce calque devant celui qui le précède.",
+      "en": "Places this layer in front of the preceding layer."
+    },
+    "Descendre le calque": {
+      "fr": "Place ce calque derrière le suivant.",
+      "en": "Places this layer behind the next one."
+    },
+    "Couleur du texte…": {
+      "fr": "Choisit la couleur du texte du calque sélectionné.",
+      "en": "Chooses the text colour for the selected layer."
+    },
+    "Contour de cette catégorie…": {
+      "fr": "Choisit la couleur du contour de la catégorie affichée.",
+      "en": "Chooses the border colour for the displayed category."
+    },
+    "Fond…": {
+      "fr": "Choisit la couleur de fond de l’étiquette.",
+      "en": "Chooses the label’s background colour."
+    },
+    "Contour par défaut…": {
+      "fr": "Choisit la couleur de contour par défaut du modèle.",
+      "en": "Chooses the model’s default border colour."
+    },
+    "Grille / aimantation 0,5 mm": {
+      "fr": "Aligne les déplacements des calques sur une grille de 0,5 mm.",
+      "en": "Snaps layer movements to a 0.5 mm grid."
+    },
+    "Réduire les marges autour de la pièce": {
+      "fr": "Recadre la vue sur les pixels visibles de la pièce.",
+      "en": "Crops the view to the part’s visible pixels."
+    },
+    "Fond transparent": {
+      "fr": "Conserve un fond transparent dans les exports et l’impression.",
+      "en": "Preserves a transparent background in exports and printing."
+    },
+    "Gras": {
+      "fr": "Affiche le texte du calque en gras.",
+      "en": "Displays the layer text in bold."
+    },
+    "Visible": {
+      "fr": "Affiche ou masque ce calque sur l’étiquette.",
+      "en": "Shows or hides this layer on the label."
+    },
+    "Verrouillé": {
+      "fr": "Empêche de déplacer ce calque avec la souris.",
+      "en": "Prevents moving this layer with the mouse."
+    },
+    "Vue initiale": {
+      "fr": "Rétablit le point de vue initial du modèle 3D.",
+      "en": "Restores the initial 3D viewpoint."
+    },
+    "Tourner de 180°": {
+      "fr": "Tourne le modèle d’un demi-tour pour voir l’autre face.",
+      "en": "Rotates the model half a turn to see the other side."
+    },
+    "Enregistrer ce point de vue…": {
+      "fr": "Enregistre ces angles dans la liste des points de vue.",
+      "en": "Saves these angles in the viewpoint list."
+    },
+    "Appliquer cette vue à tous les modèles 3D (remplace les angles individuels)": {
+      "fr": "Utilise ces angles pour tous les modèles, en remplaçant leurs vues individuelles.",
+      "en": "Uses these angles for all models, replacing individual viewpoints."
+    },
+    "Créer une sauvegarde…": {
+      "fr": "Crée une copie complète et vérifiée de tes données personnelles.",
+      "en": "Creates a complete validated copy of your personal data."
+    },
+    "Restaurer une sauvegarde…": {
+      "fr": "Prépare le remplacement des données au prochain démarrage.",
+      "en": "Prepares replacement of the data on the next launch."
+    },
+    "Annuler la restauration prévue": {
+      "fr": "Annule la restauration préparée pour le prochain démarrage.",
+      "en": "Cancels the restore prepared for the next launch."
+    },
+    "Exporter les familles choisies…": {
+      "fr": "Enregistre un fichier séparé pour chaque famille cochée.",
+      "en": "Saves a separate file for each checked data family."
+    },
+    "Restaurer des fichiers séparés…": {
+      "fr": "Restaure uniquement les familles contenues dans les fichiers choisis.",
+      "en": "Restores only the data families in the chosen files."
+    },
+    "Appliquer les limites": {
+      "fr": "Enregistre les limites de mémoire et de disque des miniatures.",
+      "en": "Saves thumbnail memory and disk limits."
+    },
+    "Actualiser les tailles": {
+      "fr": "Recalcule l’espace utilisé par les données et les caches.",
+      "en": "Recalculates the space used by data and caches."
+    },
+    "Vider le cache des miniatures": {
+      "fr": "Supprime les miniatures recalculables ; elles seront recréées au besoin.",
+      "en": "Deletes regenerable thumbnails; they are recreated when needed."
+    },
+    "Nettoyer les temporaires de plus de 7 jours": {
+      "fr": "Retire les anciens temporaires inutilisés de BrickLabo.",
+      "en": "Removes old unused BrickLabo temporary files."
+    },
+    "Supprimer les copies LDraw identiques": {
+      "fr": "Retire les doublons LDraw identiques en gardant l’archive active.",
+      "en": "Removes identical LDraw duplicates while keeping the active archive."
+    },
+    "Mettre à jour BrickArchitect depuis le site…": {
+      "fr": "Actualise les fiches BrickArchitect depuis les pages publiques du site.",
+      "en": "Updates BrickArchitect records from the site’s public pages."
+    },
+    "Annuler la mise à jour": {
+      "fr": "Arrête la mise à jour BrickArchitect en cours.",
+      "en": "Stops the current BrickArchitect update."
+    },
+    "Recharger la photo": {
+      "fr": "Essaie de récupérer à nouveau la photo de la boîte.",
+      "en": "Tries to fetch the box photo again."
+    },
+    "Rechercher les sets réalisables": {
+      "fr": "Calcule les sets réalisables et les pièces manquantes avec le stock choisi.",
+      "en": "Calculates buildable sets and missing parts using the chosen stock."
+    },
+    "Choisir le stock utilisable…": {
+      "fr": "Choisit les sets dont les pièces peuvent participer aux calculs.",
+      "en": "Chooses which owned sets can contribute parts to calculations."
+    },
+    "Ignorer les couleurs": {
+      "fr": "Compare les références sans exiger les couleurs de l’inventaire.",
+      "en": "Compares references without requiring inventory colours."
+    },
+    "MOC avec les pièces disponibles…": {
+      "fr": "Cherche des alternatives des sets couverts par ton stock. Clé Rebrickable requise.",
+      "en": "Finds alternatives of sets covered by your stock. A Rebrickable key is required."
+    },
+    "MOC par mot clé / créateur": {
+      "fr": "Cherche des MOC sur les pages publiques Rebrickable, sans clé API.",
+      "en": "Finds MOCs on public Rebrickable pages, without an API key."
+    },
+    "Rechercher par mot clé / créateur": {
+      "fr": "Ouvre la recherche publique de MOC, indépendante du stock et des clés API.",
+      "en": "Opens public MOC search, independent of stock and API keys."
+    },
+    "Analyser les 20 sets suivants": {
+      "fr": "Cherche les alternatives du prochain groupe de 20 sets reconstituables.",
+      "en": "Finds alternatives for the next group of 20 buildable sets."
+    },
+    "Voir la construction / les notices": {
+      "fr": "Ouvre la construction sélectionnée et ses notices sur Rebrickable.",
+      "en": "Opens the selected build and its instructions on Rebrickable."
+    },
+    "Voir le set sur Rebrickable": {
+      "fr": "Ouvre la fiche du set sur Rebrickable.",
+      "en": "Opens the set’s Rebrickable page."
+    },
+    "Rechercher / actualiser": {
+      "fr": "Charge ou actualise les alternatives de ce set. Clé Rebrickable requise.",
+      "en": "Loads or refreshes this set’s alternatives. A Rebrickable key is required."
+    },
+    "Charger la suite": {
+      "fr": "Ajoute les résultats de la page suivante à la liste.",
+      "en": "Adds the next page of results to the list."
+    },
+    "Rechercher": {
+      "fr": "Lance la recherche avec les critères choisis.",
+      "en": "Starts the search using the chosen criteria."
+    },
+    "Arrêter": {
+      "fr": "Demande l’arrêt du travail en cours.",
+      "en": "Requests that the current operation stop."
+    },
+    "Ouvrir la recherche sur Rebrickable": {
+      "fr": "Ouvre les critères de recherche dans le navigateur.",
+      "en": "Opens the search criteria in your browser."
+    },
+    "Constructions alternatives uniquement": {
+      "fr": "Limite la recherche aux constructions alternatives de sets.",
+      "en": "Limits the search to alternative set builds."
+    },
+    "Notices gratuites uniquement": {
+      "fr": "Limite la recherche aux MOC dont les notices sont gratuites.",
+      "en": "Limits the search to MOCs with free instructions."
+    },
+    "Exporter les pièces manquantes (CSV)": {
+      "fr": "Enregistre la liste des pièces manquantes pour le set sélectionné.",
+      "en": "Saves the missing-part list for the selected set."
+    },
+    "Exporter les pièces en stock (CSV)": {
+      "fr": "Enregistre les pièces disponibles pour le set sélectionné.",
+      "en": "Saves the available-part list for the selected set."
+    },
+    "Convertir BrickLink (API RB)": {
+      "fr": "Cherche les références et couleurs Rebrickable équivalentes. Clé Rebrickable requise.",
+      "en": "Finds equivalent Rebrickable references and colours. A Rebrickable key is required."
+    },
+    "Vérifier les corrections": {
+      "fr": "Contrôle les références, couleurs et quantités corrigées avant l’export.",
+      "en": "Checks corrected references, colours and quantities before export."
+    },
+    "Enregistrer les deux CSV": {
+      "fr": "Enregistre les fichiers de pièces et de sets préparés pour Rebrickable.",
+      "en": "Saves the part and set files prepared for Rebrickable."
+    },
+    "Ouvrir Rebrickable": {
+      "fr": "Ouvre Rebrickable dans le navigateur pour importer les CSV.",
+      "en": "Opens Rebrickable in your browser to import the CSV files."
+    },
+    "Autoriser un export partiel et accepter les points à vérifier du rapport": {
+      "fr": "Autorise l’export des lignes valides malgré les points restants du rapport.",
+      "en": "Allows valid rows to export despite remaining report issues."
+    },
+    "Afficher les sets": {
+      "fr": "Recherche les sets du catalogue à charger par lots.",
+      "en": "Finds catalogue sets to load in batches."
+    },
+    "Actualiser aussi les inventaires déjà présents": {
+      "fr": "Recharge aussi les inventaires déjà disponibles localement.",
+      "en": "Also reloads inventories already available locally."
+    },
+    "Préparer la sélection": {
+      "fr": "Crée une liste de chargement pour les sets sélectionnés.",
+      "en": "Creates a download queue for selected sets."
+    },
+    "Préparer tous les sets affichés": {
+      "fr": "Crée une liste de chargement pour tous les résultats affichés.",
+      "en": "Creates a download queue for all displayed results."
+    },
+    "Charger le prochain lot": {
+      "fr": "Télécharge un lot d’inventaires par l’API de la source choisie.",
+      "en": "Downloads one inventory batch through the chosen source’s API."
+    },
+    "Enchaîner les lots": {
+      "fr": "Poursuit les chargements API jusqu’à la fin ou à la pause.",
+      "en": "Continues API downloads until finished or paused."
+    },
+    "Pause": {
+      "fr": "Arrête l’enchaînement et conserve la liste pour la reprendre.",
+      "en": "Pauses continuous downloads and keeps the queue for resumption."
+    },
+    "Réessayer les erreurs": {
+      "fr": "Remet les inventaires en échec dans la liste de chargement.",
+      "en": "Returns failed inventories to the download queue."
+    },
+    "Chercher des constructions": {
+      "fr": "Ouvre la comparaison des inventaires chargés avec le stock.",
+      "en": "Opens comparison of loaded inventories against stock."
+    },
+    "Ouvrir un fichier…": {
+      "fr": "Charge un fichier de collection pour examiner les lignes à importer.",
+      "en": "Loads a collection file to review its import rows."
+    },
+    "Reprendre cet import": {
+      "fr": "Rouvre un import en attente avec ses corrections enregistrées.",
+      "en": "Reopens a pending import with its saved corrections."
+    },
+    "Rechercher dans le catalogue…": {
+      "fr": "Cherche la référence locale à utiliser pour corriger cette ligne.",
+      "en": "Finds the local reference to use when correcting this row."
+    },
+    "Enregistrer la correction": {
+      "fr": "Conserve la référence, la couleur et la quantité corrigées pour cette ligne.",
+      "en": "Saves the corrected reference, colour and quantity for this row."
+    },
+    "Ajouter les lignes prêtes": {
+      "fr": "Ajoute les lignes valides au stock et conserve celles restant à corriger.",
+      "en": "Adds valid rows to stock and keeps those still needing correction."
+    },
+    "Revérifier les lignes": {
+      "fr": "Contrôle à nouveau les lignes de l’import avec les données actuelles.",
+      "en": "Rechecks import rows using the current data."
+    },
+    "Choisir cette référence": {
+      "fr": "Utilise la référence sélectionnée pour corriger la ligne d’import.",
+      "en": "Uses the selected reference to correct the import row."
+    },
+    "Tout cocher (lignes visibles)": {
+      "fr": "Autorise tous les sets visibles à contribuer leurs pièces aux calculs.",
+      "en": "Allows every visible set to contribute parts to calculations."
+    },
+    "Tout décocher (lignes visibles)": {
+      "fr": "Exclut tous les sets visibles du stock utilisable pour les calculs.",
+      "en": "Excludes every visible set from the stock used for calculations."
+    },
+    "Sélectionner toutes les catégories": {
+      "fr": "Ajoute toutes les catégories au filtre de recherche.",
+      "en": "Adds every category to the search filter."
+    },
+    "Effacer les catégories sélectionnées": {
+      "fr": "Retire les catégories choisies du filtre de recherche.",
+      "en": "Removes chosen categories from the search filter."
+    },
+    "Réinitialiser tous les filtres": {
+      "fr": "Efface les critères avancés et revient à une recherche sans filtre.",
+      "en": "Clears advanced criteria and returns to an unfiltered search."
+    },
+    "Ajouter des PDF locaux": {
+      "fr": "Associe des notices PDF du PC au set sélectionné.",
+      "en": "Associates local PDF instructions with the selected set."
+    },
+    "Rechercher en ligne": {
+      "fr": "Cherche les notices du set sur LEGO, Rebrickable et Manuall.",
+      "en": "Finds set instructions on LEGO, Rebrickable and Manuall."
+    },
+    "Télécharger": {
+      "fr": "Enregistre les notices sélectionnées dans le dossier Notices du set.",
+      "en": "Saves selected instructions in the set’s Notices folder."
+    },
+    "Ouvrir les notices Rebrickable dans le navigateur": {
+      "fr": "Ouvre la page des notices Rebrickable du set sélectionné.",
+      "en": "Opens the selected set’s Rebrickable instructions page."
+    },
+    "Ajouter le lien": {
+      "fr": "Associe le lien de notice saisi au set sélectionné.",
+      "en": "Associates the entered instructions link with the selected set."
+    },
+    "Supprimer le lien ajouté": {
+      "fr": "Retire le lien de notice ajouté manuellement.",
+      "en": "Removes the manually added instructions link."
+    },
+    "Organiser le meuble": {
+      "fr": "Ouvre les commandes de création, modification et organisation des tiroirs.",
+      "en": "Opens controls for creating, editing and organising drawers."
+    },
+    "Disposer les meubles": {
+      "fr": "Ouvre les commandes de placement et d’organisation des meubles.",
+      "en": "Opens controls for positioning and arranging cabinets."
+    },
+    "Ranger par catégorie et taille…": {
+      "fr": "Prépare une proposition de tiroirs par catégorie et dimensions en tenons.",
+      "en": "Prepares drawer assignments by category and stud dimensions."
+    },
+    "Tous les meubles": {
+      "fr": "Affiche tous les meubles dans la vue de rangement.",
+      "en": "Shows all cabinets in the storage view."
+    },
+    "Vue de face": {
+      "fr": "Bascule le meuble entre une vue de face et une vue avec profondeur.",
+      "en": "Switches the cabinet between front and depth views."
+    },
+    "+": {
+      "fr": "Agrandit la vue du rangement.",
+      "en": "Zooms into the storage view."
+    },
+    "−": {
+      "fr": "Réduit la vue du rangement.",
+      "en": "Zooms out of the storage view."
+    },
+    "Zoom sur le meuble": {
+      "fr": "Cadre le meuble choisi dans la zone d’affichage.",
+      "en": "Fits the chosen cabinet in the display area."
+    },
+    "Vue complète": {
+      "fr": "Affiche et cadre tous les meubles.",
+      "en": "Shows and fits all cabinets in the view."
+    },
+    "Ajouter des références du stock": {
+      "fr": "Ouvre le tableau du stock à associer aux tiroirs.",
+      "en": "Opens the stock table for assigning parts to drawers."
+    },
+    "Ajouter depuis un catalogue": {
+      "fr": "Ouvre les catalogues pour associer des références sans créer de stock.",
+      "en": "Opens catalogues for linking references without creating stock."
+    },
+    "Retirer les références du tiroir": {
+      "fr": "Retire les liens de rangement du tiroir sans modifier le stock.",
+      "en": "Removes drawer assignments without changing stock."
+    },
+    "Associer la sélection": {
+      "fr": "Associe les références sélectionnées au tiroir choisi.",
+      "en": "Links selected references to the chosen drawer."
+    },
+    "Associer au tiroir sélectionné": {
+      "fr": "Associe la sélection au tiroir actuellement choisi.",
+      "en": "Links the selection to the currently chosen drawer."
+    },
+    "Associer les références au tiroir": {
+      "fr": "Enregistre les liens entre ces références et le tiroir choisi.",
+      "en": "Saves links between these references and the chosen drawer."
+    },
+    "Actualiser les meubles": {
+      "fr": "Recharge la liste des meubles et des tiroirs disponibles.",
+      "en": "Reloads the available cabinets and drawers."
+    },
+    "Sans emplacement uniquement": {
+      "fr": "Affiche uniquement les références qui n’ont pas encore de tiroir.",
+      "en": "Shows only references that do not yet have a drawer."
+    },
+    "Séparer les couleurs": {
+      "fr": "Propose des tiroirs distincts pour les couleurs d’une même taille.",
+      "en": "Proposes separate drawers for colours of the same size."
+    },
+    "Réorganiser cette catégorie dans ce meuble": {
+      "fr": "Refait les associations de cette catégorie dans le meuble choisi.",
+      "en": "Rebuilds this category’s assignments in the chosen cabinet."
+    },
+    "Préparer une proposition": {
+      "fr": "Calcule une répartition des pièces dans les tiroirs, à vérifier avant application.",
+      "en": "Calculates drawer assignments for review before application."
+    },
+    "Appliquer le rangement proposé": {
+      "fr": "Enregistre les associations du plan vérifié, sans modifier les quantités.",
+      "en": "Saves assignments from the reviewed plan without changing quantities."
+    },
+    "À gauche": {
+      "fr": "Place ce meuble à gauche du meuble de référence avec l’écart choisi.",
+      "en": "Places this cabinet left of the reference cabinet using the chosen gap."
+    },
+    "À droite": {
+      "fr": "Place ce meuble à droite du meuble de référence avec l’écart choisi.",
+      "en": "Places this cabinet right of the reference cabinet using the chosen gap."
+    },
+    "Au-dessus": {
+      "fr": "Place ce meuble au-dessus du meuble de référence avec l’écart choisi.",
+      "en": "Places this cabinet above the reference cabinet using the chosen gap."
+    },
+    "En dessous": {
+      "fr": "Place ce meuble sous le meuble de référence avec l’écart choisi.",
+      "en": "Places this cabinet below the reference cabinet using the chosen gap."
+    },
+    "Rechercher une mise à jour": {
+      "fr": "Vérifie les releases GitHub plus récentes que la version installée.",
+      "en": "Checks GitHub releases newer than the installed version."
+    },
+    "Télécharger le ZIP complet": {
+      "fr": "Télécharge et vérifie la version Windows proposée.",
+      "en": "Downloads and validates the proposed Windows version."
+    },
+    "Installer et redémarrer": {
+      "fr": "Installe la version téléchargée après fermeture, puis relance BrickLabo.",
+      "en": "Installs the downloaded version after shutdown, then restarts BrickLabo."
+    },
+    "Ouvrir le dossier de l’ancienne installation": {
+      "fr": "Ouvre la copie conservée de l’installation précédente.",
+      "en": "Opens the retained copy of the previous installation."
+    },
+    "Ouvrir les releases sur GitHub": {
+      "fr": "Ouvre les versions publiées et leurs fichiers sur GitHub.",
+      "en": "Opens published versions and their files on GitHub."
+    },
+    "Annuler le téléchargement": {
+      "fr": "Arrête le téléchargement sans remplacer la version installée.",
+      "en": "Stops downloading without replacing the installed version."
+    },
+    "Terminer le placement": {
+      "fr": "Quitte le mode de déplacement des meubles. Les positions sont déjà enregistrées.",
+      "en": "Exits cabinet placement mode. Positions are already saved."
+    },
+    "Cocher les résultats": {
+      "fr": "Coche les catégories trouvées par la recherche et conserve les autres choix.",
+      "en": "Checks categories matching the search and keeps other choices."
+    },
+    "Décocher les résultats": {
+      "fr": "Décoche les catégories trouvées par la recherche et conserve les autres choix.",
+      "en": "Unchecks categories matching the search and keeps other choices."
+    },
+    "Ajouter au stock…": {
+      "fr": "Choisit entre ajouter les pièces de l’inventaire au stock en vrac et ajouter le set au stock set.",
+      "en": "Chooses between adding inventory parts to loose stock and adding the set to set stock."
+    },
+    "Rangement automatique…": {
+      "fr": "Propose des tiroirs par catégorie et taille, les plus petites pièces en haut, à vérifier puis appliquer.",
+      "en": "Proposes drawers by category and size, smallest parts at the top, to review then apply."
+    }
+  },
+  "contexts": {
+    "LabelEditor|Annuler": {
+      "fr": "Annule la dernière modification du brouillon de l’étiquette.",
+      "en": "Undoes the last change to the label draft."
+    },
+    "LabelEditor|Supprimer": {
+      "fr": "Retire le calque sélectionné du brouillon de l’étiquette.",
+      "en": "Removes the selected layer from the label draft."
+    },
+    "LabelEditor|Charger…": {
+      "fr": "Charge un modèle d’étiquette depuis un fichier JSON.",
+      "en": "Loads a label model from a JSON file."
+    },
+    "LabelEditor|Enregistrer sous…": {
+      "fr": "Enregistre le brouillon d’étiquette dans un fichier JSON.",
+      "en": "Saves the label draft to a JSON file."
+    },
+    "LabelEditor|Appliquer": {
+      "fr": "Enregistre le brouillon pour le général, la catégorie ou la sélection indiquée.",
+      "en": "Saves the draft for the indicated general model, category or selection."
+    },
+    "EdgeDialog|Supprimer": {
+      "fr": "Retire le réglage d’arêtes sélectionné de la liste.",
+      "en": "Removes the selected edge preset from the list."
+    },
+    "EdgeDialog|Enregistrer sous…": {
+      "fr": "Enregistre ces arêtes comme nouveau réglage nommé.",
+      "en": "Saves these edges as a new named preset."
+    },
+    "FilterDialog|Supprimer": {
+      "fr": "Retire le filtre enregistré sélectionné.",
+      "en": "Removes the selected saved filter."
+    },
+    "FilterDialog|Charger": {
+      "fr": "Remet les critères du filtre enregistré dans cette fenêtre.",
+      "en": "Loads the saved filter criteria into this window."
+    },
+    "FilterDialog|Enregistrer…": {
+      "fr": "Enregistre les critères de recherche sous un nom.",
+      "en": "Saves search criteria under a name."
+    },
+    "Catalogue|Ajouter": {
+      "fr": "Crée une référence dans le catalogue alternatif.",
+      "en": "Creates a reference in the alternative catalogue."
+    },
+    "Catalogue|Supprimer": {
+      "fr": "Retire les lignes sélectionnées du tableau actuel.",
+      "en": "Removes selected rows from the current table."
+    },
+    "Preview|Supprimer": {
+      "fr": "Retire ce lien web de la référence.",
+      "en": "Removes this web link from the reference."
+    },
+    "DocumentsPanel|Ouvrir": {
+      "fr": "Ouvre les notices sélectionnées, en les téléchargeant si nécessaire.",
+      "en": "Opens selected instructions, downloading them when needed."
+    },
+    "StockMocsDialog|Rechercher": {
+      "fr": "Cherche les alternatives des sets couverts par ton stock. Clé Rebrickable requise.",
+      "en": "Finds alternatives of sets covered by your stock. A Rebrickable key is required."
+    },
+    "MocSearchDialog|Rechercher": {
+      "fr": "Cherche les MOC selon le mot-clé et le créateur, sans clé API.",
+      "en": "Finds MOCs using the keyword and creator, without an API key."
+    }
+  }
+}

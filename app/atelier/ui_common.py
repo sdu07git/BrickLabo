@@ -9,11 +9,32 @@ from .fileio import error_message
 from pathlib import Path
 from io import BytesIO
 
-from PySide6.QtCore import QObject, QRunnable, QThreadPool, Signal, Slot, Qt, QSize, QRect
+from PySide6.QtCore import QObject, QRunnable, QThreadPool, Signal, Slot, Qt, QSize, QRect, QEvent
 from PySide6.QtGui import QImage, QPixmap, QPainter, QBrush, QColor, QPalette
 from PySide6.QtWidgets import (QDialog,QVBoxLayout,QScrollArea,QWidget,QLabel,QPushButton,
                               QMessageBox,QDialogButtonBox,QFormLayout,QLineEdit,QSpinBox,QComboBox,QLayout,
-                              QStylePainter,QStyleOptionButton,QStyle)
+                              QStylePainter,QStyleOptionButton,QStyle,QSizePolicy,QFrame)
+
+
+class HorizontalControls(QScrollArea):
+    """One row of readable controls, scrollable without taking table height."""
+    def __init__(self,parent=None):
+        super().__init__(parent)
+        self.setWidgetResizable(True);self.setFrameShape(QFrame.Shape.NoFrame)
+        self.setVerticalScrollBarPolicy(Qt.ScrollBarPolicy.ScrollBarAlwaysOff)
+        self.setSizePolicy(QSizePolicy.Policy.Expanding,QSizePolicy.Policy.Fixed)
+        body=QWidget();self.setWidget(body)
+        from PySide6.QtWidgets import QHBoxLayout
+        self.row=QHBoxLayout(body);self.row.setContentsMargins(0,0,0,0);self.row.setSpacing(6)
+        self.row.setSizeConstraint(QLayout.SizeConstraint.SetMinimumSize)
+        body.installEventFilter(self)
+    def sizeHint(self):
+        height=self.widget().sizeHint().height()+self.horizontalScrollBar().sizeHint().height()
+        return QSize(300,max(0,height))
+    def minimumSizeHint(self):return QSize(160,self.sizeHint().height())
+    def eventFilter(self,watched,event):
+        if event.type()==QEvent.Type.LayoutRequest:self.updateGeometry()
+        return super().eventFilter(watched,event)
 
 
 class FlowLayout(QLayout):

@@ -1,8 +1,56 @@
-# BrickLabo — v0.1.50
+# BrickLabo — v0.1.54
 
-Windows desktop software for LEGO catalogues, stock, construction searches and labels. This version continues the delivered v0.1.49, based on the original v0.1.28.
+Windows desktop software for LEGO catalogues, stock, construction searches and labels. This version continues the published v0.1.50, based on the original v0.1.28.
 
-**Downloads v0.1.50:** [complete Windows package](https://github.com/sdu07git/BrickLabo/releases/download/v0.1.50/BrickLabo_v0.1.50_Complet.zip) · [sources with resources](https://github.com/sdu07git/BrickLabo/releases/download/v0.1.50/BrickLabo_v0.1.50_Sources.zip) · [release notes](https://github.com/sdu07git/BrickLabo/releases/tag/v0.1.50).
+**Downloads v0.1.54 :** [complete Windows package](https://github.com/sdu07git/BrickLabo/releases/download/v0.1.54/BrickLabo_v0.1.54_Complet.zip) · [sources with resources](https://github.com/sdu07git/BrickLabo/releases/download/v0.1.54/BrickLabo_v0.1.54_Sources.zip) · [release notes](https://github.com/sdu07git/BrickLabo/releases/tag/v0.1.54).
+
+## Small screens and adjustable top panel — v0.1.54
+
+Catalogue search stays compact. Search, categories, columns, advanced filters and **Hide / Show decorated parts** share one row. When space is limited, move the horizontal scrollbar below these controls; filters no longer create extra rows. **Selection layout…** joins the actions below the table. Categories can be ticked or unticked in their menu, with search and select-all controls. No selected-category tag bar takes space above the table. The active exact-reference filter remains visible separately.
+
+**Drag the horizontal border below the top button groups** up or down to shrink or enlarge the panel. Its height survives restart and preference backups. A vertical scrollbar keeps every top button accessible when the panel is reduced. Groups have smaller margins and fit their contents. The initial window fits the screen, with a minimum size of 800 × 480.
+
+To exclude a group, open **Advanced filters → Categories**, click **Select all categories**, search for **duplo**, then **Uncheck search results**. Only matching categories are removed; other choices are kept. **Check search results** does the reverse. The catalogue category menu offers the same commands. No checked category removes the category filter and shows all categories.
+
+In set catalogues, right-click offers **Add inventory to My stock** to add loose parts and minifigures, or **Add set to My set stock** to own the set with tracked components. **Add to stock…** offers both destinations. Multiple selections are supported; inventory colours and quantities are preserved, nested sets are expanded and spare parts are included. Missing or incomplete inventories stop the entire addition. Load inventories first; these actions trigger no download. Ctrl+Z undoes the addition.
+
+In **My storage → Parts to store**, choose **Destination cabinet**. This focuses the cabinet for drag and drop and targets **Automatic storage…** and **Store by category and size…**. Automatic storage uses selected rows, or displayed references if none are selected, from the chosen stock or catalogue source. Categories are grouped and stud sizes sorted smallest first; drawers are proposed top to bottom, left to right. Review and apply the proposal; it creates storage links while preserving quantities. Unknown dimensions, groups without available drawers and occupied drawers remain identified.
+
+**Right-click a drawer → Remove a reference from the drawer** lets you choose the part and colour to remove from that location. Other references, links to other drawers and stock are preserved. **Remove all references from the drawer…** requires confirmation. For drawers containing more than thirty rows, the menu also opens their contents table.
+
+## Button help and API features — v0.1.53
+
+Keep the pointer over a button for **two seconds** to see a brief explanation. Leaving, clicking or closing the window cancels the tooltip. Each new button starts its own two-second delay. Help covers controls across windows, standard buttons, checkboxes and controls created later; existing explanations are preserved. Help follows changing captions and the FR / EN language. It triggers no action and changes no data. Label-model hover previews remain immediate.
+
+A **Rebrickable key** is required for these API operations: updating an RB reference’s photo and external matches; batch downloads of RB set inventories; downloading RB minifigure parts; fetching a set’s alternate builds; **MOCs using available parts…** (alternatives of sets covered by stock, without verifying the MOC’s own inventory); and online automatic BrickLink-to-Rebrickable part and colour conversion through **Convert BrickLink (RB API)** during stock export.
+
+The **four BrickLink credentials** (Consumer Key, Consumer Secret, Token, Token Secret) are required for these API operations: updating a BL reference’s photo and fetching its colour palette; downloading BL set and minifigure inventories, including set batches; and fetching a reference’s available colours through **Load via BrickLink API (optional)**.
+
+CSV / TXT imports, public Rebrickable exports, keyword / creator MOC search, public instructions, LDraw, stock, storage, label editing and printing remain available without keys. Buildable-set calculations use local inventories and require no key when the necessary data is present. Rebrickable CSV export also works without a key using known or manually corrected references; only automatic API conversion requires the key. Photo searches remain available without an API; configured credentials can add photos and reference matches. Credentials never appear in the new tooltips.
+
+
+## Custom label models, categories and selections — v0.1.52
+
+**Label editor → Label models** lists the three built-in layouts and models saved with **Save a model…**. Hover over an entry to see its label beside the menu without changing the draft. Click to choose a layout, edit its layers, then **Apply** to save it. **Delete this model** removes the menu choice while preserving applied layouts. JSON Load / Save as remain available.
+
+**Apply to → Category** associates the draft with the chosen category across catalogues and future references. Priority: individual layout, category model, general model. Category colours follow the general settings. The physical sheet format remains general; layouts scale accordingly. **Follow the general model** removes the category association.
+
+In **Print Labels**, part catalogues, stock or history, select multiple rows with Ctrl / Shift then use **Selection layout…**, also available in the context menu. The shared draft starts with the first selected row. Choose a model or adjust its layers, then **Apply**. Rows are captured on opening, including across pages; a deleted target interrupts application. All layouts commit together. Quantities, stock, colours, angles and individual edges are preserved. Catalogue selections configure references; Print Labels selections configure only those scoped entries and colours. Resetting an individual layout returns to its category model, or to the general model when none is assigned.
+
+**Data updates → Update LDraw (complete.zip)** downloads the official library, validates the ZIP and indexes explicit header links. Failure preserves the active library. After successful activation, the previous managed archive in Donnees is removed if no other setting refers to it. The bundled complete.zip and external files are preserved. Manual complete.zip imports remain available and retain their earlier versions.
+
+LDraw shortcuts recursively load their parts, stickers, subparts and primitives using each file’s positions and transformations. Bare parts do not receive arbitrary stickers. Only explicit, unique Rebrickable / BrickLink header links are used. Missing dependencies or unsupported TEXMAP patterns fall back to photographs. Verified example: **87552d02.dat**, official UPDATE 2026-09, loads **87552.dat** and **6177954b.dat** and identifies BrickLink **87552pb065R**. This version includes official library update 2026-09. Named models, category assignments and individual layouts are included in selective model backups.
+
+
+## Two new label layouts — v0.1.51
+
+In **Label editor → Label models**, choose **Centred main view** for a single centred view, without top or side views. Category and stud dimensions sit in the header, with references at the bottom. **Main and bottom views** places the main view on the left and a true underside view on the right. The classic layout with top and side views remains available.
+
+The choice changes the draft: adjust layers if needed, then **Apply** to save. Presets are also available in the individual label editor. Current format, colours, transparency and edge settings are retained. Undo / redo, JSON templates and selective label backups preserve the layout.
+
+The LDraw bottom view keeps its orientation when the main view rotates. Its layer supports adding, moving, resizing, cropping and zooming. A photograph alone cannot provide an underside; the preview explains when it is unavailable. Only requested views are rendered. PNG, PDF and printing share the same layout.
+
+
 
 
 ## Assign catalogue references directly to drawers — v0.1.50
@@ -178,8 +226,9 @@ Read [English help](documentation/AIDE.en.html) and [component licences](documen
 | 0.1.48 | Partial imports with saved corrections, resumption, duplicate prevention and undo; buttons and scrolling adapted to small windows. |
 | 0.1.49 | Spaced top controls, external exports, stable thin-edge thumbnails, part drag-and-drop and assisted storage by category and size. |
 | 0.1.50 | Direct catalogue-to-drawer associations without stock or quantities; catalogue choices in Parts to store. |
+| 0.1.51 | Centred main view and main plus bottom view label presets; editable LDraw underside and rendering of requested views only. |
 
-One bilingual [NOUVEAUTES.txt](documentation/NOUVEAUTES.txt) holds cumulative notes. This branch does not document a released 0.1.29. The 0.1.28b / Range variants were not used as the baseline. The [v0.1.50 validation report](documentation/CONTROLE_v0.1.50.txt) describes the checks for this delivery.
+One bilingual [NOUVEAUTES.txt](documentation/NOUVEAUTES.txt) holds cumulative notes. This branch does not document a released 0.1.29. The 0.1.28b / Range variants were not used as the baseline. The [v0.1.51 validation report](documentation/CONTROLE_v0.1.51.txt) describes the checks for this delivery.
 
 ## Development and diagnostics
 
@@ -193,5 +242,8 @@ For a compatible future update, publish a public stable release with tag `vX.Y.Z
 
 To develop from this repository, take `ressources/complete.zip` from the source ZIP attached to the release: this LDraw archive exceeds GitHub's regular file size limit. GitHub's automatic source archives contain neither this resource nor the Windows runtime. Both attached ZIPs are the delivered and tested version; the repository READMEs are adapted for publication.
 
-**Validation v0.1.50:** 540 tests passed on Qt/Linux; archives, dependencies and embedded icon checked. Native Windows execution and Windows drag-and-drop remain to be confirmed.
+The [v0.1.51 validation report](documentation/CONTROLE_v0.1.51.txt) describes the checks for this delivery. Native Windows execution remains to be confirmed.
 
+
+
+**Validation v0.1.54:** 617 tests covered on Qt/Linux, including 153 successfully rerun checks for changed features. Windows launcher, icon, dependencies and ZIPs checked. Native Windows execution remains to be confirmed.

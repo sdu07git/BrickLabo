@@ -5,7 +5,7 @@ import uuid
 
 from PySide6.QtCore import Qt,QMimeData,QTimer,Signal
 from PySide6.QtGui import QDrag
-from PySide6.QtWidgets import (QWidget,QDialog,QVBoxLayout,QLabel,QLineEdit,QComboBox,QCheckBox,
+from PySide6.QtWidgets import (QWidget,QDialog,QVBoxLayout,QHBoxLayout,QLabel,QLineEdit,QComboBox,QCheckBox,
     QTableWidget,QPushButton,QAbstractItemView,QHeaderView,QMessageBox,QFormLayout)
 from .i18n import tr,tf
 from .ui_common import FlowLayout
@@ -65,6 +65,8 @@ class StorageDragTable(QTableWidget):
 class StockToDrawers(QWidget):
     selected=Signal(object)
     opened=Signal(object)
+    plan_requested=Signal()
+    target_wall_changed=Signal(object)
     def __init__(self,db,engine,place,parent=None):
         super().__init__(parent);self.db=db;self.rows=[];self.place=place
         layout=QVBoxLayout(self);layout.setContentsMargins(0,0,0,0)
@@ -72,6 +74,7 @@ class StockToDrawers(QWidget):
         self.origin=QComboBox();self.origin.setAccessibleName(tr('Origine des pièces à ranger'))
         for label,value in [(tr('Stock en vrac'),'stock'),(tr('Tous les catalogues'),'catalogue'),(tr('Catalogue Rebrickable'),'RB'),(tr('Catalogue BrickLink'),'BL'),('BrickArchitect','BA'),(tr('Catalogue Briques Alternatives'),'ALT'),(tr('Catalogue Mini-Figs'),'minifig')]:self.origin.addItem(label,value)
         layout.addWidget(self.origin)
+        destination=QHBoxLayout();destination.addWidget(QLabel(tr('Meuble de destination')));self.target_wall=QComboBox();self.target_wall.setAccessibleName(tr('Meuble de destination'));self.target_wall.setSizeAdjustPolicy(QComboBox.SizeAdjustPolicy.AdjustToMinimumContentsLengthWithIcon);self.target_wall.setMinimumContentsLength(12);self.target_wall.setMaximumWidth(260);destination.addWidget(self.target_wall,1);layout.addLayout(destination)
         controls=FlowLayout();self.query=QLineEdit();self.query.setPlaceholderText(tr('Référence, nom ou catégorie'));self.query.setMinimumWidth(180);controls.addWidget(self.query)
         self.category=QComboBox();self.category.setMinimumContentsLength(16);self.category.setSizeAdjustPolicy(QComboBox.SizeAdjustPolicy.AdjustToMinimumContentsLengthWithIcon);controls.addWidget(self.category)
         self.unlocated=QCheckBox(tr('Sans emplacement uniquement'));self.unlocated.setChecked(True);controls.addWidget(self.unlocated);layout.addLayout(controls)
@@ -81,13 +84,24 @@ class StockToDrawers(QWidget):
         for column,width in enumerate((70,90,80,210,140,100,130)):self.table.setColumnWidth(column,width)
         self.table.horizontalHeader().setSectionResizeMode(QHeaderView.ResizeMode.Interactive);self.table.setMinimumHeight(150);layout.addWidget(self.table,1)
         self.thumbnails=PartThumbnails(self.table,db,engine,self.visible_rows,6,self) if engine else None
-        row=FlowLayout();self.count=QLabel();row.addWidget(self.count);self.add=QPushButton(tr('Associer au tiroir sélectionné'));self.add.clicked.connect(self.add_selection);row.addWidget(self.add);layout.addLayout(row)
+        row=FlowLayout();self.count=QLabel();row.addWidget(self.count);self.add=QPushButton(tr('Associer au tiroir sélectionné'));self.add.clicked.connect(self.add_selection);row.addWidget(self.add)
+        self.auto_sort=QPushButton(tr('Rangement automatique…'));self.auto_sort.setToolTip(tr('Préparer un rangement par catégorie et taille, des plus petites pièces en haut aux plus grandes en bas.'));self.auto_sort.clicked.connect(lambda:self.plan_requested.emit());row.addWidget(self.auto_sort);layout.addLayout(row)
         self.timer=QTimer(self);self.timer.setSingleShot(True);self.timer.setInterval(180);self.timer.timeout.connect(self.reload)
         for signal in (self.query.textChanged,self.category.currentIndexChanged,self.unlocated.toggled):signal.connect(lambda *_:self.timer.start())
         self.table.itemSelectionChanged.connect(self.select);self.table.itemDoubleClicked.connect(self.open)
         self.table.horizontalHeader().sortIndicatorChanged.connect(lambda *_:self.thumbnails.reset() if self.thumbnails else None)
         self.origin.currentIndexChanged.connect(self.change_origin)
+        self.target_wall.currentIndexChanged.connect(lambda:self.target_wall_changed.emit(self.target_wall.currentData()))
+        self.target_wall.currentTextChanged.connect(self.target_wall.setToolTip)
+        self.reload_target_walls()
         self.reload_categories();self.reload()
+
+    def set_target_wall(self,identity):
+        blocked=self.target_wall.blockSignals(True);self.target_wall.setCurrentIndex(max(0,self.target_wall.findData(identity)));self.target_wall.blockSignals(blocked)
+    def reload_target_walls(self,preferred=None):
+        current=preferred if preferred is not None else self.target_wall.currentData();blocked=self.target_wall.blockSignals(True);self.target_wall.clear()
+        for wall in walls.walls(self.db):self.target_wall.addItem(wall['name'],wall['id'])
+        self.target_wall.setCurrentIndex(max(0,self.target_wall.findData(current)));self.target_wall.setEnabled(self.target_wall.count()>0);self.target_wall.blockSignals(blocked)
 
     def catalogue_mode(self):return self.origin.currentData()!='stock'
 
@@ -172,13 +186,22 @@ class CatalogueToDrawerDialog(QDialog):
 
 
 class StoragePlanDialog(QDialog):
-    def __init__(self,db,wall_id,parent=None,changed=lambda:None):
+    def __init__(self,db,wall_id,parent=None,changed=lambda:None,entries=None,from_catalogue=False,category=''):
         super().__init__(parent);self.db=db;self.wall_id=wall_id;self.changed=changed;self.plan=None;self.targets=[]
+        self.entries=list(entries) if entries is not None else None;self.from_catalogue=from_catalogue
         self.setWindowTitle(tr('Ranger par catégorie et taille en tenons'));self.resize(960,650)
         layout=QVBoxLayout(self)
-        hint=QLabel(tr('Choisis une catégorie, par exemple Bricks. Les dimensions écrites dans les noms des pièces regroupent les références par taille, de la plus petite à la plus grande. Les couleurs restent ensemble sauf si tu les sépares. Ajuste les tiroirs proposés avant d’appliquer.'));hint.setWordWrap(True);layout.addWidget(hint)
+        hint=QLabel(tr('Choisis une catégorie, par exemple Bricks. Les dimensions écrites dans les noms des pièces regroupent les références par taille, de la plus petite à la plus grande. Les tiroirs sont remplis depuis le haut, de gauche à droite. Les couleurs restent ensemble sauf si tu les sépares. Ajuste les tiroirs proposés avant d’appliquer.'));hint.setWordWrap(True);layout.addWidget(hint)
+        if self.entries is not None:
+            scope_hint=QLabel(tr('Cette proposition utilise la sélection de Pièces à ranger, ou les références affichées si aucune ligne n’est sélectionnée.'));scope_hint.setWordWrap(True);layout.addWidget(scope_hint)
         controls=FlowLayout();self.category=QComboBox();self.category.addItem(tr('Toutes les catégories'),'')
         for row in db.rows("SELECT DISTINCT category FROM (SELECT i.category FROM stock s JOIN items i ON i.id=s.item_id WHERE s.quantity>0 AND i.kind IN ('part','minifig') UNION SELECT i.category FROM storage_contents p JOIN storage_drawers d ON d.id=p.drawer_id JOIN items i ON i.id=p.item_id WHERE d.wall_id=?) WHERE category<>'' ORDER BY category",(wall_id,)):self.category.addItem(row['category'],row['category'])
+        if self.from_catalogue:
+            categories={self.category.itemData(index) for index in range(self.category.count())}
+            for identity,color in self.entries or []:
+                item=db.get_item(identity)
+                if item and item['category'] and item['category'] not in categories:self.category.addItem(item['category'],item['category']);categories.add(item['category'])
+        self.category.setCurrentIndex(max(0,self.category.findData(category)))
         controls.addWidget(self.category);self.colors=QCheckBox(tr('Séparer les couleurs'));controls.addWidget(self.colors)
         self.reorganize=QCheckBox(tr('Réorganiser cette catégorie dans ce meuble'));controls.addWidget(self.reorganize);layout.addLayout(controls)
         explanation=QLabel(tr('Par défaut : pièces sans emplacement et tiroirs vides sans nom. La réorganisation remplace les liens des tiroirs contenant uniquement cette catégorie. Les tiroirs mixtes, les autres meubles et toutes les quantités sont conservés.'));explanation.setWordWrap(True);layout.addWidget(explanation)
@@ -195,7 +218,7 @@ class StoragePlanDialog(QDialog):
     def rebuild(self,*_):
         category=self.category.currentData() or '';self.reorganize.setEnabled(bool(category))
         if not category:self.reorganize.blockSignals(True);self.reorganize.setChecked(False);self.reorganize.blockSignals(False)
-        try:self.plan=assignment.propose(self.db,self.wall_id,category,self.colors.isChecked(),self.reorganize.isChecked())
+        try:self.plan=assignment.propose(self.db,self.wall_id,category,self.colors.isChecked(),self.reorganize.isChecked(),self.entries,self.from_catalogue)
         except (ValueError,sqlite3.Error,OSError) as error:
             self.plan=None;self.table.setRowCount(0);self.summary.setText(str(error));self.apply_button.setEnabled(False);return
         self.targets=[];fill_table(self.table,[(g['category'],assignment.dimensions_text(g['dimensions']),g['color'],str(len(g['entries'])),'') for g in self.plan['groups']],sortable=False)

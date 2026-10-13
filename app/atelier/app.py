@@ -19,7 +19,7 @@ from PySide6.QtCore import Qt,QTimer,QUrl
 from PySide6.QtGui import QAction,QDesktopServices,QColor
 from PySide6.QtWidgets import (QApplication,QMainWindow,QWidget,QVBoxLayout,QHBoxLayout,QSplitter,
     QListWidget,QStackedWidget,QScrollArea,QPushButton,QLabel,QComboBox,QFileDialog,QMessageBox,
-    QMenu,QInputDialog,QColorDialog,QCheckBox,QGroupBox,QDoubleSpinBox,QFormLayout,QDialog,QGridLayout)
+    QMenu,QInputDialog,QColorDialog,QCheckBox,QGroupBox,QDoubleSpinBox,QFormLayout,QDialog,QGridLayout,QFrame)
 
 from .version import APP_NAME,VERSION
 from .diagnostics import setup_logging,log_directory
@@ -40,27 +40,40 @@ NAV=[(tr('Catalogue Rebrickable'),'RB','part','catalogue'),(tr('Catalogue BrickL
      (tr('Catalogue Set Alternatif'),'ALT','set','catalogue'),(tr('Mon stock'),None,('part','minifig'),'stock'),(tr('Mon stock set'),None,'set','stock_sets'),
      (tr('Impression Étiquettes'),None,None,'queue'),(tr('Historique'),None,None,'history'),(tr('Mon rangement'),None,None,'storage')]
 
+TOP_MIN_HEIGHT=64
+
 
 class MainWindow(QMainWindow):
     def __init__(self,db):
-        super().__init__();self.db=db;self.engine=VisualEngine(db);self.current_item=None;self.catalogues=[];self.owned_panels=[];self.generating=False;self._stock_revision=db.stock_revision();self._closing=False;self._request_cancel=threading.Event()
+        super().__init__()
+        from .button_help import install_button_help
+        install_button_help()
+        self.db=db;self.engine=VisualEngine(db);self.current_item=None;self.catalogues=[];self.owned_panels=[];self.generating=False;self._stock_revision=db.stock_revision();self._closing=False;self._request_cancel=threading.Event()
         self.close_timer=QTimer(self);self.close_timer.setInterval(50);self.close_timer.timeout.connect(self.close)
-        self.setWindowTitle(f'{APP_NAME} — v{VERSION}');self.resize(1500,900);self.setMinimumSize(950,650)
-        outer=QWidget();self.setCentralWidget(outer);root=QVBoxLayout(outer);root.setSpacing(10)
-        top=QHBoxLayout();top.setSpacing(14);root.addLayout(top)
-        edit=QGroupBox(tr('Édition de l’étiquette'));erow=FlowLayout(edit,spacing=12);erow.setContentsMargins(12,24,12,12)
+        self.setWindowTitle(f'{APP_NAME} — v{VERSION}');self.setMinimumSize(800,480)
+        available=self.screen().availableGeometry();self.resize(min(1500,max(800,available.width()-32)),min(900,max(480,available.height()-56)))
+        outer=QWidget();self.setCentralWidget(outer);root=QVBoxLayout(outer);root.setContentsMargins(6,6,6,6);root.setSpacing(0)
+        self.workspace_splitter=QSplitter(Qt.Orientation.Vertical);self.workspace_splitter.setObjectName('workspaceSplitter');self.workspace_splitter.setHandleWidth(9);self.workspace_splitter.setChildrenCollapsible(False);self.workspace_splitter.setOpaqueResize(False);root.addWidget(self.workspace_splitter)
+        self.workspace_splitter.setStyleSheet('QSplitter#workspaceSplitter::handle:vertical { background:#304258; border-top:1px solid #586d86; border-bottom:1px solid #101923; }')
+        self.top_scroll=QScrollArea();self.top_scroll.setWidgetResizable(True);self.top_scroll.setFrameShape(QFrame.Shape.NoFrame);self.top_scroll.setHorizontalScrollBarPolicy(Qt.ScrollBarPolicy.ScrollBarAlwaysOff);self.top_scroll.setMinimumHeight(TOP_MIN_HEIGHT)
+        self.top_controls=QWidget();self.top_controls.setStyleSheet('QGroupBox { margin-top:8px; padding-top:0px; } QPushButton { padding:5px 8px; }');self.top_scroll.setWidget(self.top_controls);self.workspace_splitter.addWidget(self.top_scroll)
+        top=QHBoxLayout(self.top_controls);top.setContentsMargins(0,0,0,0);top.setSpacing(10);top.setAlignment(Qt.AlignmentFlag.AlignTop)
+        edit=QGroupBox(tr('Édition de l’étiquette'));erow=FlowLayout(edit,spacing=8);erow.setContentsMargins(8,18,8,8)
         for name,func in [(tr('Contours'),self.category_colors),(tr('Couleur 3D'),self.default_color),(tr('Arêtes 3D'),self.edge_settings),(tr('Éditeur d’étiquettes'),self.editor),(tr('Taille par défaut'),self.label_size)]:
             b=QPushButton(name);b.clicked.connect(func);erow.addWidget(b)
-        top.addWidget(edit,1)
-        tools=QGroupBox(tr('Données et réglages'));trow=FlowLayout(tools,spacing=12);trow.setContentsMargins(12,24,12,12)
+        top.addWidget(edit,1,Qt.AlignmentFlag.AlignTop)
+        tools=QGroupBox(tr('Données et réglages'));trow=FlowLayout(tools,spacing=8);trow.setContentsMargins(8,18,8,8)
         for index,(name,func) in enumerate([(tr('Langue'),self.language_settings),(tr('Clés API'),self.api),(tr('Aide'),lambda:help_dialog(self)),(tr('Mise à jour des données'),self.imports),(tr('Dossier PNG / PDF'),self.output_folder),(tr('Logs'),self.open_logs),(tr('Espace disque'),self.cache_settings),(tr('Sauvegardes'),self.backup_settings),(tr('Sources et licences'),self.sources_licenses)]):
             b=QPushButton(name);b.clicked.connect(func);trow.addWidget(b)
-        top.addWidget(tools,1)
-        self.undo_button=QPushButton(tr('Annuler la dernière action'));self.undo_button.clicked.connect(self.undo_stock);root.addWidget(self.undo_button)
+        top.addWidget(tools,1,Qt.AlignmentFlag.AlignTop)
+        content=QWidget();body=QVBoxLayout(content);body.setContentsMargins(0,0,0,0);body.setSpacing(6);self.workspace_splitter.addWidget(content);self.workspace_splitter.setStretchFactor(0,0);self.workspace_splitter.setStretchFactor(1,1)
+        handle=self.workspace_splitter.handle(1);handle.setCursor(Qt.CursorShape.SplitVCursor);handle.setAccessibleName(tr('Hauteur du volet supérieur'));handle.setToolTip(tr('Glisse cette bordure vers le haut ou le bas pour régler la hauteur du volet supérieur.'))
+        self._top_height_restored=False;self.workspace_splitter.splitterMoved.connect(self.save_top_panel_height)
+        self.undo_button=QPushButton(tr('Annuler la dernière action'));self.undo_button.clicked.connect(self.undo_stock);body.addWidget(self.undo_button)
         self.undo_shortcut=QAction(self);self.undo_shortcut.setShortcut('Ctrl+Z');self.undo_shortcut.triggered.connect(self.undo_stock);self.addAction(self.undo_shortcut)
         self.update_undo()
-        split=QSplitter();root.addWidget(split,1)
-        self.nav=QListWidget();self.nav.addItems([x[0] for x in NAV]);self.nav.setMinimumWidth(225);self.nav.setMaximumWidth(300);split.addWidget(self.nav)
+        split=QSplitter();body.addWidget(split,1)
+        self.nav=QListWidget();self.nav.addItems([x[0] for x in NAV]);self.nav.setMinimumWidth(190);self.nav.setMaximumWidth(300);split.addWidget(self.nav)
         self.stack=QStackedWidget();split.addWidget(self.stack)
         for title,source,kind,scope in NAV:
             if scope=='storage':
@@ -89,7 +102,7 @@ class MainWindow(QMainWindow):
                 vl.addWidget(cat);self.bind(cat)
                 if scope=='queue':self.queue=cat
                 self.stack.addWidget(widget)
-        self.right_scroll=QScrollArea();self.right_scroll.setWidgetResizable(True);self.preview=Preview(db,self.engine);self.preview.visual_changed.connect(self.visual_changed);self.right_scroll.setWidget(self.preview);self.right_scroll.setMinimumWidth(380);split.addWidget(self.right_scroll);split.setSizes([235,835,430]);split.setChildrenCollapsible(False)
+        self.right_scroll=QScrollArea();self.right_scroll.setWidgetResizable(True);self.preview=Preview(db,self.engine);self.preview.visual_changed.connect(self.visual_changed);self.right_scroll.setWidget(self.preview);self.right_scroll.setMinimumWidth(280);split.addWidget(self.right_scroll);split.setSizes([235,835,430]);split.setChildrenCollapsible(False)
         self.nav.currentRowChanged.connect(self.stack.setCurrentIndex);self.nav.setCurrentRow(0)
         self.statusBar().showMessage(tr('Prêt — importe les ressources pour remplir les catalogues.'))
         self.export_path=db.setting('output',str(db.path.parent/'Exports'))
@@ -98,6 +111,20 @@ class MainWindow(QMainWindow):
         self.import_window=None
         self.startup_timer=QTimer(self);self.startup_timer.setSingleShot(True);self.startup_timer.timeout.connect(self.first_import);self.startup_timer.start(100)
         self.cleanup_timer=QTimer(self);self.cleanup_timer.setSingleShot(True);self.cleanup_timer.timeout.connect(self.cleanup_old_installations)
+
+    def showEvent(self,event):
+        super().showEvent(event)
+        if self._top_height_restored:return
+        self._top_height_restored=True
+        natural=self.top_controls.layout().heightForWidth(self.top_scroll.viewport().width())
+        saved=self.db.setting('top_panel_height',natural)
+        if isinstance(saved,bool) or not isinstance(saved,(int,float)):saved=natural
+        height=max(TOP_MIN_HEIGHT,min(int(saved),max(TOP_MIN_HEIGHT,int(self.workspace_splitter.height()*.45))))
+        self.workspace_splitter.setSizes([height,max(1,self.workspace_splitter.height()-height)])
+
+    def save_top_panel_height(self,position,index):
+        if self._closing or not self._top_height_restored:return
+        self.db.set_setting('top_panel_height',self.workspace_splitter.sizes()[0])
 
     def cleanup_old_installations(self):
         from .paths import application_root
@@ -166,6 +193,7 @@ class MainWindow(QMainWindow):
             for window in list(getattr(self,'_consultation_windows',[])):
                 if hasattr(window,'stock_changed'):window.stock_changed()
     def refresh_all(self):
+        self.engine.invalidate_renderer()
         for c in self.catalogues:c.reload_categories();c.reload()
         if self.current_item:self.preview.set_item(self.db.get_item(self.current_item['id']))
         if hasattr(self,'storage'):self.storage.reload_walls();self.storage.invalidate()
@@ -213,7 +241,9 @@ class MainWindow(QMainWindow):
         d=ImportDialog(self.db,self,paths);d.finished_import.connect(self.refresh_all);self.import_window=d;show_window(d,self)
     def api(self):show_window(APIDialog(self.db,self),self)
     def editor(self):
-        d=LabelEditor(self.db,self.engine,self.current_item,self)
+        catalogue=self.stack.currentWidget().findChild(Catalogue)
+        selected=catalogue.selection() if catalogue else []
+        d=LabelEditor(self.db,self.engine,self.current_item,self,targets=selected)
         show_window(d,self,lambda result:self.preview.refresh() if result and self.current_item else None,refresh_counts=False)
     def edge_settings(self):
         from .edges import EdgeDialog

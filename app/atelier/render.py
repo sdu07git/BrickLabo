@@ -161,7 +161,7 @@ class LDraw:
         with _RENDER_SLOTS:return self._render(ref,size,color,view,outlines,camera,edge_strength,edge_settings)
 
     def _render(self,ref,size=(500,330),color='#f3d55b',view='perspective',outlines=True,camera=None,edge_strength=0,edge_settings=None):
-        angles=tuple(normalize_camera(camera).values()) if camera is not None and view not in ('top','side') else None
+        angles=tuple(normalize_camera(camera).values()) if camera is not None and view not in ('top','side','bottom') else None
         key=(self.frame_cache.generation,ref,tuple(size),color,view,angles)
         frame=self.frame_cache.get_or_create(key,lambda:self._frame(ref,size,color,view,camera))
         rgba=frame['rgba'].copy()
@@ -186,6 +186,8 @@ class LDraw:
         width,height=size;ss=2;w=width*ss;h=height*ss
         if view=='top':
             right=np.array([1.,0,0]);up=np.array([0.,0,-1]);depth=np.array([0.,-1,0])
+        elif view=='bottom':
+            right=np.array([1.,0,0]);up=np.array([0.,0,1]);depth=np.array([0.,1,0])
         elif view=='side':
             right=np.array([1.,0,0]);up=np.array([0.,-1,0]);depth=np.array([0.,0,-1])
         else:
@@ -193,7 +195,7 @@ class LDraw:
             depth=np.array([.48,-.72,.5]);depth/=np.linalg.norm(depth)
             up=np.cross(right,depth);up/=np.linalg.norm(up)
             right=np.cross(depth,up)
-        if view not in ('top','side') and camera is not None:
+        if view not in ('top','side','bottom') and camera is not None:
             angles=normalize_camera(camera)
             def rotate(vector,axis,degrees):
                 if not degrees:return vector

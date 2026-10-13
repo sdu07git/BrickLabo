@@ -1,0 +1,48 @@
+BrickLabo v0.1.54 — Controle de livraison
+
+617 tests couverts sur Qt/Linux : suite complete de 603 tests, puis revalidation
+des controles modifies et 14 nouveaux tests de stock et rangement.
+Revalidation finale : 153 tests reussis en 43,190 s ; 27 controles d interface
+et de langue reussis en 99,371 s, et 23 controles d aide et de catalogues reussis.
+140 fichiers Python valides en syntaxe.
+
+Petits ecrans : recherche de 130 a 240 pixels, filtres sur une seule ligne
+avec defilement horizontal. Volet superieur redimensionnable a la souris,
+hauteur conservee au redemarrage et dans les preferences. Chaque bouton
+reste accessible quand le volet est reduit. Verification visuelle FR/EN
+a 1024 x 600, 800 x 480 et 1366 x 768 ; glissement reel Qt verifie.
+
+Categories : cases a cocher dans le menu, sans bandeau au-dessus du tableau.
+Cocher/decocher les resultats de recherche conserve les autres choix.
+Exclusion groupee de toutes les categories Duplo verifiee, synchronisation
+avec les filtres avances et compatibilite des prereglages conserves.
+
+Sets : choix distincts au clic droit et dans le bouton Ajouter au stock...
+Inventaire vers le stock en vrac, ou set vers Mon stock set avec composants suivis.
+Couleurs, quantites, pieces supplementaires, mini-figures et sous-sets verifies.
+Multiselection atomique, inventaire incomplet refuse et annulation testee.
+Rebrickable, BrickLink et inventaires alternatifs verifies localement.
+Aucun telechargement implicite ; les inventaires doivent deja etre disponibles.
+
+Rangement : meuble de destination dans Pieces a ranger, commun au glisser-deposer
+et au rangement automatique par categorie et taille. Selection ou references
+affichees capturees depuis le stock ou les catalogues. Petites tailles d abord ;
+tiroirs du haut vers le bas, puis de gauche a droite dans chaque rangee.
+Meuble de 30 tiroirs, references sans stock et controle de proposition perimee testes.
+Clic droit sur un tiroir : retrait d une reference/couleur ou retrait de toutes
+les references apres confirmation. Autres tiroirs et toutes les quantites conserves.
+Un plan d inventaire est theorique : les pieces manquantes exigent une comparaison
+avec les quantites physiquement comptees. Le stock affiche reste global, pas un
+comptage propre a chaque tiroir.
+
+Les modeles d etiquettes v51/v52, l edition par categorie et selection, la mise
+a jour officielle LDraw et les aides apres deux secondes de v53 sont inclus.
+Bibliotheque LDraw officielle UPDATE 2026-09 conservee dans les ZIP de livraison.
+
+Fabrication : lanceur Windows recompile pour 0.1.54, controles PE 64 bits,
+icone originale et manifeste, dependances du runtime et CRC des deux ZIP.
+Sources et fichiers communs de la distribution compares par le fabricant.
+Exclusion de Donnees, caches, journaux, fichiers temporaires et bytecode.
+Execution native Windows et ergonomie de glissement sur Windows a confirmer.
+
+Mise a jour : conserver une sauvegarde et le dossier Donnees de l ancienne version.
