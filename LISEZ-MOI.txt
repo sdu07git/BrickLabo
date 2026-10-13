@@ -1,4 +1,4 @@
-BrickLabo v0.1.55
+BrickLabo v0.1.56
 
 Survoler un bouton pendant deux secondes affiche une breve aide, dans les differentes fenetres.
 Les cles API servent uniquement aux acces API ; catalogues locaux, etiquettes et rangement restent disponibles sans cles.
@@ -80,3 +80,18 @@ Durée de vie des tâches et signaux Qt sécurisée pour éviter leur destructio
 
 Couleur 3D → Valeurs par défaut : remettre le jaune d’origine puis Appliquer ; Annuler conserve le réglage précédent.
 Les roues et pneus utilisent leur face arrière pour la vue du dessous, y compris les anciennes références tournées.
+
+NOUVEAUTES v0.1.56
+Rangement : aperçu du meuble proposé avant application, clic sur un tiroir et détails du contenu.
+Modes : par catégorie/taille, une référence par tiroir, ou regroupement libre.
+Mode libre : sélectionner avec Ctrl/Maj puis Regrouper la sélection pour choisir un tiroir commun.
+Contenu du tiroir : colonne Catégorie.
+Annuler la dernière action / Ctrl+Z : couleurs 3D générales ou individuelles, placements, déplacements et retraits de références des tiroirs.
+Une seule dernière action, conservée après redémarrage ; stock et quantités préservés lors de l’annulation d’un rangement.
+
+NEW v0.1.56
+Storage proposal cabinet preview before applying, drawer selection and content details.
+Modes: category/size, one reference per drawer, or free reference grouping.
+Free mode: Ctrl/Shift multi-selection, then Group selection to choose one shared drawer.
+Drawer contents: Category column. Undo last action / Ctrl+Z also restores 3D colours and drawer assignments, moves and removals.
+One latest action survives restarts; storage undo preserves stock quantities.

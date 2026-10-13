@@ -1,8 +1,18 @@
-# BrickLabo — v0.1.55
+# BrickLabo — v0.1.56
 
-Logiciel de bureau Windows pour les catalogues LEGO, les stocks, les recherches de constructions et les étiquettes. Cette version reprend la v0.1.54 publiée, issue de la v0.1.28 d’origine.
+Logiciel de bureau Windows pour les catalogues LEGO, les stocks, les recherches de constructions et les étiquettes. Cette version reprend la v0.1.55 publiée, issue de la v0.1.28 d’origine.
 
-**Téléchargements v0.1.55 :** [version complète Windows](https://github.com/sdu07git/BrickLabo/releases/download/v0.1.55/BrickLabo_v0.1.55_Complet.zip) · [sources avec ressources](https://github.com/sdu07git/BrickLabo/releases/download/v0.1.55/BrickLabo_v0.1.55_Sources.zip) · [notes de release](https://github.com/sdu07git/BrickLabo/releases/tag/v0.1.55).
+**Téléchargements v0.1.56 :** [version complète Windows](https://github.com/sdu07git/BrickLabo/releases/download/v0.1.56/BrickLabo_v0.1.56_Complet.zip) · [sources avec ressources](https://github.com/sdu07git/BrickLabo/releases/download/v0.1.56/BrickLabo_v0.1.56_Sources.zip) · [notes de release](https://github.com/sdu07git/BrickLabo/releases/tag/v0.1.56).
+
+## Aperçu du rangement, références par tiroir et annulation — v0.1.56
+
+Dans **Mon rangement → Ranger par catégorie et taille en tenons**, choisir le mode **Par catégorie et taille**, **Une référence par tiroir** ou **Regroupement libre de références**. Le premier conserve le tri des plus petites tailles vers les plus grandes. Le deuxième réserve un tiroir à chaque référence : sources et variantes restent distinctes, les couleurs d’une même référence restent ensemble sauf avec **Séparer les couleurs**. En mode libre, sélectionner plusieurs lignes avec Ctrl ou Maj puis **Regrouper la sélection…** pour choisir leur tiroir commun ; les listes **Tiroir proposé** permettent aussi d’ajuster chaque affectation. Les modes par référence et libre incluent les pièces et mini-figurines sans dimensions connues ; aucune taille n’est inventée.
+
+Le panneau **Meuble proposé** montre la façade du meuble et les contenus proposés avant enregistrement. Les tiroirs affectés sont verts ; les conflits sont rouges et bloquent l’application. Cliquer sur un tiroir sélectionne ses groupes, puis double-cliquer ouvre **Contenu du tiroir** avec références, catégories, couleurs, miniatures et quantités. Ces quantités sont le stock global en vrac, et non une répartition physique entre tiroirs ; une référence de catalogue non possédée affiche 0. Les tiroirs réservés ou mixtes restent visibles. Zoomer ou déplacer la séparation entre tableau et aperçu pour examiner le meuble. La colonne **Catégorie** est aussi ajoutée au contenu du tiroir dans la fenêtre principale.
+
+La sélection de **Pièces à ranger** est capturée à l’ouverture de cette fenêtre ; sans sélection, elle utilise les références affichées. **Préparer une proposition** recalcule le brouillon. Les groupes sans place restent signalés et sans emplacement. **Fermer** abandonne la proposition ; seul **Appliquer le rangement proposé** écrit les associations. Si le stock ou le rangement change entre-temps, préparer une nouvelle proposition. Les quantités ne sont pas modifiées.
+
+**Annuler la dernière action / Ctrl+Z** prend maintenant aussi en charge la couleur 3D générale, la couleur individuelle d’une référence, les associations aux tiroirs, les déplacements de références entre tiroirs, leur retrait et les propositions de rangement appliquées. Le journal conserve une seule dernière action et survit au redémarrage. L’annulation d’un rangement rétablit les contenus et les noms de tiroirs concernés, sans modifier le stock. Une nouvelle action sur le stock devient la dernière action ; une modification incompatible ultérieure bloque l’annulation au lieu d’écraser les données.
 
 ## Correction du plantage mémoire des tâches — v0.1.55
 
@@ -199,7 +209,7 @@ La migration conserve les quantités observées et sépare les pièces en vrac d
 ## Nouvelles fonctions
 
 - **Mon stock** contient le vrac et les mini-figures. **Mon stock set** contient les sets et leurs composants enregistrés. Le tableau inférieur affiche les quantités totales possédées, les aperçus, le tri par en-tête et le double-clic d’une pièce. Retirer un set peut supprimer ses composants ou les déplacer vers le vrac.
-- **Annuler la dernière action / Ctrl+Z** annule le dernier ajout, import, retrait ou changement de quantité / couleur dans les stocks ou la file d’étiquettes. Un import forme une seule action. Le journal survit au redémarrage ; une restauration du stock le réinitialise. Une modification ultérieure incompatible bloque l’annulation.
+- **Annuler la dernière action / Ctrl+Z** annule le dernier ajout, import, retrait ou changement de quantité / couleur dans les stocks ou la file d’étiquettes, ainsi que la couleur 3D générale ou individuelle et les associations de références aux tiroirs. Un import forme une seule action. Le journal survit au redémarrage ; une restauration du stock le réinitialise. Une modification ultérieure incompatible bloque l’annulation.
 - **Importer une collection** accepte les listes de pièces ou de sets Rebrickable CSV, et BrickLink CSV, TXT tabulé ou XML. Choisir la source et le stock de destination. Un set destiné au vrac est décomposé ; des pièces destinées au stock set s’attachent à un set existant ou à un inventaire personnel nommé. Les lignes valides sont ajoutées ; les références inconnues, couleurs ou quantités incorrectes et inventaires incomplets restent en attente dans l’assistant de correction. Enregistrer les corrections puis reprendre les lignes prêtes, même après fermeture.
 - **Exporter vers Rebrickable** produit deux CSV, sets possédés et pièces en vrac, sans compter deux fois les composants des sets. Vérifier les correspondances de références et couleurs. Les inventaires personnels ALT ne sont pas assimilés à des sets officiels.
 - **Sets réalisables** combine le vrac et les pièces des sets autorisés. Le tableau du haut affiche la photo du set ; toutes ses colonnes, dont **Set**, se redimensionnent en faisant glisser le bord de l’en-tête. Les photos suivent les références lors d’un tri et utilisent le cache partagé. **Choisir le stock utilisable** réserve des sets ou des pièces sans les supprimer. Les résultats sont évalués séparément : ils ne garantissent pas de construire tous les sets simultanément.
@@ -245,8 +255,13 @@ L’aide complète se trouve dans [documentation/AIDE.html](documentation/AIDE.h
 | 0.1.49 | Commandes supérieures espacées, exports externes, miniatures à arêtes fines, glissement des pièces et rangement assisté par catégorie et taille. |
 | 0.1.50 | Association directe de références des catalogues aux tiroirs, sans ajout au stock ni quantité ; choix des catalogues dans Pièces à ranger. |
 | 0.1.51 | Modèles avec vue principale centrée ou vue principale et dessous ; calque de dessous LDraw et calcul des seules vues utilisées. |
+| 0.1.52 | Modèles nommés avec aperçu, catégories et sélection ; mise à jour officielle LDraw. |
+| 0.1.53 | Bulles d’aide après deux secondes et documentation des accès API. |
+| 0.1.54 | Petits écrans, catégories, stocks de sets et meuble de destination pour le rangement. |
+| 0.1.55 | Durée de vie des tâches Qt, couleur d’origine et face arrière des roues. |
+| 0.1.56 | Aperçu des propositions, un tiroir par référence ou regroupement libre, colonne Catégorie et annulation des couleurs 3D et placements. |
 
-Un seul [NOUVEAUTES.txt](documentation/NOUVEAUTES.txt) réunit les notes françaises et anglaises. Les notes de cette branche ne documentent pas de livraison 0.1.29. Les variantes 0.1.28b et Range n’ont pas servi de base. Le [rapport de contrôle v0.1.55](documentation/CONTROLE_v0.1.55.txt) décrit les vérifications de cette livraison.
+Un seul [NOUVEAUTES.txt](documentation/NOUVEAUTES.txt) réunit les notes françaises et anglaises. Les notes de cette branche ne documentent pas de livraison 0.1.29. Les variantes 0.1.28b et Range n’ont pas servi de base. Le [rapport de contrôle v0.1.56](documentation/CONTROLE_v0.1.56.txt) décrit les vérifications de cette livraison.
 
 ## Développement et diagnostic
 
@@ -262,7 +277,7 @@ Pour publier une future mise à jour compatible : créer une release publique st
 
 Pour développer depuis ce dépôt, reprendre `ressources/complete.zip` depuis le ZIP Sources joint à la release : cette archive LDraw dépasse la limite de taille des fichiers GitHub. Les archives automatiques « Source code » ne contiennent ni cette ressource ni le runtime Windows. Les deux ZIP joints sont ceux de la version livrée et testée ; les README du dépôt sont adaptés à la publication.
 
-Le [rapport de contrôle v0.1.55](documentation/CONTROLE_v0.1.55.txt) décrit les vérifications de cette livraison. Exécution native Windows à confirmer.
+Le [rapport de contrôle v0.1.56](documentation/CONTROLE_v0.1.56.txt) décrit les vérifications de cette livraison. Exécution native Windows à confirmer.
 
 
 
@@ -270,3 +285,6 @@ Le [rapport de contrôle v0.1.55](documentation/CONTROLE_v0.1.55.txt) décrit le
 
 
 **Validation v0.1.55 :** 627 tests de stabilisation réussis sous Qt/Linux, puis 141 tests ciblés réussis après les ajouts couleur / roues, dont 11 nouveaux tests ; 800 tâches supplémentaires contrôlées dans huit processus. Les signaux sont détruits dans le thread GUI, sans objets résiduels après nettoyage. Lanceur, dépendances et ZIP contrôlés. Le crash Windows exact reste à retester sur le PC concerné.
+
+
+**Validation v0.1.56 :** 657 tests de la suite complète réussis, puis 86 tests ciblés après l’ajout de l’annulation des couleurs individuelles et 49 après les derniers ajustements visuels et d’aide. Les 21 nouveaux tests couvrent les propositions, le regroupement, les miniatures, la colonne Catégorie et l’annulation persistante. Contrôle visuel à 1360 × 790 et 800 × 540. Lanceur Windows et intégrité des deux ZIP contrôlés ; exécution native Windows à confirmer.
