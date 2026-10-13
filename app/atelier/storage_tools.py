@@ -3,10 +3,10 @@ import json
 import sqlite3
 import uuid
 
-from PySide6.QtCore import Qt,QMimeData,QTimer,Signal
+from PySide6.QtCore import Qt,QMimeData,QTimer,Signal,QItemSelectionModel
 from PySide6.QtGui import QDrag
 from PySide6.QtWidgets import (QWidget,QDialog,QVBoxLayout,QHBoxLayout,QLabel,QLineEdit,QComboBox,QCheckBox,
-    QTableWidget,QPushButton,QAbstractItemView,QHeaderView,QMessageBox,QFormLayout)
+    QTableWidget,QPushButton,QAbstractItemView,QHeaderView,QMessageBox,QFormLayout,QSplitter,QInputDialog)
 from .i18n import tr,tf
 from .ui_common import FlowLayout
 from .result_tables import fill_table,row_index
@@ -189,12 +189,13 @@ class StoragePlanDialog(QDialog):
     def __init__(self,db,wall_id,parent=None,changed=lambda:None,entries=None,from_catalogue=False,category=''):
         super().__init__(parent);self.db=db;self.wall_id=wall_id;self.changed=changed;self.plan=None;self.targets=[]
         self.entries=list(entries) if entries is not None else None;self.from_catalogue=from_catalogue
-        self.setWindowTitle(tr('Ranger par catégorie et taille en tenons'));self.resize(960,650)
+        self.setWindowTitle(tr('Ranger par catégorie et taille en tenons'));self.setMinimumSize(800,480)
+        available=self.screen().availableGeometry();self.resize(min(1360,max(800,available.width()-32)),min(820,max(480,available.height()-56)))
         layout=QVBoxLayout(self)
         hint=QLabel(tr('Choisis une catégorie, par exemple Bricks. Les dimensions écrites dans les noms des pièces regroupent les références par taille, de la plus petite à la plus grande. Les tiroirs sont remplis depuis le haut, de gauche à droite. Les couleurs restent ensemble sauf si tu les sépares. Ajuste les tiroirs proposés avant d’appliquer.'));hint.setWordWrap(True);layout.addWidget(hint)
         if self.entries is not None:
             scope_hint=QLabel(tr('Cette proposition utilise la sélection de Pièces à ranger, ou les références affichées si aucune ligne n’est sélectionnée.'));scope_hint.setWordWrap(True);layout.addWidget(scope_hint)
-        controls=FlowLayout();self.category=QComboBox();self.category.addItem(tr('Toutes les catégories'),'')
+        controls=FlowLayout();self.category=QComboBox();self.category.setMaximumWidth(280);self.category.addItem(tr('Toutes les catégories'),'')
         for row in db.rows("SELECT DISTINCT category FROM (SELECT i.category FROM stock s JOIN items i ON i.id=s.item_id WHERE s.quantity>0 AND i.kind IN ('part','minifig') UNION SELECT i.category FROM storage_contents p JOIN storage_drawers d ON d.id=p.drawer_id JOIN items i ON i.id=p.item_id WHERE d.wall_id=?) WHERE category<>'' ORDER BY category",(wall_id,)):self.category.addItem(row['category'],row['category'])
         if self.from_catalogue:
             categories={self.category.itemData(index) for index in range(self.category.count())}
@@ -202,39 +203,77 @@ class StoragePlanDialog(QDialog):
                 item=db.get_item(identity)
                 if item and item['category'] and item['category'] not in categories:self.category.addItem(item['category'],item['category']);categories.add(item['category'])
         self.category.setCurrentIndex(max(0,self.category.findData(category)))
-        controls.addWidget(self.category);self.colors=QCheckBox(tr('Séparer les couleurs'));controls.addWidget(self.colors)
+        controls.addWidget(self.category);self.grouping=QComboBox();self.grouping.setAccessibleName(tr('Mode de rangement'))
+        for label,mode in [(tr('Par catégorie et taille'),'size'),(tr('Une référence par tiroir'),'reference'),(tr('Regroupement libre de références'),'manual')]:self.grouping.addItem(label,mode)
+        controls.addWidget(self.grouping);self.colors=QCheckBox(tr('Séparer les couleurs'));controls.addWidget(self.colors)
         self.reorganize=QCheckBox(tr('Réorganiser cette catégorie dans ce meuble'));controls.addWidget(self.reorganize);layout.addLayout(controls)
         explanation=QLabel(tr('Par défaut : pièces sans emplacement et tiroirs vides sans nom. La réorganisation remplace les liens des tiroirs contenant uniquement cette catégorie. Les tiroirs mixtes, les autres meubles et toutes les quantités sont conservés.'));explanation.setWordWrap(True);layout.addWidget(explanation)
         self.table=QTableWidget(0,5);self.table.setHorizontalHeaderLabels([tr('Catégorie'),tr('Dimensions en tenons'),tr('Couleur'),tr('Références'),tr('Tiroir proposé')]);self.table.setEditTriggers(QAbstractItemView.EditTrigger.NoEditTriggers);self.table.horizontalHeader().setSectionResizeMode(QHeaderView.ResizeMode.Interactive)
+        self.table.setSelectionBehavior(QAbstractItemView.SelectionBehavior.SelectRows);self.table.setSelectionMode(QAbstractItemView.SelectionMode.ExtendedSelection)
         self.table.ensurePolished()
-        for column,width in enumerate((145,190,90,175,260)):
+        for column,width in enumerate((110,170,90,135,230)):
             self.table.setColumnWidth(column,max(width,self.table.fontMetrics().horizontalAdvance(self.table.horizontalHeaderItem(column).text())+28))
-        layout.addWidget(self.table,1);self.summary=QLabel();self.summary.setWordWrap(True);layout.addWidget(self.summary)
+        from .storage_preview import StorageProposalPreview
+        self.proposal_preview=StorageProposalPreview(db,getattr(parent,'engine',None),self)
+        self.splitter=QSplitter(Qt.Orientation.Horizontal);self.splitter.setChildrenCollapsible(False);self.splitter.addWidget(self.table);self.splitter.addWidget(self.proposal_preview);self.splitter.setSizes([800,560]);layout.addWidget(self.splitter,1)
+        self.summary=QLabel();self.summary.setWordWrap(True);layout.addWidget(self.summary)
         row=FlowLayout();prepare=QPushButton(tr('Préparer une proposition'));prepare.clicked.connect(self.rebuild);row.addWidget(prepare)
+        self.combine=QPushButton(tr('Regrouper la sélection…'));self.combine.clicked.connect(self.combine_selection);self.combine.setToolTip(tr('Choisis Regroupement libre de références, puis sélectionne les lignes avec Ctrl ou Maj.'));row.addWidget(self.combine)
         self.apply_button=QPushButton(tr('Appliquer le rangement proposé'));self.apply_button.clicked.connect(self.apply);row.addWidget(self.apply_button)
         close=QPushButton(tr('Fermer'));close.clicked.connect(self.reject);row.addWidget(close);layout.addLayout(row)
-        self.category.currentIndexChanged.connect(self.rebuild);self.colors.toggled.connect(self.rebuild);self.reorganize.toggled.connect(self.rebuild);self.rebuild()
+        self.category.currentIndexChanged.connect(self.rebuild);self.grouping.currentIndexChanged.connect(self.rebuild);self.colors.toggled.connect(self.rebuild);self.reorganize.toggled.connect(self.rebuild)
+        self.table.currentCellChanged.connect(self.group_selected);self.proposal_preview.drawer_selected.connect(self.drawer_selected);self.rebuild()
 
     def rebuild(self,*_):
         category=self.category.currentData() or '';self.reorganize.setEnabled(bool(category))
         if not category:self.reorganize.blockSignals(True);self.reorganize.setChecked(False);self.reorganize.blockSignals(False)
-        try:self.plan=assignment.propose(self.db,self.wall_id,category,self.colors.isChecked(),self.reorganize.isChecked(),self.entries,self.from_catalogue)
+        try:self.plan=assignment.propose(self.db,self.wall_id,category,self.colors.isChecked(),self.reorganize.isChecked(),self.entries,self.from_catalogue,self.grouping.currentData())
         except (ValueError,sqlite3.Error,OSError) as error:
-            self.plan=None;self.table.setRowCount(0);self.summary.setText(str(error));self.apply_button.setEnabled(False);return
-        self.targets=[];fill_table(self.table,[(g['category'],assignment.dimensions_text(g['dimensions']),g['color'],str(len(g['entries'])),'') for g in self.plan['groups']],sortable=False)
+            self.plan=None;self.table.setRowCount(0);self.proposal_preview.set_proposal(None,[]);self.summary.setText(str(error));self.apply_button.setEnabled(False);self.combine.setEnabled(False);return
+        self.targets=[];self.table.blockSignals(True)
+        fill_table(self.table,[(g['category'],assignment.dimensions_text(g['dimensions']) or tr('Non indiquées'),g['color'],str(len(g['entries'])) if self.grouping.currentData()=='size' else g['references'][0],'') for g in self.plan['groups']],sortable=False)
         for index,group in enumerate(self.plan['groups']):
             self.table.item(index,3).setToolTip('\n'.join(group['references']))
             target=QComboBox();target.addItem(tr('Laisser sans emplacement'),None)
             for drawer in self.plan['available']:target.addItem(walls.address(drawer)+(' — '+drawer['name'] if drawer['name'] else ''),drawer['id'])
             target.setCurrentIndex(max(0,target.findData(group['drawer_id'])));self.table.setCellWidget(index,4,target);self.targets.append(target)
             target.currentIndexChanged.connect(self.update_summary)
-        self.update_summary()
+        self.table.blockSignals(False);self.combine.setEnabled(self.grouping.currentData()=='manual' and bool(self.plan['available']))
+        self.reset_preview=True;self.update_summary()
 
     def update_summary(self,*_):
         if not self.plan:return
         chosen=[w.currentData() for w in self.targets];assigned=[identity for identity in chosen if identity is not None]
         self.summary.setText(tf('{0} groupe(s), {1} tiroir(s) disponible(s), {2} groupe(s) à ranger, {3} sans tiroir. {4} référence(s) sans dimensions restent à ranger manuellement.',len(chosen),len(self.plan['available']),len(assigned),len(chosen)-len(assigned),len(self.plan['unknown'])))
-        self.apply_button.setEnabled(bool(assigned) and len(assigned)==len(set(assigned)))
+        self.apply_button.setEnabled(bool(assigned) and (self.plan.get('shared_drawers') or len(assigned)==len(set(assigned))))
+        self.proposal_preview.set_proposal(self.plan,chosen,reset=getattr(self,'reset_preview',False));self.reset_preview=False
+
+    def group_selected(self,row,*_):
+        if self.plan and len(self.targets)==len(self.plan['groups']):self.proposal_preview.show_group(row,[w.currentData() for w in self.targets])
+
+    def drawer_selected(self,identity):
+        indices=[i for i,w in enumerate(self.targets) if w.currentData()==identity]
+        self.table.blockSignals(True);self.table.clearSelection()
+        for index in indices:self.table.selectionModel().select(self.table.model().index(index,0),QItemSelectionModel.SelectionFlag.Select|QItemSelectionModel.SelectionFlag.Rows)
+        if indices:self.table.scrollToItem(self.table.item(indices[0],0))
+        self.table.blockSignals(False)
+
+    def combine_selection(self):
+        if not self.plan or not self.plan.get('shared_drawers'):return
+        indices=sorted(index.row() for index in self.table.selectionModel().selectedRows())
+        if not indices:
+            QMessageBox.information(self,tr('Rangement'),tr('Sélectionne les références à réunir avec Ctrl ou Maj.'));return
+        labels=[walls.address(drawer) for drawer in self.plan['available']]
+        text,ok=QInputDialog.getItem(self,tr('Tiroir commun'),tr('Choisis le tiroir pour les références sélectionnées :'),labels,0,False)
+        if not ok:return
+        identity=self.plan['available'][labels.index(text)]['id']
+        for index in indices:self.targets[index].blockSignals(True);self.targets[index].setCurrentIndex(self.targets[index].findData(identity));self.targets[index].blockSignals(False)
+        self.update_summary();self.proposal_preview.choose_drawer(identity,emit=False);self.proposal_preview.tabs.setCurrentIndex(0)
+
+    def refresh_storage_visuals(self):self.proposal_preview.invalidate()
+
+    def done(self,result):
+        self.proposal_preview.stop();super().done(result)
 
     def apply(self):
         if not self.plan:return
