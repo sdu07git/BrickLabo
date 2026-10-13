@@ -10,6 +10,34 @@ from test_storage_and_inventory_batches import Fixture,app
 
 
 class CategorySelectionTests(Fixture):
+    def test_uncheck_search_results_removes_all_duplo_categories_only(self):
+        tags=self.keep(CategoryTags(['Bricks','DUPLO Bricks','Duplo Figures','duplo Vehicles','Plates'],show_tags=False))
+        tags.select_all.click();tags.search.setText('duplo')
+        with patch.object(tags,'update_selection',wraps=tags.update_selection) as updates:tags.uncheck_matches.click()
+        self.assertEqual(updates.call_count,1)
+        self.assertEqual(set(tags.values()),{'Bricks','Plates'})
+        self.assertFalse(tags.bar.isVisible())
+        tags.check_matches.click();self.assertEqual(len(tags.values()),5)
+        tags.search.setText('absent');before=tags.values();tags.uncheck_matches.click()
+        self.assertEqual(tags.values(),before);self.assertFalse(tags.uncheck_matches.isEnabled())
+    def test_category_popup_and_advanced_filters_share_selection_without_tags(self):
+        from atelier.catalogue import Catalogue
+        from PySide6.QtTest import QTest
+        from PySide6.QtWidgets import QPushButton
+        for category,ref in [('Bricks','a'),('Duplo Bricks','b'),('Duplo Plates','c'),('Plates','d')]:
+            self.db.run("INSERT INTO items(source,kind,ref,name,category,search) VALUES('RB','part',?,?,?,?)",(ref,category,category,category))
+        cat=self.keep(Catalogue(self.db,'RB','part'));cat.resize(420,600);cat.show();app.processEvents()
+        initial_y=cat.table.y();cat.category.showPopup();app.processEvents();picker=cat.category.picker
+        picker.select_all.click();picker.search.setText('duplo');picker.uncheck_matches.click()
+        self.assertEqual(cat.total,2);self.assertEqual(set(cat.advanced['categories']),{'Bricks','Plates'})
+        self.assertTrue(cat.category.menu.isVisible());self.assertFalse(picker.bar.isVisible())
+        cat.category.hidePopup();app.processEvents();self.assertEqual(cat.table.y(),initial_y)
+        dialog=self.keep(FilterDialog(cat));dialog.show();app.processEvents()
+        self.assertEqual(set(dialog.categories.values()),{'Bricks','Plates'});self.assertFalse(dialog.categories.bar.isVisible())
+        dialog.categories.search.setText('plate');dialog.categories.uncheck_matches.click();cat.apply_filter_state(dialog.state())
+        self.assertEqual(cat.total,1);self.assertEqual(cat.rows[0]['ref'],'a')
+        cat.category.showPopup();app.processEvents();self.assertEqual(cat.category.picker.values(),['Bricks'])
+        cat.category.hidePopup();dialog.close();cat.close()
     def test_all_includes_hidden_categories_then_uncheck_and_tag_removal(self):
         tags=self.keep(CategoryTags(['Briques','Chapeaux','Armes','Briques']))
         tags.search.setText('brique');tags.select_all.click()
