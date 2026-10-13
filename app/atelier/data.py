@@ -118,6 +118,8 @@ class Database:
             prepare(self,c)
             from .storage_wall import prepare as prepare_storage
             prepare_storage(c)
+            from .action_undo import prepare as prepare_actions
+            prepare_actions(c)
             from .inventory_batches import prepare as prepare_inventories
             prepare_inventories(c)
 
@@ -289,10 +291,11 @@ class Database:
         return mutate(self,[{'op':operation,'scope':scope,'ids':list(ids),'value':value}],tr('Modification du stock / des étiquettes'))
 
     def undo_description(self):
-        rows=self.rows('SELECT description FROM stock_undo WHERE id=1');return rows[0]['description'] if rows else ''
+        from .action_undo import description
+        return description(self)
 
     def undo_last_action(self):
-        from .stock import undo
+        from .action_undo import undo
         return undo(self)
 
     def owned_components(self,entry_id):
