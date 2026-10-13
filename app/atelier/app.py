@@ -137,9 +137,12 @@ class MainWindow(QMainWindow):
         cat.load_thumbnails()
     def item_selected(self,item):self.current_item=item;self.preview.set_item(item)
     def visual_changed(self,item):
+        self.update_undo()
         for cat in self.catalogues:
             if cat.isVisible():cat.refresh_visual(item)
         if hasattr(self,'storage'):self.storage.invalidate(item)
+        for window in list(getattr(self,'_consultation_windows',[])):
+            if hasattr(window,'refresh_storage_visuals'):window.refresh_storage_visuals()
 
     def import_stock(self,scope='stock'):
         from .stock_import_dialog import StockImportDialog
@@ -156,7 +159,13 @@ class MainWindow(QMainWindow):
         description=self.db.undo_description();self.undo_button.setEnabled(bool(description));self.undo_shortcut.setEnabled(bool(description));self.undo_button.setToolTip(description)
 
     def undo_stock(self):
-        try:self.db.undo_last_action()
+        try:
+            changed=self.db.undo_last_action()
+            if changed:
+                if self.preview.item:self.preview.set_item(dict(self.preview.item))
+                else:self.preview.refresh()
+                self.visual_changed(None)
+                if hasattr(self,'storage'):self.storage.refresh()
         except ValueError as error:QMessageBox.warning(self,tr('Annulation'),str(error))
         self.refresh_counts()
 
@@ -259,7 +268,9 @@ class MainWindow(QMainWindow):
         def saved(result):
             if not result:return
             c=d.selectedColor()
-            if c.isValid():self.db.set_setting('default_color',c.name());self.preview.refresh();self.visual_changed(None)
+            if c.isValid():
+                from .action_undo import set_default_color
+                set_default_color(self.db,c.name());self.preview.refresh();self.visual_changed(None);self.update_undo()
         show_window(d,self,saved,refresh_counts=False)
     def category_colors(self):
         from .contours import ContourDialog
