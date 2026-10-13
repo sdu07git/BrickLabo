@@ -143,7 +143,8 @@ def save_drawer(db,wall_id,col,row,width=1,height=1,name='',drawer_id=None):
 
 
 def assign(db,drawer_id,entries):
-    with db.connect() as c:
+    from .action_undo import storage_change
+    with db.connect() as c,storage_change(c,[drawer_id],tr('Modification du contenu d’un tiroir')):
         if not c.execute('SELECT 1 FROM storage_drawers WHERE id=?',(drawer_id,)).fetchone():raise ValueError(tr('Tiroir introuvable.'))
         for item_id,color in entries:
             color=str(color or '')
@@ -153,8 +154,8 @@ def assign(db,drawer_id,entries):
 
 def unassign(db,drawer_id,entries=None):
     """Remove location links atomically, leaving every stock quantity intact."""
-    with db.connect() as c:
-        c.execute('BEGIN IMMEDIATE')
+    from .action_undo import storage_change
+    with db.connect() as c,storage_change(c,[drawer_id],tr('Modification du contenu d’un tiroir')):
         if not c.execute('SELECT 1 FROM storage_drawers WHERE id=?',(drawer_id,)).fetchone():raise ValueError(tr('Tiroir introuvable.'))
         before=c.total_changes
         if entries is None:c.execute('DELETE FROM storage_contents WHERE drawer_id=?',(drawer_id,))
