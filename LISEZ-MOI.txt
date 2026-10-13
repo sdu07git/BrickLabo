@@ -1,4 +1,20 @@
-BrickLabo v0.1.50
+BrickLabo v0.1.54
+
+Survoler un bouton pendant deux secondes affiche une breve aide, dans les differentes fenetres.
+Les cles API servent uniquement aux acces API ; catalogues locaux, etiquettes et rangement restent disponibles sans cles.
+Details des fonctions API dans Aide et README.
+
+Modeles d etiquette : menu avec apercu au survol et Enregistrer un modele pour les dispositions personnalisees.
+Appliquer a > Categorie pour une famille de pieces ; les dispositions individuelles restent prioritaires.
+Selectionner plusieurs lignes > Disposition de la selection pour un reglage commun a la volee.
+Mise a jour des donnees > Mettre a jour LDraw (complete.zip) pour telecharger la bibliotheque officielle.
+Archive verifiee avant activation. Ancienne copie geree inutilisee supprimee ; fichiers externes et ressource fournie conserves.
+LDraw officiel 2026-09 fourni, incluant le raccourci modele + sticker 87552d02.
+
+Editeur d etiquettes > Modeles d etiquette : Vue principale centree ou Vue principale et vue de dessous.
+Choisir le modele, ajuster les calques si besoin, puis Appliquer. Le format et les couleurs sont conserves.
+La vue de dessous est calculee depuis LDraw ; une photo seule ne fournit pas cette vue.
+Ces modeles sont egalement disponibles pour une etiquette individuelle.
 
 Extraire le ZIP entier dans un nouveau dossier accessible en ecriture.
 Fermer l ancienne version, conserver une sauvegarde et copier Donnees a cote du nouvel exe.
@@ -27,6 +43,8 @@ En cas d erreur de chemin, deplacer tout le logiciel vers un chemin plus court.
 Extract the complete ZIP into a new writable folder. Close the old version and keep a backup.
 Copy Donnees beside the new executable and retain all subfolders.
 English guide: documentation/AIDE.en.html.
+Label editor > Preset layouts: Centred main view or Main and bottom views. Apply saves the choice.
+Bottom view requires LDraw. Current label format, colours, transparency and edge settings are retained.
 
 Future updates: Data updates > Check for a software update.
 The complete ZIP and GitHub SHA-256 are verified; Donnees is preserved.
@@ -51,3 +69,8 @@ Nouveautes v0.1.50 :
 Catalogue > selection > Associer a un tiroir : choisir meuble et tiroir, sans ajout au stock ni quantite.
 Mon rangement > Pieces a ranger : choisir Stock en vrac ou un catalogue, puis glisser les references vers un tiroir.
 Les references et leurs variantes restent distinctes.
+
+Nouveautes v0.1.54 :
+Recherche et filtres des catalogues sur une ligne compacte, avec defilement horizontal si necessaire.
+Glisser la bordure sous les boutons superieurs pour regler la hauteur du volet ; ce choix est memorise.
+Tous les boutons restent accessibles par defilement quand le volet est reduit.

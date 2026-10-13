@@ -1,8 +1,56 @@
-# BrickLabo — v0.1.50
+# BrickLabo — v0.1.54
 
-Logiciel de bureau Windows pour les catalogues LEGO, les stocks, les recherches de constructions et les étiquettes. Cette version reprend la v0.1.49 livrée, issue de la v0.1.28 d’origine.
+Logiciel de bureau Windows pour les catalogues LEGO, les stocks, les recherches de constructions et les étiquettes. Cette version reprend la v0.1.50 publiée, issue de la v0.1.28 d’origine.
 
-**Téléchargements v0.1.50 :** [version complète Windows](https://github.com/sdu07git/BrickLabo/releases/download/v0.1.50/BrickLabo_v0.1.50_Complet.zip) · [sources avec ressources](https://github.com/sdu07git/BrickLabo/releases/download/v0.1.50/BrickLabo_v0.1.50_Sources.zip) · [notes de release](https://github.com/sdu07git/BrickLabo/releases/tag/v0.1.50).
+**Téléchargements v0.1.54 :** [version complète Windows](https://github.com/sdu07git/BrickLabo/releases/download/v0.1.54/BrickLabo_v0.1.54_Complet.zip) · [sources avec ressources](https://github.com/sdu07git/BrickLabo/releases/download/v0.1.54/BrickLabo_v0.1.54_Sources.zip) · [notes de release](https://github.com/sdu07git/BrickLabo/releases/tag/v0.1.54).
+
+## Petits écrans et volet supérieur réglable — v0.1.54
+
+La recherche des catalogues reste compacte. Recherche, catégories, colonnes, filtres avancés et **Masquer / Réafficher pièces décorées** sont réunis sur une seule ligne. Si la largeur manque, déplacer la barre de défilement horizontale sous ces commandes ; les filtres ne créent plus de rangées supplémentaires. Le bouton **Disposition de la sélection…** rejoint les actions sous le tableau. Les catégories se cochent ou se décochent directement dans leur menu, avec recherche et sélection de toutes les catégories. Aucun bandeau de catégories sélectionnées ne prend de place au-dessus du tableau. Le filtre de référence exacte reste visible séparément lorsqu’il est actif.
+
+**Glisser la bordure horizontale sous les groupes de boutons supérieurs** vers le haut ou le bas pour réduire ou agrandir ce volet. Le choix est conservé au redémarrage et dans les sauvegardes des préférences. Quand le volet est réduit, sa barre de défilement verticale permet d’atteindre tous ses boutons. Les encadrés ont des marges plus petites et s’ajustent à leur contenu. La fenêtre s’ouvre à une taille adaptée à l’écran ; elle peut descendre à 800 × 480.
+
+Pour exclure un groupe, ouvrir **Filtres avancés → Catégories**, cliquer **Sélectionner toutes les catégories**, rechercher par exemple **duplo**, puis **Décocher les résultats**. Seules les catégories trouvées sont retirées ; les autres choix sont conservés. **Cocher les résultats** fait l’inverse. Ces commandes sont aussi disponibles dans le menu de catégories du catalogue. Aucune catégorie cochée retire le filtre et affiche toutes les catégories.
+
+Dans les catalogues de sets, le clic droit propose **Ajouter l’inventaire à Mon stock** pour ajouter les pièces et mini-figurines en vrac, ou **Ajouter le set à Mon stock set** pour posséder le set avec son inventaire suivi. Le bouton **Ajouter au stock…** propose les deux destinations. La sélection multiple est prise en charge ; les couleurs et quantités de l’inventaire sont conservées, les sous-sets sont développés et les pièces supplémentaires sont incluses. Un inventaire manquant ou incomplet interrompt l’ajout entier. Charger les inventaires avant l’ajout ; aucun téléchargement n’est déclenché par ces commandes. L’action s’annule avec Ctrl+Z.
+
+Dans **Mon rangement → Pièces à ranger**, choisir **Meuble de destination**. Ce choix affiche le meuble pour le glisser-déposer et sert à **Rangement automatique…** ainsi qu’à **Ranger par catégorie et taille…**. Le rangement automatique utilise les lignes sélectionnées, ou les références affichées si aucune ligne n’est sélectionnée, depuis le stock ou le catalogue choisi. Il regroupe les catégories puis les tailles en tenons, de la plus petite à la plus grande, et propose les tiroirs depuis le haut, de gauche à droite. Ajuster puis appliquer la proposition ; elle crée des emplacements et conserve les quantités. Les dimensions inconnues, les groupes sans tiroir disponible et les tiroirs déjà utilisés restent signalés.
+
+Un **clic droit sur un tiroir → Retirer une référence du tiroir** permet de choisir la pièce et sa couleur à retirer de cet emplacement. Les autres références, les associations aux autres tiroirs et le stock sont conservés. **Retirer toutes les références du tiroir…** demande confirmation. Pour un tiroir contenant plus de trente lignes, le menu donne aussi accès au tableau de son contenu.
+
+## Bulles d’aide et fonctions API — v0.1.53
+
+Laisser la souris sur un bouton pendant **deux secondes** pour afficher une brève explication. Quitter le bouton, cliquer ou fermer la fenêtre annule la bulle. Chaque nouveau bouton attend son propre délai de deux secondes. L’aide couvre les commandes des différentes fenêtres, les boutons standard, les cases à cocher et les contrôles créés ensuite ; les aides déjà définies sont conservées. Les explications suivent les changements de libellé et la langue FR / EN. Elles ne déclenchent aucune action et ne modifient pas les données. L’aperçu au survol des modèles d’étiquettes conserve son comportement immédiat.
+
+La clé **Rebrickable** est nécessaire pour les accès suivants : actualisation de la photo et des correspondances externes d’une référence RB par API ; téléchargement des inventaires de sets RB par lots ; chargement des pièces d’une mini-figurine RB depuis l’API ; téléchargement des alternatives d’un set ; **MOC avec les pièces disponibles…** (alternatives des sets reconstituables avec le stock, sans vérification de l’inventaire propre au MOC) ; conversion automatique en ligne des références et couleurs BrickLink vers Rebrickable avec **Convertir BrickLink (API RB)** lors de l’export du stock.
+
+Les **quatre identifiants BrickLink** (Consumer Key, Consumer Secret, Token, Token Secret) sont nécessaires pour ces accès : actualisation de la photo d’une référence BL et chargement de sa palette par API ; téléchargement des inventaires des sets et mini-figurines BL depuis l’API, y compris les sets par lots ; chargement par API des couleurs disponibles pour une référence avec **Charger via l’API BrickLink (facultatif)**.
+
+Les fonctions d’import CSV / TXT, exports complets publics Rebrickable, recherche de MOC par mot-clé / créateur, notices publiques, LDraw, stock, rangement, édition et impression d’étiquettes restent disponibles sans ces clés. Le calcul des sets réalisables utilise les inventaires locaux et ne nécessite pas de clé lorsque les données nécessaires sont présentes. L’export CSV vers Rebrickable reste possible sans clé avec des références connues ou corrigées manuellement ; seule la conversion automatique par API exige la clé. Les recherches de photos restent accessibles sans API ; les clés peuvent apporter des photos et correspondances complémentaires. Les identifiants ne sont jamais affichés dans les nouvelles bulles.
+
+
+## Modèles personnalisés, catégories et sélection — v0.1.52
+
+Dans **Éditeur d’étiquettes → Modèles d’étiquette**, le menu propose les trois dispositions prédéfinies et les modèles enregistrés avec **Enregistrer un modèle…**. Survoler une ligne du menu affiche son étiquette à côté, sans changer le brouillon. Cliquer choisit le modèle ; déplacer ou redimensionner les calques, puis **Appliquer** pour enregistrer. **Supprimer ce modèle** retire le choix du menu et conserve les dispositions déjà appliquées. Les fichiers JSON restent disponibles avec Charger / Enregistrer sous.
+
+**Appliquer à → Catégorie** associe le brouillon à la catégorie choisie, dans tous les catalogues et pour les nouvelles références de cette catégorie. Priorité : disposition individuelle, modèle de catégorie, modèle général. Les couleurs des catégories restent celles du réglage général. Le format physique suit la taille générale de la feuille ; les dispositions sont mises à l’échelle. **Suivre le modèle général** retire l’association de la catégorie.
+
+Dans **Impression Étiquettes**, un catalogue de pièces, le stock ou l’historique, sélectionner plusieurs lignes avec Ctrl / Maj puis cliquer **Disposition de la sélection…**, aussi disponible au clic droit. Le brouillon commun reprend la première ligne sélectionnée. Choisir un modèle ou régler les calques librement, puis **Appliquer**. Les lignes sont capturées à l’ouverture, y compris sur plusieurs pages ; une sélection supprimée entre-temps interrompt l’application. Toutes les dispositions sont enregistrées ensemble. Les quantités, le stock, les couleurs, les angles et les arêtes individuelles restent conservés. Une sélection du catalogue règle les références ; une sélection dans Impression Étiquettes règle uniquement ces entrées et couleurs. Réinitialiser une disposition individuelle revient au modèle de sa catégorie, puis au général si aucun modèle de catégorie n’existe.
+
+**Mise à jour des données → Mettre à jour LDraw (complete.zip)** télécharge la bibliothèque officielle depuis LDraw, vérifie le ZIP et construit les correspondances explicitement indiquées dans ses en-têtes. Un échec conserve la bibliothèque active. La précédente archive gérée dans Donnees est retirée après activation de la nouvelle si elle n’est pas référencée ailleurs. Le complete.zip fourni avec l’application et les fichiers externes sont conservés. L’import manuel de complete.zip reste disponible et conserve ses anciennes versions.
+
+Les fichiers d’assemblage LDraw chargent récursivement leurs pièces, stickers, sous-pièces et primitives, en appliquant les positions et rotations inscrites dans les fichiers. Une pièce nue ne reçoit pas un sticker arbitraire. Les correspondances Rebrickable / BrickLink issues des en-têtes sont utilisées uniquement si elles sont explicites et uniques. Une dépendance absente ou un motif TEXMAP non pris en charge entraîne le recours à la photo. Exemple vérifié : **87552d02.dat**, officiel UPDATE 2026-09, charge **87552.dat** et **6177954b.dat**, avec la référence BrickLink **87552pb065R**. La bibliothèque officielle 2026-09 est fournie dans cette version. Les dispositions, modèles nommés et associations de catégories entrent dans les sauvegardes sélectives des modèles.
+
+
+## Deux nouveaux modèles d’étiquettes — v0.1.51
+
+Dans **Éditeur d’étiquettes → Modèles d’étiquette**, choisir **Vue principale centrée** pour une seule vue centrée, sans dessus ni côté. La catégorie et les dimensions en tenons sont placées dans le bandeau supérieur, et les références restent en bas. **Vue principale et vue de dessous** place la vue principale à gauche et une vraie vue du dessous à droite. Le modèle de base avec dessus et côté reste disponible.
+
+Le choix modifie le brouillon : ajuster les calques si nécessaire puis **Appliquer** pour enregistrer. Les modèles sont aussi proposés dans **Disposition de cette étiquette**. Le format courant, les couleurs, la transparence et les réglages d’arêtes sont conservés. Les commandes **Annuler / Rétablir**, les modèles JSON et la sauvegarde sélective des modèles conservent la nouvelle disposition.
+
+La vue de dessous est calculée depuis LDraw et conserve son orientation lors de la rotation de la vue principale. Son calque peut être ajouté, déplacé, redimensionné, recadré et zoomé. Une photo seule ne fournit pas de dessous : le logiciel le signale dans l’aperçu. Seules les vues demandées par le modèle sont calculées. PNG, PDF et impression utilisent la même disposition.
+
+
 
 
 ## Associer directement les catalogues aux tiroirs — v0.1.50
@@ -184,8 +232,9 @@ L’aide complète se trouve dans [documentation/AIDE.html](documentation/AIDE.h
 | 0.1.48 | Imports partiels avec correction, sauvegarde et reprise, protection contre les doublons et annulation ; boutons et défilement adaptés aux petites fenêtres. |
 | 0.1.49 | Commandes supérieures espacées, exports externes, miniatures à arêtes fines, glissement des pièces et rangement assisté par catégorie et taille. |
 | 0.1.50 | Association directe de références des catalogues aux tiroirs, sans ajout au stock ni quantité ; choix des catalogues dans Pièces à ranger. |
+| 0.1.51 | Modèles avec vue principale centrée ou vue principale et dessous ; calque de dessous LDraw et calcul des seules vues utilisées. |
 
-Un seul [NOUVEAUTES.txt](documentation/NOUVEAUTES.txt) réunit les notes françaises et anglaises. Les notes de cette branche ne documentent pas de livraison 0.1.29. Les variantes 0.1.28b et Range n’ont pas servi de base. Le [rapport de contrôle v0.1.50](documentation/CONTROLE_v0.1.50.txt) décrit les vérifications de cette livraison.
+Un seul [NOUVEAUTES.txt](documentation/NOUVEAUTES.txt) réunit les notes françaises et anglaises. Les notes de cette branche ne documentent pas de livraison 0.1.29. Les variantes 0.1.28b et Range n’ont pas servi de base. Le [rapport de contrôle v0.1.54](documentation/CONTROLE_v0.1.54.txt) décrit les vérifications de cette livraison.
 
 ## Développement et diagnostic
 
@@ -201,5 +250,8 @@ Pour publier une future mise à jour compatible : créer une release publique st
 
 Pour développer depuis ce dépôt, reprendre `ressources/complete.zip` depuis le ZIP Sources joint à la release : cette archive LDraw dépasse la limite de taille des fichiers GitHub. Les archives automatiques « Source code » ne contiennent ni cette ressource ni le runtime Windows. Les deux ZIP joints sont ceux de la version livrée et testée ; les README du dépôt sont adaptés à la publication.
 
-**Validation v0.1.50 :** 540 tests réussis sous Qt/Linux ; archives, dépendances et icône intégrée vérifiées. Exécution native Windows et glisser-déposer Windows à confirmer.
+Le [rapport de contrôle v0.1.54](documentation/CONTROLE_v0.1.54.txt) décrit les vérifications de cette livraison. Exécution native Windows à confirmer.
 
+
+
+**Validation v0.1.54 :** 617 tests couverts sous Qt/Linux, dont 153 tests des fonctions modifiées revérifiés avec succès. Lanceur Windows, icône, dépendances et ZIP contrôlés. Exécution native Windows à confirmer.
