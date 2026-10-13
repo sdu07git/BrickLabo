@@ -1,3 +1,21 @@
+BrickLabo v0.1.54
+FR : Barre de recherche et filtres compacte sur une seule ligne avec defilement horizontal. Volet superieur redimensionnable par glissement, hauteur memorisee, defilement interne et encadres plus petits. Fenetre adaptee aux petits ecrans.
+EN : Compact single-row catalogue search and filters with horizontal scrolling. Drag-adjustable top panel, saved height, internal scrolling and smaller groups. Screen-aware initial window size.
+FR : Categories cochables sans bandeau ; cocher/decocher les resultats Duplo. Deux destinations pour les inventaires de sets. Meuble de destination commun au glisser-deposer et au rangement par categorie/taille, petits tiroirs du haut en premier, depuis stock ou catalogues. Clic droit pour retirer une reference d un tiroir.
+EN : Checkable categories without tags; batch check/uncheck Duplo search results. Two stock destinations for sets. Destination cabinet for drag/drop and size-sorted storage from stock or catalogues. Drawer context menu removes individual references.
+
+BrickLabo v0.1.53
+FR : Aide au survol des boutons apres deux secondes, dans les fenetres principales et secondaires. Descriptions courtes FR / EN, aides existantes conservees, delai renouvele sur un autre bouton, annulation au clic / sortie / fermeture et protection des controles supprimes. Boutons dynamiques et libelles changeants pris en charge. Apercus de modeles inchanges. Fonctions necessitant les API distinguees des imports et recherches publics dans l aide.
+EN : Two-second button hover help across main and secondary windows. Short FR / EN descriptions, existing help preserved, a new delay for each button and cancellation on click / leave / close. Deleted controls, dynamic buttons and changing captions handled. Model previews unchanged. Documentation distinguishes API-only operations from public imports and searches.
+
+BrickLabo v0.1.52
+FR : Modèles personnalisés dans le menu de dispositions avec aperçu au survol. Application à une catégorie, héritage individuel / catégorie / général. Édition groupée de la sélection capturée, enregistrement atomique, couleurs / quantités / angles / arêtes conservés. Bouton de mise à jour officielle LDraw avec validation du ZIP, conservation sur erreur et retrait de la précédente archive gérée inutilisée. Liens explicites et uniques des en-têtes vers RB et BL ; assemblage modèle et sticker vérifié pour 87552d02. Bibliothèque officielle 2026-09 fournie. Sauvegardes et aide FR / EN actualisées.
+EN : Saved custom layouts with hover previews; category models and atomic captured-selection edits. Individual / category / general priority. Existing quantities, colours, cameras and edges preserved. Official LDraw update button validates downloads, preserves the active archive on failure and removes the unused previous managed archive. Explicit unique RB / BL header links and verified part-plus-sticker shortcut 87552d02. Official library 2026-09 included. Updated backups and FR / EN help.
+
+BrickLabo v0.1.51
+FR : Modeles predefinis dans l editeur general et individuel : vue principale centree seule, ou vue principale et vue de dessous. Le modele de base reste disponible. La disposition conserve le format, couleurs, transparence et aretes du brouillon ; Appliquer enregistre le choix. Vue du dessous LDraw distincte du dessus, fixe lors de la rotation de la vue principale. Calque de dessous editable et redimensionnable, recadrage et zoom, sauvegardes JSON et selectives. Seules les vues demandees sont calculees. Une photo seule ne fournit pas de vue du dessous.
+EN : Preset layouts in the general and individual label editors: centred main view, or main and bottom views. The classic layout remains available. Presets retain the draft format, colours, transparency and edges; Apply saves the choice. A true LDraw underside stays fixed when rotating the main view. Editable bottom layer, crop and zoom, JSON and selective backups. Only requested views are rendered. A photo alone cannot provide a bottom view.
+
 BrickLabo v0.1.50
 - Bouton et clic droit Associer a un tiroir depuis les catalogues de pieces et mini-figs, sans ajout au stock ni quantite.
 - Pieces a ranger : selection du stock, de tous les catalogues ou d’une source precise ; glissement multiselection.

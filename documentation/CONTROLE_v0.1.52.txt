@@ -1,0 +1,29 @@
+BrickLabo v0.1.52 — Controle de livraison
+
+581 tests reussis sur Qt/Linux en 43,776 s.
+18 tests nouveaux de dispositions : modeles nommes, suppression sans perte des dispositions,
+priorite individuel / categorie / general, nouvelle reference et format general,
+application atomique a une selection de references ou d entrees colorees,
+selection supprimee refusee, couleurs / quantites / cameras / aretes preservees,
+apercu au survol et chargement asynchrone sans mutation du brouillon,
+sauvegardes selectives et interface anglaise.
+10 tests de mise a jour LDraw : telechargement simule, validation, echec et archive invalide,
+reutilisation, retrait de l ancienne copie geree apres activation, protection des fichiers externes,
+correspondances explicites uniques, dependance sticker absente refusee et assemblage recursif.
+
+Verification reelle de complete.zip officiel UPDATE 2026-09, telecharge depuis library.ldraw.org.
+CRC ZIP correct. SHA-256 f3e496d0ede69ca7942fa4aa198e661ee2d22723906101e2e339d8917a4dd5f2.
+24 856 fichiers de pieces de premier niveau, 8 429 liens BL et 6 943 liens RB explicites uniques.
+87552d02.dat officiel : assemblage de 87552.dat et 6177954b.dat.
+Rendu reel : 4 277 triangles, dont 980 pour le corps et 3 297 pour le sticker.
+Lien BrickLink 87552pb065R vers 87552d02 verifie. Tourner l apercu pour voir sa face decoree.
+
+Interface a 1366 x 768 : francais en 10 / 12 points et anglais en 12 points.
+Modeles et apercu lateral, destination categorie, multiselection, file d impression,
+Appliquer / Fermer et bouton de mise a jour LDraw visibles. Aucun bouton tronque observe.
+135 fichiers Python valides en syntaxe.
+
+Distribution : lanceur Windows recompile en version 0.1.52, runtime conserve,
+inspection PE, icone et manifeste, verification des contenus et CRC des deux ZIP.
+Lancement et interactions natives Windows restent a confirmer sur le PC utilisateur.
+Les donnees personnelles ne sont pas incluses. Conserver Donnees lors de la migration.
