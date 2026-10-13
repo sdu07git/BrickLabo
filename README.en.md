@@ -1,8 +1,20 @@
-# BrickLabo — v0.1.54
+# BrickLabo — v0.1.55
 
-Windows desktop software for LEGO catalogues, stock, construction searches and labels. This version continues the published v0.1.50, based on the original v0.1.28.
+Windows desktop software for LEGO catalogues, stock, construction searches and labels. This version continues the published v0.1.54, based on the original v0.1.28.
 
-**Downloads v0.1.54 :** [complete Windows package](https://github.com/sdu07git/BrickLabo/releases/download/v0.1.54/BrickLabo_v0.1.54_Complet.zip) · [sources with resources](https://github.com/sdu07git/BrickLabo/releases/download/v0.1.54/BrickLabo_v0.1.54_Sources.zip) · [release notes](https://github.com/sdu07git/BrickLabo/releases/tag/v0.1.54).
+**Downloads v0.1.55 :** [complete Windows package](https://github.com/sdu07git/BrickLabo/releases/download/v0.1.55/BrickLabo_v0.1.55_Complet.zip) · [sources with resources](https://github.com/sdu07git/BrickLabo/releases/download/v0.1.55/BrickLabo_v0.1.55_Sources.zip) · [release notes](https://github.com/sdu07git/BrickLabo/releases/tag/v0.1.55).
+
+## Background-task memory-crash fix — v0.1.55
+
+This version keeps background tasks and their Qt signals alive until the native thread pool has finished using them, then releases callbacks and signal objects on the GUI thread. Results and progress are explicitly queued to that thread; late callbacks after closure are ignored. Error, cancellation and application-shutdown paths are covered too.
+
+The v0.1.54 diagnostic reproduced Qt signal destruction on worker threads during BrickArchitect parsing. The fix removes that ownership defect without changing catalogues, stock, cabinets or labels. The exact Windows crash still requires a retest on the affected PC.
+
+## Factory colour and wheel back views — v0.1.55
+
+In the top panel, **3D colour → Defaults** restores the original yellow (`#f3d55b`) in the picker. **Apply** saves the choice and refreshes previews; **Cancel** keeps the previous colour. Individual colours and palettes retain priority.
+
+The **Main and bottom views** layout now shows the back face of wheels and tyres along their axle, instead of their tread profile. Historical LDraw aliases retain their signed axle rotation. Brick undersides, the other views and custom main-view angles keep their orientation. The fix is included in previews and PNG/PDF exports.
 
 ## Small screens and adjustable top panel — v0.1.54
 
@@ -247,3 +259,6 @@ The [v0.1.51 validation report](documentation/CONTROLE_v0.1.51.txt) describes th
 
 
 **Validation v0.1.54:** 617 tests covered on Qt/Linux, including 153 successfully rerun checks for changed features. Windows launcher, icon, dependencies and ZIPs checked. Native Windows execution remains to be confirmed.
+
+
+**Validation v0.1.55:** 627 stabilisation tests passed on Qt/Linux, followed by 141 targeted tests after the colour / wheel additions, including 11 new regressions; 800 additional tasks checked in eight processes. Signals are destroyed on the GUI thread with no remaining wrappers after cleanup. Launcher, dependencies and ZIPs checked. The exact Windows crash still needs a retest on the affected PC.

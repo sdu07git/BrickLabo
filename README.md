@@ -1,8 +1,20 @@
-# BrickLabo — v0.1.54
+# BrickLabo — v0.1.55
 
-Logiciel de bureau Windows pour les catalogues LEGO, les stocks, les recherches de constructions et les étiquettes. Cette version reprend la v0.1.50 publiée, issue de la v0.1.28 d’origine.
+Logiciel de bureau Windows pour les catalogues LEGO, les stocks, les recherches de constructions et les étiquettes. Cette version reprend la v0.1.54 publiée, issue de la v0.1.28 d’origine.
 
-**Téléchargements v0.1.54 :** [version complète Windows](https://github.com/sdu07git/BrickLabo/releases/download/v0.1.54/BrickLabo_v0.1.54_Complet.zip) · [sources avec ressources](https://github.com/sdu07git/BrickLabo/releases/download/v0.1.54/BrickLabo_v0.1.54_Sources.zip) · [notes de release](https://github.com/sdu07git/BrickLabo/releases/tag/v0.1.54).
+**Téléchargements v0.1.55 :** [version complète Windows](https://github.com/sdu07git/BrickLabo/releases/download/v0.1.55/BrickLabo_v0.1.55_Complet.zip) · [sources avec ressources](https://github.com/sdu07git/BrickLabo/releases/download/v0.1.55/BrickLabo_v0.1.55_Sources.zip) · [notes de release](https://github.com/sdu07git/BrickLabo/releases/tag/v0.1.55).
+
+## Correction du plantage mémoire des tâches — v0.1.55
+
+Cette version corrige la durée de vie des tâches en arrière-plan et de leurs signaux Qt. Les objets restent conservés jusqu’à la fin effective des travaux, puis leurs références et leurs signaux sont libérés dans le thread de l’interface. Les résultats et progressions reviennent explicitement dans ce thread ; les callbacks tardifs sont ignorés après fermeture. Le nettoyage couvre aussi les erreurs, l’annulation et la sortie du logiciel.
+
+Le contrôle de la v0.1.54 a reproduit des destructions de signaux Qt dans les threads de travail pendant l’analyse BrickArchitect. Le correctif supprime ce défaut sans modifier le catalogue, le stock, les meubles ou les étiquettes. Le crash Windows exact reste à retester sur le PC concerné.
+
+## Couleur d’origine et vue arrière des roues — v0.1.55
+
+Dans le volet supérieur, **Couleur 3D → Valeurs par défaut** remet le jaune d’origine (`#f3d55b`) dans le sélecteur. **Appliquer** enregistre ce choix et actualise les aperçus ; **Annuler** conserve la couleur précédente. Les couleurs individuelles et les palettes restent prioritaires.
+
+Le modèle **Vue principale et vue du dessous** montre désormais la face arrière des roues et pneus suivant leur axe, au lieu de leur tranche. Les redirections LDraw d’anciennes références conservent la rotation et le sens de leur axe. L’orientation habituelle du dessous des briques reste conservée, ainsi que les autres vues et les angles personnalisés de la vue principale. La correction est reprise dans l’aperçu et les exports PNG/PDF.
 
 ## Petits écrans et volet supérieur réglable — v0.1.54
 
@@ -234,7 +246,7 @@ L’aide complète se trouve dans [documentation/AIDE.html](documentation/AIDE.h
 | 0.1.50 | Association directe de références des catalogues aux tiroirs, sans ajout au stock ni quantité ; choix des catalogues dans Pièces à ranger. |
 | 0.1.51 | Modèles avec vue principale centrée ou vue principale et dessous ; calque de dessous LDraw et calcul des seules vues utilisées. |
 
-Un seul [NOUVEAUTES.txt](documentation/NOUVEAUTES.txt) réunit les notes françaises et anglaises. Les notes de cette branche ne documentent pas de livraison 0.1.29. Les variantes 0.1.28b et Range n’ont pas servi de base. Le [rapport de contrôle v0.1.54](documentation/CONTROLE_v0.1.54.txt) décrit les vérifications de cette livraison.
+Un seul [NOUVEAUTES.txt](documentation/NOUVEAUTES.txt) réunit les notes françaises et anglaises. Les notes de cette branche ne documentent pas de livraison 0.1.29. Les variantes 0.1.28b et Range n’ont pas servi de base. Le [rapport de contrôle v0.1.55](documentation/CONTROLE_v0.1.55.txt) décrit les vérifications de cette livraison.
 
 ## Développement et diagnostic
 
@@ -250,8 +262,11 @@ Pour publier une future mise à jour compatible : créer une release publique st
 
 Pour développer depuis ce dépôt, reprendre `ressources/complete.zip` depuis le ZIP Sources joint à la release : cette archive LDraw dépasse la limite de taille des fichiers GitHub. Les archives automatiques « Source code » ne contiennent ni cette ressource ni le runtime Windows. Les deux ZIP joints sont ceux de la version livrée et testée ; les README du dépôt sont adaptés à la publication.
 
-Le [rapport de contrôle v0.1.54](documentation/CONTROLE_v0.1.54.txt) décrit les vérifications de cette livraison. Exécution native Windows à confirmer.
+Le [rapport de contrôle v0.1.55](documentation/CONTROLE_v0.1.55.txt) décrit les vérifications de cette livraison. Exécution native Windows à confirmer.
 
 
 
 **Validation v0.1.54 :** 617 tests couverts sous Qt/Linux, dont 153 tests des fonctions modifiées revérifiés avec succès. Lanceur Windows, icône, dépendances et ZIP contrôlés. Exécution native Windows à confirmer.
+
+
+**Validation v0.1.55 :** 627 tests de stabilisation réussis sous Qt/Linux, puis 141 tests ciblés réussis après les ajouts couleur / roues, dont 11 nouveaux tests ; 800 tâches supplémentaires contrôlées dans huit processus. Les signaux sont détruits dans le thread GUI, sans objets résiduels après nettoyage. Lanceur, dépendances et ZIP contrôlés. Le crash Windows exact reste à retester sur le PC concerné.
