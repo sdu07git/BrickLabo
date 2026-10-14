@@ -191,6 +191,7 @@ class BuildStockDialog(QDialog):
         self.run=QPushButton(tr('Rechercher'));self.run.clicked.connect(self.start);bar.addWidget(self.run)
         self.stop=QPushButton(tr('Arrêter'));self.stop.setEnabled(False);self.stop.clicked.connect(self.cancel.set);bar.addWidget(self.stop)
         options=FlowLayout();self.stock_filter=QPushButton(tr('Choisir le stock utilisable…'));self.stock_filter.clicked.connect(self.choose_stock);options.addWidget(self.stock_filter)
+        self.loose_only=QPushButton(tr('Vrac uniquement'));self.loose_only.setToolTip(tr('Réinclut toutes les pièces et mini-figurines du vrac, exclut les composants des sets possédés et relance la recherche avec les critères actuels.'));self.loose_only.clicked.connect(self.use_loose_stock);options.addWidget(self.loose_only)
         self.mocs=QPushButton(tr('Autres recherches'));searches=QMenu(self.mocs)
         searches.addAction(tr('MOC avec les pièces disponibles…'),self.find_mocs);searches.addAction(tr('MOC par mot clé / créateur'),self.global_search);self.mocs.setMenu(searches);options.addWidget(self.mocs)
         self.project_button=QPushButton(tr('Créer un projet avec ce set…'));self.project_button.clicked.connect(lambda:self.create_project());self.project_button.setEnabled(False);options.addWidget(self.project_button);layout.addLayout(options)
@@ -233,6 +234,11 @@ class BuildStockDialog(QDialog):
             self.detail_token+=1;self.clear_details();self.parts.setRowCount(0);self.table.setRowCount(0);self.results=[]
             self.status.setText(tr('Stock utilisable modifié : relance la recherche.'))
         show_window(StockFilterDialog(self.db,self),self,saved)
+
+    def use_loose_stock(self):
+        if self.busy:return
+        from .stock_filter import select_all_loose_stock
+        select_all_loose_stock(self.db);self.start()
 
     def global_search(self):
         from .moc_search import MocSearchDialog
@@ -284,11 +290,11 @@ class BuildStockDialog(QDialog):
         if self.set_thumbnails:self.set_thumbnails.suspend()
         self.clear_details();self.busy=True;self.cancel.clear();self.detail_token+=1;self.parts.setRowCount(0);self.table.setRowCount(0);self.results=[]
         source=self.source.currentData();text=self.search.text();ignore=self.ignore.isChecked();copies=self.copies.value();minimum=self.minimum.value();excluded_stock=list(self.db.setting('build_excluded_entries',[]));exclude_minifigs=self.exclude_minifigs.isChecked();include_sets=self.db.setting('build_include_set_stock',True)
-        for widget in (self.run,self.source,self.search,self.ignore,self.exclude_minifigs,self.copies,self.minimum,self.stock_filter,self.mocs):widget.setEnabled(False)
+        for widget in (self.run,self.source,self.search,self.ignore,self.exclude_minifigs,self.copies,self.minimum,self.stock_filter,self.loose_only,self.mocs):widget.setEnabled(False)
         self.stop.setEnabled(True);self.status.setText(tr('Analyse du stock et des inventaires…'));self.warnings.clear();self.warnings.hide()
         def finish():
             self.busy=False;self.stop.setEnabled(False)
-            for widget in (self.run,self.source,self.search,self.ignore,self.exclude_minifigs,self.copies,self.minimum,self.stock_filter,self.mocs):widget.setEnabled(True)
+            for widget in (self.run,self.source,self.search,self.ignore,self.exclude_minifigs,self.copies,self.minimum,self.stock_filter,self.loose_only,self.mocs):widget.setEnabled(True)
         def done(data):
             if self.closed:return
             if revision!=self.db.stock_revision():finish();self.stock_changed();return

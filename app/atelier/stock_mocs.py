@@ -38,6 +38,7 @@ class StockMocsDialog(QDialog):
         if self.busy:return
         revision=self.db.stock_revision()
         include_sets=self.db.setting('build_include_set_stock',True)
+        excluded_stock=list(self.db.setting('build_excluded_entries',self.excluded))
         if not self.db.setting('api_rb',''):
             self.status.setText(tr('Renseigne ta clé Rebrickable dans « API Keys », puis réessaie.'));return
         self.cancel.clear();self.rows=[];self.table.setRowCount(0);self.sets=[];self.cursor=0;self.photo.clear();self.photos+=1;self.controls(True)
@@ -48,7 +49,7 @@ class StockMocsDialog(QDialog):
             self.status.setText(str(len(self.sets))+tr(' sets reconstituables avec le stock sélectionné.')+'\n'+'\n'.join(warnings))
             if not include_sets:self.status.setText(self.status.text()+' · '+tr('Stock en vrac uniquement'))
             if self.sets and not cancelled:self.next_batch()
-        async_task(self,lambda progress:find_builds(self.db,'RB','',False,1,100,self.cancel,progress,self.excluded,include_set_stock=include_sets),done,self.fail,self.progress)
+        async_task(self,lambda progress:find_builds(self.db,'RB','',False,1,100,self.cancel,progress,excluded_stock,include_set_stock=include_sets),done,self.fail,self.progress)
     def progress(self,message):
         if not self.closed:self.status.setText(str(message))
     def fail(self,error):

@@ -277,7 +277,13 @@ class RelationsDialog(QDialog):
         if 0<=r<len(self.parts):self.preview.set_item(self.parts[r])
     def add_parts(self,target,all_parts):
         selected=self.parts if all_parts else [self.parts[x.row()] for x in self.part_table.selectionModel().selectedRows()]
-        try:self.db.add_many([(target,p['id'],str(p.get('chosen_color','')),p.get('chosen_quantity',1)) for p in selected])
+        try:
+            if all_parts and self.active_set['kind']=='set':
+                complete=self.db.components(self.active_set,strict=True)
+                from collections import Counter
+                identity=lambda rows:Counter((p['id'],int(p.get('chosen_quantity',1)),bool(p.get('is_spare'))) for p in rows)
+                if identity(complete)!=identity(self.parts):raise ValueError(tr('L’inventaire affiché a changé. Rouvre la fenêtre du set avant d’ajouter toutes les pièces.'))
+            self.db.add_many([(target,p['id'],str(p.get('chosen_color','')),p.get('chosen_quantity',1)) for p in selected])
         except Exception as error:QMessageBox.warning(self,tr('Ajout impossible'),str(error));return
         self.progress_label.setText(str(len(selected))+tr(' référence(s) ajoutée(s).'))
         notify_changed(self)

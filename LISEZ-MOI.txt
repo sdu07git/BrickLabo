@@ -1,4 +1,8 @@
-BrickLabo v0.1.59
+BrickLabo v0.1.60
+
+Sets realisables > Vrac uniquement : reinclut tout le vrac et relance la recherche sans les composants des sets possedes. Les inventaires deja transferes dans le vrac sont inclus, hors reservations des projets.
+Choisir le stock utilisable > Utiliser uniquement le stock en vrac : meme selection, a valider avec OK. Annuler conserve les choix precedents.
+Dans la fiche d un set, l ajout de toutes les pieces refuse un inventaire incomplet et indique les references absentes du catalogue.
 
 Survoler un bouton pendant deux secondes affiche une breve aide, dans les differentes fenetres.
 Les cles API servent uniquement aux acces API ; catalogues locaux, etiquettes et rangement restent disponibles sans cles.
