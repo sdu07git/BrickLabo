@@ -1,10 +1,28 @@
-# BrickLabo — v0.1.56
+# BrickLabo — v0.1.57
 
-Windows desktop software for LEGO catalogues, stock, construction searches and labels. This version continues the published v0.1.55, based on the original v0.1.28.
+Windows desktop software for LEGO catalogues, stock, construction searches and labels. This version continues the published v0.1.56, based on the original v0.1.28.
 
-**Downloads v0.1.56 :** [complete Windows package](https://github.com/sdu07git/BrickLabo/releases/download/v0.1.56/BrickLabo_v0.1.56_Complet.zip) · [sources with resources](https://github.com/sdu07git/BrickLabo/releases/download/v0.1.56/BrickLabo_v0.1.56_Sources.zip) · [release notes](https://github.com/sdu07git/BrickLabo/releases/tag/v0.1.56).
+**Downloads v0.1.57 :** [complete Windows package](https://github.com/sdu07git/BrickLabo/releases/download/v0.1.57/BrickLabo_v0.1.57_Complet.zip) · [sources with resources](https://github.com/sdu07git/BrickLabo/releases/download/v0.1.57/BrickLabo_v0.1.57_Sources.zip) · [release notes](https://github.com/sdu07git/BrickLabo/releases/tag/v0.1.57).
 
-## Cabinet proposal preview, references per drawer and undo — v0.1.56
+## Drawer quantities, action history and construction projects — v0.1.57
+
+**My storage → Drawer contents** now shows **Quantity in this drawer** separately from **Global loose stock**. Select a reference and use **Quantity in this drawer…** to declare its count. The same reference and colour can be split between drawers: 100 owned parts can be 30 in one drawer and 70 in another, while total stock remains 100. **Transfer a quantity…** moves part of a count to another drawer or cabinet. Dragging a reference from a drawer also moves its declared quantity and merges it with the destination count.
+
+In **Parts to store**, the **Remaining to store** column and **Remaining quantities to store** checkbox account for saved counts. From loose stock, dragging or **Assign to selected drawer** places the remaining quantity. For a partial allocation, adjust the drawer count or transfer part afterwards. Automatic storage offers **Allocate remaining quantities**: review counts in **Proposed cabinet → Drawer contents**, then apply. Reorganisation preserves existing declared counts. Catalogue references can still be assigned without owning the part; their quantities are **To be entered**.
+
+Migration from v0.1.56 retains cabinets and assignments with quantities **To be entered** rather than copying total stock into each drawer. An explicit zero differs from an unknown count. Declared totals for each reference, source and colour cannot exceed loose stock. Reduce or remove affected drawer counts before lowering stock below its allocated quantity. **My stock → Columns** offers **Allocated to drawers** and **Remaining to store** to track allocations.
+
+The top toolbar offers **Undo last action / Ctrl+Z**, **Redo / Ctrl+Y** and **Action history**. The journal retains 100 actions by default and survives restarts. Its window lists dates, descriptions and applied or undone states; **Retained actions** sets a limit from 1 to 500. It covers stock, the print queue, general and individual 3D colours, drawer assignments and counts, applied proposals and projects. Grouped imports and proposals restore atomically. Undo runs backwards through actions and redo replays their original order. A new change after undo replaces the remaining redo tail; rejected operations and unchanged values preserve it. Conflicting later edits prevent restoration. The last compatible v0.1.56 action is migrated without inventing its date.
+
+**My projects** appears in navigation. **New project…** offers a **Catalogue set** or **Custom build**. A set catalogue’s context menu also offers **Create a construction project…**. For a set, load its complete local inventory, choose the number of copies and whether to include spare parts. Creation snapshots the requirements without adding or reserving stock. For a custom build, **Project parts → Add a part…** selects a local reference, colour and required count. That menu also edits requirements, removes selected rows and adjusts their reservations.
+
+The project table shows **Planned**, **In progress** or **Completed**, requirements, reservations and missing quantities. Details show **Required**, **Reserved**, **Free in stock** and **Missing** for each reference and colour. **Reserve available stock** allocates free parts up to the requirements; **Reserve selection** only handles selected rows. **Adjust reservation…** sets an exact count. Projects share the same free pool: parts held by one cannot be reserved again by another. Reservations use only loose stock with the exact same source, reference and colour, without automatic equivalence or taking tracked components from owned sets.
+
+Reservations preserve ownership and physical locations. **My stock → Columns** offers **Reserved for projects** and **Available for building**; buildable-set searches exclude reserved loose parts. A **Completed** project keeps reservations until **Release reservations**. Deleting the project releases them too. Release affected reservations before lowering stock or requirements below reserved counts. A drawer allocation and a project reservation describe the same part in different ways and are not added together to reduce stock.
+
+**Backups → Projects and reservations** exports a new JSON family; **Cabinets and locations** includes drawer quantities. Restore the necessary loose stock too, or retain enough existing stock. Inconsistent restores roll back entirely. Old storage backups remain readable with unknown counts. Selective restoration clears the action journal; full ZIP backups preserve the database and its history. These functions use local data and require no API key.
+
+## History: cabinet proposal preview and undo — v0.1.56
 
 In **My storage → Store by category and size in studs**, choose **By category and size**, **One reference per drawer** or **Free reference grouping**. The first keeps the smallest-to-largest size order. The second gives each reference its own drawer: sources and variants stay distinct; colours of the same reference stay together unless **Separate colours** is checked. In free mode, select several rows with Ctrl or Shift, then **Group the selection…** to choose their shared drawer. The **Proposed drawer** lists also allow individual adjustments. Reference and free modes include parts and minifigures with unknown dimensions without inventing their sizes.
 
@@ -205,7 +223,7 @@ The launcher is rebuilt with the original icon in seven classic Windows bitmap s
 Extract the entire complete ZIP into a new writable folder. Close the old version, keep a backup and copy **Donnees** beside the new **BrickLabo.exe**. Do not overlay installations. Migration preserves observed part totals and separates loose stock from tracked set components. It retains `Donnees/sauvegardes/avant_v37.sqlite` before moving legacy sets and never invents inventories for untracked sets.
 
 - **My stock** contains loose parts and minifigures. **My set stock** contains sets and their saved total component quantities. The lower table supports previews, header sorting and double-click opening. Removing a set can discard components or move them to loose stock.
-- **Undo last action / Ctrl+Z** reverses the latest stock or print-queue add, import, removal, quantity or colour change, as well as general or individual 3D colour and reference assignments to drawers. Imports are single actions; the journal survives restarts and stock restores reset it. Later conflicting changes prevent undo.
+- **Undo / Redo / Action history** restores multiple changes to stock, the print queue, 3D colours, drawer contents and quantities, or projects and reservations. Ctrl+Z undoes; Ctrl+Y redoes. The journal survives restarts and is cleared by selective restoration. Conflicting changes prevent replay.
 - **Import collection** accepts Rebrickable parts / sets CSV and BrickLink CSV, tab-separated TXT or XML. Select the source and destination. Sets going to loose stock are decomposed; parts going to set stock attach to an owned set or a named personal inventory. Valid rows are added; unknown references, invalid colours or quantities and incomplete inventories remain pending in the correction assistant. Save corrections and resume ready rows, even after closing.
 - Rebrickable exports produce owned sets and loose parts CSV lists without double-counting tracked set components. Review colour and reference mappings. Personal ALT inventories are not official sets.
 - Build searches combine loose stock and enabled set components. The upper table shows set photos; drag a header boundary to resize any column, including **Set**. Photos stay with their references after sorting and use the shared cache. Reserve sets or coloured parts without deleting them. Each proposal uses the same stock independently.
@@ -254,8 +272,9 @@ Read [English help](documentation/AIDE.en.html) and [component licences](documen
 | 0.1.54 | Small screens, categories, set stock and destination cabinet for storage. |
 | 0.1.55 | Qt task lifetime, factory colour and wheel back faces. |
 | 0.1.56 | Cabinet proposal preview, one reference per drawer or free grouping, Category column and undo for 3D colours and assignments. |
+| 0.1.57 | Drawer counts and partial transfers, persistent undo/redo history, projects with requirements, reservations and missing parts. |
 
-One bilingual [NOUVEAUTES.txt](documentation/NOUVEAUTES.txt) holds cumulative notes. This branch does not document a released 0.1.29. The 0.1.28b / Range variants were not used as the baseline. The [v0.1.56 validation report](documentation/CONTROLE_v0.1.56.txt) describes the checks for this delivery.
+One bilingual [NOUVEAUTES.txt](documentation/NOUVEAUTES.txt) holds cumulative notes. This branch does not document a released 0.1.29. The 0.1.28b / Range variants were not used as the baseline. The [v0.1.57 validation report](documentation/CONTROLE_v0.1.57.txt) describes the checks for this delivery.
 
 ## Development and diagnostics
 
@@ -269,7 +288,7 @@ For a compatible future update, publish a public stable release with tag `vX.Y.Z
 
 To develop from this repository, take `ressources/complete.zip` from the source ZIP attached to the release: this LDraw archive exceeds GitHub's regular file size limit. GitHub's automatic source archives contain neither this resource nor the Windows runtime. Both attached ZIPs are the delivered and tested version; the repository READMEs are adapted for publication.
 
-The [v0.1.56 validation report](documentation/CONTROLE_v0.1.56.txt) describes the checks for this delivery. Native Windows execution remains to be confirmed.
+The [v0.1.57 validation report](documentation/CONTROLE_v0.1.57.txt) describes the checks for this delivery. Native Windows execution remains to be confirmed.
 
 
 
@@ -280,3 +299,6 @@ The [v0.1.56 validation report](documentation/CONTROLE_v0.1.56.txt) describes th
 
 
 **Validation v0.1.56:** 657 full-suite tests passed, followed by 86 targeted tests after individual colour undo was added and 49 after the final visual and help adjustments. The 21 new tests cover proposals, grouping, thumbnails, Category and persistent undo. Visual checks at 1360 × 790 and 800 × 540. Windows launcher and both ZIPs checked; native Windows execution remains to be confirmed.
+
+
+**Validation v0.1.57:** 695 tests passed on Qt/Linux (Python 3.12, PySide6 6.11.2), including 36 new checks of counts, transfers, projects, backups and persistent history. Additional scenario with 183 references in 183 drawers, reservations, restart and Undo/Redo. Visual checks at 1360 × 790 and 800 × 540. Packaging validates the Windows launcher and both archives; native Windows execution remains to be confirmed.
