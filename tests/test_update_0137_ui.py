@@ -34,11 +34,13 @@ class Update37UiTests(unittest.TestCase):
             window=self.keep(MainWindow(self.db));window.startup_timer.stop();return window
 
     def test_navigation_and_undo_controls_follow_stock_journal(self):
-        window=self.main_window();self.assertEqual(window.nav.count(),13);self.assertEqual(NAV[8][3],'stock');self.assertEqual(NAV[9][3],'stock_sets');self.assertFalse(window.undo_button.isEnabled())
+        window=self.main_window();self.assertEqual(window.nav.count(),14);self.assertEqual(NAV[8][3],'stock');self.assertEqual(NAV[9][3],'stock_sets');self.assertEqual(NAV[-1][3],'projects');self.assertFalse(window.undo_button.isEnabled());self.assertFalse(window.redo_button.isEnabled())
         self.db.add('stock',self.set,quantity=2)
         with patch('atelier.catalogue.Catalogue.load_thumbnails'):window.refresh_counts()
         self.assertTrue(window.undo_button.isEnabled());self.assertTrue(window.undo_shortcut.isEnabled());self.assertEqual(window.undo_shortcut.shortcut().toString(),'Ctrl+Z');self.assertEqual(self.db.query(scope='stock')[1],0)
         window.undo_shortcut.trigger();self.assertEqual(self.db.query(scope='stock_sets')[1],0);self.assertFalse(window.undo_button.isEnabled())
+        self.assertTrue(window.redo_button.isEnabled());self.assertEqual(window.redo_shortcut.shortcut().toString(),'Ctrl+Y')
+        window.redo_shortcut.trigger();self.assertEqual(self.db.query(scope='stock_sets')[1],1);self.assertFalse(window.redo_button.isEnabled())
 
     def test_owned_components_sort_and_double_click_open_matching_reference(self):
         self.db.add('stock',self.set,quantity=2);panel=self.keep(OwnedSetsPanel(self.db,VisualEngine(self.db)));panel.select(self.db.query(scope='stock_sets')[0][0]);self.assertEqual(panel.table.columnCount(),6)
@@ -51,8 +53,8 @@ class Update37UiTests(unittest.TestCase):
         path=Path(self.temp.name)/'parts.csv';path.write_text('Part,Color,Quantity\n3001,4,2\n');window.path=path;window.load();self.assertEqual(window.table.rowCount(),1);self.assertFalse(window.commit.isEnabled());window.name.setText('Mes pièces');self.assertTrue(window.commit.isEnabled());window.destination.setCurrentIndex(0);self.assertFalse(window.target.isEnabled())
         path.write_text('Part,Color,Quantity\nmissing,4,2\n');window.load();self.assertFalse(window.commit.isEnabled());self.assertEqual(self.db.query(scope='stock')[1],0)
 
-    def test_backup_defaults_seven_separate_families_without_api(self):
-        parent=self.main_window();window=self.keep(BackupDialog(parent));self.assertEqual(len(window.families),9);self.assertFalse(window.families['api'].isChecked());self.assertEqual(sum(c.isChecked() for c in window.families.values()),8)
+    def test_backup_defaults_include_projects_without_api(self):
+        parent=self.main_window();window=self.keep(BackupDialog(parent));self.assertEqual(len(window.families),10);self.assertFalse(window.families['api'].isChecked());self.assertTrue(window.families['projects'].isChecked());self.assertEqual(sum(c.isChecked() for c in window.families.values()),9)
 
     def test_moc_origin_loading_preserves_sorted_selection(self):
         window=self.keep(MocSearchDialog(self.db,None));window.rows=[{'set_num':'MOC-123','name':'Falcon','bases_loaded':False,'bases':[]},{'set_num':'MOC-456','name':'Other','bases_loaded':True,'bases':['100-1']}];window.fill();window.table.sortItems(4,Qt.SortOrder.AscendingOrder)

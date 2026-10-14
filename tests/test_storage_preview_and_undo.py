@@ -149,12 +149,12 @@ class ExtendedUndoTests(Fixture):
 
     def test_main_button_and_ctrl_z_action_restore_colour_and_refresh_drawers(self):
         with patch('atelier.catalogue.Catalogue.load_thumbnails'),patch('atelier.thumbnails.PartThumbnails.schedule'),patch('atelier.storage_panel.StoragePanel.schedule_icons'),patch('atelier.preview.Preview.refresh') as refresh:
-            window=self.keep(MainWindow(self.db));window.startup_timer.stop();window.show();window.nav.setCurrentRow(len(NAV)-1);app.processEvents()
+            window=self.keep(MainWindow(self.db));window.startup_timer.stop();window.show();window.nav.setCurrentRow(next(index for index,entry in enumerate(NAV) if entry[3]=='storage'));app.processEvents()
             window.default_color();dialog=window._consultation_windows[-1];dialog.setCurrentColor(QColor('#112233'));dialog.buttons.button(QDialogButtonBox.StandardButton.Ok).click()
             self.assertTrue(window.undo_button.isEnabled());window.undo_button.click();self.assertIsNone(self.db.setting('default_color'));self.assertTrue(refresh.called)
             drawer=self.drawers[0];assignment.place_entries(self.db,drawer['id'],[(self.part,'4')]);window.storage.refresh();window.storage.choose_drawer(drawer['id'])
             self.assertEqual(window.storage.table.rowCount(),1);self.assertTrue(window.undo_shortcut.isEnabled());window.undo_shortcut.trigger()
-            self.assertEqual(window.storage.table.rowCount(),0);self.assertEqual(window.storage.items[drawer['id']].parts,[]);self.assertFalse(window.undo_button.isEnabled())
+            self.assertEqual(window.storage.table.rowCount(),0);self.assertEqual(window.storage.items[drawer['id']].parts,[]);self.assertTrue(window.redo_button.isEnabled());self.assertTrue(window.undo_button.isEnabled())
             window.engine.close()
 
     def test_colour_undo_restores_an_absent_setting_and_persists_after_restart(self):
@@ -162,7 +162,7 @@ class ExtendedUndoTests(Fixture):
         reopened=Database(self.db.path)
         try:
             self.assertIn('couleur 3D',reopened.undo_description());self.assertTrue(reopened.undo_last_action());self.assertIsNone(reopened.setting('default_color'))
-            self.assertEqual(reopened.undo_description(),'');self.assertFalse(reopened.undo_last_action())
+            self.assertTrue(reopened.redo_description());self.assertTrue(reopened.undo_description())
         finally:reopened.close()
         self.assertEqual(self.stock_state(),before)
 
@@ -208,15 +208,16 @@ class ExtendedUndoTests(Fixture):
         a=self.drawers[0];walls.assign(self.db,a['id'],[(self.part,'4')]);walls.unassign(self.db,a['id'],[(self.part,'4')]);self.assertTrue(self.db.undo_last_action());self.assertEqual([p['id'] for p in walls.contents(self.db,a['id'])],[self.part])
         set_default_color(self.db,'#112233');description=self.db.undo_description();self.assertEqual(assignment.place_entries(self.db,a['id'],[(self.part,'4')]),0);self.assertEqual(self.db.undo_description(),description)
 
-    def test_new_stock_action_supersedes_storage_and_colour_undo(self):
+    def test_new_stock_action_precedes_storage_and_colour_in_history(self):
         assignment.place_entries(self.db,self.drawers[0]['id'],[(self.part,'4')]);set_default_color(self.db,'#112233')
         self.db.add('stock',self.part,'4',3);self.assertTrue(self.db.undo_last_action());self.assertEqual(self.db.rows('SELECT quantity FROM stock WHERE item_id=?',(self.part,))[0]['quantity'],40)
-        self.assertEqual(self.db.setting('default_color'),'#112233');self.assertEqual(len(walls.contents(self.db,self.drawers[0]['id'])),1);self.assertEqual(self.db.undo_description(),'')
+        self.assertEqual(self.db.setting('default_color'),'#112233');self.assertEqual(len(walls.contents(self.db,self.drawers[0]['id'])),1);self.assertIn('couleur',self.db.undo_description())
+        self.assertTrue(self.db.undo_last_action());self.assertIsNone(self.db.setting('default_color'))
 
-    def test_later_drawer_changes_block_undo_and_invalid_operations_keep_the_journal(self):
+    def test_unrelated_drawer_changes_survive_undo_and_invalid_operations_keep_the_journal(self):
         a=self.drawers[0];assignment.place_entries(self.db,a['id'],[(self.part,'4')]);before=self.db.undo_description()
         with self.assertRaises(ValueError):assignment.place_entries(self.db,99999,[(self.other,'4')])
         self.assertEqual(self.db.undo_description(),before)
-        self.db.run('INSERT INTO storage_contents VALUES(?,?,?)',(a['id'],self.other,'4'))
-        with self.assertRaises(ValueError):self.db.undo_last_action()
-        self.assertEqual(len(walls.contents(self.db,a['id'])),2)
+        self.db.run('INSERT INTO storage_contents(drawer_id,item_id,color) VALUES(?,?,?)',(a['id'],self.other,'4'))
+        self.assertTrue(self.db.undo_last_action())
+        self.assertEqual([part['id'] for part in walls.contents(self.db,a['id'])],[self.other])
