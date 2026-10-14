@@ -1,8 +1,22 @@
-# BrickLabo — v0.1.58
+# BrickLabo — v0.1.59
 
-Windows desktop software for LEGO catalogues, stock, construction searches and labels. This version continues the published v0.1.57, based on the original v0.1.28.
+Windows desktop software for LEGO catalogues, stock, construction searches and labels. This version continues the published v0.1.58, based on the original v0.1.28.
 
-**Downloads v0.1.58 :** [complete Windows package](https://github.com/sdu07git/BrickLabo/releases/download/v0.1.58/BrickLabo_v0.1.58_Complet.zip) · [sources with resources](https://github.com/sdu07git/BrickLabo/releases/download/v0.1.58/BrickLabo_v0.1.58_Sources.zip) · [release notes](https://github.com/sdu07git/BrickLabo/releases/tag/v0.1.58).
+**Downloads v0.1.59 :** [complete Windows package](https://github.com/sdu07git/BrickLabo/releases/download/v0.1.59/BrickLabo_v0.1.59_Complet.zip) · [sources with resources](https://github.com/sdu07git/BrickLabo/releases/download/v0.1.59/BrickLabo_v0.1.59_Sources.zip) · [release notes](https://github.com/sdu07git/BrickLabo/releases/tag/v0.1.59).
+
+## Loose stock partial transfers and excluded words — v0.1.59
+
+**Loose stock only** : In Buildable sets → Choose usable stock, uncheck Use parts from My set stock to exclude all tracked components of owned sets, including future additions. Only loose parts and minifigures remain usable after project reservations. Details, exports and MOC suggestions use this choice. Individual set exclusions are preserved for later reactivation.
+
+**Partial drag and drop** : Dragging counted entries from one drawer to another opens Quantities to move. Choose 20 out of 40: 20 stay in the source and 20 move to the destination. Multiple selected references have individual counts, applied atomically with undo/redo. Cancelling leaves all drawers unchanged. Uncounted references are moved in full without inventing quantities.
+
+**Stock additions and cabinets** : After adding loose stock, a reference and color fully counted in one drawer follows the new total: 40 plus 10 becomes 50. Split, partial or unknown counts are preserved and new pieces remain unplaced. Owned set components remain separate from loose stock. Stock additions and automatic drawer changes are undone or redone together. Visible storage and open inventories refresh; hidden storage is refreshed when opened.
+
+**Visible drawer counts** : The cabinet face displays the total when all drawer counts are known. Hover still lists each reference and color. Zero and unknown quantities remain distinct.
+
+**Exclude search words** : Normal and advanced search accept -modulex to exclude items containing modulex in name, reference or category. brick -modulex -duplo combines required and excluded words. Set themes follow the same rule. Indexed and compatible searches agree; hyphens inside references such as 75192-1 remain literal.
+
+**Validation v0.1.59:** all 762 tests passed on Qt/Linux, including 22 new tests; dialogs and cabinet checked at normal and compact sizes. [Detailed report](documentation/CONTROLE_v0.1.59.txt). Native Windows execution remains to be confirmed.
 
 ## Projects, drawer inventories and fixes — v0.1.58
 
@@ -287,7 +301,7 @@ Read [English help](documentation/AIDE.en.html) and [component licences](documen
 | 0.1.58 | Projects and previews, drawer inventories, versioned CSV imports, figure layouts and memory protection. |
 | 0.1.57 | Drawer counts and partial transfers, persistent undo/redo history, projects with requirements, reservations and missing parts. |
 
-One bilingual [NOUVEAUTES.txt](documentation/NOUVEAUTES.txt) holds cumulative notes. This branch does not document a released 0.1.29. The 0.1.28b / Range variants were not used as the baseline. The [v0.1.57 validation report](documentation/CONTROLE_v0.1.57.txt) describes the checks for this delivery.
+One bilingual [NOUVEAUTES.txt](documentation/NOUVEAUTES.txt) holds cumulative notes. This branch does not document a released 0.1.29. The 0.1.28b / Range variants were not used as the baseline. The [v0.1.59 validation report](documentation/CONTROLE_v0.1.59.txt) describes the checks for this delivery.
 
 ## Development and diagnostics
 
@@ -301,7 +315,7 @@ For a compatible future update, publish a public stable release with tag `vX.Y.Z
 
 To develop from this repository, take `ressources/complete.zip` from the source ZIP attached to the release: this LDraw archive exceeds GitHub's regular file size limit. GitHub's automatic source archives contain neither this resource nor the Windows runtime. Both attached ZIPs are the delivered and tested version; the repository READMEs are adapted for publication.
 
-The [v0.1.57 validation report](documentation/CONTROLE_v0.1.57.txt) describes the checks for this delivery. Native Windows execution remains to be confirmed.
+The [v0.1.59 validation report](documentation/CONTROLE_v0.1.59.txt) describes the checks for this delivery. Native Windows execution remains to be confirmed.
 
 
 

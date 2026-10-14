@@ -1,8 +1,22 @@
-# BrickLabo — v0.1.58
+# BrickLabo — v0.1.59
 
-Logiciel de bureau Windows pour les catalogues LEGO, les stocks, les recherches de constructions et les étiquettes. Cette version reprend la v0.1.57 publiée, issue de la v0.1.28 d’origine.
+Logiciel de bureau Windows pour les catalogues LEGO, les stocks, les recherches de constructions et les étiquettes. Cette version reprend la v0.1.58 publiée, issue de la v0.1.28 d’origine.
 
-**Téléchargements v0.1.58 :** [version complète Windows](https://github.com/sdu07git/BrickLabo/releases/download/v0.1.58/BrickLabo_v0.1.58_Complet.zip) · [sources avec ressources](https://github.com/sdu07git/BrickLabo/releases/download/v0.1.58/BrickLabo_v0.1.58_Sources.zip) · [notes de release](https://github.com/sdu07git/BrickLabo/releases/tag/v0.1.58).
+**Téléchargements v0.1.59 :** [version complète Windows](https://github.com/sdu07git/BrickLabo/releases/download/v0.1.59/BrickLabo_v0.1.59_Complet.zip) · [sources avec ressources](https://github.com/sdu07git/BrickLabo/releases/download/v0.1.59/BrickLabo_v0.1.59_Sources.zip) · [notes de release](https://github.com/sdu07git/BrickLabo/releases/tag/v0.1.59).
+
+## Vrac uniquement transferts partiels et exclusions — v0.1.59
+
+**Vrac uniquement** : Dans Sets réalisables → Choisir le stock utilisable, décocher Utiliser les pièces de Mon stock set exclut tous les composants des sets possédés, y compris ceux ajoutés plus tard. La recherche utilise seulement les pièces et mini-figurines en vrac, après les réservations des projets. Les détails, exports et suggestions MOC reprennent ce choix. Les exclusions individuelles des sets sont conservées pour une réactivation ultérieure.
+
+**Transfert partiel par glisser-déposer** : Glisser une référence depuis le contenu d’un tiroir vers un autre ouvre Quantités à déplacer pour les comptages connus. Choisir par exemple 20 pièces sur 40 : 20 restent à l’origine et 20 sont déposées à destination. Une sélection de plusieurs références peut être réglée ligne par ligne ; la validation est atomique et annulable. Annuler le dialogue ne change aucun tiroir. Les références sans comptage sont déplacées entièrement, sans inventer de quantité.
+
+**Ajouts au stock et meubles** : Après un ajout au vrac, une référence et une couleur entièrement comptées dans un seul tiroir suivent le nouveau total. Par exemple 40 pièces puis un ajout de 10 donnent 50 dans ce tiroir. Si plusieurs tiroirs partagent la référence, ou si le comptage est partiel ou inconnu, les comptages sont conservés et les nouvelles pièces restent à ranger. Les composants de sets possédés restent distincts du vrac. L’ajout et l’actualisation du tiroir s’annulent et se rétablissent ensemble. Le rangement et les inventaires ouverts s’actualisent ; un rangement masqué est relu à son ouverture.
+
+**Quantité visible sur le meuble** : La façade affiche le nombre de pièces lorsque tous les comptages du tiroir sont connus. Le survol conserve le détail par référence et couleur ; zéro et quantité inconnue restent distincts.
+
+**Exclure un mot de la recherche** : Dans la recherche normale et les filtres avancés, -modulex retire les références contenant modulex dans le nom, la référence ou la catégorie. brick -modulex -duplo combine un mot recherché et plusieurs exclusions. Les thèmes des sets suivent également ce filtre. Les recherches indexées et compatibles sont cohérentes ; les tirets internes des références, comme 75192-1, restent littéraux.
+
+**Validation v0.1.59 :** 762 tests réussis sous Qt/Linux, dont 22 nouveaux ; dialogues et meuble contrôlés en formats normal et compact. [Rapport détaillé](documentation/CONTROLE_v0.1.59.txt). Exécution native Windows à confirmer.
 
 ## Projets, inventaire des tiroirs et corrections — v0.1.58
 
@@ -293,7 +307,7 @@ L’aide complète se trouve dans [documentation/AIDE.html](documentation/AIDE.h
 | 0.1.58 | Projets et aperçus, inventaires des tiroirs, CSV versionnés, modèles Mini-figs et protection mémoire. |
 | 0.1.57 | Quantités par tiroir et transferts partiels, historique Annuler/Rétablir persistant, projets avec besoins, réservations et manquants. |
 
-Un seul [NOUVEAUTES.txt](documentation/NOUVEAUTES.txt) réunit les notes françaises et anglaises. Les notes de cette branche ne documentent pas de livraison 0.1.29. Les variantes 0.1.28b et Range n’ont pas servi de base. Le [rapport de contrôle v0.1.57](documentation/CONTROLE_v0.1.57.txt) décrit les vérifications de cette livraison.
+Un seul [NOUVEAUTES.txt](documentation/NOUVEAUTES.txt) réunit les notes françaises et anglaises. Les notes de cette branche ne documentent pas de livraison 0.1.29. Les variantes 0.1.28b et Range n’ont pas servi de base. Le [rapport de contrôle v0.1.59](documentation/CONTROLE_v0.1.59.txt) décrit les vérifications de cette livraison.
 
 ## Développement et diagnostic
 
@@ -309,7 +323,7 @@ Pour publier une future mise à jour compatible : créer une release publique st
 
 Pour développer depuis ce dépôt, reprendre `ressources/complete.zip` depuis le ZIP Sources joint à la release : cette archive LDraw dépasse la limite de taille des fichiers GitHub. Les archives automatiques « Source code » ne contiennent ni cette ressource ni le runtime Windows. Les deux ZIP joints sont ceux de la version livrée et testée ; les README du dépôt sont adaptés à la publication.
 
-Le [rapport de contrôle v0.1.57](documentation/CONTROLE_v0.1.57.txt) décrit les vérifications de cette livraison. Exécution native Windows à confirmer.
+Le [rapport de contrôle v0.1.59](documentation/CONTROLE_v0.1.59.txt) décrit les vérifications de cette livraison. Exécution native Windows à confirmer.
 
 
 
