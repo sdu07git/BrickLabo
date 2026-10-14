@@ -624,17 +624,21 @@ class UpdateDialogTests(unittest.TestCase):
         window._pending_software_update = prepared
         window.findChildren.return_value = []
         window.engine.close.side_effect = lambda: order.append('engine')
+        window.deleteLater.side_effect = lambda: order.append('window')
         gui = Mock()
         gui.exec.return_value = 0
+        gui._bricklabo_button_help.stop.side_effect = lambda: order.append('help')
+        collector = Mock()
+        collector.stop.side_effect = lambda: order.append('gc')
         pool = Mock()
         pool.waitForDone.side_effect = lambda: order.append('workers')
         def start(value):
             self.assertIs(value, prepared)
-            self.assertEqual(order, ['workers', 'engine', 'database'])
+            self.assertEqual(order, ['workers', 'engine', 'database', 'help', 'window', 'gc'])
             order.append('installer')
         old_hook = sys.excepthook
         try:
-            with patch('atelier.storage.prepare_portable_storage', return_value=root), patch('atelier.storage.configure_portable_database'), patch.object(application, 'setup_logging', return_value=(Mock(), root / 'logs')), patch.object(application, 'QApplication', return_value=gui), patch.object(application, 'install_qt_language'), patch.object(application, 'Database', return_value=db), patch.object(application, 'MainWindow', return_value=window), patch('PySide6.QtCore.QThreadPool.globalInstance', return_value=pool), patch.object(updates, 'start_installer', side_effect=start):
+            with patch('atelier.storage.prepare_portable_storage', return_value=root), patch('atelier.storage.configure_portable_database'), patch.object(application, 'setup_logging', return_value=(Mock(), root / 'logs')), patch.object(application, 'QApplication', return_value=gui), patch.object(application, 'install_qt_language'), patch.object(application, 'Database', return_value=db), patch.object(application, 'MainWindow', return_value=window), patch('PySide6.QtCore.QThreadPool.globalInstance', return_value=pool), patch('atelier.gui_gc.GuiGarbageCollector',return_value=collector),patch('atelier.task_lifetime.drain_tasks',return_value=True),patch('PySide6.QtCore.QCoreApplication.sendPostedEvents'),patch.object(updates, 'start_installer', side_effect=start):
                 self.assertEqual(application.main(), 0)
         finally:
             sys.excepthook = old_hook

@@ -46,7 +46,7 @@ class StockFilterTests(unittest.TestCase):
   d=BuildStockDialog(self.db,Mock());d.results=[{'source':'RB','ref':'100-1'},{'source':'BL','ref':'200-1'}];d.table.setRowCount(2)
   for i in range(2):d.table.setItem(i,0,QTableWidgetItem(str(i)))
   with patch('atelier.build_stock.async_task'),patch('atelier.build_stock.QMenu') as menu,patch('atelier.alternates.AlternatesDialog') as dialog:
-   menu.return_value.addAction.side_effect=lambda text,fn:fn()
+   menu.return_value.addAction.side_effect=lambda text,fn:fn() if 'alternatives' in text else None
    d.context_menu(d.table.visualItemRect(d.table.item(1,0)).center())
    self.assertEqual(dialog.call_args.args[2]['ref'],'200-1');dialog.reset_mock()
    d.context_menu(QPoint(-1,-1));dialog.assert_not_called()

@@ -34,7 +34,7 @@ class ButtonHelpTests(unittest.TestCase):
 
     def window(self,caption='Générer',enabled=True):
         window=QDialog();window.move(40,40);layout=QVBoxLayout(window);button=QPushButton(caption);button.setEnabled(enabled);layout.addWidget(button)
-        window.resize(420,130);window.show();self.windows.append(window);app.processEvents();return window,button
+        window.resize(420,130);window.show();self.windows.append(window);self.manager.register_buttons();app.processEvents();return window,button
 
     def hover(self,button):
         QCursor.setPos(button.mapToGlobal(button.rect().center()));QTest.mouseMove(button,button.rect().center());app.processEvents()
@@ -48,7 +48,7 @@ class ButtonHelpTests(unittest.TestCase):
         self.assertIn('Enregistre les étiquettes',QToolTip.text().replace('\n',' '));self.assertFalse(button.isDown())
 
     def test_next_button_starts_a_new_delay_and_native_tip_cannot_appear_early(self):
-        window,button=self.window();second=QPushButton('Aide');window.layout().addWidget(second);app.processEvents();self.hover(button)
+        window,button=self.window();second=QPushButton('Aide');window.layout().addWidget(second);app.processEvents();QTest.qWait(250);self.hover(button)
         with patch('atelier.button_help.QToolTip.showText') as show:
             self.manager.show_help();self.assertEqual(show.call_count,1);self.hover(second)
             event=QHelpEvent(QEvent.Type.ToolTip,second.rect().center(),second.mapToGlobal(second.rect().center()))
@@ -71,6 +71,7 @@ class ButtonHelpTests(unittest.TestCase):
         window,button=self.window('Charger via l’API BrickLink (facultatif)',False)
         self.assertIn('Identifiants BrickLink requis',button.toolTip())
         late=QPushButton('Mettre à jour LDraw (complete.zip)');window.layout().addWidget(late);app.processEvents()
+        QTest.qWait(250)
         self.assertIn('bibliothèque officielle LDraw',late.toolTip());self.assertIs(install_button_help(app),self.manager)
 
     def test_existing_explanation_and_link_are_preserved(self):
