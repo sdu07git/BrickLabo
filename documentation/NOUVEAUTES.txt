@@ -1,3 +1,20 @@
+Vrac transferts partiels et filtres — v0.1.59
+
+Vrac uniquement
+Dans Sets réalisables → Choisir le stock utilisable, décocher Utiliser les pièces de Mon stock set exclut tous les composants des sets possédés, y compris ceux ajoutés plus tard. La recherche utilise seulement les pièces et mini-figurines en vrac, après les réservations des projets. Les détails, exports et suggestions MOC reprennent ce choix. Les exclusions individuelles des sets sont conservées pour une réactivation ultérieure.
+
+Transfert partiel par glisser-déposer
+Glisser une référence depuis le contenu d’un tiroir vers un autre ouvre Quantités à déplacer pour les comptages connus. Choisir par exemple 20 pièces sur 40 : 20 restent à l’origine et 20 sont déposées à destination. Une sélection de plusieurs références peut être réglée ligne par ligne ; la validation est atomique et annulable. Annuler le dialogue ne change aucun tiroir. Les références sans comptage sont déplacées entièrement, sans inventer de quantité.
+
+Ajouts au stock et meubles
+Après un ajout au vrac, une référence et une couleur entièrement comptées dans un seul tiroir suivent le nouveau total. Par exemple 40 pièces puis un ajout de 10 donnent 50 dans ce tiroir. Si plusieurs tiroirs partagent la référence, ou si le comptage est partiel ou inconnu, les comptages sont conservés et les nouvelles pièces restent à ranger. Les composants de sets possédés restent distincts du vrac. L’ajout et l’actualisation du tiroir s’annulent et se rétablissent ensemble. Le rangement et les inventaires ouverts s’actualisent ; un rangement masqué est relu à son ouverture.
+
+Quantité visible sur le meuble
+La façade affiche le nombre de pièces lorsque tous les comptages du tiroir sont connus. Le survol conserve le détail par référence et couleur ; zéro et quantité inconnue restent distincts.
+
+Exclure un mot de la recherche
+Dans la recherche normale et les filtres avancés, -modulex retire les références contenant modulex dans le nom, la référence ou la catégorie. brick -modulex -duplo combine un mot recherché et plusieurs exclusions. Les thèmes des sets suivent également ce filtre. Les recherches indexées et compatibles sont cohérentes ; les tirets internes des références, comme 75192-1, restent littéraux.
+
 Projets, inventaire des tiroirs et corrections — v0.1.58
 
 - Sets réalisables : bouton et clic droit Créer un projet avec ce set…. Le nombre d’exemplaires et l’option Exclure les minifigurines sont transmis au nouveau projet.
