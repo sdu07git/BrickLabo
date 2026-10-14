@@ -1,0 +1,73 @@
+BRICKLABO v0.1.58 — CONTRÔLE DE LIVRAISON
+14 octobre 2026
+
+Base : v0.1.57, commit 051cb712d51e34c29fa660e2e49b38f62331c641.
+Environnement : Python 3.12, PySide6 / shiboken6 6.11.2, NumPy 2.5.3,
+Pillow 12.3.0, Qt/Linux avec affichage offscreen.
+
+Périmètre : création de projets depuis les sets réalisables ; aperçu du set
+dans Mes projets et ouverture par double-clic ; sélecteur de sets avec filtres,
+pagination et photo ; exclusion des mini-figurines ; inventaire éditable des
+tiroirs ; modèles d’étiquettes pour tout le catalogue Mini-figs ; listes CSV
+Rebrickable avec quantité et version d’inventaire ; stabilité des objets Qt.
+
+Suite complète : 740 tests réussis en 491,823 secondes, dont 45 nouveaux tests.
+91 tests ciblés revérifiés ; compilation Python et différences Git contrôlées.
+
+Scénarios vérifiés
+- CSV natif « Set Number,Quantity,Inventory Ver » : 106 références et
+  109 exemplaires importés dans une base d’essai avec les données publiques
+  fournies. Aucun ajout lors d’une reprise ; annulation complète vérifiée.
+  Le fichier personnel utilisé n’est pas inclus dans les sources ni les ZIP.
+- Une version demandée est respectée même si une autre version est plus
+  récente. Version absente ou invalide : ligne conservée en attente.
+  L’import général détecte les collections et ouvre l’assistant de stock.
+- Les projets reprennent le nombre d’exemplaires et l’exclusion des figurines.
+  La création ne réserve ni n’ajoute de stock. Les projets personnels effacent
+  l’ancien aperçu du set ; les fenêtres conservent les bonnes références triées.
+- Les caches API distinguent l’inventaire complet et le modèle sans figurines.
+  Les anciens caches incomplets demandent un rechargement ; les CSV locaux
+  peuvent servir directement. Une figurine intacte du stock n’est pas démontée
+  quand l’exclusion est active. Détails, pourcentages et CSV sont cohérents.
+- Les tiroirs montrent leurs comptages propres, avec couleur et référence.
+  Inconnu et zéro restent distincts. Les modifications sont atomiques,
+  bornées au stock en vrac et annulables/rétablissables. Une édition devenue
+  périmée ou une référence/couleur déjà présente est refusée sans écrasement.
+- Les modèles Mini-figs couvrent toutes les sources et les futures références.
+  Les dispositions individuelles existantes sont adaptées en conservant leurs
+  couleurs de catégories et leurs arêtes. Sauvegarde/restauration vérifiée.
+
+Stabilité
+- Un plantage a été reproduit en combinant nettoyage mémoire, éditeur
+  d’étiquettes et fermeture de fenêtres avec le filtre Qt global des bulles
+  d’aide. Le filtre global est remplacé par une observation des boutons
+  entièrement construits, dont les wrappers sont conservés jusqu’à destruction.
+- Les nouveaux boutons sont détectés périodiquement, puis chaque bouton
+  attend son propre délai de deux secondes. Les commandes ne sont pas activées
+  par le survol. Les fenêtres fermées n’affichent pas de bulle tardive.
+- Le nettoyage cyclique Python est différé vers le thread GUI, après la fin
+  native des tâches. Les callbacks encore actifs dans une boucle modale
+  empêchent cette collecte. Les tâches et fenêtres sont détruites explicitement
+  sur le thread GUI avant la fin de l’application et son éventuelle mise à jour.
+- Essai prolongé : 60 itérations, 120 parcours d’ouverture/fermeture de fenêtres,
+  120 tâches de rendu 3D réel terminées, zéro erreur et zéro tâche restante.
+
+Interface
+Contrôles visuels à 1360 × 790 et 800 × 540 : Mes projets, Sets réalisables,
+Choisir un set, Nouveau projet, Inventaire du tiroir, édition d’une ligne.
+Les dimensions demandées sont conservées ; aucun bouton visible comprimé.
+Les commandes de recherche restent compactes et les tableaux peuvent défiler.
+Le redessin des meubles conserve trois lectures groupées pour dix meubles.
+
+Fabrication
+Lanceur recompilé avec MinGW-w64 : Windows 64 bits, version 0.1.58,
+icône bitmap en sept tailles correspondant au fichier ICO fourni.
+Runtime Python 3.12.10 et dépendances Windows repris du paquet précédent,
+avec versions conformes à app/requirements.txt. Les deux ZIP incluent LDraw
+et les ressources publiques. CRC, structure, exécutables, dépendances et
+concordance des sources/du paquet complet vérifiés.
+Les empreintes SHA-256 des archives finales figurent dans les notes de release.
+
+Limite : l’exécution native Windows et la disparition du code 0xc0000374
+sur le PC concerné doivent encore être confirmées. Les essais Qt/Linux ne
+constituent pas une reproduction de cet environnement Windows exact.
