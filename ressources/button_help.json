@@ -935,6 +935,54 @@
     "Historique des actions…": {
       "fr": "Affiche les actions appliquées et annulées, conservées après redémarrage.",
       "en": "Shows applied and undone actions, retained after restarting."
+    },
+    "Actualiser": {
+      "fr": "Recharge les données affichées dans cette fenêtre.",
+      "en": "Reloads the data displayed in this window."
+    },
+    "Ajouter une référence…": {
+      "fr": "Ajoute une référence et une couleur à l’inventaire du tiroir.",
+      "en": "Adds a reference and colour to the drawer inventory."
+    },
+    "Choisir une référence…": {
+      "fr": "Choisit une pièce ou une mini-figurine dans les catalogues locaux.",
+      "en": "Chooses a part or minifigure from the local catalogues."
+    },
+    "Créer un projet avec ce set…": {
+      "fr": "Prépare un projet depuis le set sélectionné, avec les exemplaires et le choix des mini-figs du calcul.",
+      "en": "Prepares a project from the selected set using the search copies and minifigure option."
+    },
+    "Exclure les minifigurines": {
+      "fr": "Ignore les mini-figurines dans les besoins et les pourcentages du set. Les figurines du stock restent intactes.",
+      "en": "Ignores minifigures in set requirements and percentages. Stock figures remain intact."
+    },
+    "Modifier référence, couleur et quantité…": {
+      "fr": "Modifie la référence, la couleur et le comptage de la ligne sélectionnée dans ce tiroir.",
+      "en": "Edits the reference, colour and count of the selected row in this drawer."
+    },
+    "Ouvrir l’inventaire du tiroir…": {
+      "fr": "Ouvre une fenêtre pour consulter et modifier les références, les couleurs et les quantités du tiroir.",
+      "en": "Opens a window to view and edit drawer references, colours and counts."
+    },
+    "Quantité à renseigner": {
+      "fr": "Conserve un comptage inconnu, distinct d’une quantité nulle.",
+      "en": "Keeps an unknown count, distinct from a zero count."
+    },
+    "Retirer la sélection": {
+      "fr": "Retire les lignes sélectionnées du tiroir. Le stock possédé reste conservé.",
+      "en": "Removes selected drawer rows while preserving owned stock."
+    },
+    "Réinitialiser les filtres": {
+      "fr": "Efface la recherche et les filtres du sélecteur de sets.",
+      "en": "Clears the search and filters in the set picker."
+    },
+    "Voir le set": {
+      "fr": "Ouvre le set du projet sélectionné avec sa photo et son inventaire.",
+      "en": "Opens the selected project’s set with its photo and inventory."
+    },
+    "Autres recherches": {
+      "fr": "Ouvre les recherches de MOC avec les pièces disponibles ou par mot clé et créateur.",
+      "en": "Opens MOC searches using available parts or by keyword and designer."
     }
   },
   "contexts": {
@@ -1017,6 +1065,10 @@
     "ActionHistoryDialog|Annuler": {
       "fr": "Annule la dernière action appliquée, sans fermer l’historique.",
       "en": "Undoes the last applied action without closing the history."
+    },
+    "BuildStockDialog|Rechercher": {
+      "fr": "Compare les inventaires locaux au stock utilisable et affiche les sets selon les critères choisis.",
+      "en": "Compares local inventories with usable stock and displays sets matching the selected criteria."
     }
   }
 }

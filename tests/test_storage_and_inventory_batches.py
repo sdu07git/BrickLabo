@@ -107,7 +107,8 @@ class BatchTests(Fixture):
     def test_failure_retained_and_retry_keeps_successes(self):
         items=self.sets(2);job=batches.create_job(self.db,items);result=batches.run_batch(self.db,job,api_factory=self.api(fail_ref=items[0]['ref']))
         self.assertEqual((result['errors'],result['loaded']),(1,1));batches.retry_errors(self.db,job)
-        api=self.api();result=batches.run_batch(self.db,job,api_factory=api);self.assertEqual(result['loaded'],2);self.assertEqual(len(api.calls),1)
+        api=self.api();result=batches.run_batch(self.db,job,api_factory=api);self.assertEqual(result['loaded'],2);self.assertEqual(len(api.calls),2)
+        self.assertTrue(all('sets/'+items[0]['ref']+'/' in path for path in api.calls));self.assertIn('inc_minifig_parts=0',api.calls[1])
     def test_cancel_mid_inventory_does_not_publish_partial_parts(self):
         item=self.sets(1)[0];job=batches.create_job(self.db,[item]);cancel=threading.Event();result=batches.run_batch(self.db,job,cancel,api_factory=self.api(True,cancel=cancel))
         self.assertEqual(result['pending'],1);self.assertEqual(self.db.rows('SELECT * FROM catalogue_inventory'),[])

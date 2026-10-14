@@ -78,6 +78,7 @@ class LabelEditor(QDialog):
         destination=QHBoxLayout();outer.addLayout(destination);destination.addWidget(QLabel(tr('Appliquer à')))
         self.destination=QComboBox();self.destination.setObjectName('labelDestination')
         self.destination.addItem(tr('Modèle général'),'general');self.destination.addItem(tr('Catégorie'),'category')
+        self.destination.addItem(tr('Tout le catalogue Mini-figs'),'minifigs')
         if self.targets:self.destination.addItem(tf('Sélection ({0} étiquettes)',len(self.targets)),'selection')
         if individual:self.destination.addItem(tr('Cette étiquette'),'individual')
         self.destination.setCurrentIndex(self.destination.findData('selection' if selection_mode else 'individual' if individual else 'general'));destination.addWidget(self.destination)
@@ -324,7 +325,7 @@ class LabelEditor(QDialog):
         self.width.setEnabled(scope=='general');self.height.setEnabled(scope=='general')
         self.category_color_button.setEnabled(scope in ('general','individual'))
         if self.edge_controls:self.edge_controls.setEnabled(scope=='individual')
-        notes={'general':tr('Modifie les étiquettes qui suivent le modèle général.'),'category':tr('Modifie toutes les étiquettes de cette catégorie. Les dispositions individuelles restent prioritaires.'),'selection':tr('Brouillon commun à la sélection capturée à l’ouverture. Couleurs, quantités, angles et arêtes propres à chaque étiquette conservés.'),'individual':tr('Modifie uniquement cette étiquette.')}
+        notes={'general':tr('Modifie les étiquettes qui suivent le modèle général.'),'category':tr('Modifie toutes les étiquettes de cette catégorie. Les dispositions individuelles restent prioritaires.'),'minifigs':tr('Applique la disposition à toutes les mini-figs de tous les catalogues, y compris leurs étiquettes personnalisées et les futures références. Les couleurs, les angles et les arêtes sont conservés.'),'selection':tr('Brouillon commun à la sélection capturée à l’ouverture. Couleurs, quantités, angles et arêtes propres à chaque étiquette conservés.'),'individual':tr('Modifie uniquement cette étiquette.')}
         self.destination_note.setText(notes[scope]);self.refresh_canvas()
 
     def reset_category(self):
@@ -335,11 +336,12 @@ class LabelEditor(QDialog):
         self.presets.close_preview();self.edge_closed=True;self.edge_revision+=1;self.edge_timer.stop();super().done(result)
 
     def apply(self):
-        from .label_models import apply_selection,set_category_model,validate_template,merge_layout
+        from .label_models import apply_selection,set_category_model,set_kind_model,validate_template,merge_layout
         try:
             scope=self.destination.currentData();template=validate_template(self.template)
             if scope=='selection':self.applied_count=apply_selection(self.db,self.targets,template)
             elif scope=='category':set_category_model(self.db,self.categories.currentData(),template)
+            elif scope=='minifigs':self.applied_count=set_kind_model(self.db,'minifig',template)
             elif scope=='individual':self.db.set_setting(individual_template_key(self.item),template)
             else:self.db.set_setting('template',template)
         except (ValueError,OSError) as error:QMessageBox.warning(self,tr('Application impossible'),str(error));return

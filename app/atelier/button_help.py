@@ -109,8 +109,25 @@ def _assign_help(button):
 
 class ButtonHelp(QObject):
     def __init__(self,app):
-        super().__init__(app);self.app=app;self.target=None;self.showing=False
+        super().__init__(app);self.app=app;self.target=None;self.showing=False;self.buttons=set()
         self.timer=QTimer(self);self.timer.setSingleShot(True);self.timer.setTimerType(Qt.TimerType.PreciseTimer);self.timer.setInterval(HOVER_DELAY_MS);self.timer.timeout.connect(self.show_help)
+        # An application-wide Python filter wraps even internal Qt objects
+        # during their C++ construction/destruction. Observe fully constructed
+        # buttons instead, retaining their wrappers until native deletion.
+        self.discovery=QTimer(self);self.discovery.setInterval(200);self.discovery.timeout.connect(self.register_buttons);self.discovery.start()
+
+    def register_buttons(self):
+        self.buttons={button for button in self.buttons if isValid(button)}
+        for button in self.app.allWidgets():
+            if isinstance(button,QAbstractButton) and isValid(button) and button not in self.buttons:
+                _assign_help(button);button.installEventFilter(self);self.buttons.add(button)
+                if button.isVisible() and button.underMouse():self.start(button)
+
+    def stop(self):
+        self.cancel();self.discovery.stop()
+        for button in self.buttons:
+            if isValid(button):button.removeEventFilter(self)
+        self.buttons.clear()
 
     def current(self):
         target=self.target() if self.target else None
@@ -136,6 +153,12 @@ class ButtonHelp(QObject):
 
     def eventFilter(self,watched,event):
         kind=event.type()
+        # Hide/Close also arrive while C++ destroys widgets, including from
+        # cyclic GC. Inspecting another widget's window/ancestry here can
+        # re-enter an object whose native destructor is already running.
+        if kind in (QEvent.Type.Hide,QEvent.Type.Close,QEvent.Type.WindowDeactivate,QEvent.Type.DeferredDelete):
+            self.cancel();return False
+        if not isValid(watched):return False
         if isinstance(watched,QAbstractButton):
             # Polish can occur inside Qt's C++ constructors, before a button is safe to inspect.
             if kind==QEvent.Type.Show:_assign_help(watched)
@@ -143,11 +166,8 @@ class ButtonHelp(QObject):
             elif kind==QEvent.Type.ToolTip:
                 # Native Qt tips may otherwise appear early, especially after another tip.
                 return True
-            elif kind in (QEvent.Type.Leave,QEvent.Type.MouseButtonPress,QEvent.Type.Hide,QEvent.Type.Close,QEvent.Type.DeferredDelete):
+            elif kind in (QEvent.Type.Leave,QEvent.Type.MouseButtonPress):
                 if watched is self.current():self.cancel()
-        elif kind in (QEvent.Type.Hide,QEvent.Type.Close,QEvent.Type.WindowDeactivate,QEvent.Type.DeferredDelete):
-            button=self.current()
-            if button is not None and isinstance(watched,QWidget) and (watched is button.window() or watched.isAncestorOf(button)):self.cancel()
         return False
 
 
@@ -156,7 +176,6 @@ def install_button_help(app=None):
     if app is None:return None
     manager=getattr(app,'_bricklabo_button_help',None)
     if manager is None:
-        manager=ButtonHelp(app);app._bricklabo_button_help=manager;app.installEventFilter(manager)
-        for widget in app.allWidgets():
-            if isinstance(widget,QAbstractButton):_assign_help(widget)
+        manager=ButtonHelp(app);app._bricklabo_button_help=manager
+    manager.register_buttons()
     return manager

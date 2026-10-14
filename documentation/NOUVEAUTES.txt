@@ -1,3 +1,25 @@
+Projets, inventaire des tiroirs et corrections — v0.1.58
+
+- Sets réalisables : bouton et clic droit Créer un projet avec ce set…. Le nombre d’exemplaires et l’option Exclure les minifigurines sont transmis au nouveau projet.
+- Mes projets : la sélection affiche le set dans le volet droit ; un double-clic ou Voir le set ouvre sa fiche et son inventaire.
+- Choisir un set : catalogue paginé avec miniatures, aperçu photo, recherche, filtres par thème, année et source, filtres avancés et filtres enregistrés. Le formulaire du projet montre aussi le set choisi.
+- Exclure les minifigurines : calcul, pourcentages, détails et exports portent sur le modèle. Les figurines intactes en stock ne sont pas démontées pour ce calcul. Les anciens inventaires API sans distinction modèle/figurines demandent un rechargement par lots ; les CSV complets Rebrickable peuvent être utilisés directement.
+- Tiroirs : le survol donne les références, les couleurs et les quantités de ce tiroir. Un double-clic ouvre Inventaire du tiroir pour ajouter, modifier ou retirer une référence, une couleur ou un comptage. Quantité inconnue et zéro restent distincts. Les limites du stock, les conflits de modification et Annuler/Rétablir sont pris en compte.
+- Import CSV Rebrickable : prise en charge de Set Number, Quantity, Inventory Ver. La quantité d’exemplaires et la version d’inventaire sont respectées. Une version absente reste à vérifier ; aucune substitution silencieuse par la dernière version. Les corrections, la reprise et l’annulation restent disponibles.
+- Étiquettes : Appliquer à → Tout le catalogue Mini-figs règle les mini-figurines de toutes les sources, leurs dispositions personnalisées existantes et les futures références. Les couleurs, les angles et les arêtes propres aux étiquettes sont conservés.
+- Stabilité : les bulles d’aide observent uniquement les boutons construits, puis le nettoyage cyclique Python/Qt est exécuté dans le thread d’interface, uniquement après la fin des tâches natives. Les fenêtres sont détruites explicitement sur ce thread à la fermeture. Cette protection répond aux journaux de corruption de mémoire reçus en v0.1.57 ; sa confirmation sur Windows reste nécessaire.
+
+Projects, drawer inventories and fixes — v0.1.58
+
+- Buildable sets can create a project with the search copy count and Exclude minifigures option.
+- My projects show the set in the right preview; double-click or View set opens its photo and inventory.
+- Choose a set provides a paginated catalogue with thumbnails, photo preview, search, theme/year/source filters, advanced filters and saved filters. The new-project form also previews the chosen set.
+- Exclude minifigures applies to requirements, percentages, details, exports and project creation. Intact stock figures are preserved. Legacy flattened API caches require a batch refresh; full Rebrickable CSV inventories can be used directly.
+- Drawers show references, colours and physical counts on hover. Double-click opens an editable inventory. Unknown counts remain distinct from zero; stock bounds, edit conflicts and Undo/Redo are enforced.
+- Rebrickable CSV import accepts Set Number, Quantity, Inventory Ver, preserving copy counts and requested inventory versions. Missing versions remain pending for correction; the latest version is never silently substituted.
+- Labels → Apply to → Entire Minifigures catalogue applies a layout to every source, existing individual layouts and future references, preserving label colours, angles and 3D edges.
+- Stability defers cyclic Python/Qt collection to the idle GUI thread after native tasks finish, and explicitly destroys windows there during shutdown. This addresses the v0.1.57 heap-corruption reports; native Windows confirmation is still required.
+
 v0.1.57 — Quantités par tiroir, Annuler/Rétablir et projets / Drawer counts, Undo/Redo and projects
 FR : Comptages par référence/couleur dans les tiroirs, restant à ranger, glissement depuis le stock et transferts partiels sans modifier la possession. Propositions avec quantités facultatives et réorganisation conservant les nombres déclarés. Anciennes associations conservées avec quantité à renseigner. Historique persistant de 100 actions par défaut, limite 1 à 500, Ctrl+Z/Ctrl+Y, protection des conflits et des opérations sans changement. Mes projets depuis inventaires locaux de sets ou constructions personnelles, besoins par référence/couleur, états À préparer/En cours/Terminé, réservations concurrentes sans double affectation, stock libre et manquants. Projets terminés réservés jusqu’à libération explicite. Recherches de constructions tenant compte des réservations, colonnes du stock, sauvegardes sélectives et aide FR/EN mises à jour. Exécution native Windows à confirmer.
 EN : Per-reference/colour drawer counts, remaining quantities, stock dragging and partial transfers without changing ownership. Optional counted proposals and reorganisation preserving declared counts. Legacy assignments retain unknown quantities. Persistent 100-action default history, 1–500 limit, Ctrl+Z/Ctrl+Y, conflict and no-op protections. My projects from local set inventories or custom builds, per-reference/colour requirements, Planned/In progress/Completed states, competing reservations without double allocation, free stock and missing parts. Completed projects retain reservations until explicit release. Build searches account for reservations; stock columns, selective backups and FR/EN help updated. Native Windows execution remains to be confirmed.
@@ -139,4 +161,3 @@ EN : French and English interface and help.
 v0.1.27
 FR : Inventaires BrickLink TXT ; sauvegarde et restauration complète.
 EN : BrickLink TXT inventories; full backups and restores.
-

@@ -259,7 +259,7 @@ class Database:
             rows=[dict(r) for r in c.execute(sql,args+[size,(page-1)*size])]
         return rows,total,pages,page
 
-    def stock_action(self,scope,item_id,color='',quantity=1):
+    def stock_action(self,scope,item_id,color='',quantity=1,inventory_version=None):
         item=self.get_item(item_id);quantity=int(quantity)
         if not item:raise ValueError(tr('Référence absente du catalogue'))
         if quantity<1:raise ValueError(tr('Quantité positive requise'))
@@ -268,7 +268,7 @@ class Database:
         action={'op':'add','scope':scope,'item_id':item_id,'color':str(color),'quantity':quantity}
         if scope=='stock_sets':
             if item['kind']!='set':raise ValueError(tr('Un set est attendu.'))
-            parts=self.components(item,strict=True)
+            parts=self.components(item,strict=True,inventory_version=inventory_version)
             if not parts:raise ValueError(tr('Inventaire indisponible pour ')+item['ref'])
             for part in parts:
                 native=self.get_item(part.get('id'))
@@ -352,7 +352,7 @@ class Database:
         components.append({'item_id':part_id,'color':str(color),'quantity':int(quantity)})
         self.set_setting('alt_components_'+str(set_id),components)
 
-    def components(self,item,visited=None,strict=False):
+    def components(self,item,visited=None,strict=False,exclude_minifigs=False,inventory_version=None):
         visited=set(visited or [])
         key=(item['source'],item['ref'])
         if key in visited:
@@ -364,39 +364,46 @@ class Database:
             for x in self.setting('alt_components_'+str(item['id']),[]):
                 part=self.get_item(x['item_id'])
                 if strict and not part:raise ValueError(tr('Inventaire incomplet : ')+item['ref'])
+                if part and exclude_minifigs and part['kind']=='minifig':continue
                 if part and part['kind']=='set':
-                    children=self.components(part,visited,strict)
-                    if strict and not children:raise ValueError(tr('Inventaire incomplet : ')+part['ref'])
+                    children=self.components(part,visited,strict,exclude_minifigs=exclude_minifigs)
+                    if strict and not children and not exclude_minifigs:raise ValueError(tr('Inventaire incomplet : ')+part['ref'])
                     out.extend(dict(child,chosen_quantity=int(child['chosen_quantity'])*int(x['quantity'])) for child in children)
                 elif part:out.append(dict(part,chosen_color=x['color'],chosen_quantity=x['quantity'],is_spare=0))
             return out
         ref=item['ref']
         from .inventory_batches import cached_components
-        cached=None if item['source']=='BL' and self.setting('bl_manual_inventory_'+str(item['id'])) else cached_components(self,item['source'],ref)
+        cached=None if inventory_version is not None or item['source']=='BL' and self.setting('bl_manual_inventory_'+str(item['id'])) else cached_components(self,item['source'],ref,exclude_minifigs=exclude_minifigs)
         if cached is not None:return cached
         if item['source']=='BL':
             if item['kind']=='set' and self.setting('bl_manual_inventory_'+str(item['id'])):
                 from .set_inventory import components
-                return components(self,item)
+                return [p for p in components(self,item) if not exclude_minifigs or p['kind']!='minifig']
             cached=self.setting(('bl_minifig_components_' if item['kind']=='minifig' else 'bl_components_')+item['ref'],[])
-            if cached:return cached
+            if cached:return [p for p in cached if not exclude_minifigs or p['kind']!='minifig']
             match=self.rows("SELECT * FROM items WHERE source='RB' AND kind='set' AND ref IN (?,?) ORDER BY ref",(ref,ref+'-1'))
             if not match:return []
             ref=match[0]['ref']
-        inv=self.rows('SELECT id FROM inventories WHERE set_num=? ORDER BY version DESC LIMIT 1',(ref,))
+        if inventory_version is not None:
+            version=str(inventory_version)
+            if not re.fullmatch(r'[1-9][0-9]{0,5}',version):raise ValueError(tr('Version d’inventaire invalide : ')+version)
+            inv=self.rows('SELECT id FROM inventories WHERE set_num=? AND version=? ORDER BY id DESC LIMIT 1',(ref,int(version)))
+            if not inv:raise ValueError(tr('Version d’inventaire absente du catalogue local : ')+ref+' · '+version)
+        else:inv=self.rows('SELECT id FROM inventories WHERE set_num=? ORDER BY version DESC,id DESC LIMIT 1',(ref,))
         if not inv:
             if strict:raise ValueError(tr('Inventaire indisponible pour ')+ref)
             return []
         iid=inv[0]['id']
         if strict:
             for table,column,kind in [('inventory_parts','part_num','part'),('inventory_minifigs','fig_num','minifig'),('inventory_sets','set_num','set')]:
+                if exclude_minifigs and kind=='minifig':continue
                 missing=self.rows('SELECT 1 FROM '+table+" p WHERE p.inventory_id=? AND NOT EXISTS(SELECT 1 FROM items i WHERE i.source='RB' AND i.kind=? AND i.ref=p."+column+') LIMIT 1',(iid,kind))
                 if missing:raise ValueError(tr('Inventaire incomplet : ')+ref)
         parts=self.rows("SELECT i.*,p.color_id AS chosen_color,p.quantity AS chosen_quantity,p.is_spare,p.img_url AS inventory_image FROM inventory_parts p JOIN items i ON i.source='RB' AND i.kind='part' AND i.ref=p.part_num WHERE p.inventory_id=?",(iid,))
-        figs=self.rows("SELECT i.*, '' AS chosen_color,p.quantity AS chosen_quantity,0 AS is_spare FROM inventory_minifigs p JOIN items i ON i.source='RB' AND i.kind='minifig' AND i.ref=p.fig_num WHERE p.inventory_id=?",(iid,))
+        figs=[] if exclude_minifigs else self.rows("SELECT i.*, '' AS chosen_color,p.quantity AS chosen_quantity,0 AS is_spare FROM inventory_minifigs p JOIN items i ON i.source='RB' AND i.kind='minifig' AND i.ref=p.fig_num WHERE p.inventory_id=?",(iid,))
         out=parts+figs
         for child in self.rows("SELECT i.*,p.quantity AS multiplier FROM inventory_sets p JOIN items i ON i.source='RB' AND i.kind='set' AND i.ref=p.set_num WHERE p.inventory_id=?",(iid,)):
-            for p in self.components(child,visited,strict):
+            for p in self.components(child,visited,strict,exclude_minifigs=exclude_minifigs):
                 p['chosen_quantity']*=child['multiplier'];out.append(p)
         return out
 

@@ -77,6 +77,7 @@ class StockImportDialog(QDialog):
         self.edit_ref=QLineEdit();form.addRow(tr('Référence'),self.edit_ref)
         self.edit_color=QComboBox();self.edit_color.setEditable(True);self.edit_color.setInsertPolicy(QComboBox.InsertPolicy.NoInsert);compact_combo(self.edit_color);form.addRow(tr('Couleur'),self.edit_color)
         self.edit_quantity=QLineEdit();form.addRow(tr('Quantité'),self.edit_quantity)
+        self.edit_version=QLineEdit();self.edit_version.setPlaceholderText(tr('Dernière version si vide'));form.addRow(tr('Version de l’inventaire'),self.edit_version)
         actions=FlowLayout();repair.addLayout(actions)
         self.pick_button=QPushButton(tr('Rechercher dans le catalogue…'));self.pick_button.clicked.connect(self.pick_item);actions.addWidget(self.pick_button)
         self.save_row=QPushButton(tr('Enregistrer la correction'));self.save_row.clicked.connect(self.save_correction);actions.addWidget(self.save_row)
@@ -176,7 +177,7 @@ class StockImportDialog(QDialog):
         row=self.selected_row();self.repair_box.setVisible(bool(row and not row['imported']))
         if not row or row['imported']:return
         self.issue.setText(row['issue'] or tr('Prête à importer'))
-        self.updating=True;self.edit_source.setCurrentIndex(max(0,self.edit_source.findData(row['source'])));self.edit_kind.setCurrentIndex(max(0,self.edit_kind.findData(row['kind'])));self.edit_ref.setText(row['ref']);self.edit_quantity.setText(str(row['quantity']));self.populate_palette(str(row['color']));self.updating=False
+        self.updating=True;self.edit_source.setCurrentIndex(max(0,self.edit_source.findData(row['source'])));self.edit_kind.setCurrentIndex(max(0,self.edit_kind.findData(row['kind'])));self.edit_ref.setText(row['ref']);self.edit_quantity.setText(str(row['quantity']));self.edit_version.setText(str(row.get('inventory_version') or ''));self.edit_version.setEnabled(row['kind']=='set');self.populate_palette(str(row['color']));self.updating=False
 
     def populate_palette(self,color=''):
         from .color_links import rb_palette,bl_palette
@@ -191,6 +192,7 @@ class StockImportDialog(QDialog):
 
     def change_palette(self,*_):
         if not self.updating:self.populate_palette()
+        self.edit_version.setEnabled(self.edit_kind.currentData()=='set')
 
     def pick_item(self):
         picker=ImportItemPicker(self.db,self.edit_source.currentData(),self.edit_kind.currentData(),self)
@@ -204,6 +206,7 @@ class StockImportDialog(QDialog):
         index=self.edit_color.currentIndex();text=self.edit_color.currentText().strip()
         color=self.edit_color.currentData() if index>=0 and text==self.edit_color.itemText(index) else text
         payload={'source':self.edit_source.currentData(),'kind':self.edit_kind.currentData(),'ref':self.edit_ref.text().strip(),'color':str(color or '') if self.edit_kind.currentData()=='part' else '', 'quantity':self.edit_quantity.text().strip()}
+        payload['inventory_version']=self.edit_version.text().strip() if self.edit_kind.currentData()=='set' else ''
         try:imports.update_row(self.db,self.job_id,row['ordinal'],payload);self.refresh()
         except Exception as error:QMessageBox.warning(self,tr('Correction impossible'),str(error))
 

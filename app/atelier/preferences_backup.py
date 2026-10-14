@@ -38,7 +38,7 @@ def _settings(db,predicate,strip_colors=False):
         value=json.loads(row['value'])
         if strip_colors and isinstance(value,dict):
             value=copy.deepcopy(value);value.pop('category_colors',None)
-            if row['key'] in ('templates','label_layout_categories'):
+            if row['key'] in ('templates','label_layout_categories','label_layout_kinds'):
                 for template in value.values():
                     if isinstance(template,dict):template.pop('category_colors',None)
         result.append({'target':target,'value':value})
@@ -62,7 +62,7 @@ def collect_family(db,family):
         return {'entries':entries}
     if family=='labels':return {'settings':_settings(db,_label_key,True)}
     if family=='colors':
-        templates=_settings(db,lambda key:key=='template' or key.startswith('label_layout_') and key!='label_layout_categories')
+        templates=_settings(db,lambda key:key=='template' or key.startswith('label_layout_') and key not in ('label_layout_categories','label_layout_kinds'))
         colors=[{'target':r['target'],'value':r['value'].get('category_colors',{})} for r in templates if isinstance(r['value'],dict)]
         named=db.setting('templates',{})
         if isinstance(named,dict):colors.append({'target':{'key':'templates'},'named':True,'value':{name:t.get('category_colors',{}) for name,t in named.items() if isinstance(t,dict)}})

@@ -65,12 +65,12 @@ def create(db, name, parts=(), set_id=None, copies=1):
     return identity
 
 
-def from_set(db, set_id, copies=1, name='', spares=False):
+def from_set(db, set_id, copies=1, name='', spares=False, exclude_minifigs=False):
     amount(copies, 1)
     item = db.get_item(set_id)
     if not item or item['kind'] != 'set':
         raise ValueError(tr('Set introuvable.'))
-    components = db.components(item, strict=True)
+    components = db.components(item, strict=True, exclude_minifigs=exclude_minifigs)
     if not components:
         raise ValueError(tr('Charge d’abord l’inventaire complet de ce set.'))
     parts = [{'item_id': row['id'], 'color': str(row.get('chosen_color', '')),

@@ -343,7 +343,7 @@ class Preview(QWidget):
         if not item or not previous or previous['id']!=item['id']:
             self.image=None;self.label_image=None;self.photo.clear();self.label_preview.clear();self.note.clear()
             self.photo.setText(tr('Chargement du visuel…') if item else tr('Sélectionne une ligne'))
-        if not item:return
+        if not item:self.title.setText(tr('Aperçu'));return
         v=self.db.visual(item['id']);photos=[url for url in v['links'] if image_link(url)]
         if photos:
             self.store_photos(item,photos)

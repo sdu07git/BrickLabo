@@ -190,9 +190,9 @@ class MainWindow(QMainWindow):
         from .history_dialog import ActionHistoryDialog
         window=ActionHistoryDialog(self.db,self);show_window(window,self);return window
 
-    def create_project(self,item):
+    def create_project(self,item,copies=1,exclude_minifigs=False,context_note=''):
         self.nav.setCurrentRow(next(index for index,entry in enumerate(NAV) if entry[3]=='projects'))
-        return self.projects.create_from_item(item)
+        return self.projects.create_from_item(item,copies,exclude_minifigs,context_note)
 
     def build_from_stock(self):
         from .build_stock import BuildStockDialog
@@ -430,6 +430,8 @@ def main():
     root=prepare_portable_storage()
     logger,logs=setup_logging()
     app=QApplication(sys.argv);install_qt_language(app);from PySide6.QtGui import QIcon;app.setWindowIcon(QIcon(str(resources_directory()/'BrickLabo.ico')));app.setApplicationName(APP_NAME);app.setApplicationVersion(VERSION);app.setOrganizationName('SDU7');app.setStyle('Fusion');app.setStyleSheet(STYLE)
+    from .gui_gc import GuiGarbageCollector
+    collector=GuiGarbageCollector(app)
     db=Database(root/'atelier.sqlite');configure_portable_database(db);window=MainWindow(db);window.show()
     window.cleanup_timer.start(0)
     def exception(typ,value,tb):
@@ -447,9 +449,14 @@ def main():
         QThreadPool.globalInstance().waitForDone()
         from .task_lifetime import drain_tasks
         drain_tasks()
+        prepared=getattr(window,'_pending_software_update',None)
         window.engine.close();db.close()
+        help_manager=getattr(app,'_bricklabo_button_help',None)
+        if help_manager is not None:help_manager.stop()
+        from PySide6.QtCore import QCoreApplication,QEvent
+        window.deleteLater();QCoreApplication.sendPostedEvents(None,QEvent.Type.DeferredDelete)
+        collector.stop()
     logger.info(tr('Fermeture de l’application, code %s'),status)
-    prepared=getattr(window,'_pending_software_update',None)
     if prepared is not None:
         from .software_updates import start_installer
         try:

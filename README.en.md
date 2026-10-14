@@ -1,8 +1,20 @@
-# BrickLabo — v0.1.57
+# BrickLabo — v0.1.58
 
-Windows desktop software for LEGO catalogues, stock, construction searches and labels. This version continues the published v0.1.56, based on the original v0.1.28.
+Windows desktop software for LEGO catalogues, stock, construction searches and labels. This version continues the published v0.1.57, based on the original v0.1.28.
 
-**Downloads v0.1.57 :** [complete Windows package](https://github.com/sdu07git/BrickLabo/releases/download/v0.1.57/BrickLabo_v0.1.57_Complet.zip) · [sources with resources](https://github.com/sdu07git/BrickLabo/releases/download/v0.1.57/BrickLabo_v0.1.57_Sources.zip) · [release notes](https://github.com/sdu07git/BrickLabo/releases/tag/v0.1.57).
+**Downloads v0.1.58 :** [complete Windows package](https://github.com/sdu07git/BrickLabo/releases/download/v0.1.58/BrickLabo_v0.1.58_Complet.zip) · [sources with resources](https://github.com/sdu07git/BrickLabo/releases/download/v0.1.58/BrickLabo_v0.1.58_Sources.zip) · [release notes](https://github.com/sdu07git/BrickLabo/releases/tag/v0.1.58).
+
+## Projects, drawer inventories and fixes — v0.1.58
+
+- **Buildable sets** can create a project with the search copy count and **Exclude minifigures** option.
+- **My projects** show the set in the right preview; double-click or **View set** opens its photo and inventory.
+- **Choose a set** provides a paginated catalogue with thumbnails, photo preview, search, theme/year/source filters, advanced filters and saved filters. The new-project form also previews the chosen set.
+- **Exclude minifigures** applies to requirements, percentages, details, exports and project creation. Intact stock figures are preserved. Legacy flattened API caches require a batch refresh; full Rebrickable CSV inventories can be used directly.
+- **Drawers** show references, colours and physical counts on hover. Double-click opens an editable inventory. Unknown counts remain distinct from zero; stock bounds, edit conflicts and Undo/Redo are enforced.
+- **Rebrickable CSV import** accepts **Set Number, Quantity, Inventory Ver**, preserving copy counts and requested inventory versions. Missing versions remain pending for correction; the latest version is never silently substituted.
+- **Labels → Apply to → Entire Minifigures catalogue** applies a layout to every source, existing individual layouts and future references, preserving label colours, angles and 3D edges.
+- **Stability** defers cyclic Python/Qt collection to the idle GUI thread after native tasks finish, and explicitly destroys windows there during shutdown. This addresses the v0.1.57 heap-corruption reports; native Windows confirmation is still required.
+
 
 ## Drawer quantities, action history and construction projects — v0.1.57
 
@@ -272,6 +284,7 @@ Read [English help](documentation/AIDE.en.html) and [component licences](documen
 | 0.1.54 | Small screens, categories, set stock and destination cabinet for storage. |
 | 0.1.55 | Qt task lifetime, factory colour and wheel back faces. |
 | 0.1.56 | Cabinet proposal preview, one reference per drawer or free grouping, Category column and undo for 3D colours and assignments. |
+| 0.1.58 | Projects and previews, drawer inventories, versioned CSV imports, figure layouts and memory protection. |
 | 0.1.57 | Drawer counts and partial transfers, persistent undo/redo history, projects with requirements, reservations and missing parts. |
 
 One bilingual [NOUVEAUTES.txt](documentation/NOUVEAUTES.txt) holds cumulative notes. This branch does not document a released 0.1.29. The 0.1.28b / Range variants were not used as the baseline. The [v0.1.57 validation report](documentation/CONTROLE_v0.1.57.txt) describes the checks for this delivery.
@@ -302,3 +315,5 @@ The [v0.1.57 validation report](documentation/CONTROLE_v0.1.57.txt) describes th
 
 
 **Validation v0.1.57:** 695 tests passed on Qt/Linux (Python 3.12, PySide6 6.11.2), including 36 new checks of counts, transfers, projects, backups and persistent history. Additional scenario with 183 references in 183 drawers, reservations, restart and Undo/Redo. Visual checks at 1360 × 790 and 800 × 540. Packaging validates the Windows launcher and both archives; native Windows execution remains to be confirmed.
+
+**Validation v0.1.58:** all 740 tests passed on Qt/Linux, including 45 new tests. Versioned imports, projects, drawers and figure layouts checked; 120 real 3D tasks and 120 window workflows without errors. [Detailed report](documentation/CONTROLE_v0.1.58.txt). Native Windows confirmation remains required.

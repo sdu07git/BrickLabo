@@ -218,8 +218,11 @@ def contents(db,drawer_id):
 
 
 CONTENTS_SQL=f'''SELECT p.drawer_id,i.*,p.color AS chosen_color,p.quantity AS stored_quantity,{STOCK_QUANTITY} AS chosen_quantity
+      ,CASE WHEN i.source='BL' THEN json_extract(bc.value,'$."'||p.color||'".name') ELSE c.name END AS color_name
       FROM storage_contents p JOIN storage_drawers d ON d.id=p.drawer_id JOIN items i ON i.id=p.item_id
-      LEFT JOIN stock s ON s.item_id=p.item_id AND s.color=p.color'''
+      LEFT JOIN stock s ON s.item_id=p.item_id AND s.color=p.color
+      LEFT JOIN colors c ON CAST(c.id AS TEXT)=p.color AND i.source<>'BL'
+      LEFT JOIN settings bc ON bc.key='bl_colors' AND i.source='BL' '''
 
 
 def wall_contents(db,wall_id=None):
