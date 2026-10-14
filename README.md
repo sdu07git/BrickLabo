@@ -1,10 +1,28 @@
-# BrickLabo — v0.1.56
+# BrickLabo — v0.1.57
 
-Logiciel de bureau Windows pour les catalogues LEGO, les stocks, les recherches de constructions et les étiquettes. Cette version reprend la v0.1.55 publiée, issue de la v0.1.28 d’origine.
+Logiciel de bureau Windows pour les catalogues LEGO, les stocks, les recherches de constructions et les étiquettes. Cette version reprend la v0.1.56 publiée, issue de la v0.1.28 d’origine.
 
-**Téléchargements v0.1.56 :** [version complète Windows](https://github.com/sdu07git/BrickLabo/releases/download/v0.1.56/BrickLabo_v0.1.56_Complet.zip) · [sources avec ressources](https://github.com/sdu07git/BrickLabo/releases/download/v0.1.56/BrickLabo_v0.1.56_Sources.zip) · [notes de release](https://github.com/sdu07git/BrickLabo/releases/tag/v0.1.56).
+**Téléchargements v0.1.57 :** [version complète Windows](https://github.com/sdu07git/BrickLabo/releases/download/v0.1.57/BrickLabo_v0.1.57_Complet.zip) · [sources avec ressources](https://github.com/sdu07git/BrickLabo/releases/download/v0.1.57/BrickLabo_v0.1.57_Sources.zip) · [notes de release](https://github.com/sdu07git/BrickLabo/releases/tag/v0.1.57).
 
-## Aperçu du rangement, références par tiroir et annulation — v0.1.56
+## Quantités par tiroir, historique des actions et projets — v0.1.57
+
+**Mon rangement → Contenu du tiroir** affiche désormais **Quantité dans ce tiroir**, distincte du **Stock global en vrac**. Sélectionner une référence puis **Quantité dans ce tiroir…** pour déclarer son nombre. La même référence et couleur peut être répartie entre plusieurs tiroirs : avec 100 pièces possédées, 30 dans un tiroir et 70 dans un autre, le stock total reste 100. **Transférer une quantité…** déplace une partie du comptage vers un autre tiroir ou meuble. Glisser une référence depuis un tiroir déplace aussi sa quantité déclarée et la fusionne avec celle de la destination.
+
+Dans **Pièces à ranger**, la colonne **Restant à ranger** et la case **Quantités restant à ranger** prennent en compte les comptages déjà enregistrés. Depuis le stock, le glisser-déposer ou **Associer au tiroir sélectionné** place la quantité restante. Pour une répartition partielle, modifier ensuite le comptage du tiroir ou utiliser le transfert. Le rangement automatique propose la case **Répartir les quantités restantes** : vérifier les nombres dans **Meuble proposé → Contenu du tiroir**, puis appliquer. En réorganisation, les quantités déjà déclarées sont conservées. Les associations depuis les catalogues restent possibles sans posséder la pièce ; leur quantité est **À renseigner**.
+
+La migration des rangements v0.1.56 conserve les meubles et associations avec une quantité **À renseigner**, jamais une copie automatique du stock dans chaque tiroir. Une quantité nulle reste distincte d’un comptage inconnu. Le total déclaré par référence, source et couleur ne peut pas dépasser le stock en vrac. Pour diminuer le stock sous une quantité rangée, réduire ou retirer d’abord les comptages concernés. Dans **Mon stock → Colonnes**, les champs **Répartie dans les tiroirs** et **Restant à ranger** permettent de suivre la répartition.
+
+Le volet supérieur propose **Annuler la dernière action / Ctrl+Z**, **Rétablir / Ctrl+Y** et **Historique des actions**. Le journal conserve par défaut 100 actions et survit au redémarrage. La fenêtre liste leur date, leur description et leur état appliqué ou annulé ; **Actions conservées** règle la limite de 1 à 500. Les actions concernent le stock, la file d’étiquettes, les couleurs 3D générales et individuelles, les affectations et comptages des tiroirs, les propositions appliquées et les projets. Les imports et propositions groupés se restaurent en une opération atomique. Les actions s’annulent dans l’ordre inverse et se rétablissent dans l’ordre d’origine. Une nouvelle modification après annulation remplace la suite qui restait à rétablir ; une opération sans changement ou refusée la conserve. Une modification ultérieure incompatible bloque la restauration. La dernière action compatible de la v0.1.56 est reprise sans lui inventer de date.
+
+**Mes projets** apparaît dans la navigation. **Nouveau projet…** propose un **Set du catalogue** ou une **Construction personnelle**. Depuis un catalogue de sets, le clic droit offre aussi **Créer un projet de construction…**. Pour un set, charger son inventaire local complet, choisir le nombre d’exemplaires et l’inclusion éventuelle des pièces supplémentaires. La création enregistre une copie des besoins, sans ajouter ni réserver de stock. Pour une construction personnelle, **Pièces du projet → Ajouter une pièce…** choisit une référence locale, sa couleur et sa quantité nécessaire. Ce menu permet aussi de modifier les besoins, retirer la sélection ou régler sa réservation.
+
+Le tableau des projets affiche l’état **À préparer**, **En cours** ou **Terminé**, les besoins, les réservations et les manquants. Le détail affiche **Nécessaire**, **Réservée**, **Libre en stock** et **Manquante** pour chaque référence et couleur. **Réserver le stock disponible** affecte les pièces encore libres dans la limite des besoins ; **Réserver la sélection** ne traite que les lignes choisies. **Régler la réservation…** permet un nombre précis. Deux projets partagent le même stock libre : une pièce déjà réservée au premier n’est pas offerte au second. Les réservations portent uniquement sur le stock en vrac de la même source, référence et couleur, sans équivalence automatique ni prélèvement dans les composants suivis des sets.
+
+Les réservations conservent la possession et les emplacements physiques. **Mon stock → Colonnes** propose **Réservée aux projets** et **Disponible pour construire** ; les recherches de sets réalisables retirent les réservations des pièces utilisables. Un projet **Terminé** garde ses réservations jusqu’à **Libérer les réservations**. Supprimer le projet les libère également. Pour réduire le stock ou un besoin sous la quantité réservée, libérer d’abord les réservations concernées. Un comptage dans un tiroir et une réservation de projet décrivent la même pièce sous deux angles : ils ne s’additionnent pas pour diminuer le stock.
+
+**Sauvegardes → Projets et réservations** exporte une nouvelle famille JSON ; **Meubles et emplacements** inclut les quantités par tiroir. Restaurer aussi le vrac nécessaire, ou conserver un stock suffisant déjà présent. Une restauration incohérente est refusée entièrement. Les anciennes sauvegardes de rangement restent lisibles avec des quantités à renseigner. Une restauration sélective réinitialise le journal des actions ; la sauvegarde ZIP complète conserve la base et son historique. Ces fonctions utilisent les données locales et ne nécessitent aucune clé API.
+
+## Historique : aperçu du rangement et annulation — v0.1.56
 
 Dans **Mon rangement → Ranger par catégorie et taille en tenons**, choisir le mode **Par catégorie et taille**, **Une référence par tiroir** ou **Regroupement libre de références**. Le premier conserve le tri des plus petites tailles vers les plus grandes. Le deuxième réserve un tiroir à chaque référence : sources et variantes restent distinctes, les couleurs d’une même référence restent ensemble sauf avec **Séparer les couleurs**. En mode libre, sélectionner plusieurs lignes avec Ctrl ou Maj puis **Regrouper la sélection…** pour choisir leur tiroir commun ; les listes **Tiroir proposé** permettent aussi d’ajuster chaque affectation. Les modes par référence et libre incluent les pièces et mini-figurines sans dimensions connues ; aucune taille n’est inventée.
 
@@ -209,7 +227,7 @@ La migration conserve les quantités observées et sépare les pièces en vrac d
 ## Nouvelles fonctions
 
 - **Mon stock** contient le vrac et les mini-figures. **Mon stock set** contient les sets et leurs composants enregistrés. Le tableau inférieur affiche les quantités totales possédées, les aperçus, le tri par en-tête et le double-clic d’une pièce. Retirer un set peut supprimer ses composants ou les déplacer vers le vrac.
-- **Annuler la dernière action / Ctrl+Z** annule le dernier ajout, import, retrait ou changement de quantité / couleur dans les stocks ou la file d’étiquettes, ainsi que la couleur 3D générale ou individuelle et les associations de références aux tiroirs. Un import forme une seule action. Le journal survit au redémarrage ; une restauration du stock le réinitialise. Une modification ultérieure incompatible bloque l’annulation.
+- **Annuler / Rétablir / Historique des actions** restaure plusieurs actions de stock, file d’étiquettes, couleurs 3D, contenus et quantités des tiroirs, ou projets et réservations. Ctrl+Z annule ; Ctrl+Y rétablit. Le journal persiste après redémarrage et se réinitialise lors d’une restauration sélective. Une modification incompatible bloque la restauration.
 - **Importer une collection** accepte les listes de pièces ou de sets Rebrickable CSV, et BrickLink CSV, TXT tabulé ou XML. Choisir la source et le stock de destination. Un set destiné au vrac est décomposé ; des pièces destinées au stock set s’attachent à un set existant ou à un inventaire personnel nommé. Les lignes valides sont ajoutées ; les références inconnues, couleurs ou quantités incorrectes et inventaires incomplets restent en attente dans l’assistant de correction. Enregistrer les corrections puis reprendre les lignes prêtes, même après fermeture.
 - **Exporter vers Rebrickable** produit deux CSV, sets possédés et pièces en vrac, sans compter deux fois les composants des sets. Vérifier les correspondances de références et couleurs. Les inventaires personnels ALT ne sont pas assimilés à des sets officiels.
 - **Sets réalisables** combine le vrac et les pièces des sets autorisés. Le tableau du haut affiche la photo du set ; toutes ses colonnes, dont **Set**, se redimensionnent en faisant glisser le bord de l’en-tête. Les photos suivent les références lors d’un tri et utilisent le cache partagé. **Choisir le stock utilisable** réserve des sets ou des pièces sans les supprimer. Les résultats sont évalués séparément : ils ne garantissent pas de construire tous les sets simultanément.
@@ -260,8 +278,9 @@ L’aide complète se trouve dans [documentation/AIDE.html](documentation/AIDE.h
 | 0.1.54 | Petits écrans, catégories, stocks de sets et meuble de destination pour le rangement. |
 | 0.1.55 | Durée de vie des tâches Qt, couleur d’origine et face arrière des roues. |
 | 0.1.56 | Aperçu des propositions, un tiroir par référence ou regroupement libre, colonne Catégorie et annulation des couleurs 3D et placements. |
+| 0.1.57 | Quantités par tiroir et transferts partiels, historique Annuler/Rétablir persistant, projets avec besoins, réservations et manquants. |
 
-Un seul [NOUVEAUTES.txt](documentation/NOUVEAUTES.txt) réunit les notes françaises et anglaises. Les notes de cette branche ne documentent pas de livraison 0.1.29. Les variantes 0.1.28b et Range n’ont pas servi de base. Le [rapport de contrôle v0.1.56](documentation/CONTROLE_v0.1.56.txt) décrit les vérifications de cette livraison.
+Un seul [NOUVEAUTES.txt](documentation/NOUVEAUTES.txt) réunit les notes françaises et anglaises. Les notes de cette branche ne documentent pas de livraison 0.1.29. Les variantes 0.1.28b et Range n’ont pas servi de base. Le [rapport de contrôle v0.1.57](documentation/CONTROLE_v0.1.57.txt) décrit les vérifications de cette livraison.
 
 ## Développement et diagnostic
 
@@ -277,7 +296,7 @@ Pour publier une future mise à jour compatible : créer une release publique st
 
 Pour développer depuis ce dépôt, reprendre `ressources/complete.zip` depuis le ZIP Sources joint à la release : cette archive LDraw dépasse la limite de taille des fichiers GitHub. Les archives automatiques « Source code » ne contiennent ni cette ressource ni le runtime Windows. Les deux ZIP joints sont ceux de la version livrée et testée ; les README du dépôt sont adaptés à la publication.
 
-Le [rapport de contrôle v0.1.56](documentation/CONTROLE_v0.1.56.txt) décrit les vérifications de cette livraison. Exécution native Windows à confirmer.
+Le [rapport de contrôle v0.1.57](documentation/CONTROLE_v0.1.57.txt) décrit les vérifications de cette livraison. Exécution native Windows à confirmer.
 
 
 
@@ -288,3 +307,6 @@ Le [rapport de contrôle v0.1.56](documentation/CONTROLE_v0.1.56.txt) décrit le
 
 
 **Validation v0.1.56 :** 657 tests de la suite complète réussis, puis 86 tests ciblés après l’ajout de l’annulation des couleurs individuelles et 49 après les derniers ajustements visuels et d’aide. Les 21 nouveaux tests couvrent les propositions, le regroupement, les miniatures, la colonne Catégorie et l’annulation persistante. Contrôle visuel à 1360 × 790 et 800 × 540. Lanceur Windows et intégrité des deux ZIP contrôlés ; exécution native Windows à confirmer.
+
+
+**Validation v0.1.57 :** 695 tests réussis sous Qt/Linux (Python 3.12, PySide6 6.11.2), dont 36 nouveaux tests des comptages, transferts, projets, sauvegardes et historique persistant. Essai supplémentaire de 183 références dans 183 tiroirs avec réservation, redémarrage et Annuler/Rétablir. Contrôle visuel à 1360 × 790 et 800 × 540. La fabrication vérifie le lanceur Windows et les deux archives ; exécution native Windows à confirmer.

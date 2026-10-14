@@ -91,13 +91,17 @@ class LayoutTests(Fixture):
         walls.assign(self.db,walls.drawers(self.db,b)[0]['id'],[(self.part,'4')])
         before=collect_family(self.db,'storage');stock=self.stock_state();path=Path(self.temp.name)/'storage.json'
         export_family(self.db,'storage',path);walls.delete_wall(self.db,a);walls.position_wall(self.db,b,15,15)
-        restore_families(self.db,[path]);self.assertEqual(collect_family(self.db,'storage'),before);self.assertEqual(self.stock_state(),stock)
+        restore_families(self.db,[path]);self.assertEqual(collect_family(self.db,'storage'),before)
+        stock['stock_undo']=[];self.assertEqual(self.stock_state(),stock)
+        self.assertEqual(self.db.undo_description(),'');self.assertEqual(self.db.redo_description(),'')
     def test_legacy_backup_places_cabinets_alongside_each_other(self):
         self.pair();path=Path(self.temp.name)/'storage.json';export_family(self.db,'storage',path)
         payload=json.loads(path.read_text());
         for wall in payload['data']['walls']:wall.pop('x');wall.pop('y')
         path.write_text(json.dumps(payload));stock=self.stock_state();restore_families(self.db,[path])
-        self.assertEqual([(w['x'],w['y']) for w in walls.walls(self.db)],[(0.,0.),(2.5,0.)]);self.assertEqual(self.stock_state(),stock)
+        self.assertEqual([(w['x'],w['y']) for w in walls.walls(self.db)],[(0.,0.),(2.5,0.)])
+        stock['stock_undo']=[];self.assertEqual(self.stock_state(),stock)
+        self.assertEqual(self.db.undo_description(),'');self.assertEqual(self.db.redo_description(),'')
     def test_invalid_backup_rolls_back_all_cabinets_and_links(self):
         a,b=self.pair();walls.assign(self.db,walls.drawers(self.db,b)[0]['id'],[(self.part,'4')])
         before=collect_family(self.db,'storage');stock=self.stock_state();path=Path(self.temp.name)/'storage.json';export_family(self.db,'storage',path)

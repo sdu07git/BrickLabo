@@ -92,6 +92,8 @@ class InventoryReader:
         return counts,complete and bool(counts)
     def stock(self):
         available=Counter();ignored=0;reserved=Counter()
+        for row in self.c.execute('SELECT item_id,color,SUM(reserved) AS reserved FROM project_parts GROUP BY item_id,color'):
+            reserved[(row['item_id'],str(row['color']))]+=int(row['reserved'])
         for entry in self.excluded_entries:
             item=self.c.execute("SELECT i.kind,i.ref FROM stock_available s JOIN items i ON i.id=s.item_id WHERE s.id=?",(entry,)).fetchone()
             if not item or item['kind']!='set':continue

@@ -14,6 +14,7 @@ from .ui_common import edit_item,async_task,pixmap,FlowLayout,HorizontalControls
 
 COLUMNS=[('architect_rank',tr('Classement')),('ldraw_model',tr('Modèles LDraw')),('ref',tr('Référence')),('name',tr('Nom')),('category',tr('Catégorie')),('has_print',tr('Sérigraphie')),('has_sticker',tr('Sticker')),('image',tr('Aperçu 3D / photo')),
          ('source',tr('Source')),('year',tr('Année')),('chosen_color',tr('Couleur')),('chosen_quantity',tr('Quantité')),
+         ('reserved_quantity',tr('Réservée aux projets')),('available_quantity',tr('Disponible pour construire')),('allocated_quantity',tr('Répartie dans les tiroirs')),('remaining_quantity',tr('Restant à ranger')),
          ('imported_at',tr('Date d’import')),('date',tr('Date')),('method',tr('Méthode')),('alternate',tr('Autres références')),('weight',tr('Poids (g)')),('dimensions',tr('Dimensions'))]
 
 
@@ -27,6 +28,7 @@ class Catalogue(QWidget):
         self.engine=None;self.thumbnail_token=0;self.visual_versions={};self.advanced={};self.reference_filter=None
         self.key=f'columns_{source}_{kind}_{scope}'
         default_columns=['ref','name','chosen_quantity','image'] if scope=='stock_sets' else ['ref','name','category']+(['has_print','has_sticker'] if kind!='set' else [])+['image']+(['chosen_color','chosen_quantity'] if scope in ('queue','stock') else [])+(['date','method'] if scope=='history' else ['date'] if scope=='queue' else [])
+        if scope=='stock':default_columns+=['reserved_quantity','available_quantity']
         self.visible_columns=self.db.setting(self.key,default_columns)
         if kind!='set' and not self.db.setting('decoration_columns_added_'+self.key,False):
             for key in ('has_print','has_sticker'):
@@ -353,6 +355,9 @@ class Catalogue(QWidget):
         menu.addAction(tr('Colonnes…'),self.column_menu)
         item=dict(self.rows[index.row()]) if index.isValid() and index.row()<len(self.rows) else None
         if item and item.get('kind')=='set':
+            from .windows import application_owner
+            owner=application_owner(self)
+            if hasattr(owner,'create_project'):menu.addAction(tr('Créer un projet de construction…'),lambda:owner.create_project(item))
             menu.addAction(tr('Voir les constructions alternatives'),lambda:self.show_alternates(item))
             from .boxes import boxes_for_set
             action=menu.addAction(tr('Afficher la boîte d’origine'),lambda:self.show_box(item));action.setEnabled(bool(boxes_for_set(self.db,item)));action.setToolTip(tr('Ouvrir la boîte BrickLink du set.') if action.isEnabled() else tr('Aucune boîte répertoriée pour ce set ; importer Original Boxes.txt si nécessaire.'));menu.setToolTipsVisible(True)

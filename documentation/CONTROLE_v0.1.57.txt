@@ -1,0 +1,24 @@
+BrickLabo v0.1.57 — Quantités par tiroir, historique et projets
+Contrôle du 14 octobre 2026.
+
+Base : v0.1.56 publiée, commit 239d9793ca7357b4d61c94f258d16e0d6c1fa0e9.
+
+Fonctions intégrées :
+- Comptage physique par référence, source et couleur dans un tiroir, distinct de la possession. Transferts partiels, déplacement et fusion des comptages, restant à ranger et propositions avec quantités facultatives. Le total réparti ne peut pas dépasser le stock en vrac.
+- Migration des associations v56 avec quantité inconnue (NULL / À renseigner), distincte d’un zéro explicite. Aucun nombre supposé dans les anciens tiroirs.
+- Journal partagé de 100 actions par défaut, limite 1 à 500. Annuler/Rétablir, Ctrl+Z/Ctrl+Y et fenêtre d’historique. Persistance au redémarrage, ordre de restauration, protection des références et des modifications incompatibles, restauration atomique. Les opérations refusées ou sans changement conservent la suite à rétablir.
+- Mes projets : set depuis inventaire local complet ou construction personnelle, besoins par référence/couleur, états À préparer / En cours / Terminé, réservation automatique, sélection ou quantité précise, libération et suppression. Les projets terminés gardent les réservations jusqu’à libération explicite.
+- Réservations concurrentes bornées par le stock en vrac exact ; possession conservée. Colonnes du stock et recherches de constructions adaptées. Quantités physiques et réservations indépendantes, sans addition des deux mesures.
+- Sauvegardes sélectives des projets et des quantités des tiroirs. Restauration transactionnelle avec validation du stock nécessaire et réinitialisation du journal. Anciennes sauvegardes de rangement compatibles. Aide et bulles FR/EN.
+
+Validation exécutée sous Qt/Linux, Python 3.12, PySide6/shiboken6 6.11.2 :
+- Suite complète finale : 695 tests réussis, 0 échec et 0 erreur, en 414.863 secondes (415.153 secondes avec découverte des tests).
+- 36 nouveaux tests : quantités sans duplication ; dépassements atomiques ; sources et couleurs distinctes ; transferts et déplacements ; retrait d’un emplacement ; réduction de stock protégée ; opérations sans changement et glissements périmés ; propositions et réorganisation ; passage d’une association générique à une couleur de stock ; projets concurrents ; maintien des réservations après terminaison ; séparation rangement/réservation ; suppression et restauration ; inventaires de sets et pièces supplémentaires ; inventaires incomplets refusés ; recherche avec stock libre ; annulations mixtes après redémarrage ; branche de rétablissement ; conflits de lignes et d’enfants liés ; autres tiroirs conservés ; limite du journal ; couleurs individuelles ; sauvegardes et migration v56 ; commandes Qt, saisie de comptage et sélection triée.
+- Les anciens contrôles d’interface et de sauvegarde sont actualisés pour Mes projets, la nouvelle famille JSON et la réinitialisation du journal lors d’une restauration.
+- Essai supplémentaire : 183 références fictives réparties dans un meuble de 183 tiroirs, quantité de chaque référence conservée, projet réservé sans modification du stock, fermeture/réouverture de SQLite, trois annulations puis trois rétablissements cohérents. Réussi en 0.378 seconde.
+- Inspection des nouvelles interfaces à 1360 × 790 et 800 × 540 : colonnes de quantités rapprochées, menus de projets, comptage et transfert, défilement des commandes, proposition avec quantité restante et journal appliqué/annulé. Contrôle automatique des boutons de tous les onglets à 950 × 650.
+
+Fabrication : tools/build_distribution.py réutilise le runtime Windows v0.1.56, dont le SHA-256 est 5b3b75d61eb3ee3574cd00f747e51506a4f2d8bda8f4cb244b400f994cdbb8ec. Aucune nouvelle dépendance Python. Lanceur recompilé pour v0.1.57 ; versions harmonisées dans VERSION, structure.json, COMPOSANTS.json et les ressources du lanceur.
+Le constructeur contrôle le PE AMD64, le manifeste longPathAware, les sept tailles de l’icône et leurs données, les versions exactes des dépendances, la concordance des fichiers applicatifs entre archives complète et sources et les CRC ZIP. Une erreur interrompt la fabrication. Donnees, caches, journaux et fichiers temporaires sont exclus. La bibliothèque officielle LDraw 2026-09 fournie reste conservée.
+
+Limite : exécution native Windows non effectuée dans cet environnement Linux. Les tests Qt et le rendu s’exécutent sous Linux ; le lanceur et les fichiers de la distribution Windows sont inspectés.

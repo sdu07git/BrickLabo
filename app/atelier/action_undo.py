@@ -1,8 +1,4 @@
-"""Persistent last-action undo for general colour and drawer associations.
-
-The stock journal remains independent. Its writes invalidate this journal;
-an empty marker prevents an older stock action resurfacing after undoing it.
-"""
+"""Colour and drawer transactions recorded in the shared undo/redo history."""
 from contextlib import contextmanager
 import json
 
@@ -11,12 +7,14 @@ from .i18n import tr
 
 def prepare(c):
     c.execute('CREATE TABLE IF NOT EXISTS action_undo(id INTEGER PRIMARY KEY CHECK(id=1),description TEXT NOT NULL,payload TEXT NOT NULL)')
-    for operation in ('INSERT','UPDATE','DELETE'):
-        c.execute('CREATE TRIGGER IF NOT EXISTS reset_action_undo_'+operation.lower()+' AFTER '+operation+' ON stock_undo BEGIN DELETE FROM action_undo; END')
+    from .action_history import prepare as prepare_history
+    prepare_history(c)
 
 
 def record(c,description,payload):
     c.execute('INSERT OR REPLACE INTO action_undo VALUES(1,?,?)',(description,json.dumps(payload,ensure_ascii=False)))
+    from .action_history import record_payload
+    record_payload(c,description,payload)
 
 
 def set_default_color(db,color):
@@ -71,48 +69,17 @@ def storage_change(c,drawer_ids,description):
     yield
     after=storage_state(c,drawer_ids)
     if before!=after:
+        from .action_history import validate
+        validate(c)
         identities={row['item_id'] for row in before['links']+after['links']}
         record(c,description,{'kind':'storage','before':before,'after':after,'items':item_identities(c,identities)})
 
 
 def description(db):
-    rows=db.rows('SELECT description FROM action_undo WHERE id=1')
-    if rows:return rows[0]['description']
-    rows=db.rows('SELECT description FROM stock_undo WHERE id=1')
-    return rows[0]['description'] if rows else ''
+    from .action_history import description as history_description
+    return history_description(db)
 
 
 def undo(db):
-    with db.connect() as c:
-        c.execute('BEGIN IMMEDIATE')
-        row=c.execute('SELECT * FROM action_undo WHERE id=1').fetchone()
-        if row is None:
-            from .stock import undo as undo_stock
-            # End this read transaction before the stock undo acquires its own lock.
-            c.rollback()
-            return undo_stock(db)
-        if not row['description']:return False
-        payload=json.loads(row['payload'])
-        if payload['kind']=='color':
-            current=c.execute("SELECT * FROM settings WHERE key='default_color'").fetchone()
-            if not current or dict(current)!=payload['after']:raise ValueError(tr('La couleur 3D a changé depuis cette action ; annulation impossible.'))
-            c.execute("DELETE FROM settings WHERE key='default_color'")
-            if payload['before']:c.execute('INSERT INTO settings VALUES(?,?)',tuple(payload['before'][k] for k in ('key','value')))
-        elif payload['kind']=='storage':
-            after=payload['after'];before=payload['before']
-            if storage_state(c,after['ids'])!=after or item_identities(c,[r['id'] for r in payload['items']])!=payload['items']:
-                raise ValueError(tr('Le rangement a changé depuis cette action ; annulation impossible.'))
-            for drawer in before['drawers']:
-                c.execute('UPDATE storage_drawers SET name=? WHERE id=?',(drawer['name'],drawer['id']))
-            for identity in before['ids']:c.execute('DELETE FROM storage_contents WHERE drawer_id=?',(identity,))
-            c.executemany('INSERT INTO storage_contents(drawer_id,item_id,color) VALUES(?,?,?)',[(r['drawer_id'],r['item_id'],r['color']) for r in before['links']])
-        elif payload['kind']=='visual':
-            identity=payload['after']['item_id'];current=c.execute('SELECT * FROM visual WHERE item_id=?',(identity,)).fetchone()
-            if not current or dict(current)!=payload['after'] or item_identities(c,[identity])!=payload['item']:
-                raise ValueError(tr('Le visuel de cette référence a changé depuis cette action ; annulation impossible.'))
-            c.execute('DELETE FROM visual WHERE item_id=?',(identity,))
-            if payload['before']:
-                fields=list(payload['before']);c.execute('INSERT INTO visual('+','.join(fields)+') VALUES('+','.join('?' for _ in fields)+')',[payload['before'][key] for key in fields])
-        else:raise ValueError(tr('Action inconnue'))
-        record(c,'',{})
-    return True
+    from .action_history import restore
+    return restore(db)

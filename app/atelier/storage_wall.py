@@ -40,6 +40,8 @@ def prepare(c):
     fields={row['name'] for row in c.execute('PRAGMA table_info(storage_walls)')}
     if 'x' not in fields:c.execute('ALTER TABLE storage_walls ADD COLUMN x REAL NOT NULL DEFAULT 0')
     if 'y' not in fields:c.execute('ALTER TABLE storage_walls ADD COLUMN y REAL NOT NULL DEFAULT 0')
+    if 'quantity' not in {row['name'] for row in c.execute('PRAGMA table_info(storage_contents)')}:
+        c.execute('ALTER TABLE storage_contents ADD COLUMN quantity INTEGER CHECK(quantity IS NULL OR quantity>=0)')
     if 'x' not in fields or 'y' not in fields:
         # Existing independent cabinets gain a usable overview once, retaining
         # drawer identities and every stock/location association.
@@ -209,13 +211,13 @@ STOCK_QUANTITY="CASE WHEN p.color='' THEN COALESCE((SELECT SUM(g.quantity) FROM 
 
 
 def contents(db,drawer_id):
-    return db.rows(f'''SELECT i.*,p.color AS chosen_color,{STOCK_QUANTITY} AS chosen_quantity
+    return db.rows(f'''SELECT i.*,p.color AS chosen_color,p.quantity AS stored_quantity,{STOCK_QUANTITY} AS chosen_quantity
        FROM storage_contents p JOIN items i ON i.id=p.item_id
        LEFT JOIN stock s ON s.item_id=p.item_id AND s.color=p.color
        WHERE p.drawer_id=? ORDER BY i.source,i.ref,p.color''',(drawer_id,))
 
 
-CONTENTS_SQL=f'''SELECT p.drawer_id,i.*,p.color AS chosen_color,{STOCK_QUANTITY} AS chosen_quantity
+CONTENTS_SQL=f'''SELECT p.drawer_id,i.*,p.color AS chosen_color,p.quantity AS stored_quantity,{STOCK_QUANTITY} AS chosen_quantity
       FROM storage_contents p JOIN storage_drawers d ON d.id=p.drawer_id JOIN items i ON i.id=p.item_id
       LEFT JOIN stock s ON s.item_id=p.item_id AND s.color=p.color'''
 

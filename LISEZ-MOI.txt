@@ -1,4 +1,4 @@
-BrickLabo v0.1.56
+BrickLabo v0.1.57
 
 Survoler un bouton pendant deux secondes affiche une breve aide, dans les differentes fenetres.
 Les cles API servent uniquement aux acces API ; catalogues locaux, etiquettes et rangement restent disponibles sans cles.
@@ -95,3 +95,27 @@ Modes: category/size, one reference per drawer, or free reference grouping.
 Free mode: Ctrl/Shift multi-selection, then Group selection to choose one shared drawer.
 Drawer contents: Category column. Undo last action / Ctrl+Z also restores 3D colours and drawer assignments, moves and removals.
 One latest action survives restarts; storage undo preserves stock quantities.
+
+NOUVEAUTES v0.1.57
+Contenu du tiroir : Quantité dans ce tiroir, distincte du stock global. Saisir un comptage ou transférer une partie dans un autre tiroir.
+Pièces à ranger : restant à ranger ; depuis le stock, le glissement affecte ce reste. Les catalogues créent toujours des associations sans comptage.
+Rangement automatique : Répartir les quantités restantes, aperçu et validation avant application.
+Migration v0.1.56 : anciennes associations conservées, quantités À renseigner, aucun comptage inventé.
+Annuler / Rétablir / Historique des actions : Ctrl+Z / Ctrl+Y, 100 actions par défaut et limite 1 à 500, conservées après redémarrage.
+Mes projets : Nouveau projet depuis un inventaire local complet de set ou une construction personnelle.
+États : À préparer, En cours, Terminé. Besoins, réservations, stock libre et manquants par référence et couleur.
+Les réservations conservent le stock possédé et le rangement. Un projet terminé garde ses réservations jusqu'à Libérer les réservations.
+Sauvegardes : nouvelle famille Projets et réservations ; quantités incluses dans Meubles et emplacements.
+Restaurer le stock nécessaire avec les comptages et réservations. Les restaurations incohérentes sont refusées entièrement.
+
+NEW v0.1.57
+Drawer contents: Quantity in this drawer, separate from global stock. Set counts or transfer part to another drawer.
+Parts to store: remaining quantities; stock dragging places that remainder. Catalogue assignments still have unknown counts.
+Automatic storage: Allocate remaining quantities, then review and apply the proposal.
+v0.1.56 migration: assignments retained, quantities To be entered, no invented counts.
+Undo / Redo / Action history: Ctrl+Z / Ctrl+Y, 100 actions by default, configurable 1 to 500 and persistent across restarts.
+My projects: New project from a complete local set inventory or a custom build.
+States: Planned, In progress, Completed. Requirements, reservations, free stock and missing parts by reference and colour.
+Reservations preserve owned stock and locations. Completed projects retain reservations until Release reservations.
+Backups: new Projects and reservations family; counts included in Cabinets and locations.
+Restore sufficient loose stock along with counts and reservations. Inconsistent restores roll back entirely.

@@ -57,8 +57,8 @@
       "en": "Shows the origins and licences of bundled resources."
     },
     "Annuler la dernière action": {
-      "fr": "Annule la dernière modification du stock, des étiquettes, de la couleur 3D ou du contenu des tiroirs.",
-      "en": "Undoes the last change to stock, labels, 3D colour or drawer contents."
+      "fr": "Annule la dernière opération enregistrée. Ctrl+Z permet de remonter plusieurs actions.",
+      "en": "Undoes the last recorded operation. Ctrl+Z steps back through multiple actions."
     },
     "Importer une collection": {
       "fr": "Ouvre l’import de stock et la correction des lignes à vérifier.",
@@ -193,8 +193,8 @@
       "en": "Closes the window without confirming the current changes."
     },
     "Rétablir": {
-      "fr": "Rétablit la dernière modification annulée.",
-      "en": "Redoes the last undone change."
+      "fr": "Réapplique la prochaine action annulée, également avec Ctrl+Y.",
+      "en": "Reapplies the next undone action, also with Ctrl+Y."
     },
     "Oui": {
       "fr": "Confirme l’opération proposée.",
@@ -765,8 +765,8 @@
       "en": "Shows and fits all cabinets in the view."
     },
     "Ajouter des références du stock": {
-      "fr": "Ouvre le tableau du stock à associer aux tiroirs.",
-      "en": "Opens the stock table for assigning parts to drawers."
+      "fr": "Ouvre le tableau des pièces à ranger, avec leur quantité restante et le meuble de destination.",
+      "en": "Opens the parts-to-store table with remaining quantities and the destination cabinet."
     },
     "Ajouter depuis un catalogue": {
       "fr": "Ouvre les catalogues pour associer des références sans créer de stock.",
@@ -781,8 +781,8 @@
       "en": "Links selected references to the chosen drawer."
     },
     "Associer au tiroir sélectionné": {
-      "fr": "Associe la sélection au tiroir actuellement choisi.",
-      "en": "Links the selection to the currently chosen drawer."
+      "fr": "Depuis le stock, place les quantités restantes dans le tiroir choisi ; depuis un catalogue, crée des associations sans comptage.",
+      "en": "From stock, places remaining quantities in the chosen drawer; from a catalogue, creates assignments without counts."
     },
     "Associer les références au tiroir": {
       "fr": "Enregistre les liens entre ces références et le tiroir choisi.",
@@ -875,6 +875,66 @@
     "Regrouper la sélection…": {
       "fr": "Choisis le regroupement libre, sélectionne les références avec Ctrl ou Maj, puis choisis leur tiroir commun.",
       "en": "Choose free grouping, select references using Ctrl or Shift, then choose their shared drawer."
+    },
+    "Historique des actions": {
+      "fr": "Affiche les actions appliquées et annulées, conservées après redémarrage.",
+      "en": "Shows applied and undone actions, retained after restarting."
+    },
+    "Appliquer la limite": {
+      "fr": "Enregistre le nombre d’actions à conserver. Réduire la limite retire les actions excédentaires.",
+      "en": "Saves the number of actions to retain. Lowering the limit removes excess history."
+    },
+    "Quantité dans ce tiroir…": {
+      "fr": "Renseigne le nombre de pièces de cette référence et couleur dans le tiroir, sans changer le stock total.",
+      "en": "Sets this reference and colour’s count in the drawer without changing total stock."
+    },
+    "Transférer une quantité…": {
+      "fr": "Déplace une partie du nombre déclaré vers un autre tiroir. Le stock total est conservé.",
+      "en": "Moves part of the declared count to another drawer. Total stock is preserved."
+    },
+    "Nouveau projet…": {
+      "fr": "Crée un projet depuis l’inventaire local d’un set ou une construction personnelle.",
+      "en": "Creates a project from a local set inventory or a custom build."
+    },
+    "Gérer le projet": {
+      "fr": "Renomme ou supprime le projet sélectionné. Sa suppression libère ses réservations.",
+      "en": "Renames or deletes the selected project. Deleting it releases its reservations."
+    },
+    "Pièces du projet": {
+      "fr": "Ajoute ou retire des besoins et règle les quantités nécessaires ou réservées pour la sélection.",
+      "en": "Adds or removes requirements and adjusts required or reserved quantities for the selection."
+    },
+    "Réserver le stock disponible": {
+      "fr": "Réserve les pièces libres pour ce projet, dans la limite de ses besoins.",
+      "en": "Reserves free stock for this project up to its requirements."
+    },
+    "Libérer les réservations": {
+      "fr": "Rend les pièces réservées à nouveau disponibles pour les autres projets, sans changer le stock.",
+      "en": "Makes reserved parts available to other projects again without changing stock."
+    },
+    "Choisir un set…": {
+      "fr": "Choisit un set du catalogue local. Son inventaire doit être complet pour créer le projet.",
+      "en": "Chooses a local catalogue set. Its inventory must be complete to create the project."
+    },
+    "Inclure les pièces supplémentaires": {
+      "fr": "Ajoute aussi les pièces supplémentaires de l’inventaire aux besoins du projet.",
+      "en": "Includes the inventory’s spare parts in the project requirements."
+    },
+    "Quantités restant à ranger": {
+      "fr": "Affiche les références dont le stock en vrac n’est pas encore entièrement réparti dans les tiroirs.",
+      "en": "Shows references whose loose stock has not yet been fully allocated to drawers."
+    },
+    "Répartir les quantités restantes": {
+      "fr": "Ajoute au plan les quantités du stock encore à ranger. Les associations sans comptage restent possibles.",
+      "en": "Adds unallocated stock quantities to the plan. Assignments without counts remain possible."
+    },
+    "Rétablir la dernière action": {
+      "fr": "Réapplique la prochaine action annulée, également avec Ctrl+Y.",
+      "en": "Reapplies the next undone action, also with Ctrl+Y."
+    },
+    "Historique des actions…": {
+      "fr": "Affiche les actions appliquées et annulées, conservées après redémarrage.",
+      "en": "Shows applied and undone actions, retained after restarting."
     }
   },
   "contexts": {
@@ -953,6 +1013,10 @@
     "StorageProposalPreview|Vue complète": {
       "fr": "Recadre l’aperçu du meuble avec tous ses tiroirs proposés.",
       "en": "Fits the proposed cabinet preview and all its drawers."
+    },
+    "ActionHistoryDialog|Annuler": {
+      "fr": "Annule la dernière action appliquée, sans fermer l’historique.",
+      "en": "Undoes the last applied action without closing the history."
     }
   }
 }
