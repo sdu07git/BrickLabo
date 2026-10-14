@@ -1,8 +1,20 @@
-# BrickLabo — v0.1.57
+# BrickLabo — v0.1.58
 
-Logiciel de bureau Windows pour les catalogues LEGO, les stocks, les recherches de constructions et les étiquettes. Cette version reprend la v0.1.56 publiée, issue de la v0.1.28 d’origine.
+Logiciel de bureau Windows pour les catalogues LEGO, les stocks, les recherches de constructions et les étiquettes. Cette version reprend la v0.1.57 publiée, issue de la v0.1.28 d’origine.
 
-**Téléchargements v0.1.57 :** [version complète Windows](https://github.com/sdu07git/BrickLabo/releases/download/v0.1.57/BrickLabo_v0.1.57_Complet.zip) · [sources avec ressources](https://github.com/sdu07git/BrickLabo/releases/download/v0.1.57/BrickLabo_v0.1.57_Sources.zip) · [notes de release](https://github.com/sdu07git/BrickLabo/releases/tag/v0.1.57).
+**Téléchargements v0.1.58 :** [version complète Windows](https://github.com/sdu07git/BrickLabo/releases/download/v0.1.58/BrickLabo_v0.1.58_Complet.zip) · [sources avec ressources](https://github.com/sdu07git/BrickLabo/releases/download/v0.1.58/BrickLabo_v0.1.58_Sources.zip) · [notes de release](https://github.com/sdu07git/BrickLabo/releases/tag/v0.1.58).
+
+## Projets, inventaire des tiroirs et corrections — v0.1.58
+
+- **Sets réalisables** : bouton et clic droit **Créer un projet avec ce set…**. Le nombre d’exemplaires et l’option **Exclure les minifigurines** sont transmis au nouveau projet.
+- **Mes projets** : la sélection affiche le set dans le volet droit ; un double-clic ou **Voir le set** ouvre sa fiche et son inventaire.
+- **Choisir un set** : catalogue paginé avec miniatures, aperçu photo, recherche, filtres par thème, année et source, filtres avancés et filtres enregistrés. Le formulaire du projet montre aussi le set choisi.
+- **Exclure les minifigurines** : calcul, pourcentages, détails et exports portent sur le modèle. Les figurines intactes en stock ne sont pas démontées pour ce calcul. Les anciens inventaires API sans distinction modèle/figurines demandent un rechargement par lots ; les CSV complets Rebrickable peuvent être utilisés directement.
+- **Tiroirs** : le survol donne les références, les couleurs et les quantités de ce tiroir. Un double-clic ouvre **Inventaire du tiroir** pour ajouter, modifier ou retirer une référence, une couleur ou un comptage. Quantité inconnue et zéro restent distincts. Les limites du stock, les conflits de modification et Annuler/Rétablir sont pris en compte.
+- **Import CSV Rebrickable** : prise en charge de **Set Number, Quantity, Inventory Ver**. La quantité d’exemplaires et la version d’inventaire sont respectées. Une version absente reste à vérifier ; aucune substitution silencieuse par la dernière version. Les corrections, la reprise et l’annulation restent disponibles.
+- **Étiquettes** : **Appliquer à → Tout le catalogue Mini-figs** règle les mini-figurines de toutes les sources, leurs dispositions personnalisées existantes et les futures références. Les couleurs, les angles et les arêtes propres aux étiquettes sont conservés.
+- **Stabilité** : les bulles d’aide observent uniquement les boutons construits, puis le nettoyage cyclique Python/Qt est exécuté dans le thread d’interface, uniquement après la fin des tâches natives. Les fenêtres sont détruites explicitement sur ce thread à la fermeture. Cette protection répond aux journaux de corruption de mémoire reçus en v0.1.57 ; sa confirmation sur Windows reste nécessaire.
+
 
 ## Quantités par tiroir, historique des actions et projets — v0.1.57
 
@@ -278,6 +290,7 @@ L’aide complète se trouve dans [documentation/AIDE.html](documentation/AIDE.h
 | 0.1.54 | Petits écrans, catégories, stocks de sets et meuble de destination pour le rangement. |
 | 0.1.55 | Durée de vie des tâches Qt, couleur d’origine et face arrière des roues. |
 | 0.1.56 | Aperçu des propositions, un tiroir par référence ou regroupement libre, colonne Catégorie et annulation des couleurs 3D et placements. |
+| 0.1.58 | Projets et aperçus, inventaires des tiroirs, CSV versionnés, modèles Mini-figs et protection mémoire. |
 | 0.1.57 | Quantités par tiroir et transferts partiels, historique Annuler/Rétablir persistant, projets avec besoins, réservations et manquants. |
 
 Un seul [NOUVEAUTES.txt](documentation/NOUVEAUTES.txt) réunit les notes françaises et anglaises. Les notes de cette branche ne documentent pas de livraison 0.1.29. Les variantes 0.1.28b et Range n’ont pas servi de base. Le [rapport de contrôle v0.1.57](documentation/CONTROLE_v0.1.57.txt) décrit les vérifications de cette livraison.
@@ -310,3 +323,5 @@ Le [rapport de contrôle v0.1.57](documentation/CONTROLE_v0.1.57.txt) décrit le
 
 
 **Validation v0.1.57 :** 695 tests réussis sous Qt/Linux (Python 3.12, PySide6 6.11.2), dont 36 nouveaux tests des comptages, transferts, projets, sauvegardes et historique persistant. Essai supplémentaire de 183 références dans 183 tiroirs avec réservation, redémarrage et Annuler/Rétablir. Contrôle visuel à 1360 × 790 et 800 × 540. La fabrication vérifie le lanceur Windows et les deux archives ; exécution native Windows à confirmer.
+
+**Validation v0.1.58 :** 740 tests de la suite complète réussis sous Qt/Linux, dont 45 nouveaux tests. Contrôle des imports versionnés, projets, inventaires et modèles Mini-figs ; 120 rendus 3D et 120 parcours de fenêtres sans erreur. [Rapport détaillé](documentation/CONTROLE_v0.1.58.txt). Le plantage exact reste à confirmer sur Windows.
