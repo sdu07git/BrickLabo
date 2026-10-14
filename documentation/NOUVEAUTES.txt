@@ -1,3 +1,23 @@
+Vrac direct et inventaires complets — v0.1.60
+
+Vrac uniquement en un clic : dans Sets réalisables, le bouton Vrac uniquement réinclut toutes les pièces et mini-figurines du vrac, exclut tous les composants des sets possédés puis relance la recherche avec les critères actuels. Les inventaires de sets déjà transférés dans le vrac restent utilisables. Les réservations des projets sont respectées.
+
+Choisir le stock utilisable : Utiliser uniquement le stock en vrac réinclut également les lignes masquées par le filtre et remet la recherche du tableau à vide. Valider avec OK enregistre ce choix ; Annuler conserve les préférences précédentes. Il est ensuite possible de décocher certaines références. Les choix individuels des sets sont conservés pour une réactivation ultérieure.
+
+Recherches MOC : une fenêtre déjà ouverte relit la sélection actuelle du stock au prochain lancement de la recherche.
+
+Ajout d’un inventaire complet : depuis la fiche d’un set, Ajouter toutes les pièces vérifie désormais que chaque référence existe dans le catalogue. Une erreur nomme les références absentes avant tout ajout. Si l’inventaire a changé depuis l’ouverture, rouvrir la fenêtre du set. L’ajout volontaire des seules pièces sélectionnées reste disponible.
+
+Direct loose stock and complete inventories — v0.1.60
+
+Loose stock only in one click : in Buildable sets, Loose stock only includes every loose part and minifigure again, excludes all owned set components and reruns the search using the current criteria. Set inventories already transferred to loose stock remain usable. Project reservations are respected.
+
+Choose usable stock : Use all loose stock only also includes entries hidden by the table filter and clears that filter. OK saves the choice; Cancel keeps the previous preferences. Individual references can then be unchecked. Individual owned set choices are preserved for later reactivation.
+
+MOC searches : a window that was already open reads the current stock selection when the next search starts.
+
+Adding a complete inventory : Add all parts in a set window now verifies that each reference exists in the catalogue. An error names missing references before any stock addition. If the inventory changed after the window opened, reopen the set window. Explicitly adding only selected parts is still available.
+
 Vrac transferts partiels et filtres — v0.1.59
 
 Vrac uniquement
