@@ -253,11 +253,15 @@ class StoragePanel(QWidget):
         details=QWidget();d=QVBoxLayout(details);self.details=details;self.details_layout=d;details.installEventFilter(self);self.status=QLabel(tr('Crée un meuble puis associe les références de tes catalogues ou de ton stock aux tiroirs.'));self.status.setWordWrap(True);d.addWidget(self.status)
         self.results=QTableWidget(0,5);self.results.setHorizontalHeaderLabels([tr('Meuble'),tr('Emplacement'),tr('Référence'),tr('Pièce'),tr('Couleur')]);self.results.setSelectionBehavior(QAbstractItemView.SelectionBehavior.SelectRows);self.results.setEditTriggers(QAbstractItemView.EditTrigger.NoEditTriggers);self.results.horizontalHeader().setSectionResizeMode(QHeaderView.ResizeMode.Interactive);self.results.setMinimumHeight(70);self.results.setMaximumHeight(120);self.results.hide();d.addWidget(self.results)
         for column,width in enumerate((170,220,90,240,110)):self.results.setColumnWidth(column,width)
-        self.table=StorageDragTable(db,lambda:self.rows,lambda:self.drawer_id,0,7);self.table.setHorizontalHeaderLabels([tr('Source'),tr('Référence'),tr('Pièce'),tr('Catégorie'),tr('Couleur'),tr('Stock global en vrac'),tr('Aperçu 3D / photo')]);self.table.setSelectionBehavior(QAbstractItemView.SelectionBehavior.SelectRows);self.table.setSelectionMode(QAbstractItemView.SelectionMode.ExtendedSelection);self.table.setEditTriggers(QAbstractItemView.EditTrigger.NoEditTriggers);self.table.horizontalHeader().setSectionResizeMode(QHeaderView.ResizeMode.Interactive);self.table.setMinimumHeight(140);d.addWidget(self.table,1)
+        self.table=StorageDragTable(db,lambda:self.rows,lambda:self.drawer_id,0,8);self.table.setHorizontalHeaderLabels([tr('Source'),tr('Référence'),tr('Pièce'),tr('Catégorie'),tr('Couleur'),tr('Stock global en vrac'),tr('Aperçu 3D / photo'),tr('Quantité dans ce tiroir')]);self.table.setSelectionBehavior(QAbstractItemView.SelectionBehavior.SelectRows);self.table.setSelectionMode(QAbstractItemView.SelectionMode.ExtendedSelection);self.table.setEditTriggers(QAbstractItemView.EditTrigger.NoEditTriggers);self.table.horizontalHeader().setSectionResizeMode(QHeaderView.ResizeMode.Interactive);self.table.setMinimumHeight(140);d.addWidget(self.table,1)
         for column,width in enumerate((75,90,220,180,100,160,150)):self.table.setColumnWidth(column,width)
+        self.table.setColumnWidth(7,180)
+        self.table.horizontalHeader().moveSection(7,2)
         self.thumbnails=PartThumbnails(self.table,db,engine,self.visible_parts,6,self) if engine else None
         row=FlowLayout();add=QPushButton(tr('Ajouter des références du stock'));add.clicked.connect(self.pick_stock);row.addWidget(add);self.remove_references=QPushButton(tr('Retirer les références du tiroir'));self.remove_references.clicked.connect(self.unassign);self.remove_references.setToolTip(tr('Retire les lignes sélectionnées. Sans sélection, propose de retirer toutes les références du tiroir. Les pièces restent dans le stock.'));row.addWidget(self.remove_references);d.addLayout(row)
         catalogue=QPushButton(tr('Ajouter depuis un catalogue'));catalogue.clicked.connect(self.pick_catalogue);row.addWidget(catalogue)
+        self.quantity_button=QPushButton(tr('Quantité dans ce tiroir…'));self.quantity_button.clicked.connect(self.edit_drawer_quantity);row.addWidget(self.quantity_button)
+        self.transfer_button=QPushButton(tr('Transférer une quantité…'));self.transfer_button.clicked.connect(lambda:self.edit_drawer_quantity(True));row.addWidget(self.transfer_button)
         self.details_tabs=QTabWidget();self.details_tabs.addTab(details,tr('Contenu du tiroir'))
         self.stock_browser=StockToDrawers(db,engine,self.place_selected,self);self.stock_browser.selected.connect(self.selected.emit);self.stock_browser.opened.connect(self.open_stock_piece);self.details_tabs.addTab(self.stock_browser,tr('Pièces à ranger'))
         self.stock_browser.plan_requested.connect(lambda:self.plan_storage(True))
@@ -411,13 +415,18 @@ class StoragePanel(QWidget):
     def drop_parts(self,drawer_id,payload):
         target=self.items.get(drawer_id)
         if target is None:return False
-        try:place_entries(self.db,drawer_id,payload['entries'],payload.get('origin'),payload.get('catalogue',False))
+        try:
+            if payload.get('allocate_remaining'):
+                from .storage_quantities import place_remaining
+                place_remaining(self.db,drawer_id,payload['entries'])
+            else:place_entries(self.db,drawer_id,payload['entries'],payload.get('origin'),payload.get('catalogue',False))
         except (ValueError,sqlite3.Error,OSError) as error:
             self.placement_hint.setText(str(error));self.placement_hint.show();return False
         self.activate_wall(target.drawer['wall_id']);self.drawer_id=drawer_id
         self.placement_hint.setText(tr('Références rangées. Les quantités du stock sont conservées.'));self.placement_hint.show()
         owner=application_owner(self)
-        if hasattr(owner,'update_undo'):owner.update_undo()
+        if hasattr(owner,'refresh_counts'):QTimer.singleShot(0,owner.refresh_counts)
+        elif hasattr(owner,'update_undo'):owner.update_undo()
         self.drawer_refresh_timer.start();return True
     def open_stock_piece(self,item):
         from .dialogs import RelationsDialog
@@ -427,7 +436,7 @@ class StoragePanel(QWidget):
         options={}
         if from_parts:
             rows=self.stock_browser.selection() or self.stock_browser.rows
-            options={'entries':[(p['id'],p['chosen_color']) for p in rows],'from_catalogue':self.stock_browser.catalogue_mode(),'category':self.stock_browser.category.currentData() or ''}
+            options={'entries':[(p['id'],p['chosen_color']) for p in rows],'from_catalogue':self.stock_browser.catalogue_mode(),'category':self.stock_browser.category.currentData() or '','allocate_quantities':not self.stock_browser.catalogue_mode()}
         window=StoragePlanDialog(self.db,self.wall_id,self,self.refresh,**options);window._storage_wall_id=self.wall_id;show_window(window,self,refresh_counts=False);return window
     def print_wall(self):
         if self.wall_id is None:return
@@ -437,14 +446,15 @@ class StoragePanel(QWidget):
         return window
     def load_contents(self):
         self.rows=store.contents(self.db,self.drawer_id) if self.drawer_id else []
-        fill_table(self.table,[(p['source'],p['ref'],p['name'],p['category'],p['chosen_color'] or tr('Non précisée'),p['chosen_quantity'],tr('3D / photo à charger')) for p in self.rows])
+        fill_table(self.table,[(p['source'],p['ref'],p['name'],p['category'],p['chosen_color'] or tr('Non précisée'),p['chosen_quantity'],tr('3D / photo à charger'),p['stored_quantity'] if p['stored_quantity'] is not None else tr('À renseigner')) for p in self.rows])
         if self.thumbnails:self.thumbnails.reset()
         self.update_status()
     def update_status(self):
         self.remove_references.setEnabled(self.drawer_id is not None and bool(self.rows))
+        self.update_quantity_actions()
         drawer=next((d for d in self.drawers if d['id']==self.drawer_id),None)
         if self.query.text().strip() and not self.matches:self.status.setText('0'+tr(' correspondance(s) dans les tiroirs.'))
-        elif drawer:self.status.setText(' · '.join(value for value in (self.wall.currentText(),store.address(drawer),drawer['name']) if value)+' — '+str(len(self.rows))+tr(' référence(s). Les quantités indiquent le stock global, pas le nombre dans ce tiroir.'))
+        elif drawer:self.status.setText(' · '.join(value for value in (self.wall.currentText(),store.address(drawer),drawer['name']) if value)+' — '+str(len(self.rows))+tr(' référence(s). Les quantités non renseignées sont conservées sans supposer un comptage.'))
         elif self.query.text().strip():self.status.setText(str(len(self.matches))+tr(' correspondance(s) dans les tiroirs.'))
         elif self.wall_id is not None:self.status.setText(self.wall.currentText()+' — '+tr('Sélectionne un tiroir pour afficher ses références.'))
         else:self.status.setText(tr('Crée un meuble puis associe les références de tes catalogues ou de ton stock aux tiroirs.'))
@@ -468,9 +478,21 @@ class StoragePanel(QWidget):
             if not self.all_walls.isChecked():self.redraw();self.fit()
         self.choose_drawer(result['id'])
         if self.drawer_id in self.items:self.view.ensureVisible(self.items[self.drawer_id])
+    def update_quantity_actions(self):
+        index=row_index(self.table)
+        single=self.drawer_id is not None and len(self.table.selectionModel().selectedRows())==1 and 0<=index<len(self.rows)
+        self.quantity_button.setEnabled(single)
+        self.transfer_button.setEnabled(single and bool(self.rows[index].get('stored_quantity')))
     def select_piece(self):
         index=row_index(self.table)
+        self.update_quantity_actions()
         if 0<=index<len(self.rows):self.selected.emit(self.rows[index])
+
+    def edit_drawer_quantity(self,transfer=False):
+        index=row_index(self.table)
+        if len(self.table.selectionModel().selectedRows())!=1 or not 0<=index<len(self.rows):return
+        from .storage_quantity_dialog import quantity_dialog
+        return quantity_dialog(self,dict(self.rows[index]),transfer)
     def open_piece(self,*_):
         index=row_index(self.table)
         if not 0<=index<len(self.rows):return

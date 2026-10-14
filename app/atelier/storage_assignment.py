@@ -9,13 +9,15 @@ from .i18n import tr,tf
 from .action_undo import storage_change
 
 
-def stock_rows(db,query='',category='',unlocated=False,limit=None):
+def stock_rows(db,query='',category='',unlocated=False,limit=None,remaining_only=False):
     conditions=["i.kind IN ('part','minifig')","s.quantity>0"];args=[]
     if category:conditions.append('i.category=?');args.append(category)
     if unlocated:conditions.append('NOT EXISTS (SELECT 1 FROM storage_contents p WHERE p.item_id=i.id AND p.color=s.color)')
+    allocated='COALESCE((SELECT SUM(p.quantity) FROM storage_contents p WHERE p.item_id=i.id AND p.color=s.color),0)'
+    if remaining_only:conditions.append('s.quantity>'+allocated)
     for word in normalize(query).split():
         conditions.append("norm(i.ref||' '||i.name||' '||i.category) LIKE ?");args.append('%'+word+'%')
-    sql='SELECT i.*,s.color AS chosen_color,s.quantity AS chosen_quantity FROM stock s JOIN items i ON i.id=s.item_id WHERE '+' AND '.join(conditions)+' ORDER BY i.category,i.source,i.ref,s.color'
+    sql='SELECT i.*,s.color AS chosen_color,s.quantity AS chosen_quantity,'+allocated+' AS allocated_quantity,MAX(0,s.quantity-'+allocated+') AS remaining_quantity FROM stock s JOIN items i ON i.id=s.item_id WHERE '+' AND '.join(conditions)+' ORDER BY i.category,i.source,i.ref,s.color'
     if limit is not None:sql+=' LIMIT ?';args.append(limit)
     return db.rows(sql,args)
 
@@ -55,7 +57,14 @@ def place_entries(db,drawer_id,entries,source_drawer=None,from_catalogue=False):
         if source_drawer==drawer_id:return 0
         with storage_change(c,[drawer_id]+([source_drawer] if source_drawer is not None else []),tr('Placement de pièces dans les tiroirs')):
             before=c.total_changes
-            c.executemany('INSERT OR IGNORE INTO storage_contents(drawer_id,item_id,color) VALUES(?,?,?)',[(drawer_id,identity,color) for identity,color in entries])
+            if source_drawer is None:
+                c.executemany('INSERT OR IGNORE INTO storage_contents(drawer_id,item_id,color) VALUES(?,?,?)',[(drawer_id,identity,color) for identity,color in entries])
+            else:
+                for identity,color in entries:
+                    source=c.execute('SELECT quantity FROM storage_contents WHERE drawer_id=? AND item_id=? AND color=?',(source_drawer,identity,color)).fetchone()
+                    target=c.execute('SELECT quantity FROM storage_contents WHERE drawer_id=? AND item_id=? AND color=?',(drawer_id,identity,color)).fetchone()
+                    quantity=(source['quantity'] or 0)+(target['quantity'] or 0) if source['quantity'] is not None or target is not None and target['quantity'] is not None else None
+                    c.execute('INSERT INTO storage_contents(drawer_id,item_id,color,quantity) VALUES(?,?,?,?) ON CONFLICT(drawer_id,item_id,color) DO UPDATE SET quantity=excluded.quantity',(drawer_id,identity,color,quantity))
             if source_drawer is not None:
                 c.executemany('DELETE FROM storage_contents WHERE drawer_id=? AND item_id=? AND color=?',[(source_drawer,identity,color) for identity,color in entries])
             changed=c.total_changes-before
@@ -117,10 +126,11 @@ def _preview_state(c,state,entries,category,from_catalogue):
     return {'wall':state['wall'],'drawers':drawers,'links':links,'items':items,'stock':[row for row in state['stock'] if row['id'] in ids]}
 
 
-def propose(db,wall_id,category='',split_colors=False,reorganize=False,entries=None,from_catalogue=False,grouping='size'):
+def propose(db,wall_id,category='',split_colors=False,reorganize=False,entries=None,from_catalogue=False,grouping='size',allocate_quantities=False):
     """One group per category and footprint, ordered from few to many studs."""
     if reorganize and not category:raise ValueError(tr('Choisis une catégorie pour réorganiser ses tiroirs.'))
     if grouping not in ('size','reference','manual'):raise ValueError(tr('Mode de rangement invalide.'))
+    if type(allocate_quantities) is not bool or allocate_quantities and from_catalogue:raise ValueError(tr('Les quantités se répartissent depuis le stock en vrac.'))
     with db.read() as c:
         c.execute('BEGIN');state=_state(c,wall_id,entries,from_catalogue)
         state['preview']=_preview_state(c,state,entries,category,from_catalogue)
@@ -135,7 +145,13 @@ def propose(db,wall_id,category='',split_colors=False,reorganize=False,entries=N
     eligible={d['id'] for d in available}
     located={ (link['item_id'],link['color']) for link in state['links'] if link['drawer_id'] not in eligible }
     if not reorganize:located|={(link['item_id'],link['color']) for link in state['links']}
-    groups={};unknown=[];candidates=list(state['catalogue'] if from_catalogue else state['stock'])
+    groups={};unknown=[];quantities={};candidates=list(state['catalogue'] if from_catalogue else state['stock'])
+    allocated={};replaced_quantities={};replaced_known=set()
+    for link in state['links']:
+        key=(link['item_id'],link['color']);allocated[key]=allocated.get(key,0)+(link['quantity'] or 0)
+    for link in replaced:
+        key=(link['item_id'],link['color']);replaced_quantities[key]=replaced_quantities.get(key,0)+(link['quantity'] or 0)
+        if link['quantity'] is not None:replaced_known.add(key)
     if entries is not None and not from_catalogue:
         wanted={(identity,str(color)) for identity,color in entries};candidates=[item for item in candidates if (item['id'],item['color']) in wanted]
         if wanted-{(item['id'],item['color']) for item in candidates}:raise ValueError(tr('Le stock ou le rangement a changé. Prépare une nouvelle proposition.'))
@@ -145,18 +161,22 @@ def propose(db,wall_id,category='',split_colors=False,reorganize=False,entries=N
             candidates.append(dict(link,id=link['item_id'],quantity=0));known.add((link['item_id'],link['color']))
     for item in candidates:
         if category and item['category']!=category:continue
-        if (item['id'],item['color']) in located and (item['id'],item['color']) not in existing:continue
+        entry_key=(item['id'],item['color'])
+        if not allocate_quantities and entry_key in located and entry_key not in existing:continue
+        physical=replaced_quantities.get(entry_key,0)+max(0,item['quantity']-allocated.get(entry_key,0)) if allocate_quantities else replaced_quantities.get(entry_key,0) if entry_key in replaced_known else None
+        if allocate_quantities and not physical and entry_key not in existing:continue
         dimensions=stud_dimensions(item['name'])
         if not dimensions and grouping=='size':unknown.append(item);continue
         dimensions=dimensions or ()
         key=(item['category'],dimensions,item['id'] if grouping!='size' else None,item['source'] if split_colors else '',item['color'] if split_colors else '')
         group=groups.setdefault(key,{'category':item['category'],'dimensions':dimensions,'color':(item['source']+' '+item['color']) if split_colors else '', 'entries':[],'references':[]})
         group['entries'].append((item['id'],item['color']));group['references'].append(item['source']+' '+item['ref'])
+        quantities[entry_key]=physical
     ordered=sorted(groups.values(),key=lambda g:(normalize(g['category']),not bool(g['dimensions']),g['dimensions'][0]*g['dimensions'][1] if g['dimensions'] else 0,g['dimensions'][1:] if g['dimensions'] else (),g['dimensions'][:1],g['references'][0] if grouping!='size' else '',g['color']))
     for index,group in enumerate(ordered):
         group['drawer_id']=available[index]['id'] if grouping!='manual' and index<len(available) else None
         group['name']=' · '.join(v for v in ((group['references'][0] if grouping!='size' else ''),group['category'],dimensions_text(group['dimensions']),group['color']) if v)
-    return {'wall_id':wall_id,'fingerprint':_fingerprint(state),'available':available,'replaced':replaced,'groups':ordered,'unknown':unknown,'reorganize':reorganize,'entries':list(entries) if entries is not None else None,'from_catalogue':from_catalogue,'grouping':grouping,'shared_drawers':grouping=='manual','preview':state['preview']}
+    return {'wall_id':wall_id,'fingerprint':_fingerprint(state),'available':available,'replaced':replaced,'groups':ordered,'unknown':unknown,'reorganize':reorganize,'entries':list(entries) if entries is not None else None,'from_catalogue':from_catalogue,'grouping':grouping,'shared_drawers':grouping=='manual','preview':state['preview'],'quantities':quantities,'allocate_quantities':allocate_quantities}
 
 
 def apply_proposal(db,plan,targets=None):
@@ -186,5 +206,5 @@ def apply_proposal(db,plan,targets=None):
             for target,bucket in buckets.items():
                 name=bucket[0]['name'] if len(bucket)==1 else ' / '.join(dict.fromkeys(g['category'] for g in bucket))+' · '+tf('{0} référence(s)',len({identity for g in bucket for identity,color in g['entries']}))
                 c.execute('UPDATE storage_drawers SET name=? WHERE id=?',(name,target))
-                c.executemany('INSERT OR IGNORE INTO storage_contents(drawer_id,item_id,color) VALUES(?,?,?)',[(target,identity,color) for group in bucket for identity,color in group['entries']])
+                c.executemany('INSERT OR IGNORE INTO storage_contents(drawer_id,item_id,color,quantity) VALUES(?,?,?,?)',[(target,identity,color,plan.get('quantities',{}).get((identity,color))) for group in bucket for identity,color in group['entries']])
     return len(set(chosen)),len(placed)

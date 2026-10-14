@@ -118,6 +118,8 @@ class Database:
             prepare(self,c)
             from .storage_wall import prepare as prepare_storage
             prepare_storage(c)
+            from .projects import prepare as prepare_projects
+            prepare_projects(c)
             from .action_undo import prepare as prepare_actions
             prepare_actions(c)
             from .inventory_batches import prepare as prepare_inventories
@@ -240,9 +242,15 @@ class Database:
             join+=f' JOIN {scope} s ON s.item_id=i.id '
             if scope!='history':clause+=(' AND ' if clause else 'WHERE ')+'s.quantity>0'
             extra+=",s.id AS entry_id,s.color AS chosen_color,s.quantity AS chosen_quantity,"+('s.date AS date,s.method AS method' if scope=='history' else 's.added AS date')
+            if scope=='stock':
+                reserved='COALESCE((SELECT SUM(p.reserved) FROM project_parts p WHERE p.item_id=i.id AND p.color=s.color),0)'
+                allocated='COALESCE((SELECT SUM(p.quantity) FROM storage_contents p WHERE p.item_id=i.id AND p.color=s.color),0)'
+                extra+=','+reserved+' AS reserved_quantity,MAX(0,s.quantity-'+reserved+') AS available_quantity,'+allocated+' AS allocated_quantity,MAX(0,s.quantity-'+allocated+') AS remaining_quantity'
         allowed={'ref','name','category','year','date','chosen_quantity','chosen_color','source','method','has_print','has_sticker','architect_rank','ldraw_model','imported_at'}
+        if scope=='stock':allowed|={'reserved_quantity','available_quantity','allocated_quantity','remaining_quantity'}
         if sort not in allowed or (sort in {'date','chosen_quantity','chosen_color','method'} and scope not in ('stock','stock_sets','stock_available','queue','history')): sort='ref'
         if sort in {'date','chosen_quantity','chosen_color','method','has_print','has_sticker','architect_rank','ldraw_model'}: prefix=''
+        if sort in {'reserved_quantity','available_quantity','allocated_quantity','remaining_quantity'}:prefix=''
         with self.read() as c:
             c.execute('BEGIN')
             total=c.execute('SELECT COUNT(*) FROM items i '+join+clause,args).fetchone()[0]
@@ -297,6 +305,14 @@ class Database:
     def undo_last_action(self):
         from .action_undo import undo
         return undo(self)
+
+    def redo_description(self):
+        from .action_history import description
+        return description(self,redo=True)
+
+    def redo_last_action(self):
+        from .action_history import restore
+        return restore(self,redo=True)
 
     def owned_components(self,entry_id):
         return self.rows('SELECT i.*,p.color AS chosen_color,p.quantity AS chosen_quantity,0 AS is_spare FROM stock_set_components p JOIN items i ON i.id=p.item_id WHERE p.set_entry_id=? AND p.quantity>0 ORDER BY i.source,i.ref,p.color',(abs(int(entry_id)),))

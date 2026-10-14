@@ -31,6 +31,8 @@ def read_drag(mime,db):
         if not isinstance(value,dict) or value.get('session')!=drag_token(db):return None
         entries=value.get('entries');origin=value.get('origin')
         catalogue=value.get('catalogue',False)
+        allocate=value.get('allocate_remaining',False)
+        if type(allocate) is not bool or allocate and (catalogue or origin is not None):return None
         if type(catalogue) is not bool or catalogue and origin is not None:return None
         if origin is not None and (type(origin) is not int or origin<=0):return None
         if not isinstance(entries,list) or not 1<=len(entries)<=5000:return None
@@ -42,7 +44,7 @@ def read_drag(mime,db):
 
 class StorageDragTable(QTableWidget):
     def __init__(self,db,rows,origin=lambda:None,*args):
-        super().__init__(*args);self.db=db;self.drag_rows=rows;self.drag_origin=origin;self.drag_catalogue=lambda:False;drag_token(db)
+        super().__init__(*args);self.db=db;self.drag_rows=rows;self.drag_origin=origin;self.drag_catalogue=lambda:False;self.drag_allocate_remaining=lambda:False;drag_token(db)
         self.setDragEnabled(True);self.setDragDropMode(QAbstractItemView.DragDropMode.DragOnly)
         self.setSelectionBehavior(QAbstractItemView.SelectionBehavior.SelectRows)
         self.setSelectionMode(QAbstractItemView.SelectionMode.ExtendedSelection)
@@ -51,7 +53,7 @@ class StorageDragTable(QTableWidget):
     def mimeData(self,items):
         rows=self.drag_rows();indices=sorted({row_index(self,index.row()) for index in self.selectionModel().selectedRows()})
         entries=[[rows[index]['id'],str(rows[index].get('chosen_color',''))] for index in indices if 0<=index<len(rows)]
-        mime=QMimeData();mime.setData(MIME,json.dumps({'session':drag_token(self.db),'entries':entries,'origin':self.drag_origin(),'catalogue':self.drag_catalogue()}).encode())
+        mime=QMimeData();mime.setData(MIME,json.dumps({'session':drag_token(self.db),'entries':entries,'origin':self.drag_origin(),'catalogue':self.drag_catalogue(),'allocate_remaining':self.drag_allocate_remaining()}).encode())
         mime.setText(tf('{0} référence(s)',len(entries)));return mime
 
     def startDrag(self,supportedActions):
@@ -78,10 +80,12 @@ class StockToDrawers(QWidget):
         controls=FlowLayout();self.query=QLineEdit();self.query.setPlaceholderText(tr('Référence, nom ou catégorie'));self.query.setMinimumWidth(180);controls.addWidget(self.query)
         self.category=QComboBox();self.category.setMinimumContentsLength(16);self.category.setSizeAdjustPolicy(QComboBox.SizeAdjustPolicy.AdjustToMinimumContentsLengthWithIcon);controls.addWidget(self.category)
         self.unlocated=QCheckBox(tr('Sans emplacement uniquement'));self.unlocated.setChecked(True);controls.addWidget(self.unlocated);layout.addLayout(controls)
-        self.table=StorageDragTable(db,lambda:self.rows,lambda:None,0,7)
+        self.table=StorageDragTable(db,lambda:self.rows,lambda:None,0,8)
         self.table.drag_catalogue=lambda:self.catalogue_mode()
-        self.table.setHorizontalHeaderLabels([tr('Source'),tr('Référence'),tr('Couleur'),tr('Pièce'),tr('Catégorie'),tr('Stock en vrac'),tr('Aperçu')])
-        for column,width in enumerate((70,90,80,210,140,100,130)):self.table.setColumnWidth(column,width)
+        self.table.drag_allocate_remaining=lambda:not self.catalogue_mode()
+        self.table.setHorizontalHeaderLabels([tr('Source'),tr('Référence'),tr('Couleur'),tr('Pièce'),tr('Catégorie'),tr('Stock en vrac'),tr('Aperçu'),tr('Restant à ranger')])
+        for column,width in enumerate((70,90,80,210,140,100,130,140)):self.table.setColumnWidth(column,width)
+        self.table.horizontalHeader().moveSection(7,2)
         self.table.horizontalHeader().setSectionResizeMode(QHeaderView.ResizeMode.Interactive);self.table.setMinimumHeight(150);layout.addWidget(self.table,1)
         self.thumbnails=PartThumbnails(self.table,db,engine,self.visible_rows,6,self) if engine else None
         row=FlowLayout();self.count=QLabel();row.addWidget(self.count);self.add=QPushButton(tr('Associer au tiroir sélectionné'));self.add.clicked.connect(self.add_selection);row.addWidget(self.add)
@@ -106,6 +110,7 @@ class StockToDrawers(QWidget):
     def catalogue_mode(self):return self.origin.currentData()!='stock'
 
     def change_origin(self,*_):
+        self.unlocated.setText(tr('Sans emplacement uniquement') if self.catalogue_mode() else tr('Quantités restant à ranger'))
         self.timer.stop();self.reload_categories();self.reload()
 
     def reload_categories(self):
@@ -123,10 +128,11 @@ class StockToDrawers(QWidget):
         if self.catalogue_mode():
             origin=self.origin.currentData();source=origin if origin not in ('catalogue','minifig') else None
             self.rows=assignment.catalogue_rows(self.db,self.query.text(),self.category.currentData() or '',self.unlocated.isChecked(),source,'minifig' if origin=='minifig' else None,5001)
-        else:self.rows=assignment.stock_rows(self.db,self.query.text(),self.category.currentData() or '',self.unlocated.isChecked(),5001)
+        else:self.rows=assignment.stock_rows(self.db,self.query.text(),self.category.currentData() or '',False,5001,remaining_only=self.unlocated.isChecked())
         limited=len(self.rows)>5000;self.rows=self.rows[:5000]
         self.table.setColumnHidden(5,self.catalogue_mode())
-        fill_table(self.table,[(p['source'],p['ref'],tr('Non précisée') if self.catalogue_mode() else p['chosen_color'],p['name'],p['category'],p.get('chosen_quantity',''),tr('3D / photo à charger')) for p in self.rows])
+        self.table.setColumnHidden(7,self.catalogue_mode());self.unlocated.setText(tr('Sans emplacement uniquement') if self.catalogue_mode() else tr('Quantités restant à ranger'))
+        fill_table(self.table,[(p['source'],p['ref'],tr('Non précisée') if self.catalogue_mode() else p['chosen_color'],p['name'],p['category'],p.get('chosen_quantity',''),tr('3D / photo à charger'),p.get('remaining_quantity','')) for p in self.rows])
         for row in range(self.table.rowCount()):
             part=self.rows[row_index(self.table,row)];self.table.item(row,1).setToolTip(part['name']+'\n'+part['category']+'\n'+tr('Couleur')+' : '+part['chosen_color'])
         self.count.setText(tf('{0} référence(s)',len(self.rows))+(tr(' — affine la recherche pour afficher les autres.') if limited else ''))
@@ -136,7 +142,7 @@ class StockToDrawers(QWidget):
     def selection(self):return [self.rows[row_index(self.table,index.row())] for index in self.table.selectionModel().selectedRows()]
     def add_selection(self):
         rows=self.selection()
-        if rows:self.place({'entries':[(p['id'],p['chosen_color']) for p in rows],'origin':None,'catalogue':self.catalogue_mode()})
+        if rows:self.place({'entries':[(p['id'],p['chosen_color']) for p in rows],'origin':None,'catalogue':self.catalogue_mode(),'allocate_remaining':not self.catalogue_mode()})
     def select(self):
         index=row_index(self.table)
         if 0<=index<len(self.rows):self.selected.emit(self.rows[index])
@@ -186,7 +192,7 @@ class CatalogueToDrawerDialog(QDialog):
 
 
 class StoragePlanDialog(QDialog):
-    def __init__(self,db,wall_id,parent=None,changed=lambda:None,entries=None,from_catalogue=False,category=''):
+    def __init__(self,db,wall_id,parent=None,changed=lambda:None,entries=None,from_catalogue=False,category='',allocate_quantities=False):
         super().__init__(parent);self.db=db;self.wall_id=wall_id;self.changed=changed;self.plan=None;self.targets=[]
         self.entries=list(entries) if entries is not None else None;self.from_catalogue=from_catalogue
         self.setWindowTitle(tr('Ranger par catégorie et taille en tenons'));self.setMinimumSize(800,480)
@@ -206,6 +212,7 @@ class StoragePlanDialog(QDialog):
         controls.addWidget(self.category);self.grouping=QComboBox();self.grouping.setAccessibleName(tr('Mode de rangement'))
         for label,mode in [(tr('Par catégorie et taille'),'size'),(tr('Une référence par tiroir'),'reference'),(tr('Regroupement libre de références'),'manual')]:self.grouping.addItem(label,mode)
         controls.addWidget(self.grouping);self.colors=QCheckBox(tr('Séparer les couleurs'));controls.addWidget(self.colors)
+        self.quantities=QCheckBox(tr('Répartir les quantités restantes'));self.quantities.setChecked(bool(allocate_quantities) and not from_catalogue);self.quantities.setEnabled(not from_catalogue);controls.addWidget(self.quantities)
         self.reorganize=QCheckBox(tr('Réorganiser cette catégorie dans ce meuble'));controls.addWidget(self.reorganize);layout.addLayout(controls)
         explanation=QLabel(tr('Par défaut : pièces sans emplacement et tiroirs vides sans nom. La réorganisation remplace les liens des tiroirs contenant uniquement cette catégorie. Les tiroirs mixtes, les autres meubles et toutes les quantités sont conservés.'));explanation.setWordWrap(True);layout.addWidget(explanation)
         self.table=QTableWidget(0,5);self.table.setHorizontalHeaderLabels([tr('Catégorie'),tr('Dimensions en tenons'),tr('Couleur'),tr('Références'),tr('Tiroir proposé')]);self.table.setEditTriggers(QAbstractItemView.EditTrigger.NoEditTriggers);self.table.horizontalHeader().setSectionResizeMode(QHeaderView.ResizeMode.Interactive)
@@ -222,12 +229,13 @@ class StoragePlanDialog(QDialog):
         self.apply_button=QPushButton(tr('Appliquer le rangement proposé'));self.apply_button.clicked.connect(self.apply);row.addWidget(self.apply_button)
         close=QPushButton(tr('Fermer'));close.clicked.connect(self.reject);row.addWidget(close);layout.addLayout(row)
         self.category.currentIndexChanged.connect(self.rebuild);self.grouping.currentIndexChanged.connect(self.rebuild);self.colors.toggled.connect(self.rebuild);self.reorganize.toggled.connect(self.rebuild)
+        self.quantities.toggled.connect(self.rebuild)
         self.table.currentCellChanged.connect(self.group_selected);self.proposal_preview.drawer_selected.connect(self.drawer_selected);self.rebuild()
 
     def rebuild(self,*_):
         category=self.category.currentData() or '';self.reorganize.setEnabled(bool(category))
         if not category:self.reorganize.blockSignals(True);self.reorganize.setChecked(False);self.reorganize.blockSignals(False)
-        try:self.plan=assignment.propose(self.db,self.wall_id,category,self.colors.isChecked(),self.reorganize.isChecked(),self.entries,self.from_catalogue,self.grouping.currentData())
+        try:self.plan=assignment.propose(self.db,self.wall_id,category,self.colors.isChecked(),self.reorganize.isChecked(),self.entries,self.from_catalogue,self.grouping.currentData(),self.quantities.isChecked())
         except (ValueError,sqlite3.Error,OSError) as error:
             self.plan=None;self.table.setRowCount(0);self.proposal_preview.set_proposal(None,[]);self.summary.setText(str(error));self.apply_button.setEnabled(False);self.combine.setEnabled(False);return
         self.targets=[];self.table.blockSignals(True)

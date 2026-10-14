@@ -8,6 +8,7 @@ from .fileio import atomic_output
 from .i18n import tr
 
 FAMILIES={'labels':tr('Modèles d’étiquette'),'colors':tr('Couleurs des catégories'),'views':tr('Vues et rendus 3D'),'loose':tr('Pièces en vrac'),'sets':tr('Sets et leurs pièces'),'queue':tr('Étiquettes à imprimer'),'storage':tr('Meubles et emplacements'),'preferences':tr('Autres préférences'),'api':tr('Clés API (privées)')}
+FAMILIES['projects']=tr('Projets et réservations')
 ITEM_KEYS=('camera_item_','architect_model_','architect_photo_choice_','photo_choices_','label_layout_item_')
 ENTRY_RE=re.compile(r'^label_layout_(stock_sets|stock|queue|history)_([0-9]+)$')
 
@@ -26,7 +27,7 @@ def _portable_key(db,key):
 
 def _view_key(key):return key.startswith(('camera_','architect_model_','architect_photo_choice_','photo_choices_','edge_')) or key=='default_color'
 def _label_key(key):return key in ('template','templates') or key.startswith('label_layout_')
-def _private_or_cache(key):return key.startswith(('api_','stock_mocs_','moc_search_','rb_','bl_','alt_components_','export_rb_','stock_layout_','stock_migration_','downloads')) or key in ('build_excluded_entries','ldraw','ldraw_header_links','output')
+def _private_or_cache(key):return key.startswith(('api_','stock_mocs_','moc_search_','rb_','bl_','alt_components_','export_rb_','stock_layout_','stock_migration_','action_history_v','downloads')) or key in ('build_excluded_entries','ldraw','ldraw_header_links','output')
 
 def _settings(db,predicate,strip_colors=False):
     result=[]
@@ -47,7 +48,11 @@ def collect_family(db,family):
     if family not in FAMILIES:raise ValueError(tr('Famille de sauvegarde inconnue'))
     if family=='storage':
         from .storage_wall import walls,drawers,contents
-        return {'walls':[{'name':w['name'],'columns':w['columns'],'rows':w['rows'],'x':w['x'],'y':w['y'],'drawers':[dict({k:d[k] for k in ('col','row','width','height','name')},parts=[{'item':identity(p),'color':p['chosen_color']} for p in contents(db,d['id'])]) for d in drawers(db,w['id'])]} for w in walls(db)]}
+        return {'walls':[{'name':w['name'],'columns':w['columns'],'rows':w['rows'],'x':w['x'],'y':w['y'],'drawers':[dict({k:d[k] for k in ('col','row','width','height','name')},parts=[{'item':identity(p),'color':p['chosen_color'],'quantity':p['stored_quantity']} for p in contents(db,d['id'])]) for d in drawers(db,w['id'])]} for w in walls(db)]}
+    if family=='projects':
+        from .projects import list_projects,detail
+        return {'projects':[{'name':p['name'],'status':p['status'],'copies':p['copies'],'set':identity(db.get_item(p['set_id'])) if p['set_id'] is not None else None,
+            'parts':[{'item':identity(part),'color':part['chosen_color'],'required':part['required'],'reserved':part['reserved']} for part in detail(db,p['id'])]} for p in list_projects(db)]}
     if family in ('loose','sets','queue'):
         table={'loose':'stock','sets':'stock_sets','queue':'queue'}[family];entries=[]
         for row in db.rows('SELECT i.*,s.id AS entry_id,s.color,s.quantity AS stock_quantity FROM '+table+' s JOIN items i ON i.id=s.item_id WHERE s.quantity>0 ORDER BY i.source,i.ref,s.color'):
@@ -128,7 +133,7 @@ def _preserve_colors(value,old):
 def restore_families(db,paths):
     payloads=[read_family(p) for p in paths]
     if len({p['family'] for p in payloads})!=len(payloads):raise ValueError(tr('Choisis un seul fichier par famille.'))
-    order={'loose':0,'sets':1,'queue':2,'labels':3,'colors':4,'views':5,'storage':6,'preferences':7,'api':8}
+    order={'loose':0,'sets':1,'queue':2,'labels':3,'colors':4,'views':5,'storage':6,'projects':7,'preferences':8,'api':9}
     with db.connect() as c:
         c.execute('BEGIN IMMEDIATE')
         for payload in sorted(payloads,key=lambda p:order[p['family']]):
@@ -148,7 +153,25 @@ def restore_families(db,paths):
                         col,row,width,height=(int(drawer[k]) for k in ('col','row','width','height'))
                         if min(col,row,width,height)<1 or col+width-1>columns or row+height-1>rows or any(col<x+w and x<col+width and row<y+h and y<row+height for x,y,w,h in rects):raise ValueError(tr('Tiroir invalide'))
                         rects.append((col,row,width,height));did=c.execute('INSERT INTO storage_drawers(wall_id,col,row,width,height,name) VALUES(?,?,?,?,?,?)',(wid,col,row,width,height,drawer['name'])).lastrowid
-                        for part in drawer['parts']:c.execute('INSERT INTO storage_contents(drawer_id,item_id,color) VALUES(?,?,?)',(did,_item(c,part['item']),str(part['color'])))
+                        for part in drawer['parts']:
+                            from .storage_quantities import integer
+                            quantity=part.get('quantity')
+                            if quantity is not None:integer(quantity)
+                            c.execute('INSERT INTO storage_contents(drawer_id,item_id,color,quantity) VALUES(?,?,?,?)',(did,_item(c,part['item']),str(part['color']),quantity))
+            elif family=='projects':
+                from .projects import STATES,amount
+                c.execute('DELETE FROM construction_projects')
+                for project in data.get('projects',[]):
+                    name=project.get('name','');status=project.get('status','planned');copies=project.get('copies',1)
+                    if not isinstance(name,str) or not name.strip() or status not in STATES:raise ValueError(tr('Projet invalide.'))
+                    amount(copies,1)
+                    set_id=_item(c,project['set']) if project.get('set') else None
+                    if project.get('set') and project['set'].get('kind')!='set':raise ValueError(tr('Un set est attendu.'))
+                    pid=c.execute('INSERT INTO construction_projects(name,status,set_id,copies) VALUES(?,?,?,?)',(name,status,set_id,copies)).lastrowid
+                    for part in project.get('parts',[]):
+                        required=amount(part['required'],1);reserved=amount(part.get('reserved',0))
+                        if part['item'].get('kind') not in ('part','minifig') or reserved>required:raise ValueError(tr('Pièce de projet invalide.'))
+                        c.execute('INSERT INTO project_parts VALUES(?,?,?,?,?)',(pid,_item(c,part['item']),str(part.get('color','')),required,reserved))
             elif family in ('loose','sets','queue'):
                 table={'loose':'stock','sets':'stock_sets','queue':'queue'}[family]
                 layouts=_entry_layouts(c,table)
@@ -206,4 +229,6 @@ def restore_families(db,paths):
                 value=record['value']
                 if family=='labels':value=_preserve_colors(value,previous_labels.get(key,{}))
                 _write(c,key,value)
+        from .action_history import validate,clear
+        validate(c);clear(c)
     return [p['family'] for p in payloads]

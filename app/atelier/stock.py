@@ -1,4 +1,4 @@
-"""Separate loose stock and owned set components; atomic single-action undo."""
+"""Separate loose stock and owned set components; transactional undo/redo."""
 import json
 import sqlite3
 from contextlib import closing,nullcontext
@@ -136,30 +136,17 @@ def mutate(db,actions,description,connection=None):
         if not c.in_transaction:c.execute('BEGIN IMMEDIATE')
         before=_state(c)
         for action in actions:_apply(c,action)
+        from .action_history import validate,record_changes
+        validate(c)
         after=_state(c);changes=[]
         for table in TABLES:
             for key in before[table].keys()|after[table].keys():
                 old=before[table].get(key);new=after[table].get(key)
                 if old!=new:changes.append({'table':table,'key':key,'before':old,'after':new})
         if changes:c.execute('INSERT OR REPLACE INTO stock_undo VALUES(1,?,?)',(description,json.dumps(changes,ensure_ascii=False)))
+        record_changes(c,description,changes)
     return bool(changes)
 
 def undo(db):
-    with db.connect() as c:
-        c.execute('BEGIN IMMEDIATE');journal=c.execute('SELECT * FROM stock_undo WHERE id=1').fetchone()
-        if not journal:return False
-        changes=json.loads(journal['changes']);state=_state(c)
-        if any(state[x['table']].get(tuple(x['key']))!=x['after'] for x in changes):raise ValueError(tr('Le stock a changé depuis cette action ; annulation impossible.'))
-        changed_settings={tuple(x['key']) for x in changes if x['table']=='settings'}
-        for change in changes:
-            if change['table'] in ('stock','stock_sets','queue') and change['before'] is None and change['after']:
-                key=('label_layout_'+change['table']+'_'+str(change['after']['id']),)
-                if key in state['settings'] and key not in changed_settings:raise ValueError(tr('Le stock a changé depuis cette action ; annulation impossible.'))
-        for x in changes:
-            table=x['table'];keys=TABLES[table];c.execute('DELETE FROM '+table+' WHERE '+' AND '.join(k+'=?' for k in keys),x['key'])
-        for x in changes:
-            row=x['before']
-            if row:
-                keys=list(row);c.execute('INSERT INTO '+x['table']+'('+','.join(keys)+') VALUES('+','.join('?' for k in keys)+')',[row[k] for k in keys])
-        c.execute('DELETE FROM stock_undo')
-    return True
+    from .action_history import restore
+    return restore(db)

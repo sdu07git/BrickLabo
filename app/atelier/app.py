@@ -38,7 +38,7 @@ NAV=[(tr('Catalogue Rebrickable'),'RB','part','catalogue'),(tr('Catalogue BrickL
      ('BrickArchitect','BA','part','catalogue'),(tr('Catalogue Mini-Figs'),None,'minifig','catalogue'),(tr('Catalogue Briques Alternatives'),'ALT','part','catalogue'),
      (tr('Catalogue Set Rebrickable'),'RB','set','catalogue'),(tr('Catalogue Set BrickLink'),'BL','set','catalogue'),
      (tr('Catalogue Set Alternatif'),'ALT','set','catalogue'),(tr('Mon stock'),None,('part','minifig'),'stock'),(tr('Mon stock set'),None,'set','stock_sets'),
-     (tr('Impression Étiquettes'),None,None,'queue'),(tr('Historique'),None,None,'history'),(tr('Mon rangement'),None,None,'storage')]
+     (tr('Impression Étiquettes'),None,None,'queue'),(tr('Historique'),None,None,'history'),(tr('Mon rangement'),None,None,'storage'),(tr('Mes projets'),None,None,'projects')]
 
 TOP_MIN_HEIGHT=64
 
@@ -69,13 +69,20 @@ class MainWindow(QMainWindow):
         content=QWidget();body=QVBoxLayout(content);body.setContentsMargins(0,0,0,0);body.setSpacing(6);self.workspace_splitter.addWidget(content);self.workspace_splitter.setStretchFactor(0,0);self.workspace_splitter.setStretchFactor(1,1)
         handle=self.workspace_splitter.handle(1);handle.setCursor(Qt.CursorShape.SplitVCursor);handle.setAccessibleName(tr('Hauteur du volet supérieur'));handle.setToolTip(tr('Glisse cette bordure vers le haut ou le bas pour régler la hauteur du volet supérieur.'))
         self._top_height_restored=False;self.workspace_splitter.splitterMoved.connect(self.save_top_panel_height)
-        self.undo_button=QPushButton(tr('Annuler la dernière action'));self.undo_button.clicked.connect(self.undo_stock);body.addWidget(self.undo_button)
+        actions=FlowLayout();body.addLayout(actions)
+        self.undo_button=QPushButton(tr('Annuler la dernière action'));self.undo_button.clicked.connect(self.undo_stock);actions.addWidget(self.undo_button)
+        self.redo_button=QPushButton(tr('Rétablir la dernière action'));self.redo_button.clicked.connect(self.redo_stock);actions.addWidget(self.redo_button)
+        self.action_history_button=QPushButton(tr('Historique des actions…'));self.action_history_button.clicked.connect(self.show_action_history);actions.addWidget(self.action_history_button)
         self.undo_shortcut=QAction(self);self.undo_shortcut.setShortcut('Ctrl+Z');self.undo_shortcut.triggered.connect(self.undo_stock);self.addAction(self.undo_shortcut)
+        self.redo_shortcut=QAction(self);self.redo_shortcut.setShortcut('Ctrl+Y');self.redo_shortcut.triggered.connect(self.redo_stock);self.addAction(self.redo_shortcut)
         self.update_undo()
         split=QSplitter();body.addWidget(split,1)
         self.nav=QListWidget();self.nav.addItems([x[0] for x in NAV]);self.nav.setMinimumWidth(190);self.nav.setMaximumWidth(300);split.addWidget(self.nav)
         self.stack=QStackedWidget();split.addWidget(self.stack)
         for title,source,kind,scope in NAV:
+            if scope=='projects':
+                from .projects_panel import ProjectsPanel
+                self.projects=ProjectsPanel(db,self.engine);self.projects.selected.connect(self.item_selected);self.projects.changed.connect(self.refresh_counts);self.stack.addWidget(self.projects);continue
             if scope=='storage':
                 from .storage_panel import StoragePanel
                 self.storage=StoragePanel(db,self.engine);self.storage.selected.connect(self.item_selected);self.stack.addWidget(self.storage);continue
@@ -138,6 +145,7 @@ class MainWindow(QMainWindow):
     def item_selected(self,item):self.current_item=item;self.preview.set_item(item)
     def visual_changed(self,item):
         self.update_undo()
+        if hasattr(self,'projects') and self.projects.isVisible() and self.projects.thumbnails:self.projects.thumbnails.reset()
         for cat in self.catalogues:
             if cat.isVisible():cat.refresh_visual(item)
         if hasattr(self,'storage'):self.storage.invalidate(item)
@@ -157,10 +165,19 @@ class MainWindow(QMainWindow):
 
     def update_undo(self):
         description=self.db.undo_description();self.undo_button.setEnabled(bool(description));self.undo_shortcut.setEnabled(bool(description));self.undo_button.setToolTip(description)
+        redo=self.db.redo_description();self.redo_button.setEnabled(bool(redo));self.redo_shortcut.setEnabled(bool(redo));self.redo_button.setToolTip(redo)
+        for window in list(getattr(self,'_consultation_windows',[])):
+            if hasattr(window,'refresh_action_history'):window.refresh_action_history()
 
     def undo_stock(self):
+        self.restore_action()
+
+    def redo_stock(self):
+        self.restore_action(True)
+
+    def restore_action(self,redo=False):
         try:
-            changed=self.db.undo_last_action()
+            changed=self.db.redo_last_action() if redo else self.db.undo_last_action()
             if changed:
                 if self.preview.item:self.preview.set_item(dict(self.preview.item))
                 else:self.preview.refresh()
@@ -168,6 +185,14 @@ class MainWindow(QMainWindow):
                 if hasattr(self,'storage'):self.storage.refresh()
         except ValueError as error:QMessageBox.warning(self,tr('Annulation'),str(error))
         self.refresh_counts()
+
+    def show_action_history(self):
+        from .history_dialog import ActionHistoryDialog
+        window=ActionHistoryDialog(self.db,self);show_window(window,self);return window
+
+    def create_project(self,item):
+        self.nav.setCurrentRow(next(index for index,entry in enumerate(NAV) if entry[3]=='projects'))
+        return self.projects.create_from_item(item)
 
     def build_from_stock(self):
         from .build_stock import BuildStockDialog
@@ -194,6 +219,7 @@ class MainWindow(QMainWindow):
         for c in self.catalogues:
             if c.scope in ('stock','stock_sets','queue','history') or c.source=='ALT':c.reload()
         for panel in self.owned_panels:panel.refresh()
+        if hasattr(self,'projects'):self.projects.refresh()
         self.update_undo()
         revision=self.db.stock_revision()
         if revision!=self._stock_revision:
@@ -206,6 +232,7 @@ class MainWindow(QMainWindow):
         for c in self.catalogues:c.reload_categories();c.reload()
         if self.current_item:self.preview.set_item(self.db.get_item(self.current_item['id']))
         if hasattr(self,'storage'):self.storage.reload_walls();self.storage.invalidate()
+        if hasattr(self,'projects'):self.projects.refresh()
     def first_import(self):
         resources=resources_directory()
         paths=[str(p) for p in resources.iterdir() if p.suffix.lower() in ('.zip','.txt','.csv','.gz') and p.name!='brickarchitect_ldraw.zip'] if resources.exists() else []

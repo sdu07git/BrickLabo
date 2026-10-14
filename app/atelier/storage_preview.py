@@ -19,13 +19,14 @@ def proposal_snapshot(plan,targets):
     quantities={(row['id'],row['color']):row['quantity'] for row in base['stock']}
     totals={}
     for row in base['stock']:totals[row['id']]=totals.get(row['id'],0)+row['quantity']
-    def part(identity,color):
+    def part(identity,color,stored_quantity=None):
         item=dict(base['items'][identity]);item['chosen_color']=color
         item['chosen_quantity']=quantities.get((identity,color),0) if color else totals.get(identity,0)
+        item['stored_quantity']=stored_quantity
         return item
     contents={d:[] for d in drawers};replaced={link['drawer_id'] for link in plan['replaced']} if plan['reorganize'] else set()
     for link in base['links']:
-        if link['drawer_id'] not in replaced:contents[link['drawer_id']].append(part(link['item_id'],link['color']))
+        if link['drawer_id'] not in replaced:contents[link['drawer_id']].append(part(link['item_id'],link['color'],link.get('quantity')))
     for identity in replaced:drawers[identity]['name']=''
     assignments={}
     for index,(group,target) in enumerate(zip(plan['groups'],targets)):
@@ -33,7 +34,7 @@ def proposal_snapshot(plan,targets):
     for target,indices in assignments.items():
         groups=[plan['groups'][index] for index in indices]
         drawers[target]['name']=groups[0]['name'] if len(groups)==1 else ' / '.join(dict.fromkeys(g['category'] for g in groups))+' · '+tf('{0} référence(s)',len({identity for g in groups for identity,color in g['entries']}))
-        contents[target]=[part(identity,color) for group in groups for identity,color in group['entries']]
+        contents[target]=[part(identity,color,plan.get('quantities',{}).get((identity,color))) for group in groups for identity,color in group['entries']]
     conflicts={target for target,indices in assignments.items() if len(indices)>1 and not plan.get('shared_drawers')}
     return {'wall':base['wall'],'drawers':list(drawers.values()),'contents':contents,'assignments':assignments,'conflicts':conflicts,'items':base['items'],'part':part}
 
@@ -68,10 +69,12 @@ class StorageProposalPreview(QWidget):
         self.tabs.addTab(board,tr('Meuble proposé'))
         details=QWidget();detail_layout=QVBoxLayout(details);detail_layout.setContentsMargins(6,6,6,6)
         self.detail_title=QLabel(tr('Sélectionne un tiroir dans l’aperçu.'));self.detail_title.setWordWrap(True);detail_layout.addWidget(self.detail_title)
-        self.table=QTableWidget(0,7);self.table.setHorizontalHeaderLabels([tr('Source'),tr('Référence'),tr('Pièce'),tr('Catégorie'),tr('Couleur'),tr('Stock global en vrac'),tr('Aperçu')]);self.table.setEditTriggers(QAbstractItemView.EditTrigger.NoEditTriggers);self.table.setSelectionBehavior(QAbstractItemView.SelectionBehavior.SelectRows);self.table.horizontalHeader().setSectionResizeMode(QHeaderView.ResizeMode.Interactive)
+        self.table=QTableWidget(0,8);self.table.setHorizontalHeaderLabels([tr('Source'),tr('Référence'),tr('Pièce'),tr('Catégorie'),tr('Couleur'),tr('Stock global en vrac'),tr('Aperçu'),tr('Quantité dans ce tiroir')]);self.table.setEditTriggers(QAbstractItemView.EditTrigger.NoEditTriggers);self.table.setSelectionBehavior(QAbstractItemView.SelectionBehavior.SelectRows);self.table.horizontalHeader().setSectionResizeMode(QHeaderView.ResizeMode.Interactive)
         for column,width in enumerate((65,95,220,160,120,150,125)):self.table.setColumnWidth(column,width)
+        self.table.setColumnWidth(7,180)
+        self.table.horizontalHeader().moveSection(7,2)
         detail_layout.addWidget(self.table,1)
-        note=QLabel(tr('Les quantités correspondent au stock global en vrac. Les références du catalogue sans stock affichent 0.'));note.setWordWrap(True);detail_layout.addWidget(note)
+        note=QLabel(tr('Le stock global reste distinct de la quantité proposée dans ce tiroir. Une quantité non renseignée n’est pas un comptage.'));note.setWordWrap(True);detail_layout.addWidget(note)
         self.tabs.addTab(details,tr('Contenu du tiroir'))
         self.thumbs=PartThumbnails(self.table,db,engine,self.visible_rows,6,self) if engine else None
         self.timer=QTimer(self);self.timer.setSingleShot(True);self.timer.setInterval(80);self.timer.timeout.connect(self.load_icons)
@@ -108,7 +111,7 @@ class StorageProposalPreview(QWidget):
             if not code:return tr('Non précisée')
             name=bl.get(code,{}).get('name','') if part['source']=='BL' else palette.get(code,'')
             return name+' ('+code+')' if name else code
-        fill_table(self.table,[(p['source'],p['ref'],p['name'],p['category'],color(p),p['chosen_quantity'],tr('3D / photo à charger')) for p in self.rows])
+        fill_table(self.table,[(p['source'],p['ref'],p['name'],p['category'],color(p),p['chosen_quantity'],tr('3D / photo à charger'),p['stored_quantity'] if p.get('stored_quantity') is not None else tr('À renseigner')) for p in self.rows])
         if self.thumbs:self.thumbs.reset()
 
     def choose_drawer(self,identity,emit=True):
