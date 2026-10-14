@@ -17,7 +17,7 @@ class FilterDialog(QDialog):
             b=QPushButton(label);b.clicked.connect(func);row.addWidget(b)
         layout.addLayout(row);self.refresh_presets()
         form=QFormLayout();layout.addLayout(form);self.fields={}
-        self.search=QLineEdit();form.addRow(tr('Recherche'),self.search)
+        self.search=QLineEdit();self.search.setPlaceholderText(tr('Exemple : brick -modulex -duplo'));self.search.setToolTip(tr('Un mot précédé de - exclut les références contenant ce mot dans leur nom, référence ou catégorie.'));form.addRow(tr('Recherche'),self.search)
         from .category_tags import CategoryTags
         self.categories=CategoryTags([catalogue.category.itemData(i) for i in range(catalogue.category.count()) if catalogue.category.itemData(i)],show_tags=False)
         form.addRow(tr('Catégories'),self.categories)

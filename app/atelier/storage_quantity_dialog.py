@@ -61,3 +61,35 @@ def quantity_dialog(panel, row, transfer=False):
         if hasattr(owner,'refresh_counts'): owner.refresh_counts()
         dialog.accept()
     buttons.accepted.connect(save); show_window(dialog,panel); return dialog
+
+
+def drop_quantity_dialog(panel, source_drawer, target_drawer, rows):
+    """A drop chooses counts without editing the stock or committing on opening."""
+    from PySide6.QtWidgets import QVBoxLayout,QTableWidget,QHeaderView,QTableWidgetItem
+    from .drawer_inventory import color_names,color_label
+    rows=[dict(row) for row in rows]
+    db=panel.db
+    dialog=QDialog(panel);dialog._storage_drawer_id=source_drawer;dialog.setWindowTitle(tr('Quantités à déplacer'));dialog.resize(700,380)
+    layout=QVBoxLayout(dialog)
+    note=QLabel(tr('Choisis la quantité à déposer dans le tiroir de destination. Le reste demeure dans le tiroir d’origine ; le stock total est conservé. Les références sans comptage sont déplacées entièrement.'))
+    note.setWordWrap(True);layout.addWidget(note)
+    table=QTableWidget(len(rows),4);table.setHorizontalHeaderLabels([tr('Référence'),tr('Couleur'),tr('Dans le tiroir'),tr('À déplacer')]);table.horizontalHeader().setSectionResizeMode(0,QHeaderView.ResizeMode.Stretch)
+    table.setColumnWidth(1,155);table.setColumnWidth(2,110);table.setColumnWidth(3,120);layout.addWidget(table,1)
+    names=color_names(db);counts=[]
+    from PySide6.QtCore import Qt
+    for index,row in enumerate(rows):
+        color=str(row['chosen_color'] or '');quantity=row.get('stored_quantity')
+        for column,value in enumerate([row['source']+' '+row['ref'],color_label(row,names),quantity if quantity is not None else tr('À renseigner')]):
+            item=QTableWidgetItem(str(value));item.setFlags(item.flags()&~Qt.ItemFlag.ItemIsEditable);table.setItem(index,column,item)
+        count=QSpinBox();count.setRange(1,quantity) if quantity else count.setRange(0,0);count.setValue(quantity or 0);count.setEnabled(quantity is not None);table.setCellWidget(index,3,count);counts.append(count)
+    buttons=QDialogButtonBox(QDialogButtonBox.StandardButton.Save|QDialogButtonBox.StandardButton.Cancel);layout.addWidget(buttons);buttons.rejected.connect(dialog.reject)
+    def save():
+        entries=[(row['id'],row['chosen_color'],count.value() if row.get('stored_quantity') is not None else None,row.get('stored_quantity')) for row,count in zip(rows,counts)]
+        try:quantities.transfer_entries(db,source_drawer,target_drawer,entries)
+        except (ValueError,sqlite3.Error,OSError) as error:QMessageBox.warning(dialog,tr('Rangement'),str(error));return
+        target=db.rows('SELECT wall_id FROM storage_drawers WHERE id=?',(target_drawer,))
+        if target:panel.activate_wall(target[0]['wall_id']);panel.drawer_id=target_drawer
+        panel.refresh();owner=application_owner(panel)
+        if hasattr(owner,'refresh_counts'):owner.refresh_counts()
+        dialog.accept()
+    buttons.accepted.connect(save);show_window(dialog,panel);return dialog

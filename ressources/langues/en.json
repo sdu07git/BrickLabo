@@ -1466,5 +1466,17 @@
   "Applique la disposition à toutes les mini-figs de tous les catalogues, y compris leurs étiquettes personnalisées et les futures références. Les couleurs, les angles et les arêtes sont conservés.": "Applies the layout to all minifigures in every catalogue, including custom labels and future references. Colours, angles and edges are preserved.",
   "Autres recherches": "Other searches",
   "Chaque set est comparé séparément aux inventaires locaux et au stock disponible. La recherche ne modifie pas le stock.": "Each set is compared separately with local inventories and available stock. Searching does not change stock.",
-  "Liste de collection détectée : vérifie les lignes dans l’assistant d’import.": "Collection list detected: review its rows in the import assistant."
+  "Liste de collection détectée : vérifie les lignes dans l’assistant d’import.": "Collection list detected: review its rows in the import assistant.",
+  "Utiliser les pièces de Mon stock set": "Use parts from My set stock",
+  "Décoche « Utiliser les pièces de Mon stock set » pour chercher uniquement avec le vrac. Sinon, décoche les sets à garder montés ou les références à exclure. Ce choix ne modifie ni le stock ni les réservations des projets.": "Uncheck “Use parts from My set stock” to search with loose stock only. Otherwise, uncheck sets to keep assembled or references to exclude. This does not change stock or project reservations.",
+  "Inclut les composants suivis des sets possédés. Décoché : seuls les pièces et mini-figurines en vrac sont utilisables, hors réservations de projets.": "Includes tracked components of owned sets. When unchecked, only loose parts and minifigures are usable, excluding project reservations.",
+  "Stock en vrac uniquement": "Loose stock only",
+  "BrickLabo utilise le stock autorisé dans « Choisir le stock utilisable », en couleurs exactes. Il recherche les alternatives des sets Rebrickable reconstituables à 100 %. Ce n’est pas une recherche exhaustive de MOC. Les inventaires des MOC ne sont pas vérifiés : contrôler les pièces, pièces supplémentaires et notices sur Rebrickable. Chaque proposition utilise le même stock indépendamment.": "BrickLabo uses the stock allowed in “Choose usable stock”, with exact colors. It searches alternatives of Rebrickable sets that can be rebuilt in full. This is not an exhaustive MOC search. MOC inventories are not verified: check parts, spare parts and instructions on Rebrickable. Each suggestion uses the same stock independently.",
+  "Renseigne la quantité du tiroir avant un transfert partiel.": "Enter the drawer quantity before a partial transfer.",
+  "Quantités à déplacer": "Quantities to move",
+  "Choisis la quantité à déposer dans le tiroir de destination. Le reste demeure dans le tiroir d’origine ; le stock total est conservé. Les références sans comptage sont déplacées entièrement.": "Choose how many pieces to place in the destination drawer. The remainder stays in the original drawer and total stock is unchanged. References without a count are moved in full.",
+  "Dans le tiroir": "In the drawer",
+  "À déplacer": "To move",
+  "Exemple : brick -modulex -duplo": "Example: brick -modulex -duplo",
+  "Un mot précédé de - exclut les références contenant ce mot dans leur nom, référence ou catégorie.": "A word preceded by - excludes items containing that word in their name, reference or category."
 }

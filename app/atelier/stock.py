@@ -5,7 +5,7 @@ from contextlib import closing,nullcontext
 from .i18n import tr
 from .sqlite_file import connect
 
-TABLES={'stock':('id',),'stock_sets':('id',),'stock_set_components':('set_entry_id','item_id','color'),'queue':('id',),'settings':('key',),'stock_import_jobs':('id',),'stock_import_applied':('job_id','ordinal')}
+TABLES={'stock':('id',),'stock_sets':('id',),'stock_set_components':('set_entry_id','item_id','color'),'queue':('id',),'settings':('key',),'stock_import_jobs':('id',),'stock_import_applied':('job_id','ordinal'),'storage_contents':('drawer_id','item_id','color')}
 
 def prepare(db,c):
     legacy=list(c.execute("SELECT s.* FROM stock s JOIN items i ON i.id=s.item_id WHERE i.kind='set'"))
@@ -136,6 +136,8 @@ def mutate(db,actions,description,connection=None):
         if not c.in_transaction:c.execute('BEGIN IMMEDIATE')
         before=_state(c)
         for action in actions:_apply(c,action)
+        from .storage_quantities import follow_stock_additions
+        follow_stock_additions(c,before['stock'])
         from .action_history import validate,record_changes
         validate(c)
         after=_state(c);changes=[]

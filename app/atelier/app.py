@@ -118,6 +118,7 @@ class MainWindow(QMainWindow):
         self.import_window=None
         self.startup_timer=QTimer(self);self.startup_timer.setSingleShot(True);self.startup_timer.timeout.connect(self.first_import);self.startup_timer.start(100)
         self.cleanup_timer=QTimer(self);self.cleanup_timer.setSingleShot(True);self.cleanup_timer.timeout.connect(self.cleanup_old_installations)
+        install_button_help() # Register the completed controls before the first hover.
 
     def showEvent(self,event):
         super().showEvent(event)

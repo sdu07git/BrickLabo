@@ -108,7 +108,9 @@ class DrawerItem(QGraphicsObject):
                 painter.drawPixmap(QPointF(box.center().x()-image.width()/2,box.center().y()-image.height()/2),image)
             else:
                 painter.setPen(QColor('#bdc9d7'));painter.drawText(box,Qt.AlignmentFlag.AlignCenter,painter.fontMetrics().elidedText(part['ref'],Qt.TextElideMode.ElideRight,int(box.width())))
-        painter.setFont(QFont('Segoe UI',7));painter.setPen(QColor('#a9bdd1'));painter.drawText(QRectF(self.w-34,5,30,12),Qt.AlignmentFlag.AlignRight,str(self.drawer['col'])+'/'+str(self.drawer['row']))
+        counts=[part.get('stored_quantity') for part in self.parts]
+        badge='×'+str(sum(counts)) if counts and all(value is not None for value in counts) else str(self.drawer['col'])+'/'+str(self.drawer['row'])
+        painter.setFont(QFont('Segoe UI',7));painter.setPen(QColor('#a9bdd1'));painter.drawText(QRectF(self.w-34,5,30,12),Qt.AlignmentFlag.AlignRight,badge)
         painter.setPen(QPen(QColor('#81a0bf'),3));painter.drawLine(QPointF(self.w*.38,self.h-6),QPointF(self.w*.62,self.h-6))
         painter.restore()
     def mouseDoubleClickEvent(self,event):
@@ -422,6 +424,14 @@ class StoragePanel(QWidget):
     def drop_parts(self,drawer_id,payload):
         target=self.items.get(drawer_id)
         if target is None:return False
+        origin=payload.get('origin')
+        if origin is not None and origin!=drawer_id:
+            entries={(identity,str(color or '')) for identity,color in payload['entries']}
+            source=[row for row in store.contents(self.db,origin) if (row['id'],str(row['chosen_color'] or '')) in entries]
+            if len(source)!=len(entries):return False
+            if any(row.get('stored_quantity') for row in source):
+                from .storage_quantity_dialog import drop_quantity_dialog
+                drop_quantity_dialog(self,origin,drawer_id,source);return True
         try:
             if payload.get('allocate_remaining'):
                 from .storage_quantities import place_remaining

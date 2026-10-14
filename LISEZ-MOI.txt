@@ -1,4 +1,4 @@
-BrickLabo v0.1.58
+BrickLabo v0.1.59
 
 Survoler un bouton pendant deux secondes affiche une breve aide, dans les differentes fenetres.
 Les cles API servent uniquement aux acces API ; catalogues locaux, etiquettes et rangement restent disponibles sans cles.
@@ -142,3 +142,16 @@ Projects, drawer inventories and fixes — v0.1.58
 - Rebrickable CSV import accepts Set Number, Quantity, Inventory Ver, preserving copy counts and requested inventory versions. Missing versions remain pending for correction; the latest version is never silently substituted.
 - Labels → Apply to → Entire Minifigures catalogue applies a layout to every source, existing individual layouts and future references, preserving label colours, angles and 3D edges.
 - Stability defers cyclic Python/Qt collection to the idle GUI thread after native tasks finish, and explicitly destroys windows there during shutdown. This addresses the v0.1.57 heap-corruption reports; native Windows confirmation is still required.
+
+
+Vrac transferts et filtres — v0.1.59
+
+Vrac uniquement : Dans Sets réalisables → Choisir le stock utilisable, décocher Utiliser les pièces de Mon stock set exclut tous les composants des sets possédés, y compris ceux ajoutés plus tard. La recherche utilise seulement les pièces et mini-figurines en vrac, après les réservations des projets. Les détails, exports et suggestions MOC reprennent ce choix. Les exclusions individuelles des sets sont conservées pour une réactivation ultérieure.
+
+Transfert partiel par glisser-déposer : Glisser une référence depuis le contenu d’un tiroir vers un autre ouvre Quantités à déplacer pour les comptages connus. Choisir par exemple 20 pièces sur 40 : 20 restent à l’origine et 20 sont déposées à destination. Une sélection de plusieurs références peut être réglée ligne par ligne ; la validation est atomique et annulable. Annuler le dialogue ne change aucun tiroir. Les références sans comptage sont déplacées entièrement, sans inventer de quantité.
+
+Ajouts au stock et meubles : Après un ajout au vrac, une référence et une couleur entièrement comptées dans un seul tiroir suivent le nouveau total. Par exemple 40 pièces puis un ajout de 10 donnent 50 dans ce tiroir. Si plusieurs tiroirs partagent la référence, ou si le comptage est partiel ou inconnu, les comptages sont conservés et les nouvelles pièces restent à ranger. Les composants de sets possédés restent distincts du vrac. L’ajout et l’actualisation du tiroir s’annulent et se rétablissent ensemble. Le rangement et les inventaires ouverts s’actualisent ; un rangement masqué est relu à son ouverture.
+
+Quantité visible sur le meuble : La façade affiche le nombre de pièces lorsque tous les comptages du tiroir sont connus. Le survol conserve le détail par référence et couleur ; zéro et quantité inconnue restent distincts.
+
+Exclure un mot de la recherche : Dans la recherche normale et les filtres avancés, -modulex retire les références contenant modulex dans le nom, la référence ou la catégorie. brick -modulex -duplo combine un mot recherché et plusieurs exclusions. Les thèmes des sets suivent également ce filtre. Les recherches indexées et compatibles sont cohérentes ; les tirets internes des références, comme 75192-1, restent littéraux.

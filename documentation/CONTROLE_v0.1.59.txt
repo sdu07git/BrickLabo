@@ -1,0 +1,58 @@
+BRICKLABO v0.1.59 — CONTRÔLE DE LIVRAISON
+14 octobre 2026
+
+Base : v0.1.58, commit 3bac2bb5e7e0bff8ec3275b6acc48e7eb8cd6433.
+Environnement : Python 3.12, PySide6 / shiboken6 6.11.2, NumPy 2.5.3,
+Pillow 12.3.0, Qt/Linux avec affichage offscreen.
+
+Suite complète : 762 tests réussis en 361,761 secondes, dont 22 nouveaux.
+Compilation Python et différences Git contrôlées.
+
+Scénarios vérifiés
+- Stock utilisable : une case globale exclut tous les composants des sets
+  possédés. Le calcul lit alors le vrac, après les réservations des projets.
+  Les futurs ajouts de sets restent exclus. Les exclusions individuelles sont
+  conservées ; annuler le dialogue ne change pas les préférences.
+- Les détails et exports reprennent le mode du résultat calculé. Les pistes
+  de MOC appliquent le même choix. Les quantités affichées dans le sélecteur
+  passent du stock combiné au seul vrac lorsque la case est décochée.
+- Glisser-déposer : déplacer 20 pièces 3005 rouges sur 40 laisse 20 à
+  l’origine et ajoute 20 à destination, sans changer le stock. Une sélection
+  multiple se règle ligne par ligne ; un conflit refuse tout le transfert.
+  Annuler le dialogue ne change ni contenu ni historique. Annuler/Rétablir
+  restaure les deux tiroirs ensemble. Les références sans comptage gardent
+  leur état inconnu quand elles sont déplacées vers un tiroir vide.
+- Un ajout de 10 au vrac de 40 pièces entièrement comptées dans un seul
+  tiroir donne 50 dans le stock et le tiroir. L’action s’annule et se rétablit
+  ensemble. Avec deux tiroirs de 20, les comptages restent 20/20 et les
+  10 nouvelles pièces restent à ranger. Les comptages partiels ou inconnus
+  et les composants de sets possédés ne sont pas convertis en comptage total.
+- Le meuble affiche son total de pièces lorsque tous ses comptages sont
+  connus ; survol et inventaire conservent le détail par référence/couleur.
+  Les inventaires ouverts sont actualisés après modification du stock.
+- Recherche : -modulex et brick -modulex -duplo excluent les mots dans les
+  noms, références, catégories et thèmes. Résultats indexés et compatibles
+  identiques, thèmes NULL préservés, caractères LIKE littéraux et tirets
+  internes des références conservés. Application réelle du filtre vérifiée.
+- Bulles d’aide : le nouveau choix a une explication française et anglaise.
+  Les boutons achevés de la fenêtre principale sont enregistrés dès sa
+  construction, sans attendre le prochain contrôle périodique.
+
+Interface
+Huit captures Qt/Linux examinées : stock utilisable à 950 × 650 et
+800 × 540 ; transfert à 700 × 380 et 570 × 340 ; meuble à 1360 × 790
+et 800 × 540 ; filtres avancés à 630 × 610 et 800 × 540.
+Les dialogues conservent leurs commandes de validation. Les tableaux et
+panneaux existants peuvent défiler lorsqu’ils dépassent la place disponible.
+
+Fabrication
+Lanceur recompilé avec MinGW-w64 : Windows 64 bits, version 0.1.59,
+icône bitmap en sept tailles correspondant au fichier ICO fourni.
+Runtime Python 3.12.10 et dépendances Windows repris du paquet v0.1.58,
+avec versions conformes à app/requirements.txt. Les deux ZIP incluent LDraw
+et les ressources publiques. CRC, structure, exécutables, dépendances et
+concordance des sources/du paquet complet vérifiés par les outils de livraison.
+Les empreintes SHA-256 des archives finales figurent dans les notes de release.
+
+Limite : l’exécution native Windows, le glisser-déposer Windows et la
+confirmation du plantage 0xc0000374 sur le PC concerné restent à vérifier.

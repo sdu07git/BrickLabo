@@ -983,6 +983,10 @@
     "Autres recherches": {
       "fr": "Ouvre les recherches de MOC avec les pièces disponibles ou par mot clé et créateur.",
       "en": "Opens MOC searches using available parts or by keyword and designer."
+    },
+    "Utiliser les pièces de Mon stock set": {
+      "fr": "Inclut les composants des sets possédés dans les recherches. Décoché : seul le stock en vrac disponible est utilisé.",
+      "en": "Includes owned set components in build searches. Unchecked: only available loose stock is used."
     }
   },
   "contexts": {
