@@ -17,13 +17,22 @@ def prepare(c):
       PRIMARY KEY(job_id,ordinal),UNIQUE(job_id,source,ref));
     CREATE INDEX IF NOT EXISTS idx_inventory_pending ON inventory_job_items(job_id,status,ordinal);
     ''')
+    if 'parts_without_minifigs' not in {row['name'] for row in c.execute('PRAGMA table_info(catalogue_inventory)')}:
+        c.execute('ALTER TABLE catalogue_inventory ADD COLUMN parts_without_minifigs TEXT')
 
 
-def cached_components(db,source,ref):
-    found=db.rows('SELECT parts FROM catalogue_inventory WHERE source=? AND ref=?',(source,ref))
+def cached_components(db,source,ref,exclude_minifigs=False):
+    found=db.rows('SELECT parts,parts_without_minifigs FROM catalogue_inventory WHERE source=? AND ref=?',(source,ref))
     if not found:return None
+    payload=found[0]['parts']
+    if exclude_minifigs:
+        payload=found[0]['parts_without_minifigs']
+        if payload is None:
+            if source=='RB' and db.rows('SELECT 1 FROM inventories WHERE set_num=? LIMIT 1',(ref,)):return None
+            raise ValueError(tr('Actualise cet inventaire par lots pour exclure les minifigurines : ')+ref)
     rows=[]
-    for part in json.loads(found[0]['parts']):
+    for part in json.loads(payload):
+        if exclude_minifigs and part.get('kind')=='minifig':continue
         items=db.rows('SELECT * FROM items WHERE source=? AND kind=? AND ref=?',(part['source'],part.get('kind','part'),part['ref']))
         if not items:raise ValueError(tr('Référence absente de l’inventaire : ')+part['ref'])
         rows.append(dict(items[0],chosen_color=part['color'],chosen_quantity=part['quantity'],is_spare=part.get('is_spare',False),inventory_image=part.get('image','')))
@@ -59,8 +68,8 @@ def summary(db,job):
 def retry_errors(db,job):db.run("UPDATE inventory_job_items SET status='pending',error='' WHERE job_id=? AND status='error'",(job,))
 
 
-def _rb_parts(api,ref,cancel):
-    path='sets/'+urllib.parse.quote(ref,safe='')+'/parts/?page_size=1000&inc_minifig_parts=1&inc_part_details=1'
+def _rb_parts(api,ref,cancel,include_minifigs=True):
+    path='sets/'+urllib.parse.quote(ref,safe='')+'/parts/?page_size=1000&inc_minifig_parts='+str(int(include_minifigs))+'&inc_part_details=1'
     parts=[];seen=set()
     while path:
         if cancel.is_set():return None
@@ -75,31 +84,32 @@ def _rb_parts(api,ref,cancel):
               'bricklink_refs':obj.get('external_ids',{}).get('BrickLink',[])})
         path=data.get('next')
         if path and not path.startswith('https://rebrickable.com/api/v3/lego/'):raise ValueError(tr('Pagination Rebrickable invalide'))
-    if not parts:raise ValueError(tr('Inventaire vide : aucune donnée enregistrée.'))
+    if not parts and include_minifigs:raise ValueError(tr('Inventaire vide : aucune donnée enregistrée.'))
     return parts
 
 
-def _bl_parts(api,ref,cancel):
-    groups=api.bl('items/SET/'+urllib.parse.quote(ref,safe='')+'/subsets?break_minifigs=true&break_subsets=true')
+def _bl_parts(api,ref,cancel,include_minifigs=True):
+    groups=api.bl('items/SET/'+urllib.parse.quote(ref,safe='')+'/subsets?break_minifigs='+str(include_minifigs).lower()+'&break_subsets=true')
     if cancel.is_set():return None
     parts=[]
     for group in groups:
         for entry in group.get('entries',[]):
             if entry.get('is_alternate') or entry.get('is_counterpart'):continue
             obj=entry['item']
+            if not include_minifigs and obj['type']=='MINIFIG':continue
             if obj['type'] not in ('PART','MINIFIG'):continue
             quantity=int(entry.get('quantity',0))
             if quantity<=0:raise ValueError(tr('Quantité d’inventaire invalide.'))
             parts.append({'source':'BL','kind':'minifig' if obj['type']=='MINIFIG' else 'part','ref':obj['no'],'name':obj.get('name') or obj['no'],
               'category_id':str(obj.get('category_id','')),'color':str(entry.get('color_id','')),'quantity':quantity,'is_spare':bool(entry.get('is_extra',False)),'image':''})
-    if not parts:raise ValueError(tr('Inventaire vide : aucune donnée enregistrée.'))
+    if not parts and include_minifigs:raise ValueError(tr('Inventaire vide : aucune donnée enregistrée.'))
     return parts
 
 
-def store_inventory(db,source,ref,parts):
+def store_inventory(db,source,ref,parts,parts_without_minifigs=None):
     if not parts:raise ValueError(tr('Inventaire vide.'))
     with db.connect() as c:
-        for part in parts:
+        for part in parts+(parts_without_minifigs or []):
             c.execute('''INSERT INTO items(source,kind,ref,name,category_id,image,search) VALUES(?,?,?,?,?,?,?)
               ON CONFLICT(source,kind,ref) DO UPDATE SET image=excluded.image WHERE items.image='' AND excluded.image<>'' ''',
               (part['source'],part.get('kind','part'),part['ref'],part['name'],part.get('category_id',''),part.get('image',''),normalize(part['ref']+' '+part['name'])))
@@ -108,8 +118,10 @@ def store_inventory(db,source,ref,parts):
             if part.get('bricklink_refs'):
                 key='rb_bricklink_refs_part_'+part['ref']
                 c.execute('INSERT INTO settings(key,value) VALUES(?,?) ON CONFLICT(key) DO UPDATE SET value=excluded.value WHERE settings.value<>excluded.value',(key,json.dumps(part['bricklink_refs'])))
-        c.execute('''INSERT INTO catalogue_inventory(source,ref,parts) VALUES(?,?,?) ON CONFLICT(source,ref)
-          DO UPDATE SET parts=excluded.parts,loaded_at=CURRENT_TIMESTAMP WHERE catalogue_inventory.parts<>excluded.parts''',(source,ref,json.dumps(parts,ensure_ascii=False)))
+        c.execute('''INSERT INTO catalogue_inventory(source,ref,parts,parts_without_minifigs) VALUES(?,?,?,?) ON CONFLICT(source,ref)
+          DO UPDATE SET parts=excluded.parts,parts_without_minifigs=excluded.parts_without_minifigs,loaded_at=CURRENT_TIMESTAMP
+          WHERE catalogue_inventory.parts<>excluded.parts OR catalogue_inventory.parts_without_minifigs IS NOT excluded.parts_without_minifigs''',
+          (source,ref,json.dumps(parts,ensure_ascii=False),None if parts_without_minifigs is None else json.dumps(parts_without_minifigs,ensure_ascii=False)))
 
 
 def run_batch(db,job,cancel=None,progress=lambda _:None,api_factory=API):
@@ -123,12 +135,17 @@ def run_batch(db,job,cancel=None,progress=lambda _:None,api_factory=API):
         if cancel.is_set():break
         source,ref=row['source'],row['ref'];progress(source+' · '+ref)
         try:
-            with db.read() as c:ready=available(c,source,ref)
-            if ready and not config['force']:status='skipped'
+            with db.read() as c:
+                ready=available(c,source,ref)
+                cache=c.execute('SELECT parts_without_minifigs FROM catalogue_inventory WHERE source=? AND ref=?',(source,ref)).fetchone()
+                needs_model=cache is not None and cache['parts_without_minifigs'] is None
+            if ready and not config['force'] and not needs_model:status='skipped'
             else:
                 parts=_rb_parts(api,ref,cancel) if source=='RB' else _bl_parts(api,ref,cancel)
                 if cancel.is_set() or parts is None:break
-                store_inventory(db,source,ref,parts);status='loaded'
+                model=_rb_parts(api,ref,cancel,False) if source=='RB' else _bl_parts(api,ref,cancel,False)
+                if cancel.is_set() or model is None:break
+                store_inventory(db,source,ref,parts,model);status='loaded'
             db.run('UPDATE inventory_job_items SET status=?,error=? WHERE job_id=? AND ordinal=?',(status,'',job,row['ordinal']))
         except Exception as error:
             if cancel.is_set():break

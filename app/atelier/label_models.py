@@ -7,6 +7,7 @@ from .i18n import tr
 from .labels import default_template,independent_category,individual_template_key,template_for_item
 
 CATEGORY_MODELS='label_layout_categories'
+KIND_MODELS='label_layout_kinds'
 LAYOUT_FIELDS=('layers','layout_schema','preset_id','model_name','border','margin','background','transparent_background','outline')
 
 
@@ -70,6 +71,27 @@ def set_category_model(db,category,template=None):
             model=validate_template(template)
             models[category]={key:copy.deepcopy(model[key]) for key in ('width','height',*LAYOUT_FIELDS) if key in model}
         _write(c,CATEGORY_MODELS,models)
+
+
+def set_kind_model(db,kind,template):
+    """Apply a layout to every figure, including saved individual layouts.
+
+One default also covers future catalogue imports. Update only existing label
+overrides; preserve their colours, 3D edges and physical format.
+"""
+    if kind!='minifig':raise ValueError(tr('Type de référence non pris en charge : ')+kind)
+    model=validate_template(template)
+    with db.connect() as c:
+        c.execute('BEGIN IMMEDIATE');models=_setting(c,KIND_MODELS,{})
+        models[kind]={key:copy.deepcopy(model[key]) for key in ('width','height',*LAYOUT_FIELDS) if key in model}
+        layouts=list(c.execute("SELECT s.key,s.value FROM settings s JOIN items i ON s.key='label_layout_item_'||i.id WHERE i.kind=?",(kind,)))
+        for scope in ('queue','stock','stock_sets','history'):
+            layouts.extend(c.execute("SELECT s.key,s.value FROM settings s JOIN "+scope+" e ON s.key='label_layout_"+scope+"_'||e.id JOIN items i ON i.id=e.item_id WHERE i.kind=?",(kind,)))
+        for row in layouts:
+            previous=json.loads(row['value'])
+            if previous and not previous.get('use_general'):_write(c,row['key'],merge_layout(previous,model))
+        _write(c,KIND_MODELS,models)
+        return c.execute('SELECT COUNT(*) FROM items WHERE kind=?',(kind,)).fetchone()[0]
 
 
 def apply_selection(db,items,template):

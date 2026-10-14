@@ -9,8 +9,8 @@ from .result_tables import row_index,fill_table
 from .color_links import resolve, candidates, bl_palette, rb_palette
 
 class InventoryReader:
-    def __init__(self,c,ignore_colors=False,excluded_entries=None):
-        self.c=c;self.ignore_colors=ignore_colors;self.warnings=set();self.excluded_entries=set(excluded_entries or [])
+    def __init__(self,c,ignore_colors=False,excluded_entries=None,exclude_minifigs=False):
+        self.c=c;self.ignore_colors=ignore_colors;self.exclude_minifigs=exclude_minifigs;self.warnings=set();self.excluded_entries=set(excluded_entries or [])
         self.canonical=lru_cache(maxsize=20000)(self.canonical);self.children=lru_cache(maxsize=2500)(self.children)
         self.partmap=self.setting('export_rb_bl_parts',{});self.colormap=self.setting('export_rb_bl_colors',{})
         self.blcolors=bl_palette(self.setting)
@@ -48,10 +48,15 @@ class InventoryReader:
                 if not p:return (),False
                 rows.append((p['source'],p['kind'],p['ref'],str(value['color']),int(value['quantity']),False))
             return tuple(rows),found
-        cache=self.c.execute('SELECT parts FROM catalogue_inventory WHERE source=? AND ref=?',(source,ref)).fetchone()
+        cache=self.c.execute('SELECT parts,parts_without_minifigs FROM catalogue_inventory WHERE source=? AND ref=?',(source,ref)).fetchone()
         if cache and not (source=='BL' and item and kind=='set' and self.setting('bl_manual_inventory_'+str(item['id']))):
-            values=json.loads(cache['parts'])
-            return tuple((p['source'],p.get('kind','part'),p['ref'],str(p['color']),int(p['quantity']),bool(p.get('is_spare'))) for p in values),bool(values)
+            payload=cache['parts_without_minifigs'] if self.exclude_minifigs and kind=='set' else cache['parts']
+            if payload is not None:
+                values=json.loads(payload)
+                return tuple((p['source'],p.get('kind','part'),p['ref'],str(p['color']),int(p['quantity']),bool(p.get('is_spare'))) for p in values),bool(values) or self.exclude_minifigs
+            if source!='RB' or not self.c.execute('SELECT 1 FROM inventories WHERE set_num=? LIMIT 1',(ref,)).fetchone():
+                self.warnings.add(tr('Des inventaires API sont à actualiser par lots pour exclure les minifigurines.'))
+                return (),False
         if source=='BL':
             if item and kind=='set' and self.setting('bl_manual_inventory_'+str(item['id'])):
                 records=self.c.execute('SELECT i.source,i.kind,i.ref,p.color,p.quantity,p.extra FROM bl_manual_inventory p LEFT JOIN items i ON i.id=p.item_id WHERE p.set_id=? AND p.alternate=0 AND p.counterpart=0',(item['id'],)).fetchall()
@@ -83,13 +88,13 @@ class InventoryReader:
         if identity in trail:return Counter(),False
         rows,complete=self.children(*identity);counts=Counter()
         for src,typ,num,color,qty,extra in rows:
-            if qty<=0 or (extra and not spares):continue
+            if qty<=0 or (extra and not spares) or self.exclude_minifigs and typ=='minifig':continue
             if typ=='part':part,unknown=self.part(src,num,color,qty);counts.update(part);complete=complete and not unknown
             elif typ in ('minifig','set'):
                 children,ok=self.inventory(src,typ,num,trail+(identity,),spares);complete=complete and ok
                 counts.update({key:amount*qty for key,amount in children.items()})
             else:complete=False
-        return counts,complete and bool(counts)
+        return counts,complete and (bool(counts) or self.exclude_minifigs)
     def stock(self):
         available=Counter();ignored=0;reserved=Counter()
         for row in self.c.execute('SELECT item_id,color,SUM(reserved) AS reserved FROM project_parts GROUP BY item_id,color'):
@@ -111,6 +116,7 @@ class InventoryReader:
                 counts,unknown=self.part(row['source'],row['ref'],row['color'],quantity)
                 if unknown:ignored+=quantity;continue
             elif row['kind']=='minifig':
+                if self.exclude_minifigs:continue
                 counts,ok=self.inventory(row['source'],'minifig',row['ref'],spares=True)
                 if not ok:self.warnings.add(tr('Mini-figs avec inventaire absent ou incomplet : seules leurs pièces identifiées sont comptées.'))
                 counts=Counter({k:v*quantity for k,v in counts.items() if k[2]})
@@ -125,11 +131,11 @@ def compare(required,available,copies=1):
     missing=sum(max(0,n*copies-available.get(k,0)) for k,n in required.items())
     return total,missing,(100*(total-missing)/total if total else 0)
 
-def find_builds(db,source='RB',text='',ignore_colors=False,copies=1,minimum=100,cancel=None,progress=lambda _:None,excluded_entries=None):
+def find_builds(db,source='RB',text='',ignore_colors=False,copies=1,minimum=100,cancel=None,progress=lambda _:None,excluded_entries=None,exclude_minifigs=False):
     cancel=cancel or threading.Event();results=[];excluded=0
     with db.connect() as c:
         c.execute('BEGIN')
-        reader=InventoryReader(c,ignore_colors,excluded_entries);available=reader.stock()
+        reader=InventoryReader(c,ignore_colors,excluded_entries,exclude_minifigs);available=reader.stock()
         from .search_index import indexed_clause
         from .data import Database
         if db.search_index_available:
@@ -143,15 +149,16 @@ def find_builds(db,source='RB',text='',ignore_colors=False,copies=1,minimum=100,
             if index%50==0:progress(str(index)+' / '+str(len(sets))+tr(' sets analysés…'))
             required,complete=reader.inventory(item['source'],'set',item['ref'])
             if not complete:excluded+=1;continue
+            if not required:continue
             total,missing,percent=compare(required,available,copies)
             if percent+1e-9>=minimum:results.append(dict(item,total=total,missing=missing,percent=percent,copies=copies))
         results.sort(key=lambda r:(r['missing']>0,-r['percent'],r['missing'],r['ref']))
         warnings=sorted(reader.warnings)
     return results,warnings,excluded,cancel.is_set()
 
-def build_details(db,item,ignore_colors=False,copies=1,excluded_entries=None):
+def build_details(db,item,ignore_colors=False,copies=1,excluded_entries=None,exclude_minifigs=False):
     with db.connect() as c:
-        c.execute('BEGIN');reader=InventoryReader(c,ignore_colors,excluded_entries);available=reader.stock();required,complete=reader.inventory(item['source'],'set',item['ref'])
+        c.execute('BEGIN');reader=InventoryReader(c,ignore_colors,excluded_entries,exclude_minifigs);available=reader.stock();required,complete=reader.inventory(item['source'],'set',item['ref'])
         rows=[]
         for (source,ref,color),quantity in sorted(required.items()):
             need=quantity*copies;have=available.get((source,ref,color),0)
@@ -160,25 +167,31 @@ def build_details(db,item,ignore_colors=False,copies=1,excluded_entries=None):
         return rows,complete
 
 from PySide6.QtCore import Qt
-from PySide6.QtWidgets import QDialog,QVBoxLayout,QHBoxLayout,QLabel,QPushButton,QComboBox,QLineEdit,QSpinBox,QCheckBox,QTableWidget,QTableWidgetItem,QHeaderView,QAbstractItemView,QFileDialog,QMessageBox,QMenu
-from .ui_common import async_task
+from PySide6.QtWidgets import QDialog,QWidget,QVBoxLayout,QHBoxLayout,QLabel,QPushButton,QComboBox,QLineEdit,QSpinBox,QCheckBox,QTableWidget,QTableWidgetItem,QHeaderView,QAbstractItemView,QFileDialog,QMessageBox,QMenu
+from .ui_common import async_task,FlowLayout,HorizontalControls
 
 class BuildStockDialog(QDialog):
     def __init__(self,db,engine=None,parent=None):
-        super().__init__(parent);self.db=db;self.engine=engine;self.results=[];self.closed=False;self.busy=False;self.cancel=threading.Event();self.detail_token=0;self.last_excluded=[];self.last_ignore=False;self.last_copies=1;self.detail_rows=[];self.detail_item=None
+        super().__init__(parent);self.db=db;self.engine=engine;self.results=[];self.closed=False;self.busy=False;self.cancel=threading.Event();self.detail_token=0;self.last_excluded=[];self.last_ignore=False;self.last_copies=1;self.last_exclude_minifigs=False;self.detail_exclude_minifigs=False;self.detail_rows=[];self.detail_item=None
         self.setWindowTitle(tr('Sets réalisables avec Mon stock'));self.resize(1120,780);self.setWindowFlag(Qt.WindowType.WindowMaximizeButtonHint)
         layout=QVBoxLayout(self)
-        note=QLabel(tr('Calcul local sur les inventaires disponibles. Les pièces des sets en stock sont déjà comptées : on ne les ajoute pas une seconde fois. Chaque résultat est évalué séparément ; cela ne garantit pas de construire tous les résultats simultanément. Aucun stock n’est retiré.'));note.setWordWrap(True);layout.addWidget(note)
-        bar=QHBoxLayout();self.source=QComboBox()
+        note=QLabel(tr('Chaque set est comparé séparément aux inventaires locaux et au stock disponible. La recherche ne modifie pas le stock.'));note.setWordWrap(True);layout.addWidget(note)
+        controls=HorizontalControls();layout.addWidget(controls);bar=controls.row;self.source=QComboBox()
         for label,code in [('Rebrickable','RB'),('BrickLink','BL'),(tr('Alternatifs'),'ALT'),(tr('Toutes les sources'),'')]:self.source.addItem(label,code)
-        bar.addWidget(self.source);self.search=QLineEdit();self.search.setPlaceholderText(tr('Référence ou mots du nom / thème'));bar.addWidget(self.search,1)
-        self.ignore=QCheckBox(tr('Ignorer les couleurs'));bar.addWidget(self.ignore);layout.addLayout(bar)
-        bar=QHBoxLayout();bar.addWidget(QLabel(tr('Pièces possédées au minimum (%)')));self.minimum=QSpinBox();self.minimum.setRange(0,100);self.minimum.setValue(100);bar.addWidget(self.minimum)
-        bar.addWidget(QLabel(tr('Exemplaires à construire')));self.copies=QSpinBox();self.copies.setRange(1,999);bar.addWidget(self.copies)
-        self.run=QPushButton(tr('Rechercher les sets réalisables'));self.run.clicked.connect(self.start);bar.addWidget(self.run)
-        self.stop=QPushButton(tr('Arrêter'));self.stop.setEnabled(False);self.stop.clicked.connect(self.cancel.set);bar.addWidget(self.stop);layout.addLayout(bar)
-        options=QHBoxLayout();self.stock_filter=QPushButton(tr('Choisir le stock utilisable…'));self.stock_filter.clicked.connect(self.choose_stock);options.addWidget(self.stock_filter)
-        self.mocs=QPushButton(tr('MOC avec les pièces disponibles…'));self.mocs.clicked.connect(self.find_mocs);options.addWidget(self.mocs);global_search=QPushButton(tr('MOC par mot clé / créateur'));global_search.clicked.connect(self.global_search);options.addWidget(global_search);layout.addLayout(options)
+        bar.addWidget(self.source);self.search=QLineEdit();self.search.setPlaceholderText(tr('Référence ou mots du nom / thème'));self.search.setMinimumWidth(120);self.search.setMaximumWidth(230);bar.addWidget(self.search,1)
+        self.ignore=QCheckBox(tr('Ignorer les couleurs'));bar.addWidget(self.ignore)
+        self.exclude_minifigs=QCheckBox(tr('Exclure les minifigurines'));self.exclude_minifigs.setChecked(db.setting('build_exclude_minifigs',False))
+        self.exclude_minifigs.setToolTip(tr('Calculer les besoins, les pourcentages et les exports sans minifigurines. Les figurines du stock restent intactes.'));self.exclude_minifigs.toggled.connect(self.change_minifigs);bar.addWidget(self.exclude_minifigs)
+        bar=FlowLayout();layout.addLayout(bar)
+        self.minimum=QSpinBox();self.minimum.setRange(0,100);self.minimum.setValue(100);self.copies=QSpinBox();self.copies.setRange(1,999)
+        for label,control in [(tr('Pièces possédées au minimum (%)'),self.minimum),(tr('Exemplaires à construire'),self.copies)]:
+            group=QWidget();row=QHBoxLayout(group);row.setContentsMargins(0,0,0,0);row.addWidget(QLabel(label));row.addWidget(control);bar.addWidget(group)
+        self.run=QPushButton(tr('Rechercher'));self.run.clicked.connect(self.start);bar.addWidget(self.run)
+        self.stop=QPushButton(tr('Arrêter'));self.stop.setEnabled(False);self.stop.clicked.connect(self.cancel.set);bar.addWidget(self.stop)
+        options=FlowLayout();self.stock_filter=QPushButton(tr('Choisir le stock utilisable…'));self.stock_filter.clicked.connect(self.choose_stock);options.addWidget(self.stock_filter)
+        self.mocs=QPushButton(tr('Autres recherches'));searches=QMenu(self.mocs)
+        searches.addAction(tr('MOC avec les pièces disponibles…'),self.find_mocs);searches.addAction(tr('MOC par mot clé / créateur'),self.global_search);self.mocs.setMenu(searches);options.addWidget(self.mocs)
+        self.project_button=QPushButton(tr('Créer un projet avec ce set…'));self.project_button.clicked.connect(lambda:self.create_project());self.project_button.setEnabled(False);options.addWidget(self.project_button);layout.addLayout(options)
         self.status=QLabel(tr('Choisis les critères puis lance la recherche. À 100 %, seuls les sets complets sont affichés.'));self.status.setWordWrap(True);layout.addWidget(self.status)
         self.table=QTableWidget(0,8);self.table.setHorizontalHeaderLabels([tr('Source'),tr('Référence'),tr('Set'),tr('Année'),tr('Possédé %'),tr('Pièces requises'),tr('Manquantes'),tr('Aperçu du set')]);self.table.horizontalHeader().setSectionResizeMode(QHeaderView.ResizeMode.Interactive);self.table.horizontalHeader().setStretchLastSection(False);self.table.setSelectionBehavior(QAbstractItemView.SelectionBehavior.SelectRows);self.table.setSelectionMode(QAbstractItemView.SelectionMode.SingleSelection);self.table.setEditTriggers(QAbstractItemView.EditTrigger.NoEditTriggers);layout.addWidget(self.table,1)
         for column,width in enumerate((70,110,330,65,90,120,100,140)):self.table.setColumnWidth(column,width)
@@ -208,7 +221,7 @@ class BuildStockDialog(QDialog):
         self.export_owned.clicked.connect(lambda:self.export_parts('owned'))
         for button in (self.export_missing,self.export_owned):button.setEnabled(False);exports.addWidget(button)
         layout.addLayout(exports)
-        self.warnings=QLabel();self.warnings.setWordWrap(True);layout.addWidget(self.warnings)
+        self.warnings=QLabel();self.warnings.setWordWrap(True);self.warnings.hide();layout.addWidget(self.warnings)
         close=QPushButton(tr('Fermer'));close.clicked.connect(self.reject);layout.addWidget(close)
     def choose_stock(self):
         from .stock_filter import StockFilterDialog
@@ -236,8 +249,28 @@ class BuildStockDialog(QDialog):
         item=dict(self.results[row_index(self.table,index.row())])
         self.table.selectRow(index.row())
         menu=QMenu(self)
+        menu.addAction(tr('Créer un projet de construction…'),lambda:self.create_project(item))
         menu.addAction(tr('Voir les constructions alternatives'),lambda:self.show_alternates(item))
         menu.exec(self.table.viewport().mapToGlobal(pos))
+
+    def change_minifigs(self,value):
+        self.db.set_setting('build_exclude_minifigs',bool(value));self.stock_changed()
+        self.status.setText(tr('Critères modifiés : relance la recherche.'))
+
+    def create_project(self,item=None):
+        if item is None:
+            index=row_index(self.table)
+            if not 0<=index<len(self.results):return
+            item=self.results[index]
+        item=self.db.get_item(item['id'])
+        if not item:return
+        note=tr('La recherche ignore les couleurs. Le projet utilise les couleurs exactes de l’inventaire du set.') if self.last_ignore else ''
+        from .windows import application_owner
+        owner=application_owner(self)
+        if owner is not self and hasattr(owner,'create_project'):return owner.create_project(item,self.last_copies,self.last_exclude_minifigs,note)
+        from .projects_panel import ProjectsPanel,NewProjectDialog
+        panel=ProjectsPanel(self.db,self.engine,self);panel.hide();window=NewProjectDialog(panel,item,self.last_copies,self.last_exclude_minifigs,note)
+        show_window(window,self,lambda *_:panel.deleteLater());return window
 
     def show_alternates(self,item):
         from .alternates import AlternatesDialog
@@ -248,37 +281,38 @@ class BuildStockDialog(QDialog):
         revision=self.db.stock_revision()
         if self.set_thumbnails:self.set_thumbnails.suspend()
         self.clear_details();self.busy=True;self.cancel.clear();self.detail_token+=1;self.parts.setRowCount(0);self.table.setRowCount(0);self.results=[]
-        source=self.source.currentData();text=self.search.text();ignore=self.ignore.isChecked();copies=self.copies.value();minimum=self.minimum.value();excluded_stock=list(self.db.setting('build_excluded_entries',[]))
-        for widget in (self.run,self.source,self.search,self.ignore,self.copies,self.minimum,self.stock_filter,self.mocs):widget.setEnabled(False)
-        self.stop.setEnabled(True);self.status.setText(tr('Analyse du stock et des inventaires…'));self.warnings.clear()
+        source=self.source.currentData();text=self.search.text();ignore=self.ignore.isChecked();copies=self.copies.value();minimum=self.minimum.value();excluded_stock=list(self.db.setting('build_excluded_entries',[]));exclude_minifigs=self.exclude_minifigs.isChecked()
+        for widget in (self.run,self.source,self.search,self.ignore,self.exclude_minifigs,self.copies,self.minimum,self.stock_filter,self.mocs):widget.setEnabled(False)
+        self.stop.setEnabled(True);self.status.setText(tr('Analyse du stock et des inventaires…'));self.warnings.clear();self.warnings.hide()
         def finish():
             self.busy=False;self.stop.setEnabled(False)
-            for widget in (self.run,self.source,self.search,self.ignore,self.copies,self.minimum,self.stock_filter,self.mocs):widget.setEnabled(True)
+            for widget in (self.run,self.source,self.search,self.ignore,self.exclude_minifigs,self.copies,self.minimum,self.stock_filter,self.mocs):widget.setEnabled(True)
         def done(data):
             if self.closed:return
             if revision!=self.db.stock_revision():finish();self.stock_changed();return
-            self.results,warnings,excluded,cancelled=data;self.last_ignore=ignore;self.last_copies=copies;self.last_excluded=excluded_stock
+            self.results,warnings,excluded,cancelled=data;self.last_ignore=ignore;self.last_copies=copies;self.last_excluded=excluded_stock;self.last_exclude_minifigs=exclude_minifigs
             fill_table(self.table,[[round(row[key],1) if key=='percent' else row.get(key,'') for key in ('source','ref','name','year','percent','total','missing')]+[tr('Chargement…') if self.engine else tr('Aperçu indisponible')] for row in self.results])
             if self.set_thumbnails:self.set_thumbnails.reset()
             self.status.setText((tr('Recherche arrêtée — résultats partiels. ') if cancelled else '')+str(len(self.results))+tr(' résultats ; ')+str(excluded)+tr(' sets exclus : inventaire absent, incomplet ou couleur non définie.'))
-            self.warnings.setText('\n'.join(warnings));finish()
+            self.warnings.setText('\n'.join(warnings));self.warnings.setVisible(bool(warnings));finish()
+            if exclude_minifigs:self.status.setText(self.status.text()+' · '+tr('Calcul sans minifigurines'))
             if self.results:self.table.selectRow(0)
         def fail(error):
             if not self.closed:self.status.setText(error);finish()
-        async_task(self,lambda progress:find_builds(self.db,source,text,ignore,copies,minimum,self.cancel,progress,excluded_stock),done,fail,lambda msg:self.status.setText(str(msg)) if not self.closed else None)
+        async_task(self,lambda progress:find_builds(self.db,source,text,ignore,copies,minimum,self.cancel,progress,excluded_stock,exclude_minifigs),done,fail,lambda msg:self.status.setText(str(msg)) if not self.closed else None)
     def detail(self):
         self.clear_details();self.detail_token+=1;token=self.detail_token;index=row_index(self.table);self.parts.setRowCount(0)
         if not 0<=index<len(self.results):return
-        item=dict(self.results[index]);ignore=self.last_ignore;copies=self.last_copies;self.detail_status.setText(tr('Chargement des pièces…'))
+        item=dict(self.results[index]);self.project_button.setEnabled(True);ignore=self.last_ignore;copies=self.last_copies;exclude_minifigs=self.last_exclude_minifigs;self.detail_status.setText(tr('Chargement des pièces…'))
         def done(data):
             if self.closed or token!=self.detail_token:return
-            rows,complete=data;self.detail_rows=list(rows);self.detail_item=item;self.detail_ignore=ignore;self.detail_copies=copies;self.parts.setRowCount(len(rows))
+            rows,complete=data;self.detail_rows=list(rows);self.detail_item=item;self.detail_ignore=ignore;self.detail_copies=copies;self.detail_exclude_minifigs=exclude_minifigs;self.parts.setRowCount(len(rows))
             self.export_missing.setEnabled(True);self.export_owned.setEnabled(True)
             self.part_visuals=[self.part_visual(row) for row in rows]
             fill_table(self.parts,[tuple(row)+(tr('Chargement…') if self.part_visuals[i] else tr('Aperçu indisponible'),) for i,row in enumerate(rows)])
             if self.thumbnails:self.thumbnails.reset()
             self.detail_status.setText(item['ref']+' — '+tr('Pièces pour ')+str(copies)+tr(' exemplaire(s). Couleurs : ')+(tr('ignorées') if ignore else tr('exactes'))+(tr(' — inventaire incomplet') if not complete else ''))
-        async_task(self,lambda progress:build_details(self.db,item,ignore,copies,self.last_excluded),done,lambda error:self.detail_status.setText(error) if not self.closed and token==self.detail_token else None)
+        async_task(self,lambda progress:build_details(self.db,item,ignore,copies,self.last_excluded,exclude_minifigs),done,lambda error:self.detail_status.setText(error) if not self.closed and token==self.detail_token else None)
     def part_visual(self,row):
         source,ref,name,color,*_=row
         found=self.db.rows("SELECT * FROM items WHERE source=? AND kind='part' AND ref=?",(source,ref))
@@ -295,7 +329,7 @@ class BuildStockDialog(QDialog):
     def clear_details(self):
         self.detail_rows=[];self.detail_item=None;self.part_visuals=[]
         if self.thumbnails:self.thumbnails.reset()
-        self.export_missing.setEnabled(False);self.export_owned.setEnabled(False)
+        self.export_missing.setEnabled(False);self.export_owned.setEnabled(False);self.project_button.setEnabled(False)
     def open_part(self,cell):
         index=row_index(self.parts,cell.row())
         if not self.engine or not 0<=index<len(self.detail_rows):return
@@ -333,7 +367,7 @@ class BuildStockDialog(QDialog):
         path,_=QFileDialog.getSaveFileName(self,tr('Exporter les pièces'),filename,'CSV (*.csv)')
         if not path:return
         try:
-            export_build_parts(path,self.detail_item,self.detail_rows,mode,self.detail_copies,self.detail_ignore)
+            export_build_parts(path,self.detail_item,self.detail_rows,mode,self.detail_copies,self.detail_ignore,self.detail_exclude_minifigs)
         except Exception as error:
             from .fileio import error_message
             QMessageBox.warning(self,tr('Export impossible'),error_message(error));return
@@ -354,7 +388,7 @@ class BuildStockDialog(QDialog):
         self.table.setRowCount(0);self.results=[]
 
 
-def export_build_parts(path,item,rows,mode,copies=1,ignore_colors=False):
+def export_build_parts(path,item,rows,mode,copies=1,ignore_colors=False,exclude_minifigs=False):
     """Export the displayed snapshot; owned quantity is stock usable for this set."""
     import csv
     from .fileio import atomic_output
@@ -362,10 +396,10 @@ def export_build_parts(path,item,rows,mode,copies=1,ignore_colors=False):
     with atomic_output(path) as temporary:
         with temporary.open('w',encoding='utf-8-sig',newline='') as stream:
             writer=csv.writer(stream,delimiter=';')
-            writer.writerow(['source_set','reference_set','exemplaires','couleurs_ignorees','source_piece','reference_piece','nom_piece','source_couleur','code_couleur','quantite_requise','quantite_stock_totale','quantite_disponible_pour_set','quantite_manquante','quantite_exportee'])
+            writer.writerow(['source_set','reference_set','exemplaires','couleurs_ignorees','source_piece','reference_piece','nom_piece','source_couleur','code_couleur','quantite_requise','quantite_stock_totale','quantite_disponible_pour_set','quantite_manquante','quantite_exportee','minifigurines_exclues'])
             for source,ref,name,color,need,have,missing in rows:
                 available=min(need,have);amount=missing if mode=='missing' else available
                 if amount<=0:continue
                 namespace,_,code=color.partition(':')
                 if color=='*':namespace='';code='*'
-                writer.writerow([item['source'],item['ref'],copies,int(ignore_colors),source,ref,name,namespace,code,need,have,available,missing,amount])
+                writer.writerow([item['source'],item['ref'],copies,int(ignore_colors),source,ref,name,namespace,code,need,have,available,missing,amount,int(exclude_minifigs)])

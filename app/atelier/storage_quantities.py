@@ -21,6 +21,28 @@ def validate(c):
         raise ValueError(tr('La quantité répartie dans les tiroirs dépasse le stock en vrac. Réduis d’abord la répartition concernée.'))
 
 
+def put_entry(db,drawer_id,item_id,color,quantity=None,previous=None):
+    """Replace a captured drawer row atomically, without changing possession."""
+    from .action_undo import storage_change
+    if quantity is not None:integer(quantity)
+    color=str(color or '')
+    with db.connect() as c,storage_change(c,[drawer_id],tr('Modification du contenu d’un tiroir')):
+        if not c.execute('SELECT 1 FROM storage_drawers WHERE id=?',(drawer_id,)).fetchone():raise ValueError(tr('Tiroir introuvable.'))
+        if not c.execute("SELECT 1 FROM items WHERE id=? AND kind IN ('part','minifig')",(item_id,)).fetchone():raise ValueError(tr('Référence introuvable'))
+        target=c.execute('SELECT 1 FROM storage_contents WHERE drawer_id=? AND item_id=? AND color=?',(drawer_id,item_id,color)).fetchone()
+        if previous is not None:
+            old_id=previous['id'];old_color=str(previous.get('chosen_color') or '')
+            current=c.execute('SELECT quantity FROM storage_contents WHERE drawer_id=? AND item_id=? AND color=?',(drawer_id,old_id,old_color)).fetchone()
+            if current is None or current['quantity']!=previous.get('stored_quantity'):raise ValueError(tr('Cette ligne a changé. Actualise l’inventaire du tiroir.'))
+            if (old_id,old_color)!=(item_id,color) and target:raise ValueError(tr('Cette référence et cette couleur sont déjà dans le tiroir.'))
+            c.execute('UPDATE storage_contents SET item_id=?,color=?,quantity=? WHERE drawer_id=? AND item_id=? AND color=?',(item_id,color,quantity,drawer_id,old_id,old_color))
+        else:
+            if target:raise ValueError(tr('Cette référence et cette couleur sont déjà dans le tiroir.'))
+            c.execute('INSERT INTO storage_contents(drawer_id,item_id,color,quantity) VALUES(?,?,?,?)',(drawer_id,item_id,color,quantity))
+        validate(c)
+    return True
+
+
 def available(c, item_id, color):
     row = c.execute('SELECT s.quantity-' + ALLOCATED + ' AS remaining FROM stock s WHERE s.item_id=? AND s.color=?', (item_id, str(color))).fetchone()
     return int(row['remaining']) if row else 0

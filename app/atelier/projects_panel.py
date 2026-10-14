@@ -56,17 +56,22 @@ def color_options(db, item):
 
 
 class NewProjectDialog(QDialog):
-    def __init__(self, panel, item=None):
+    def __init__(self, panel, item=None, copies=1, exclude_minifigs=False, context_note=''):
         super().__init__(panel); self.panel, self.db, self.item = panel, panel.db, item
-        self.setWindowTitle(tr('Nouveau projet de construction')); self.resize(620,320)
+        self.setWindowTitle(tr('Nouveau projet de construction')); self.resize(700,440);self.picker=None;self.closed=False
         layout = QVBoxLayout(self); form = QFormLayout(); layout.addLayout(form)
         self.kind = QComboBox(); self.kind.addItem(tr('Set du catalogue'),'set'); self.kind.addItem(tr('Construction personnelle'),'custom')
         self.name = QLineEdit(); self.set_name = QLabel(); self.set_name.setWordWrap(True)
         self.choose = QPushButton(tr('Choisir un set…')); self.choose.clicked.connect(self.choose_set)
-        self.copies = QSpinBox(); self.copies.setRange(1,10000)
+        self.copies = QSpinBox(); self.copies.setRange(1,10000);self.copies.setValue(copies)
         self.spares = QCheckBox(tr('Inclure les pièces supplémentaires'))
+        self.exclude_minifigs = QCheckBox(tr('Exclure les minifigurines'));self.exclude_minifigs.setChecked(exclude_minifigs)
         form.addRow(tr('Type de projet'),self.kind); form.addRow(tr('Nom'),self.name); form.addRow(self.set_name,self.choose)
-        form.addRow(tr('Exemplaires'),self.copies); form.addRow(self.spares)
+        form.addRow(tr('Exemplaires'),self.copies); form.addRow(self.spares);form.addRow(self.exclude_minifigs)
+        from .set_picker import SetImagePreview
+        self.preview=SetImagePreview(panel.engine,self);layout.addWidget(self.preview,1)
+        if context_note:
+            context=QLabel(context_note);context.setWordWrap(True);layout.addWidget(context)
         note = QLabel(tr('Le projet conserve une copie des besoins. Sa création ne modifie pas le stock et ne réserve aucune pièce.')); note.setWordWrap(True); layout.addWidget(note)
         self.buttons = QDialogButtonBox(QDialogButtonBox.StandardButton.Save|QDialogButtonBox.StandardButton.Cancel)
         self.buttons.accepted.connect(self.save); self.buttons.rejected.connect(self.reject); layout.addWidget(self.buttons)
@@ -75,24 +80,37 @@ class NewProjectDialog(QDialog):
 
     def update_kind(self,*_):
         is_set = self.kind.currentData()=='set'
-        for widget in (self.choose,self.set_name,self.copies,self.spares): widget.setEnabled(is_set)
+        for widget in (self.choose,self.set_name,self.copies,self.spares,self.exclude_minifigs): widget.setEnabled(is_set)
+        self.preview.setVisible(is_set)
 
     def set_item(self,item):
         self.item = dict(item); self.set_name.setText(item['source']+' '+item['ref']+' · '+item['name'])
-        self.name.setText(item['ref']+' · '+item['name'])
+        self.name.setText(item['ref']+' · '+item['name']);self.preview.set_item(item)
 
     def choose_set(self):
-        picker = ReferencePicker(self.db,'set',self)
-        if picker.exec()==QDialog.DialogCode.Accepted: self.set_item(picker.chosen)
+        if self.picker is not None:
+            self.picker.show();self.picker.raise_();self.picker.activateWindow();return
+        from .set_picker import SetPicker
+        picker=SetPicker(self.db,self.panel.engine,self);self.picker=picker
+        def chosen(result):
+            self.picker=None
+            if not self.closed and result==QDialog.DialogCode.Accepted and picker.chosen:self.set_item(picker.chosen)
+        show_window(picker,self,chosen,refresh_counts=False)
 
     def save(self):
         try:
             if self.kind.currentData()=='set':
                 if self.item is None: raise ValueError(tr('Choisis un set.'))
-                identity = projects.from_set(self.db,self.item['id'],self.copies.value(),self.name.text(),self.spares.isChecked())
+                identity = projects.from_set(self.db,self.item['id'],self.copies.value(),self.name.text(),self.spares.isChecked(),self.exclude_minifigs.isChecked())
             else: identity = projects.create(self.db,self.name.text())
         except (ValueError,sqlite3.Error) as error: QMessageBox.warning(self,tr('Projet'),str(error)); return
         self.panel.refresh(identity); self.panel.changed.emit(); self.accept()
+
+
+    def done(self,result):
+        self.closed=True;self.preview.stop()
+        if self.picker is not None:self.picker.reject()
+        super().done(result)
 
 
 class ProjectsPanel(QWidget):
@@ -104,6 +122,7 @@ class ProjectsPanel(QWidget):
         actions = FlowLayout()
         for label, callback in [(tr('Nouveau projet…'),self.new_project),(tr('Actualiser'),self.refresh)]:
             button = QPushButton(label); button.clicked.connect(callback); actions.addWidget(button)
+        self.view_set=QPushButton(tr('Voir le set'));self.view_set.clicked.connect(self.open_project);actions.addWidget(self.view_set)
         self.manage=QPushButton(tr('Gérer le projet'));menu=QMenu(self.manage)
         menu.addAction(tr('Renommer le projet…'),self.rename);menu.addAction(tr('Supprimer le projet…'),self.delete);self.manage.setMenu(menu);actions.addWidget(self.manage)
         self.status = QComboBox()
@@ -140,7 +159,7 @@ class ProjectsPanel(QWidget):
         note = QLabel(tr('Les réservations utilisent le stock en vrac de la même référence et de la même couleur. Elles ne retirent aucune pièce du stock. Un projet terminé garde ses réservations jusqu’à leur libération.')); note.setWordWrap(True); box.addWidget(note)
         self.detail_scroll=QScrollArea();self.detail_scroll.setWidgetResizable(True);self.detail_scroll.setWidget(detail);self.detail_scroll.setMinimumHeight(150)
         split.addWidget(self.detail_scroll);split.setSizes([150,450]);split.setChildrenCollapsible(False)
-        self.table.itemSelectionChanged.connect(self.choose_project); self.detail.itemSelectionChanged.connect(self.select_part); self.detail.itemDoubleClicked.connect(self.open_part)
+        self.table.itemDoubleClicked.connect(self.open_project);self.table.itemSelectionChanged.connect(self.choose_project); self.detail.itemSelectionChanged.connect(self.select_part); self.detail.itemDoubleClicked.connect(self.open_part)
         if self.thumbnails:self.detail.horizontalHeader().sortIndicatorChanged.connect(lambda *_:self.thumbnails.reset())
         self.refresh()
 
@@ -160,6 +179,7 @@ class ProjectsPanel(QWidget):
         self.parts = projects.detail(self.db,self.project_id) if self.project_id is not None else []
         fill_table(self.detail,[(row['source'],row['ref'],row['name'],row['category'],row['chosen_color'] or tr('Non précisée'),row['required'],row['reserved'],row['free_quantity'],row['missing'],tr('3D / photo à charger')) for row in self.parts])
         if self.thumbnails: self.thumbnails.reset()
+        self.view_set.setEnabled(self.project_item() is not None);self.publish_selection()
         self.status.setEnabled(self.project_id is not None)
         self.manage.setEnabled(self.project_id is not None);self.part_button.setEnabled(self.project_id is not None)
         self.reserve_button.setEnabled(any(row['reserved'] < row['required'] and row['free_quantity'] > 0 for row in self.parts))
@@ -167,6 +187,22 @@ class ProjectsPanel(QWidget):
         if self.project_id is None: self.summary.setText(tr('Crée un projet depuis un set ou prépare une construction personnelle.')); return
         project = self.rows[index]; self.status.setCurrentIndex(self.status.findData(project['status']))
         self.summary.setText(tf('{0} · {1} pièce(s) nécessaire(s) · {2} réservée(s) · {3} manquante(s)',project['name'],project['required'],project['reserved'],project['missing']))
+
+    def project_item(self):
+        row=next((row for row in self.rows if row['id']==self.project_id),None)
+        return self.db.get_item(row['set_id']) if row and row['set_id'] else None
+
+    def publish_selection(self):
+        if self.isVisible():self.selected.emit(self.project_item())
+
+    def showEvent(self,event):
+        super().showEvent(event);self.publish_selection()
+
+    def open_project(self,*_):
+        item=self.project_item()
+        if item:
+            from .dialogs import RelationsDialog
+            return show_window(RelationsDialog(self.db,self.engine,item,self),self)
 
     def eventFilter(self,watched,event):
         if watched is getattr(self,'detail_body',None) and event.type() in (QEvent.Type.Resize,QEvent.Type.LayoutRequest):
@@ -196,8 +232,8 @@ class ProjectsPanel(QWidget):
         self.refresh(); self.changed.emit(); return True
 
     def new_project(self,*_): return self.create_from_item()
-    def create_from_item(self,item=None):
-        window = NewProjectDialog(self,item); show_window(window,self); return window
+    def create_from_item(self,item=None,copies=1,exclude_minifigs=False,context_note=''):
+        window = NewProjectDialog(self,item,copies,exclude_minifigs,context_note); show_window(window,self); return window
     def rename(self):
         if self.project_id is None: return
         project = next(row for row in self.rows if row['id']==self.project_id)

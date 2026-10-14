@@ -6,7 +6,7 @@ from pathlib import Path
 from .i18n import tr
 from .stock_import import read_list,resolve_rows,import_rows
 
-FIELDS=('source','kind','ref','color','quantity')
+FIELDS=('source','kind','ref','color','quantity','inventory_version')
 
 
 def create_job(db,path,source='auto',destination='stock'):
@@ -16,7 +16,7 @@ def create_job(db,path,source='auto',destination='stock'):
     with db.connect() as c:
         c.execute('BEGIN IMMEDIATE')
         c.execute('INSERT INTO stock_import_jobs(id,filename,source,destination) VALUES(?,?,?,?)',(job,str(Path(path)),source,destination))
-        c.executemany('INSERT INTO stock_import_rows VALUES(?,?,?,?)',[(job,row['line_number'],json.dumps({k:row[k] for k in FIELDS},ensure_ascii=False),json.dumps(row['original'],ensure_ascii=False)) for row in rows])
+        c.executemany('INSERT INTO stock_import_rows VALUES(?,?,?,?)',[(job,row['line_number'],json.dumps({k:row.get(k,'') for k in FIELDS},ensure_ascii=False),json.dumps(row['original'],ensure_ascii=False)) for row in rows])
     return job
 
 
@@ -36,10 +36,11 @@ def job_rows(db,job):
 
 
 def update_row(db,job,ordinal,payload):
-    data={key:payload.get(key,'') for key in FIELDS}
     with db.connect() as c:
         c.execute('BEGIN IMMEDIATE')
         if c.execute('SELECT 1 FROM stock_import_applied WHERE job_id=? AND ordinal=?',(job,ordinal)).fetchone():raise ValueError(tr('Cette ligne a déjà été importée.'))
+        old=c.execute('SELECT payload FROM stock_import_rows WHERE job_id=? AND ordinal=?',(job,ordinal)).fetchone()
+        data={key:payload.get(key,json.loads(old['payload']).get(key,'') if old else '') for key in FIELDS}
         if not c.execute('UPDATE stock_import_rows SET payload=? WHERE job_id=? AND ordinal=?',(json.dumps(data,ensure_ascii=False),job,ordinal)).rowcount:raise ValueError(tr('Ligne d’import introuvable.'))
 
 

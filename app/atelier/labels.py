@@ -168,7 +168,7 @@ def template_for_item(item,db,base=None,read_setting=None):
     base=base or setting('template',default_template())
     personal=setting(individual_template_key(item)) or setting('label_layout_item_'+str(item['id']))
     if not personal or personal.get('use_general'):
-        category=setting('label_layout_categories',{}).get(item.get('category',''))
+        category=setting('label_layout_kinds',{}).get(item.get('kind')) or setting('label_layout_categories',{}).get(item.get('category',''))
         if category:
             from .label_models import merge_layout
             return merge_layout(base,category)

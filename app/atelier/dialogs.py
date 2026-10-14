@@ -82,6 +82,17 @@ class ImportDialog(QDialog):
         if not self.running:super().reject()
     def start(self):
         if not self.paths:return
+        from .stock_import import list_kind
+        collections=[(path,list_kind(path)) for path in self.paths]
+        opened=False
+        for path,kind in collections:
+            if kind is None:continue
+            from .stock_import_dialog import StockImportDialog
+            window=StockImportDialog(self.db,self,'stock_sets' if kind=='set' else 'stock');window.path=path;window.load();show_window(window,self)
+            self.paths.remove(path);opened=True
+        if opened:
+            self.refresh();self.progress_label.setText(tr('Liste de collection détectée : vérifie les lignes dans l’assistant d’import.'))
+        if not self.paths:return
         self.busy(True);paths=list(self.paths)
         order=['part_categories','themes','colors','parts','sets','minifigs','inventories','inventory_parts','inventory_sets','inventory_minifigs','elements','part_relationships']
         paths.sort(key=lambda p:next((i for i,s in enumerate(order) if Path(p).name.lower().startswith(s+'.')),100))

@@ -67,6 +67,7 @@ class CabinetItem(QGraphicsObject):
 
 
 class DrawerItem(QGraphicsObject):
+    opened=Signal(int)
     chosen=Signal(int)
     moved=Signal(int,object)
     def __init__(self,drawer,parts,icons,yaw,pitch,parent=None,arranging=False,dragging=False,thumbnail_size=100):
@@ -81,7 +82,8 @@ class DrawerItem(QGraphicsObject):
         self.top=QPolygonF([rear[0],rear[1],self.front[1],self.front[0]])
         self.side=QPolygonF([rear[1],rear[2],self.front[2],self.front[1]])
         self.bounds=self.front.boundingRect().united(self.top.boundingRect()).united(self.side.boundingRect()).adjusted(-3,-3,3,3)
-        self.setToolTip(store.address(drawer)+'\n'+drawer['name']+'\n'+'\n'.join(p['ref']+' — '+p['name'] for p in parts))
+        from .drawer_inventory import drawer_tooltip
+        self.setToolTip(drawer_tooltip(drawer,parts))
         self.setAcceptHoverEvents(True)
         self.setAcceptedMouseButtons(Qt.MouseButton.NoButton if arranging else Qt.MouseButton.LeftButton)
         self.setFlag(QGraphicsObject.GraphicsItemFlag.ItemIsMovable,dragging)
@@ -109,6 +111,9 @@ class DrawerItem(QGraphicsObject):
         painter.setFont(QFont('Segoe UI',7));painter.setPen(QColor('#a9bdd1'));painter.drawText(QRectF(self.w-34,5,30,12),Qt.AlignmentFlag.AlignRight,str(self.drawer['col'])+'/'+str(self.drawer['row']))
         painter.setPen(QPen(QColor('#81a0bf'),3));painter.drawLine(QPointF(self.w*.38,self.h-6),QPointF(self.w*.62,self.h-6))
         painter.restore()
+    def mouseDoubleClickEvent(self,event):
+        if event.button()==Qt.MouseButton.LeftButton:self.opened.emit(self.drawer['id']);event.accept()
+        else:super().mouseDoubleClickEvent(event)
     def thumbnail_boxes(self):
         shown=self.parts[:min(3,max(1,int(self.w/35)))];count=len(shown)
         if not count:return []
@@ -259,6 +264,8 @@ class StoragePanel(QWidget):
         self.table.horizontalHeader().moveSection(7,2)
         self.thumbnails=PartThumbnails(self.table,db,engine,self.visible_parts,6,self) if engine else None
         row=FlowLayout();add=QPushButton(tr('Ajouter des références du stock'));add.clicked.connect(self.pick_stock);row.addWidget(add);self.remove_references=QPushButton(tr('Retirer les références du tiroir'));self.remove_references.clicked.connect(self.unassign);self.remove_references.setToolTip(tr('Retire les lignes sélectionnées. Sans sélection, propose de retirer toutes les références du tiroir. Les pièces restent dans le stock.'));row.addWidget(self.remove_references);d.addLayout(row)
+        self.inventory_button=QPushButton(tr('Ouvrir l’inventaire du tiroir…'));self.inventory_button.clicked.connect(lambda:self.open_drawer_inventory());row.addWidget(self.inventory_button)
+        self._drawer_windows={}
         catalogue=QPushButton(tr('Ajouter depuis un catalogue'));catalogue.clicked.connect(self.pick_catalogue);row.addWidget(catalogue)
         self.quantity_button=QPushButton(tr('Quantité dans ce tiroir…'));self.quantity_button.clicked.connect(self.edit_drawer_quantity);row.addWidget(self.quantity_button)
         self.transfer_button=QPushButton(tr('Transférer une quantité…'));self.transfer_button.clicked.connect(lambda:self.edit_drawer_quantity(True));row.addWidget(self.transfer_button)
@@ -337,7 +344,7 @@ class StoragePanel(QWidget):
         for wall in visible_walls:
             cabinet=CabinetItem(wall,yaw,pitch,overview,arranging);cabinet.chosen.connect(self.choose_wall);cabinet.moved.connect(self.move_wall);self.scene.addItem(cabinet);self.cabinets[wall['id']]=cabinet
             for drawer in self.wall_drawers.get(wall['id'],[]):
-                item=DrawerItem(drawer,parts.get(drawer['id'],[]),self.icons,yaw,pitch,cabinet,arranging,self.drag_drawers.isChecked(),self.thumbnail_size.value());item.chosen.connect(self.choose_drawer);item.moved.connect(self.move_drawer);self.items[drawer['id']]=item
+                item=DrawerItem(drawer,parts.get(drawer['id'],[]),self.icons,yaw,pitch,cabinet,arranging,self.drag_drawers.isChecked(),self.thumbnail_size.value());item.opened.connect(self.open_drawer_inventory);item.chosen.connect(self.choose_drawer);item.moved.connect(self.move_drawer);self.items[drawer['id']]=item
         if self.drawer_id not in self.items:self.drawer_id=None
         self.scene.setSceneRect(self.scene.itemsBoundingRect().adjusted(-20,-20,20,20));self.highlight();self.schedule_icons()
     def fit(self):
@@ -444,12 +451,22 @@ class StoragePanel(QWidget):
         window=StoragePrintPreview(self.db,self.engine,self.wall_id,self)
         show_window(window,self)
         return window
+    def open_drawer_inventory(self,drawer_id=None):
+        if drawer_id is None:drawer_id=self.drawer_id
+        if drawer_id is None:return
+        existing=self._drawer_windows.get(drawer_id)
+        if existing is not None:
+            existing.show();existing.raise_();existing.activateWindow();return existing
+        from .drawer_inventory import DrawerInventoryDialog
+        window=DrawerInventoryDialog(self.db,self.engine,drawer_id,self,self.refresh);self._drawer_windows[drawer_id]=window
+        show_window(window,self,lambda *_:self._drawer_windows.pop(drawer_id,None),refresh_counts=False);return window
     def load_contents(self):
         self.rows=store.contents(self.db,self.drawer_id) if self.drawer_id else []
         fill_table(self.table,[(p['source'],p['ref'],p['name'],p['category'],p['chosen_color'] or tr('Non précisée'),p['chosen_quantity'],tr('3D / photo à charger'),p['stored_quantity'] if p['stored_quantity'] is not None else tr('À renseigner')) for p in self.rows])
         if self.thumbnails:self.thumbnails.reset()
         self.update_status()
     def update_status(self):
+        self.inventory_button.setEnabled(self.drawer_id is not None)
         self.remove_references.setEnabled(self.drawer_id is not None and bool(self.rows))
         self.update_quantity_actions()
         drawer=next((d for d in self.drawers if d['id']==self.drawer_id),None)
@@ -604,7 +621,7 @@ class StoragePanel(QWidget):
         item=self.view.itemAt(pos)
         if not isinstance(item,DrawerItem):return
         drawer_id=item.drawer['id'];self.choose_drawer(drawer_id);parts=store.contents(self.db,drawer_id)
-        menu=QMenu(self);references=menu.addMenu(tr('Retirer une référence du tiroir'));references.setEnabled(bool(parts))
+        menu=QMenu(self);menu.addAction(tr('Ouvrir l’inventaire du tiroir…'),lambda:self.open_drawer_inventory(drawer_id));references=menu.addMenu(tr('Retirer une référence du tiroir'));references.setEnabled(bool(parts))
         for part in parts[:30]:
             label=part['source']+' '+part['ref']+' — '+part['name']+' · '+(part['chosen_color'] or tr('Non précisée'))
             references.addAction(label,lambda checked=False,p=part:self.remove_drawer_references(drawer_id,[(p['id'],p['chosen_color'])]))
