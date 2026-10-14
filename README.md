@@ -1,8 +1,20 @@
-# BrickLabo — v0.1.59
+# BrickLabo — v0.1.60
 
-Logiciel de bureau Windows pour les catalogues LEGO, les stocks, les recherches de constructions et les étiquettes. Cette version reprend la v0.1.58 publiée, issue de la v0.1.28 d’origine.
+Logiciel de bureau Windows pour les catalogues LEGO, les stocks, les recherches de constructions et les étiquettes. Cette version reprend la v0.1.59 publiée, issue de la v0.1.28 d’origine.
 
-**Téléchargements v0.1.59 :** [version complète Windows](https://github.com/sdu07git/BrickLabo/releases/download/v0.1.59/BrickLabo_v0.1.59_Complet.zip) · [sources avec ressources](https://github.com/sdu07git/BrickLabo/releases/download/v0.1.59/BrickLabo_v0.1.59_Sources.zip) · [notes de release](https://github.com/sdu07git/BrickLabo/releases/tag/v0.1.59).
+**Téléchargements v0.1.60 :** [version complète Windows](https://github.com/sdu07git/BrickLabo/releases/download/v0.1.60/BrickLabo_v0.1.60_Complet.zip) · [sources avec ressources](https://github.com/sdu07git/BrickLabo/releases/download/v0.1.60/BrickLabo_v0.1.60_Sources.zip) · [notes de release](https://github.com/sdu07git/BrickLabo/releases/tag/v0.1.60).
+
+## Vrac direct et inventaires complets — v0.1.60
+
+**Vrac uniquement en un clic** : dans Sets réalisables, le bouton Vrac uniquement réinclut toutes les pièces et mini-figurines du vrac, exclut tous les composants des sets possédés puis relance la recherche avec les critères actuels. Les inventaires de sets déjà transférés dans le vrac restent utilisables. Les réservations des projets sont respectées.
+
+**Choisir le stock utilisable** : Utiliser uniquement le stock en vrac réinclut également les lignes masquées par le filtre et remet la recherche du tableau à vide. Valider avec OK enregistre ce choix ; Annuler conserve les préférences précédentes. Il est ensuite possible de décocher certaines références. Les choix individuels des sets sont conservés pour une réactivation ultérieure.
+
+**Recherches MOC** : une fenêtre déjà ouverte relit la sélection actuelle du stock au prochain lancement de la recherche.
+
+**Ajout d’un inventaire complet** : depuis la fiche d’un set, Ajouter toutes les pièces vérifie désormais que chaque référence existe dans le catalogue. Une erreur nomme les références absentes avant tout ajout. Si l’inventaire a changé depuis l’ouverture, rouvrir la fenêtre du set. L’ajout volontaire des seules pièces sélectionnées reste disponible.
+
+**Validation v0.1.60 :** suite complète de 773 tests réussie sous Qt/Linux, puis 12 tests ciblés après le dernier ajustement ; quatre captures contrôlées en formats normal et compact. [Rapport détaillé](documentation/CONTROLE_v0.1.60.txt). Exécution native Windows à confirmer.
 
 ## Vrac uniquement transferts partiels et exclusions — v0.1.59
 
@@ -307,7 +319,7 @@ L’aide complète se trouve dans [documentation/AIDE.html](documentation/AIDE.h
 | 0.1.58 | Projets et aperçus, inventaires des tiroirs, CSV versionnés, modèles Mini-figs et protection mémoire. |
 | 0.1.57 | Quantités par tiroir et transferts partiels, historique Annuler/Rétablir persistant, projets avec besoins, réservations et manquants. |
 
-Un seul [NOUVEAUTES.txt](documentation/NOUVEAUTES.txt) réunit les notes françaises et anglaises. Les notes de cette branche ne documentent pas de livraison 0.1.29. Les variantes 0.1.28b et Range n’ont pas servi de base. Le [rapport de contrôle v0.1.59](documentation/CONTROLE_v0.1.59.txt) décrit les vérifications de cette livraison.
+Un seul [NOUVEAUTES.txt](documentation/NOUVEAUTES.txt) réunit les notes françaises et anglaises. Les notes de cette branche ne documentent pas de livraison 0.1.29. Les variantes 0.1.28b et Range n’ont pas servi de base. Le [rapport de contrôle v0.1.60](documentation/CONTROLE_v0.1.60.txt) décrit les vérifications de cette livraison.
 
 ## Développement et diagnostic
 
@@ -323,7 +335,7 @@ Pour publier une future mise à jour compatible : créer une release publique st
 
 Pour développer depuis ce dépôt, reprendre `ressources/complete.zip` depuis le ZIP Sources joint à la release : cette archive LDraw dépasse la limite de taille des fichiers GitHub. Les archives automatiques « Source code » ne contiennent ni cette ressource ni le runtime Windows. Les deux ZIP joints sont ceux de la version livrée et testée ; les README du dépôt sont adaptés à la publication.
 
-Le [rapport de contrôle v0.1.59](documentation/CONTROLE_v0.1.59.txt) décrit les vérifications de cette livraison. Exécution native Windows à confirmer.
+Le [rapport de contrôle v0.1.60](documentation/CONTROLE_v0.1.60.txt) décrit les vérifications de cette livraison. Exécution native Windows à confirmer.
 
 
 

@@ -1,8 +1,20 @@
-# BrickLabo — v0.1.59
+# BrickLabo — v0.1.60
 
-Windows desktop software for LEGO catalogues, stock, construction searches and labels. This version continues the published v0.1.58, based on the original v0.1.28.
+Windows desktop software for LEGO catalogues, stock, construction searches and labels. This version continues the published v0.1.59, based on the original v0.1.28.
 
-**Downloads v0.1.59 :** [complete Windows package](https://github.com/sdu07git/BrickLabo/releases/download/v0.1.59/BrickLabo_v0.1.59_Complet.zip) · [sources with resources](https://github.com/sdu07git/BrickLabo/releases/download/v0.1.59/BrickLabo_v0.1.59_Sources.zip) · [release notes](https://github.com/sdu07git/BrickLabo/releases/tag/v0.1.59).
+**Downloads v0.1.60 :** [complete Windows package](https://github.com/sdu07git/BrickLabo/releases/download/v0.1.60/BrickLabo_v0.1.60_Complet.zip) · [sources with resources](https://github.com/sdu07git/BrickLabo/releases/download/v0.1.60/BrickLabo_v0.1.60_Sources.zip) · [release notes](https://github.com/sdu07git/BrickLabo/releases/tag/v0.1.60).
+
+## Direct loose stock and complete inventories — v0.1.60
+
+**Loose stock only in one click** : in Buildable sets, Loose stock only includes every loose part and minifigure again, excludes all owned set components and reruns the search using the current criteria. Set inventories already transferred to loose stock remain usable. Project reservations are respected.
+
+**Choose usable stock** : Use all loose stock only also includes entries hidden by the table filter and clears that filter. OK saves the choice; Cancel keeps the previous preferences. Individual references can then be unchecked. Individual owned set choices are preserved for later reactivation.
+
+**MOC searches** : a window that was already open reads the current stock selection when the next search starts.
+
+**Adding a complete inventory** : Add all parts in a set window now verifies that each reference exists in the catalogue. An error names missing references before any stock addition. If the inventory changed after the window opened, reopen the set window. Explicitly adding only selected parts is still available.
+
+**Validation v0.1.60:** all 773 tests in the complete suite passed on Qt/Linux, followed by 12 targeted tests after the final adjustment; four screenshots checked at normal and compact sizes. [Detailed report](documentation/CONTROLE_v0.1.60.txt). Native Windows execution remains to be confirmed.
 
 ## Loose stock partial transfers and excluded words — v0.1.59
 
@@ -301,7 +313,7 @@ Read [English help](documentation/AIDE.en.html) and [component licences](documen
 | 0.1.58 | Projects and previews, drawer inventories, versioned CSV imports, figure layouts and memory protection. |
 | 0.1.57 | Drawer counts and partial transfers, persistent undo/redo history, projects with requirements, reservations and missing parts. |
 
-One bilingual [NOUVEAUTES.txt](documentation/NOUVEAUTES.txt) holds cumulative notes. This branch does not document a released 0.1.29. The 0.1.28b / Range variants were not used as the baseline. The [v0.1.59 validation report](documentation/CONTROLE_v0.1.59.txt) describes the checks for this delivery.
+One bilingual [NOUVEAUTES.txt](documentation/NOUVEAUTES.txt) holds cumulative notes. This branch does not document a released 0.1.29. The 0.1.28b / Range variants were not used as the baseline. The [v0.1.60 validation report](documentation/CONTROLE_v0.1.60.txt) describes the checks for this delivery.
 
 ## Development and diagnostics
 
@@ -315,7 +327,7 @@ For a compatible future update, publish a public stable release with tag `vX.Y.Z
 
 To develop from this repository, take `ressources/complete.zip` from the source ZIP attached to the release: this LDraw archive exceeds GitHub's regular file size limit. GitHub's automatic source archives contain neither this resource nor the Windows runtime. Both attached ZIPs are the delivered and tested version; the repository READMEs are adapted for publication.
 
-The [v0.1.59 validation report](documentation/CONTROLE_v0.1.59.txt) describes the checks for this delivery. Native Windows execution remains to be confirmed.
+The [v0.1.60 validation report](documentation/CONTROLE_v0.1.60.txt) describes the checks for this delivery. Native Windows execution remains to be confirmed.
 
 
 
