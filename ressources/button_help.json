@@ -987,6 +987,14 @@
     "Utiliser les pièces de Mon stock set": {
       "fr": "Inclut les composants des sets possédés dans les recherches. Décoché : seul le stock en vrac disponible est utilisé.",
       "en": "Includes owned set components in build searches. Unchecked: only available loose stock is used."
+    },
+    "Utiliser uniquement le stock en vrac": {
+      "fr": "Réinclut tout le vrac et exclut les composants des sets possédés. Valide avec OK pour enregistrer ce choix.",
+      "en": "Includes all loose stock again and excludes owned set components. Confirm with OK to save this choice."
+    },
+    "Vrac uniquement": {
+      "fr": "Réinclut tout le vrac, exclut les composants des sets possédés et relance la recherche avec les critères actuels.",
+      "en": "Includes all loose stock again, excludes owned set components and reruns the search with the current criteria."
     }
   },
   "contexts": {
