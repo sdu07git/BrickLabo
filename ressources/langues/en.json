@@ -1478,5 +1478,11 @@
   "Dans le tiroir": "In the drawer",
   "À déplacer": "To move",
   "Exemple : brick -modulex -duplo": "Example: brick -modulex -duplo",
-  "Un mot précédé de - exclut les références contenant ce mot dans leur nom, référence ou catégorie.": "A word preceded by - excludes items containing that word in their name, reference or category."
+  "Un mot précédé de - exclut les références contenant ce mot dans leur nom, référence ou catégorie.": "A word preceded by - excludes items containing that word in their name, reference or category.",
+  "Utiliser uniquement le stock en vrac": "Use all loose stock only",
+  "Vrac uniquement": "Loose stock only",
+  "« Utiliser uniquement le stock en vrac » réinclut tout le vrac et exclut les composants des sets possédés. Les inventaires transférés dans le vrac sont inclus. Tu peux ensuite affiner la sélection. Le stock et les réservations ne sont pas modifiés.": "“Use all loose stock only” includes all loose stock again and excludes owned set components. Inventories transferred to loose stock are included. You can then refine the selection. Stock and reservations are not changed.",
+  "Réinclut toutes les pièces et mini-figurines du vrac, exclut les composants des sets possédés et relance la recherche avec les critères actuels.": "Includes all loose parts and minifigures again, excludes owned set components and reruns the search with the current criteria.",
+  "Références absentes du catalogue : ": "References missing from the catalogue: ",
+  "L’inventaire affiché a changé. Rouvre la fenêtre du set avant d’ajouter toutes les pièces.": "The displayed inventory has changed. Reopen the set window before adding all parts."
 }
