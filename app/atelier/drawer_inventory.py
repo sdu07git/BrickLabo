@@ -123,6 +123,7 @@ class DrawerInventoryDialog(QDialog):
         notify_changed(self)
 
     def refresh_action_history(self):self.refresh()
+    def stock_changed(self):self.refresh()
     def open_editor(self,part=None):
         if self.closed:return
         window=DrawerEntryDialog(self,part);self.entry_windows.add(window)

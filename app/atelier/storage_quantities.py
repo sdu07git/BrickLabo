@@ -48,6 +48,46 @@ def available(c, item_id, color):
     return int(row['remaining']) if row else 0
 
 
+def follow_stock_additions(c, previous):
+    """A single fully counted location follows additions; split counts stay put."""
+    old={(row['item_id'],str(row['color'])):int(row['quantity']) for row in previous.values()}
+    for row in c.execute('SELECT item_id,color,quantity FROM stock WHERE quantity>0'):
+        before=old.get((row['item_id'],str(row['color'])),0)
+        if row['quantity']<=before:continue
+        locations=c.execute('SELECT drawer_id,quantity FROM storage_contents WHERE item_id=? AND color=?',(row['item_id'],row['color'])).fetchall()
+        if len(locations)==1 and locations[0]['quantity']==before:
+            c.execute('UPDATE storage_contents SET quantity=? WHERE drawer_id=? AND item_id=? AND color=?',(row['quantity'],locations[0]['drawer_id'],row['item_id'],row['color']))
+
+
+def transfer_entries(db, source_drawer, target_drawer, entries):
+    """Move chosen counts atomically, checking the quantities shown by the dialog."""
+    from .action_undo import storage_change
+    entries=list(entries)
+    if not entries or source_drawer==target_drawer:return False
+    if len({(identity,str(color or '')) for identity,color,amount,expected in entries})!=len(entries):
+        raise ValueError(tr('Cette référence et cette couleur sont déjà dans le tiroir.'))
+    with db.connect() as c,storage_change(c,[source_drawer,target_drawer],tr('Transfert d’une quantité entre tiroirs')):
+        if not c.execute('SELECT 1 FROM storage_drawers WHERE id=?',(target_drawer,)).fetchone():raise ValueError(tr('Tiroir introuvable.'))
+        for identity,color,amount,expected in entries:
+            color=str(color or '')
+            source=c.execute('SELECT quantity FROM storage_contents WHERE drawer_id=? AND item_id=? AND color=?',(source_drawer,identity,color)).fetchone()
+            if source is None or source['quantity']!=expected:raise ValueError(tr('Le contenu du tiroir a changé. Recommence le glissement.'))
+            if source['quantity'] is None:
+                if amount is not None:raise ValueError(tr('Renseigne la quantité du tiroir avant un transfert partiel.'))
+            else:
+                integer(amount)
+                if amount>source['quantity'] or amount==0 and source['quantity']>0:raise ValueError(tr('La quantité à transférer n’est plus disponible dans ce tiroir.'))
+            target=c.execute('SELECT quantity FROM storage_contents WHERE drawer_id=? AND item_id=? AND color=?',(target_drawer,identity,color)).fetchone()
+            target_quantity=target['quantity'] if target is not None else None
+            total=(amount or 0)+(target_quantity or 0) if amount is not None or target_quantity is not None else None
+            c.execute('INSERT INTO storage_contents(drawer_id,item_id,color,quantity) VALUES(?,?,?,?) ON CONFLICT(drawer_id,item_id,color) DO UPDATE SET quantity=excluded.quantity',(target_drawer,identity,color,total))
+            if amount is None or amount==source['quantity']:
+                c.execute('DELETE FROM storage_contents WHERE drawer_id=? AND item_id=? AND color=?',(source_drawer,identity,color))
+            else:c.execute('UPDATE storage_contents SET quantity=quantity-? WHERE drawer_id=? AND item_id=? AND color=?',(amount,source_drawer,identity,color))
+        validate(c)
+    return True
+
+
 def set_quantity(db, drawer_id, item_id, color, quantity, target_color=None):
     from .action_undo import storage_change
     integer(quantity)

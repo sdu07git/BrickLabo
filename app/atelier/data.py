@@ -218,10 +218,12 @@ class Database:
                 if isinstance(val,(list,tuple)):
                     parts.append('i.'+col+' IN ('+','.join('?' for _ in val)+')');args.extend(val)
                 else:parts.append('i.'+col+'=?'); args.append(val)
-        for word in normalize(search).split():
+        from .search_index import search_terms,DOCUMENT
+        for word,negative in search_terms(search):
             pattern='%'+word.replace('\\','\\\\').replace('%','\\%').replace('_','\\_')+'%'
-            parts.append("(i.search LIKE ? ESCAPE '\\' OR norm(COALESCE(i.category,'')) LIKE ? ESCAPE '\\' OR (i.source='RB' AND i.kind='set' AND i.category_id IN (WITH RECURSIVE matching(id) AS (SELECT id FROM themes WHERE norm(name) LIKE ? ESCAPE '\\' UNION SELECT t.id FROM themes t JOIN matching m ON t.parent_id=m.id) SELECT CAST(id AS TEXT) FROM matching)))")
-            args.extend([pattern,pattern,pattern])
+            match="("+DOCUMENT.format(p='i.')+" LIKE ? ESCAPE '\\' OR (i.source='RB' AND i.kind='set' AND i.category_id IN (WITH RECURSIVE matching(id) AS (SELECT id FROM themes WHERE norm(name) LIKE ? ESCAPE '\\' UNION SELECT t.id FROM themes t JOIN matching m ON t.parent_id=m.id) SELECT CAST(id AS TEXT) FROM matching)))"
+            parts.append('NOT COALESCE('+match+',0)' if negative else match)
+            args.extend([pattern,pattern])
         return ('WHERE '+' AND '.join(parts) if parts else ''),args
 
     def query(self,source=None,kind=None,search='',category='',scope='catalogue',page=1,size=100,sort='ref',descending=False,hide_decorated=False,year='',advanced=None,reference=None):

@@ -9,8 +9,8 @@ from .result_tables import row_index,fill_table
 from .color_links import resolve, candidates, bl_palette, rb_palette
 
 class InventoryReader:
-    def __init__(self,c,ignore_colors=False,excluded_entries=None,exclude_minifigs=False):
-        self.c=c;self.ignore_colors=ignore_colors;self.exclude_minifigs=exclude_minifigs;self.warnings=set();self.excluded_entries=set(excluded_entries or [])
+    def __init__(self,c,ignore_colors=False,excluded_entries=None,exclude_minifigs=False,include_set_stock=True):
+        self.c=c;self.ignore_colors=ignore_colors;self.exclude_minifigs=exclude_minifigs;self.include_set_stock=include_set_stock;self.warnings=set();self.excluded_entries=set(excluded_entries or [])
         self.canonical=lru_cache(maxsize=20000)(self.canonical);self.children=lru_cache(maxsize=2500)(self.children)
         self.partmap=self.setting('export_rb_bl_parts',{});self.colormap=self.setting('export_rb_bl_colors',{})
         self.blcolors=bl_palette(self.setting)
@@ -100,12 +100,14 @@ class InventoryReader:
         for row in self.c.execute('SELECT item_id,color,SUM(reserved) AS reserved FROM project_parts GROUP BY item_id,color'):
             reserved[(row['item_id'],str(row['color']))]+=int(row['reserved'])
         for entry in self.excluded_entries:
+            if not self.include_set_stock:continue
             item=self.c.execute("SELECT i.kind,i.ref FROM stock_available s JOIN items i ON i.id=s.item_id WHERE s.id=?",(entry,)).fetchone()
             if not item or item['kind']!='set':continue
             tracked=self.c.execute('SELECT item_id,color,quantity FROM stock_set_components WHERE set_entry_id=?',(abs(entry),)).fetchall()
             if not tracked:raise ValueError(tr('Impossible d’exclure les pièces de ce set sans suivi de stock : ')+item['ref'])
             for part in tracked:reserved[(part['item_id'],str(part['color']))]+=int(part['quantity'])
-        for row in self.c.execute('SELECT i.source,i.kind,i.ref,s.color,s.quantity,s.id AS entry,s.item_id FROM stock_available s JOIN items i ON i.id=s.item_id WHERE s.quantity>0'):
+        ledger='stock_available' if self.include_set_stock else 'stock'
+        for row in self.c.execute('SELECT i.source,i.kind,i.ref,s.color,s.quantity,s.id AS entry,s.item_id FROM '+ledger+' s JOIN items i ON i.id=s.item_id WHERE s.quantity>0'):
             if row['kind']=='set':
                 if not self.c.execute('SELECT 1 FROM stock_set_components WHERE set_entry_id=? LIMIT 1',(abs(row['entry']),)).fetchone():self.warnings.add(tr('Certains sets n’ont pas de suivi de pièces : vérifier leur présence dans le stock des pièces.'))
                 continue
@@ -131,11 +133,11 @@ def compare(required,available,copies=1):
     missing=sum(max(0,n*copies-available.get(k,0)) for k,n in required.items())
     return total,missing,(100*(total-missing)/total if total else 0)
 
-def find_builds(db,source='RB',text='',ignore_colors=False,copies=1,minimum=100,cancel=None,progress=lambda _:None,excluded_entries=None,exclude_minifigs=False):
+def find_builds(db,source='RB',text='',ignore_colors=False,copies=1,minimum=100,cancel=None,progress=lambda _:None,excluded_entries=None,exclude_minifigs=False,include_set_stock=True):
     cancel=cancel or threading.Event();results=[];excluded=0
     with db.connect() as c:
         c.execute('BEGIN')
-        reader=InventoryReader(c,ignore_colors,excluded_entries,exclude_minifigs);available=reader.stock()
+        reader=InventoryReader(c,ignore_colors,excluded_entries,exclude_minifigs,include_set_stock);available=reader.stock()
         from .search_index import indexed_clause
         from .data import Database
         if db.search_index_available:
@@ -156,9 +158,9 @@ def find_builds(db,source='RB',text='',ignore_colors=False,copies=1,minimum=100,
         warnings=sorted(reader.warnings)
     return results,warnings,excluded,cancel.is_set()
 
-def build_details(db,item,ignore_colors=False,copies=1,excluded_entries=None,exclude_minifigs=False):
+def build_details(db,item,ignore_colors=False,copies=1,excluded_entries=None,exclude_minifigs=False,include_set_stock=True):
     with db.connect() as c:
-        c.execute('BEGIN');reader=InventoryReader(c,ignore_colors,excluded_entries,exclude_minifigs);available=reader.stock();required,complete=reader.inventory(item['source'],'set',item['ref'])
+        c.execute('BEGIN');reader=InventoryReader(c,ignore_colors,excluded_entries,exclude_minifigs,include_set_stock);available=reader.stock();required,complete=reader.inventory(item['source'],'set',item['ref'])
         rows=[]
         for (source,ref,color),quantity in sorted(required.items()):
             need=quantity*copies;have=available.get((source,ref,color),0)
@@ -281,7 +283,7 @@ class BuildStockDialog(QDialog):
         revision=self.db.stock_revision()
         if self.set_thumbnails:self.set_thumbnails.suspend()
         self.clear_details();self.busy=True;self.cancel.clear();self.detail_token+=1;self.parts.setRowCount(0);self.table.setRowCount(0);self.results=[]
-        source=self.source.currentData();text=self.search.text();ignore=self.ignore.isChecked();copies=self.copies.value();minimum=self.minimum.value();excluded_stock=list(self.db.setting('build_excluded_entries',[]));exclude_minifigs=self.exclude_minifigs.isChecked()
+        source=self.source.currentData();text=self.search.text();ignore=self.ignore.isChecked();copies=self.copies.value();minimum=self.minimum.value();excluded_stock=list(self.db.setting('build_excluded_entries',[]));exclude_minifigs=self.exclude_minifigs.isChecked();include_sets=self.db.setting('build_include_set_stock',True)
         for widget in (self.run,self.source,self.search,self.ignore,self.exclude_minifigs,self.copies,self.minimum,self.stock_filter,self.mocs):widget.setEnabled(False)
         self.stop.setEnabled(True);self.status.setText(tr('Analyse du stock et des inventaires…'));self.warnings.clear();self.warnings.hide()
         def finish():
@@ -290,16 +292,17 @@ class BuildStockDialog(QDialog):
         def done(data):
             if self.closed:return
             if revision!=self.db.stock_revision():finish();self.stock_changed();return
-            self.results,warnings,excluded,cancelled=data;self.last_ignore=ignore;self.last_copies=copies;self.last_excluded=excluded_stock;self.last_exclude_minifigs=exclude_minifigs
+            self.results,warnings,excluded,cancelled=data;self.last_ignore=ignore;self.last_copies=copies;self.last_excluded=excluded_stock;self.last_exclude_minifigs=exclude_minifigs;self.last_include_sets=include_sets
             fill_table(self.table,[[round(row[key],1) if key=='percent' else row.get(key,'') for key in ('source','ref','name','year','percent','total','missing')]+[tr('Chargement…') if self.engine else tr('Aperçu indisponible')] for row in self.results])
             if self.set_thumbnails:self.set_thumbnails.reset()
             self.status.setText((tr('Recherche arrêtée — résultats partiels. ') if cancelled else '')+str(len(self.results))+tr(' résultats ; ')+str(excluded)+tr(' sets exclus : inventaire absent, incomplet ou couleur non définie.'))
             self.warnings.setText('\n'.join(warnings));self.warnings.setVisible(bool(warnings));finish()
             if exclude_minifigs:self.status.setText(self.status.text()+' · '+tr('Calcul sans minifigurines'))
+            if not include_sets:self.status.setText(self.status.text()+' · '+tr('Stock en vrac uniquement'))
             if self.results:self.table.selectRow(0)
         def fail(error):
             if not self.closed:self.status.setText(error);finish()
-        async_task(self,lambda progress:find_builds(self.db,source,text,ignore,copies,minimum,self.cancel,progress,excluded_stock,exclude_minifigs),done,fail,lambda msg:self.status.setText(str(msg)) if not self.closed else None)
+        async_task(self,lambda progress:find_builds(self.db,source,text,ignore,copies,minimum,self.cancel,progress,excluded_stock,exclude_minifigs,include_sets),done,fail,lambda msg:self.status.setText(str(msg)) if not self.closed else None)
     def detail(self):
         self.clear_details();self.detail_token+=1;token=self.detail_token;index=row_index(self.table);self.parts.setRowCount(0)
         if not 0<=index<len(self.results):return
@@ -312,7 +315,7 @@ class BuildStockDialog(QDialog):
             fill_table(self.parts,[tuple(row)+(tr('Chargement…') if self.part_visuals[i] else tr('Aperçu indisponible'),) for i,row in enumerate(rows)])
             if self.thumbnails:self.thumbnails.reset()
             self.detail_status.setText(item['ref']+' — '+tr('Pièces pour ')+str(copies)+tr(' exemplaire(s). Couleurs : ')+(tr('ignorées') if ignore else tr('exactes'))+(tr(' — inventaire incomplet') if not complete else ''))
-        async_task(self,lambda progress:build_details(self.db,item,ignore,copies,self.last_excluded,exclude_minifigs),done,lambda error:self.detail_status.setText(error) if not self.closed and token==self.detail_token else None)
+        async_task(self,lambda progress:build_details(self.db,item,ignore,copies,self.last_excluded,exclude_minifigs,getattr(self,'last_include_sets',True)),done,lambda error:self.detail_status.setText(error) if not self.closed and token==self.detail_token else None)
     def part_visual(self,row):
         source,ref,name,color,*_=row
         found=self.db.rows("SELECT * FROM items WHERE source=? AND kind='part' AND ref=?",(source,ref))

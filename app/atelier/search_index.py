@@ -21,17 +21,26 @@ def prepare_index(c):
     if not previous or previous[0]!=update:c.execute('DROP TRIGGER IF EXISTS items_search_update');c.execute(update)
     return True
 
+def search_terms(search):
+    """Leading minus excludes a word; hyphens inside references stay literal."""
+    from .data import normalize
+    for word in normalize(search).split():
+        negative=word.startswith('-') and len(word)>1
+        yield (word[1:] if negative else word),negative
+
+
 def indexed_clause(search):
     from .data import normalize
     parts=[];args=[]
-    for word in normalize(search).split():
+    for word,negative in search_terms(search):
         pattern='%'+word.replace('\\','\\\\').replace('%','\\%').replace('_','\\_')+'%'
         # ESCAPE disables FTS5's LIKE optimization. Plain words take the indexed
         # route; wildcard characters remain literal with a safe escaped fallback.
         if any(ch in word for ch in ('\\','%','_')):
             condition="text LIKE ? ESCAPE '\\'"
         else:condition='text LIKE ?'
-        parts.append("(i.id IN (SELECT rowid FROM items_search WHERE "+condition+") OR (i.source='RB' AND i.kind='set' AND i.category_id IN (WITH RECURSIVE matching(id) AS (SELECT id FROM themes WHERE norm(name) LIKE ? ESCAPE '\\' UNION SELECT t.id FROM themes t JOIN matching m ON t.parent_id=m.id) SELECT CAST(id AS TEXT) FROM matching)))")
+        match="(i.id IN (SELECT rowid FROM items_search WHERE "+condition+") OR (i.source='RB' AND i.kind='set' AND i.category_id IN (WITH RECURSIVE matching(id) AS (SELECT id FROM themes WHERE norm(name) LIKE ? ESCAPE '\\' UNION SELECT t.id FROM themes t JOIN matching m ON t.parent_id=m.id) SELECT CAST(id AS TEXT) FROM matching)))"
+        parts.append('NOT COALESCE('+match+',0)' if negative else match)
         args.extend((pattern,pattern))
     return parts,args
 

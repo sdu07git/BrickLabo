@@ -18,7 +18,7 @@ class StockMocsDialog(QDialog):
         super().__init__(parent);self.db=db;self.engine=engine;self.excluded=list(excluded);self.closed=False;self.busy=False;self.cancel=threading.Event();self.sets=[];self.cursor=0;self.rows=[];self.photos=0
         self.setWindowTitle(tr('MOC avec les pièces disponibles'));self.resize(1050,750)
         layout=QVBoxLayout(self)
-        note=QLabel(tr('Les pièces en vrac et les pièces des sets autorisés sont combinées, en couleurs exactes. BrickLabo recherche les alternatives des sets Rebrickable reconstituables à 100 %. Ce n’est pas une recherche exhaustive de MOC. Les inventaires des MOC ne sont pas vérifiés : contrôler les pièces, pièces supplémentaires et notices sur Rebrickable. Chaque proposition utilise le même stock indépendamment.'));note.setWordWrap(True);layout.addWidget(note)
+        note=QLabel(tr('BrickLabo utilise le stock autorisé dans « Choisir le stock utilisable », en couleurs exactes. Il recherche les alternatives des sets Rebrickable reconstituables à 100 %. Ce n’est pas une recherche exhaustive de MOC. Les inventaires des MOC ne sont pas vérifiés : contrôler les pièces, pièces supplémentaires et notices sur Rebrickable. Chaque proposition utilise le même stock indépendamment.'));note.setWordWrap(True);layout.addWidget(note)
         self.status=QLabel(tr('Clique sur Rechercher pour analyser le stock sélectionné.'));self.status.setWordWrap(True);layout.addWidget(self.status)
         self.table=QTableWidget(0,5);self.table.setHorizontalHeaderLabels([tr('Référence'),tr('Construction'),tr('Créateur'),tr('Pièces'),tr('Sets de départ')]);self.table.horizontalHeader().setSectionResizeMode(QHeaderView.ResizeMode.Interactive);self.table.setColumnWidth(1,350);self.table.setColumnWidth(4,230);self.table.setSelectionBehavior(QAbstractItemView.SelectionBehavior.SelectRows);self.table.setSelectionMode(QAbstractItemView.SelectionMode.SingleSelection);self.table.setEditTriggers(QAbstractItemView.EditTrigger.NoEditTriggers);layout.addWidget(self.table,1)
         self.photo=QLabel();self.photo.setAlignment(Qt.AlignmentFlag.AlignCenter);self.photo.setMinimumHeight(160);layout.addWidget(self.photo)
@@ -37,6 +37,7 @@ class StockMocsDialog(QDialog):
     def start(self):
         if self.busy:return
         revision=self.db.stock_revision()
+        include_sets=self.db.setting('build_include_set_stock',True)
         if not self.db.setting('api_rb',''):
             self.status.setText(tr('Renseigne ta clé Rebrickable dans « API Keys », puis réessaie.'));return
         self.cancel.clear();self.rows=[];self.table.setRowCount(0);self.sets=[];self.cursor=0;self.photo.clear();self.photos+=1;self.controls(True)
@@ -45,8 +46,9 @@ class StockMocsDialog(QDialog):
             if revision!=self.db.stock_revision():self.controls(False);self.stock_changed();return
             self.sets,warnings,excluded,cancelled=result;self.controls(False)
             self.status.setText(str(len(self.sets))+tr(' sets reconstituables avec le stock sélectionné.')+'\n'+'\n'.join(warnings))
+            if not include_sets:self.status.setText(self.status.text()+' · '+tr('Stock en vrac uniquement'))
             if self.sets and not cancelled:self.next_batch()
-        async_task(self,lambda progress:find_builds(self.db,'RB','',False,1,100,self.cancel,progress,self.excluded),done,self.fail,self.progress)
+        async_task(self,lambda progress:find_builds(self.db,'RB','',False,1,100,self.cancel,progress,self.excluded,include_set_stock=include_sets),done,self.fail,self.progress)
     def progress(self,message):
         if not self.closed:self.status.setText(str(message))
     def fail(self,error):
