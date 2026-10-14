@@ -399,8 +399,8 @@ class Database:
         if strict:
             for table,column,kind in [('inventory_parts','part_num','part'),('inventory_minifigs','fig_num','minifig'),('inventory_sets','set_num','set')]:
                 if exclude_minifigs and kind=='minifig':continue
-                missing=self.rows('SELECT 1 FROM '+table+" p WHERE p.inventory_id=? AND NOT EXISTS(SELECT 1 FROM items i WHERE i.source='RB' AND i.kind=? AND i.ref=p."+column+') LIMIT 1',(iid,kind))
-                if missing:raise ValueError(tr('Inventaire incomplet : ')+ref)
+                missing=self.rows('SELECT DISTINCT p.'+column+' AS ref FROM '+table+" p WHERE p.inventory_id=? AND NOT EXISTS(SELECT 1 FROM items i WHERE i.source='RB' AND i.kind=? AND i.ref=p."+column+') LIMIT 8',(iid,kind))
+                if missing:raise ValueError(tr('Inventaire incomplet : ')+ref+' — '+tr('Références absentes du catalogue : ')+', '.join(row['ref'] for row in missing))
         parts=self.rows("SELECT i.*,p.color_id AS chosen_color,p.quantity AS chosen_quantity,p.is_spare,p.img_url AS inventory_image FROM inventory_parts p JOIN items i ON i.source='RB' AND i.kind='part' AND i.ref=p.part_num WHERE p.inventory_id=?",(iid,))
         figs=[] if exclude_minifigs else self.rows("SELECT i.*, '' AS chosen_color,p.quantity AS chosen_quantity,0 AS is_spare FROM inventory_minifigs p JOIN items i ON i.source='RB' AND i.kind='minifig' AND i.ref=p.fig_num WHERE p.inventory_id=?",(iid,))
         out=parts+figs

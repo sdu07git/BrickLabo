@@ -4,14 +4,32 @@ from PySide6.QtCore import Qt
 from PySide6.QtWidgets import QDialog,QVBoxLayout,QHBoxLayout,QLabel,QLineEdit,QCheckBox,QTableWidget,QTableWidgetItem,QHeaderView,QPushButton,QDialogButtonBox
 from .i18n import tr
 
+
+def _save_choices(c,include_sets,excluded):
+    for key,value in [('build_include_set_stock',include_sets),('build_excluded_entries',excluded)]:
+        c.execute('INSERT INTO settings VALUES(?,?) ON CONFLICT(key) DO UPDATE SET value=excluded.value WHERE settings.value<>excluded.value',(key,json.dumps(value)))
+
+
+def select_all_loose_stock(db):
+    """Explicitly include all loose entries, keeping owned-set choices for later."""
+    with db.connect() as c:
+        c.execute('BEGIN IMMEDIATE')
+        row=c.execute("SELECT value FROM settings WHERE key='build_excluded_entries'").fetchone()
+        excluded=json.loads(row['value']) if row else []
+        _save_choices(c,False,[entry for entry in excluded if entry<0])
+
+
 class StockFilterDialog(QDialog):
     def __init__(self,db,parent=None):
         super().__init__(parent);self.db=db;self.setWindowTitle(tr('Stock utilisable pour les recherches'));self.resize(950,650)
         layout=QVBoxLayout(self)
-        info=QLabel(tr('Décoche « Utiliser les pièces de Mon stock set » pour chercher uniquement avec le vrac. Sinon, décoche les sets à garder montés ou les références à exclure. Ce choix ne modifie ni le stock ni les réservations des projets.'));info.setWordWrap(True);layout.addWidget(info)
+        info=QLabel(tr('« Utiliser uniquement le stock en vrac » réinclut tout le vrac et exclut les composants des sets possédés. Les inventaires transférés dans le vrac sont inclus. Tu peux ensuite affiner la sélection. Le stock et les réservations ne sont pas modifiés.'));info.setWordWrap(True);layout.addWidget(info)
         self.include_sets=QCheckBox(tr('Utiliser les pièces de Mon stock set'))
         self.include_sets.setToolTip(tr('Inclut les composants suivis des sets possédés. Décoché : seuls les pièces et mini-figurines en vrac sont utilisables, hors réservations de projets.'))
-        self.include_sets.setChecked(db.setting('build_include_set_stock',True));layout.addWidget(self.include_sets)
+        self.include_sets.setChecked(db.setting('build_include_set_stock',True))
+        mode=QHBoxLayout();mode.addWidget(self.include_sets);mode.addStretch()
+        self.loose_only=QPushButton(tr('Utiliser uniquement le stock en vrac'));self.loose_only.clicked.connect(self.select_all_loose)
+        mode.addWidget(self.loose_only);layout.addLayout(mode)
         self.search=QLineEdit();self.search.setPlaceholderText(tr('Filtrer par référence, nom, source ou type'));layout.addWidget(self.search)
         self.rows=db.rows('''SELECT s.id,s.color,s.quantity,i.source,i.kind,i.ref,i.name,
             COALESCE((SELECT quantity FROM stock p WHERE p.id=s.id),0) AS loose_quantity
@@ -52,10 +70,13 @@ class StockFilterDialog(QDialog):
     def set_visible(self,state):
         for i,row in enumerate(self.rows):
             if not self.table.isRowHidden(i) and (row['kind']!='set' or self.include_sets.isChecked()):self.table.item(i,0).setCheckState(state)
+    def select_all_loose(self):
+        self.include_sets.setChecked(False);self.search.clear()
+        for i,row in enumerate(self.rows):
+            if row['kind']!='set':self.table.item(i,0).setCheckState(Qt.CheckState.Checked)
     def save(self):
         enabled=self.include_sets.isChecked()
         excluded=[row['id'] for i,row in enumerate(self.rows) if (not self._set_checked[row['id']] if row['kind']=='set' and not enabled else self.table.item(i,0).checkState()==Qt.CheckState.Unchecked)]
         with self.db.connect() as c:
-            for key,value in [('build_include_set_stock',enabled),('build_excluded_entries',excluded)]:
-                c.execute('INSERT INTO settings VALUES(?,?) ON CONFLICT(key) DO UPDATE SET value=excluded.value WHERE settings.value<>excluded.value',(key,json.dumps(value)))
+            _save_choices(c,enabled,excluded)
         self.accept()
