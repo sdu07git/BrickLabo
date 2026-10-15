@@ -48,6 +48,8 @@ class ReferencePicker(QDialog):
 def color_options(db, item):
     options = {str(row['color']): str(row['color']) for row in db.rows('SELECT color FROM stock WHERE item_id=? AND quantity>0 ORDER BY color',(item['id'],))}
     for color in db.available_colors(item): options[str(color['id'])] = color['name'] + ' (' + str(color['id']) + ')'
+    from .alternative_catalogue import original
+    item=original(item)
     if item['source']=='RB':
         for row in db.rows('SELECT id,name FROM colors ORDER BY name'): options.setdefault(str(row['id']), row['name']+' ('+str(row['id'])+')')
     elif item['source']=='BL':
@@ -66,8 +68,9 @@ class NewProjectDialog(QDialog):
         self.copies = QSpinBox(); self.copies.setRange(1,10000);self.copies.setValue(copies)
         self.spares = QCheckBox(tr('Inclure les pièces supplémentaires'))
         self.exclude_minifigs = QCheckBox(tr('Exclure les minifigurines'));self.exclude_minifigs.setChecked(exclude_minifigs)
+        self.alternatives=QCheckBox(tr('Autoriser les briques alternatives équivalentes'));self.alternatives.setChecked(self.db.setting('build_allow_alternatives',False));self.alternatives.setToolTip(tr('Utiliser les équivalences d’origine connue du vrac libre, en conservant les références et couleurs physiques dans le projet.'))
         form.addRow(tr('Type de projet'),self.kind); form.addRow(tr('Nom'),self.name); form.addRow(self.set_name,self.choose)
-        form.addRow(tr('Exemplaires'),self.copies); form.addRow(self.spares);form.addRow(self.exclude_minifigs)
+        form.addRow(tr('Exemplaires'),self.copies); form.addRow(self.spares);form.addRow(self.exclude_minifigs);form.addRow(self.alternatives)
         from .set_picker import SetImagePreview
         self.preview=SetImagePreview(panel.engine,self);layout.addWidget(self.preview,1)
         if context_note:
@@ -80,7 +83,7 @@ class NewProjectDialog(QDialog):
 
     def update_kind(self,*_):
         is_set = self.kind.currentData()=='set'
-        for widget in (self.choose,self.set_name,self.copies,self.spares,self.exclude_minifigs): widget.setEnabled(is_set)
+        for widget in (self.choose,self.set_name,self.copies,self.spares,self.exclude_minifigs,self.alternatives): widget.setEnabled(is_set)
         self.preview.setVisible(is_set)
 
     def set_item(self,item):
@@ -101,7 +104,7 @@ class NewProjectDialog(QDialog):
         try:
             if self.kind.currentData()=='set':
                 if self.item is None: raise ValueError(tr('Choisis un set.'))
-                identity = projects.from_set(self.db,self.item['id'],self.copies.value(),self.name.text(),self.spares.isChecked(),self.exclude_minifigs.isChecked())
+                identity = projects.from_set(self.db,self.item['id'],self.copies.value(),self.name.text(),self.spares.isChecked(),self.exclude_minifigs.isChecked(),self.alternatives.isChecked())
             else: identity = projects.create(self.db,self.name.text())
         except (ValueError,sqlite3.Error) as error: QMessageBox.warning(self,tr('Projet'),str(error)); return
         self.panel.refresh(identity); self.panel.changed.emit(); self.accept()

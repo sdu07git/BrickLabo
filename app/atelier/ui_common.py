@@ -245,10 +245,13 @@ def edit_item(parent,db,item=None,kind='part'):
     types=QComboBox();types.addItem(tr('Pièce'),'part');types.addItem(tr('Set'),'set');types.addItem(tr('Mini-fig'),'minifig')
     types.setCurrentIndex(max(0,types.findData(item['kind'] if item else kind)))
     form.addRow(tr('Type'),types);form.addRow(tr('Référence'),ref);form.addRow(tr('Nom'),name);form.addRow(tr('Catégorie'),category)
+    comment=QLineEdit(item.get('comment','') if item else '');comment.setPlaceholderText(tr('Exemple : marque Lepin'));form.addRow(tr('Commentaire'),comment)
+    if item and item.get('origin_source'):
+        types.setEnabled(False);form.addRow(tr('Origine'),QLabel(item['origin_source']+' '+item['origin_ref']))
     buttons=QDialogButtonBox(QDialogButtonBox.StandardButton.Save|QDialogButtonBox.StandardButton.Cancel)
     layout.addWidget(buttons);buttons.rejected.connect(d.reject)
     def save():
-        try:db.alternative(types.currentData(),ref.text(),name.text(),category.text(),item.get('image','') if item else '',item['id'] if item else None);d.accept()
+        try:db.alternative(types.currentData(),ref.text(),name.text(),category.text(),item.get('image','') if item else '',item['id'] if item else None,comment.text());d.accept()
         except Exception as e:QMessageBox.warning(d,tr('Référence invalide'),str(e))
     buttons.accepted.connect(save)
     return d.exec()

@@ -16,6 +16,10 @@ def prepare(db,c):
     c.executescript('''CREATE TABLE IF NOT EXISTS stock_sets(id INTEGER PRIMARY KEY,item_id INTEGER,color TEXT DEFAULT '',quantity INTEGER NOT NULL,added TEXT DEFAULT CURRENT_TIMESTAMP,UNIQUE(item_id,color));
     CREATE TABLE IF NOT EXISTS stock_undo(id INTEGER PRIMARY KEY CHECK(id=1),description TEXT NOT NULL,changes TEXT NOT NULL);
     CREATE VIEW IF NOT EXISTS stock_available AS SELECT s.id,s.item_id,s.color,s.quantity+COALESCE((SELECT SUM(p.quantity) FROM stock_set_components p JOIN stock_sets o ON o.id=p.set_entry_id WHERE p.item_id=s.item_id AND p.color=s.color),0) AS quantity,s.added FROM stock s UNION ALL SELECT -id,item_id,color,quantity,added FROM stock_sets;''')
+    for table in ('stock','stock_sets'):
+        if 'last_added' not in {r['name'] for r in c.execute('PRAGMA table_info('+table+')')}:
+            c.execute('ALTER TABLE '+table+" ADD COLUMN last_added TEXT NOT NULL DEFAULT ''")
+            c.execute('UPDATE '+table+' SET last_added=added')
     c.executescript('CREATE TABLE IF NOT EXISTS stock_revision(id INTEGER PRIMARY KEY CHECK(id=1),version INTEGER NOT NULL); INSERT OR IGNORE INTO stock_revision VALUES(1,0);')
     for table in ('stock','stock_sets','stock_set_components'):
         for action in ('INSERT','UPDATE','DELETE'):
@@ -23,7 +27,7 @@ def prepare(db,c):
     if c.execute("SELECT 1 FROM settings WHERE key='stock_layout_v37'").fetchone():return
     notes=[]
     for row in legacy:
-        c.execute('INSERT INTO stock_sets(id,item_id,color,quantity,added) VALUES(?,?,?,?,?)',tuple(row))
+        c.execute('INSERT INTO stock_sets(id,item_id,color,quantity,added,last_added) VALUES(?,?,?,?,?,?)',tuple(row[k] for k in ('id','item_id','color','quantity','added'))+(row['added'],))
         if not c.execute('SELECT 1 FROM stock_set_components WHERE set_entry_id=?',(row['id'],)).fetchone():notes.append(tr('Set conservé sans inventaire suivi : ')+str(row['item_id']))
         c.execute('DELETE FROM stock WHERE id=?',(row['id'],))
         c.execute('UPDATE settings SET key=? WHERE key=?',('label_layout_stock_sets_'+str(row['id']),'label_layout_stock_'+str(row['id'])))
@@ -54,7 +58,7 @@ def _state(c):
 def _loose(c,iid,color,amount):
     if amount==0:
         c.execute('INSERT INTO stock(item_id,color,quantity) VALUES(?,?,0) ON CONFLICT(item_id,color) DO NOTHING',(iid,str(color)));return
-    c.execute('INSERT INTO stock(item_id,color,quantity) VALUES(?,?,?) ON CONFLICT(item_id,color) DO UPDATE SET quantity=stock.quantity+excluded.quantity',(iid,str(color),amount))
+    c.execute('INSERT INTO stock(item_id,color,quantity,last_added) VALUES(?,?,?,CURRENT_TIMESTAMP) ON CONFLICT(item_id,color) DO UPDATE SET quantity=stock.quantity+excluded.quantity,last_added=excluded.last_added',(iid,str(color),amount))
 
 def _apply(c,action):
     scope=action.get('scope','stock');op=action['op']
@@ -70,7 +74,10 @@ def _apply(c,action):
     if op=='add':
         iid=action['item_id'];qty=int(action['quantity']);color=str(action.get('color',''))
         if qty<1:raise ValueError(tr('Quantité positive requise'))
-        c.execute('INSERT INTO '+scope+'(item_id,color,quantity) VALUES(?,?,?) ON CONFLICT(item_id,color) DO UPDATE SET quantity='+scope+'.quantity+excluded.quantity',(iid,color,qty))
+        date_column=',last_added' if scope in ('stock','stock_sets') else ''
+        date_value=',CURRENT_TIMESTAMP' if date_column else ''
+        date_update=',last_added=excluded.last_added' if date_column else ''
+        c.execute('INSERT INTO '+scope+'(item_id,color,quantity'+date_column+') VALUES(?,?,?'+date_value+') ON CONFLICT(item_id,color) DO UPDATE SET quantity='+scope+'.quantity+excluded.quantity'+date_update,(iid,color,qty))
         if scope=='stock_sets':
             eid=c.execute('SELECT id FROM stock_sets WHERE item_id=? AND color=?',(iid,color)).fetchone()['id']
             for p in action.get('components',[]):
@@ -105,7 +112,8 @@ def _apply(c,action):
                         amount=p['quantity']*qty
                         if amount%row['quantity']:raise ValueError(tr('Ce set contient des quantités personnalisées. Modifie son inventaire avant de changer le nombre de sets.'))
                         c.execute('UPDATE stock_set_components SET quantity=? WHERE set_entry_id=? AND item_id=? AND color=?',(amount//row['quantity'],eid,p['item_id'],p['color']))
-                c.execute('UPDATE '+scope+' SET quantity=? WHERE id=?',(qty,eid))
+                date_update=',last_added=CURRENT_TIMESTAMP' if scope in ('stock','stock_sets') and qty>row['quantity'] else ''
+                c.execute('UPDATE '+scope+' SET quantity=?'+date_update+' WHERE id=?',(qty,eid))
             else:
                 color=str(action['value'])
                 if color==row['color']:continue

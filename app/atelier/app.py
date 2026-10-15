@@ -94,6 +94,7 @@ class MainWindow(QMainWindow):
                     from .owned_sets import OwnedSetsPanel
                     panel=OwnedSetsPanel(db,self.engine);self.owned_panels.append(panel);cat=panel.catalogue;vl.addWidget(panel)
                 else:cat=Catalogue(db,kind=('part','minifig'),scope='stock');vl.addWidget(cat)
+                clear=QPushButton(tr('Vider Mon stock…') if scope=='stock' else tr('Vider Mon stock set…'));clear.clicked.connect(cat.clear_all_stock);row.addWidget(clear)
                 self.bind(cat);self.stack.addWidget(widget)
                 if db.setting('stock_migration_report',[]):
                     report=QPushButton(tr('Rapport de migration du stock'));report.clicked.connect(self.stock_migration_report);vl.addWidget(report)

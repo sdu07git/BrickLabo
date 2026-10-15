@@ -1,4 +1,5 @@
 from __future__ import annotations
+from .alternative_catalogue import original
 from .windows import show_window
 import json
 import threading
@@ -61,6 +62,7 @@ class VisualEngine:
             self.ldraw=None;self.render_cache.clear();self.images.decoded.clear()
 
     def color_rgb(self,item,chosen=''):
+        item=original(item)
         rgb=self.db.setting('default_color',DEFAULT_PART_COLOR)
         if chosen.startswith('#'):rgb=chosen
         elif chosen:
@@ -76,6 +78,7 @@ class VisualEngine:
         return rgb
 
     def photo(self,item,download=True,color=None,_native=False):
+        item=original(item)
         v=self.db.visual(item['id'])
         if item['source']=='BA':
             from .brickarchitect import native_item
@@ -103,6 +106,7 @@ class VisualEngine:
                 if image is not None:return image
             raise ValueError(tr('La référence ')+item['ref']+tr(' appartient à ')+item['source']+tr('. Choisis sa photo native ou importe une image de la référence équivalente.'))
         native=self.db.get_item(item['id']) if target=='RB' and item['kind']=='set' else None
+        if native and native['source']!=item['source']:native=item
         url=self.db.part_image(native or item,chosen);candidates=[url] if url else [];errors=[]
         if target=='RB' and item['kind']=='set':
             import urllib.parse
@@ -199,11 +203,12 @@ class VisualEngine:
         camera=camera_for_item(self.db,item) if camera is None else camera
         from .brickarchitect import model_ref
         ref=model_ref(self.db,item)
-        if item['source'] in ('RB','BL'):
-            links=getattr(renderer,'header_links',{});source=item['source'];key=item['ref'].lower()
+        native=original(item)
+        if native['source'] in ('RB','BL'):
+            links=getattr(renderer,'header_links',{});source=native['source'];key=native['ref'].lower()
             linked=links.get('models',{}).get(source,{}).get(key)
             if linked:ref=linked
-            elif key in links.get('ambiguous',{}).get(source,[]):ref=item['ref']
+            elif key in links.get('ambiguous',{}).get(source,[]):ref=native['ref']
         from .edge_style import style_for_item
         style=edge_settings if edge_settings is not None else style_for_item(self.db,item)
         options={'edge_strength':edge_strength if edge_strength is not None else style.get('legacy',0)}
@@ -307,7 +312,7 @@ class Preview(QWidget):
     def choose_color_link(self):
         if not self.item:return
         chosen=str(self.item.get('chosen_color') or self.db.visual(self.item['id'])['color'] or '')
-        if self.item['source']=='RB':
+        if original(self.item)['source']=='RB':
             palette=rb_palette()
             if chosen not in palette:
                 labels=[k+' — '+v['name'] for k,v in palette.items()]
@@ -324,15 +329,15 @@ class Preview(QWidget):
         options=candidates(self.db.setting,chosen)
         if len(options)<2:
             QMessageBox.information(self,tr('Correspondances'),describe(options[0]) if options else tr('Aucune correspondance connue.'));return
-        current=resolve(self.db.setting,self.item['ref'],chosen)
+        current=resolve(self.db.setting,original(self.item)['ref'],chosen)
         labels=[tr('Non résolue — conserver le code BrickLink')]+[describe(k) for k in options]
-        label,ok=QInputDialog.getItem(self,tr('Correspondance pour cette pièce'),self.item['ref']+' / BrickLink '+chosen,labels,options.index(current)+1 if current in options else 0,False)
+        label,ok=QInputDialog.getItem(self,tr('Correspondance pour cette pièce'),original(self.item)['ref']+' / BrickLink '+chosen,labels,options.index(current)+1 if current in options else 0,False)
         if ok:
-            index=labels.index(label);save_choice(self.db,self.item['ref'],chosen,options[index-1] if index else '')
+            index=labels.index(label);save_choice(self.db,original(self.item)['ref'],chosen,options[index-1] if index else '')
             self.visual_changed.emit(self.item);self.refresh()
 
     def import_inventory(self):
-        if not self.item:return
+        if not self.item or self.item['source']=='ALT':return
         from .set_inventory import choose_inventory
         selected=dict(self.item)
         choose_inventory(self,self.db,selected,lambda:self.note.setText(tr('Inventaire enregistré pour ')+selected['ref']+tr(' — double-clic sur le set pour voir les pièces.')))
@@ -350,12 +355,13 @@ class Preview(QWidget):
             updates={'links':[url for url in v['links'] if url not in photos]}
             if not v['image']:updates.update(image=photos[-1],mode='photo_bl' if item['source']=='BL' else 'photo_rb' if item['source']=='RB' else 'local')
             self.db.save_visual(item['id'],**updates)
-        self.title.setText(item['ref']+' — '+item['name']);self.title.setWordWrap(True)
+        self.title.setText(item['ref']+' — '+item['name']+('\n'+item['comment'] if item.get('comment') else ''));self.title.setWordWrap(True)
+        item=original(item)
         is_set=item['kind']=='set'
         self.color_link.setVisible(item['kind']=='part' and item['source'] in ('BL','RB'))
         for w in [self.label_title,self.label_preview,self.mode,self.mode_title,self.color,self.color_title,self.available,self.available_title,self.edit_one,self.reset_one]:w.setVisible(not is_set)
         self.find_rb_photos_button.setVisible(item['source'] in ('RB','BA') and not is_set and item['kind']=='part')
-        self.inventory_button.setVisible(is_set and item['source']=='BL');self.notice.setVisible(is_set);self.gallery_box.setVisible(True);self.gallery_box.setTitle(tr('Photo du set') if is_set else tr('Photos de la pièce'));self.find_photos_button.setVisible(item['source'] in ('RB','BL','BA') and not is_set);self.load_colors.setVisible(item['source']=='BL' and not is_set and all(self.db.setting('api_bl',{}).get(k) for k in ('consumer_key','consumer_secret','token','token_secret')))
+        self.inventory_button.setVisible(is_set and item['source']=='BL' and self.item['source']!='ALT');self.notice.setVisible(is_set);self.gallery_box.setVisible(True);self.gallery_box.setTitle(tr('Photo du set') if is_set else tr('Photos de la pièce'));self.find_photos_button.setVisible(item['source'] in ('RB','BL','BA') and not is_set);self.load_colors.setVisible(item['source']=='BL' and not is_set and all(self.db.setting('api_bl',{}).get(k) for k in ('consumer_key','consumer_secret','token','token_secret')))
         self.color.setToolTip(tr('La palette permet de choisir un rendu. Elle ne garantit pas que cette pièce existe dans la couleur choisie.'))
         self.available_title.setText(tr('Couleurs connues BrickLink') if item['source']=='BL' else tr('Couleurs disponibles dans les inventaires'))
         v=self.db.visual(item['id']);self.camera_button.setVisible(not is_set);self.camera_button.setEnabled(v['mode']=='3d' and not v['image']);self.updating=True
@@ -434,7 +440,7 @@ class Preview(QWidget):
         async_task(self,lambda progress:enrich_record(self.db,owner),done,failed)
 
     def model_changed(self):
-        if self.updating or not self.item or self.item['source']!='BA':return
+        if self.updating or not self.item or original(self.item)['source']!='BA':return
         model=self.model_choice.currentData()
         if not model:return
         self.db.set_setting('architect_model_'+str(self.item['id']),model)
@@ -449,17 +455,17 @@ class Preview(QWidget):
         for color in colors:
             self.available.addItem(color['name']+' ('+str(color['id'])+')',str(color['id']))
             if color.get('element_codes'):self.available.setItemData(self.available.count()-1,tr('Codes élément LEGO : ')+', '.join(color['element_codes']),Qt.ItemDataRole.ToolTipRole)
-        if self.item['source']=='BL' and self.item['kind']=='part':
-            has_codes=bool(self.db.rows('SELECT 1 FROM bl_codes WHERE item_ref=? LIMIT 1',(self.item['ref'],)))
+        if original(self.item)['source']=='BL' and self.item['kind']=='part':
+            has_codes=bool(self.db.rows('SELECT 1 FROM bl_codes WHERE item_ref=? LIMIT 1',(original(self.item)['ref'],)))
             self.available_title.setText(tr('Couleurs BrickLink renseignées (fichiers / cache)') if has_codes else tr('Couleurs connues BrickLink'))
             self.available.setToolTip(tr('Les codes élément LEGO renseignent certaines couleurs de cette pièce. Leur absence ne signifie pas que la pièce n’existe pas dans une couleur.'))
-        if self.item['source']=='BL' and not colors:self.available.setItemText(0,tr('Disponibilité non renseignée dans les fichiers'))
+        if original(self.item)['source']=='BL' and not colors:self.available.setItemText(0,tr('Disponibilité non renseignée dans les fichiers'))
         self.available.setEnabled(bool(colors))
         self.available.blockSignals(False)
 
     def fetch_colors(self):
-        if not self.item or self.item['source']!='BL':return
-        item=dict(self.item);iid=item['id']
+        if not self.item or original(self.item)['source']!='BL':return
+        item=dict(original(self.item));iid=item['id']
         if iid in self.color_requests:return
         self.color_requests.add(iid);self.note.setText(tr('Chargement des couleurs connues BrickLink…'))
         def done(colors):
@@ -608,7 +614,7 @@ class Preview(QWidget):
         self.db.set_setting(key,known)
         if self.item and self.item['id']==item['id']:self.reload_gallery()
     def photo_variant_changed(self):
-        if self.updating or not self.item or self.item['source']!='BA':return
+        if self.updating or not self.item or original(self.item)['source']!='BA':return
         choice=self.photo_variant.currentData() or ''
         self.db.set_setting('architect_photo_choice_'+str(self.item['id']),choice)
         mode={'RB':'photo_rb','BL':'photo_bl'}.get(choice.partition(':')[0],'3d')
@@ -618,8 +624,8 @@ class Preview(QWidget):
         self.token+=1;self.visual_changed.emit(self.item);self.refresh()
 
     def find_rb_photos(self):
-        if not self.item or self.item['source'] not in ('RB','BA') or self.item['kind']!='part':return
-        owner=dict(self.item);item=dict(owner)
+        if not self.item or original(self.item)['source'] not in ('RB','BA') or self.item['kind']!='part':return
+        owner=dict(self.item);item=dict(original(owner))
         if item['source']=='BA':
             from .brickarchitect import native_item
             item=native_item(self.db,item,'RB',preview=True)
@@ -639,8 +645,8 @@ class Preview(QWidget):
         async_task(self,lambda progress:rebrickable_photos(self.db,item),done,fail)
 
     def find_photos(self):
-        if not self.item or self.item['source'] not in ('RB','BL','BA'):return
-        owner=dict(self.item);item=dict(owner)
+        if not self.item or original(self.item)['source'] not in ('RB','BL','BA'):return
+        owner=dict(self.item);item=dict(original(owner))
         if item['source']=='BA':
             from .brickarchitect import native_item
             item=native_item(self.db,item,'BL',preview=True)

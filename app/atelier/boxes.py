@@ -7,6 +7,8 @@ from PySide6.QtWidgets import QDialog,QVBoxLayout,QLabel,QComboBox,QPushButton,Q
 from .ui_common import async_task,scalable
 
 def boxes_for_set(db,item):
+    from .alternative_catalogue import original
+    item=original(item)
     if not item or item.get('kind')!='set' or item.get('source') not in ('RB','BL'):return []
     refs=[item['ref']]
     if '-' not in item['ref']:refs.append(item['ref']+'-1')
