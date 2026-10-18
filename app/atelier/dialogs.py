@@ -13,7 +13,7 @@ from PySide6.QtWidgets import (QDialog,QWidget,QVBoxLayout,QHBoxLayout,QLabel,QL
     QScrollArea,QTableWidget,QTableWidgetItem,QDialogButtonBox,QSplitter,QFileDialog,QMessageBox,QInputDialog,
     QAbstractItemView,QComboBox,QTextBrowser,QCheckBox,QMenu)
 
-from .ui_common import async_task,dialog,scalable,edit_item
+from .ui_common import async_task,dialog,scalable,edit_item,FlowLayout
 from .services import API,request
 from .preview import Preview
 from .thumbnails import PartThumbnails
@@ -146,10 +146,14 @@ class DocumentsDialog(QDialog):
 
 class RelationsDialog(QDialog):
     def __init__(self,db,engine,item,parent):
-        super().__init__(parent);self.db=db;self.engine=engine;self.item=item;self.is_set=item['kind'] in ('set','minifig');self.show_sets=item['kind']!='set';self.parts=[];self.sets=[];self.set_image_token=0
+        super().__init__(parent);self.db=db;self.engine=engine;self.item=item;self.is_set=item['kind'] in ('set','minifig');self.show_sets=item['kind']!='set';self.parts=[];self.sets=[];self.set_image_token=0;self.relation_token=0;self.relation_closed=False;self.relation_filters=None
         self.setWindowTitle((tr('Pièces de la mini-figure — ') if item['kind']=='minifig' else tr('Pièces du set — ') if self.is_set else tr('Sets contenant — '))+item['ref']);self.setWindowFlag(Qt.WindowType.WindowMaximizeButtonHint);self.resize(1150,750)
         layout=QVBoxLayout(self);split=QSplitter();layout.addWidget(split,1);left=QWidget();lv=QVBoxLayout(left);split.addWidget(left)
         self.sets_heading=QLabel(tr('Sets contenant la mini-figure') if item['kind']=='minifig' else tr('Sets contenant la pièce'));self.sets_heading.setVisible(self.show_sets);lv.addWidget(self.sets_heading)
+        if item['kind']=='part':
+            from .relation_filters import RelationFilters
+            self.relation_filters=RelationFilters(db,engine,item,self);lv.addWidget(self.relation_filters)
+            self.relation_filters.search_requested.connect(self.search_containing_sets)
         self.tables_splitter=QSplitter(Qt.Orientation.Vertical);self.tables_splitter.setHandleWidth(9);self.tables_splitter.setChildrenCollapsible(False);self.tables_splitter.setStyleSheet('QSplitter::handle:vertical { background:#354963; border-top:1px solid #5a708c; border-bottom:1px solid #5a708c; }');lv.addWidget(self.tables_splitter,1)
         self.set_table=QTableWidget(0,3);self.set_table.setHorizontalHeaderLabels([tr('Référence'),tr('Set'),tr('Famille')]);self.set_table.setSelectionBehavior(QAbstractItemView.SelectionBehavior.SelectRows);self.set_table.horizontalHeader().setStretchLastSection(True);self.set_table.itemSelectionChanged.connect(self.set_selected);self.set_table.setMinimumHeight(70);self.tables_splitter.addWidget(self.set_table)
         self.set_table.setVisible(self.show_sets);self.set_table.setEditTriggers(QAbstractItemView.EditTrigger.NoEditTriggers);self.set_table.itemDoubleClicked.connect(self.open_containing_set);self.set_table.horizontalHeader().setSortIndicator(0,Qt.SortOrder.AscendingOrder)
@@ -158,7 +162,7 @@ class RelationsDialog(QDialog):
         self.source_note=QLabel();self.source_note.setWordWrap(True);lv.addWidget(self.source_note)
         right=QWidget();rv=QVBoxLayout(right);self.set_image_title=QLabel(tr('Aperçu de la mini-figure') if item['kind']=='minifig' else tr('Aperçu du set'));rv.addWidget(self.set_image_title);self.set_image=QLabel();self.set_image.setMinimumHeight(170);self.set_image.setAlignment(Qt.AlignmentFlag.AlignCenter);rv.addWidget(self.set_image)
         scroll=QScrollArea();scroll.setWidgetResizable(True);self.preview=Preview(db,engine);scroll.setWidget(self.preview);rv.addWidget(scroll,1);split.addWidget(right);split.setSizes([750,350])
-        row=QHBoxLayout()
+        row=FlowLayout()
         for name,target,all_parts in [(tr('Toutes les pièces → étiquettes'),'queue',True),(tr('Toutes les pièces → stock'),'stock',True),(tr('Sélection → étiquettes'),'queue',False),(tr('Sélection → stock'),'stock',False)]:
             b=QPushButton(name);b.clicked.connect(lambda checked=False,t=target,a=all_parts:self.add_parts(t,a));row.addWidget(b)
         layout.addLayout(row)
@@ -181,11 +185,34 @@ class RelationsDialog(QDialog):
             if item['kind']=='minifig' and not self.parts and item['source']=='RB' and db.setting('api_rb',''):self.fetch_rb()
         else:
             self.sets=db.containing_sets(item)
+            self.sets_heading.setText(tr('Sets contenant la pièce — ')+str(len(self.sets))+tr(' résultat(s)'))
+            self.sets_heading.setToolTip(tr('Recherche dans les inventaires locaux, y compris les pièces des mini-figurines et les sous-sets. Les données absentes ne peuvent pas être retrouvées.'))
             fill_table(self.set_table,[(s['ref'],s['name'],s['category']) for s in self.sets])
             self.preview.set_item(item)
             if self.sets:self.set_table.selectRow(0)
             elif item['source']=='BL':self.source_note.setText(tr('Les fichiers TXT BrickLink n’incluent pas les relations pièce → sets. L’inventaire d’un set peut être chargé depuis l’API dans le catalogue de sets BrickLink.'))
             else:self.source_note.setText(tr('Aucun set trouvé dans les inventaires importés.'))
+    def search_containing_sets(self):
+        if not self.relation_filters or self.relation_closed:return
+        criteria=self.relation_filters.criteria()
+        if not criteria:return
+        self.relation_token+=1;token=self.relation_token
+        self.relation_filters.set_busy(True)
+        self.sets_heading.setText(tr('Recherche des sets contenant les pièces…'))
+        from .containing_sets import matching
+        def finish(rows=None,error=None):
+            if self.relation_closed or token!=self.relation_token:return
+            self.relation_filters.set_busy(False)
+            if error:self.sets_heading.setText(tr('Recherche impossible : ')+error);return
+            self.sets=rows
+            fill_table(self.set_table,[(row['ref'],row['name'],row['category']) for row in rows])
+            self.sets_heading.setText(tr('Sets contenant toutes les pièces — ')+str(len(rows))+tr(' résultat(s)'))
+            if rows:self.set_table.selectRow(0)
+            else:
+                self.parts=[];self.part_table.setRowCount(0);self.thumbnails.reset();self.set_image_token+=1;self.set_image.clear()
+                self.preview.set_item(None);self.source_note.setText(tr('Aucun set commun trouvé dans les inventaires locaux avec ces références et couleurs.'))
+        async_task(self,lambda _:matching(self.db,criteria),lambda rows:finish(rows),lambda error:finish(error=error))
+
     def set_selected(self):
         row=row_index(self.set_table)
         if 0<=row<len(self.sets):
@@ -265,9 +292,13 @@ class RelationsDialog(QDialog):
     def fetch_rb(self):
         async_task(self,lambda progress:API(self.db).rb_minifig_components(self.item),lambda parts:self.load_set(self.item),lambda e:self.progress_label.setText(e))
     def closeEvent(self,event):
+        self.relation_closed=True;self.relation_token+=1
+        if self.relation_filters:self.relation_filters.stop()
         if self.show_sets:self.db.set_setting('relations_table_sizes',self.tables_splitter.sizes())
         self.set_image_token+=1;self.thumbnails.stop();super().closeEvent(event)
     def done(self,result):
+        self.relation_closed=True;self.relation_token+=1
+        if self.relation_filters:self.relation_filters.stop()
         if self.show_sets:self.db.set_setting('relations_table_sizes',self.tables_splitter.sizes())
         self.set_image_token+=1;self.thumbnails.stop();super().done(result)
     def change_part_color(self,row,value):

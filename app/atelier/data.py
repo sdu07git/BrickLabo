@@ -60,6 +60,7 @@ CREATE INDEX IF NOT EXISTS idx_ip_inventory ON inventory_parts(inventory_id);
 CREATE INDEX IF NOT EXISTS idx_ip_part ON inventory_parts(part_num,inventory_id);
 CREATE TABLE IF NOT EXISTS inventory_sets(inventory_id INTEGER,set_num TEXT,quantity INTEGER);
 CREATE INDEX IF NOT EXISTS idx_is_inventory ON inventory_sets(inventory_id);
+CREATE INDEX IF NOT EXISTS idx_is_set ON inventory_sets(set_num,inventory_id);
 CREATE TABLE IF NOT EXISTS inventory_minifigs(inventory_id INTEGER,fig_num TEXT,quantity INTEGER);
 CREATE INDEX IF NOT EXISTS idx_im_inventory ON inventory_minifigs(inventory_id);
 CREATE INDEX IF NOT EXISTS idx_im_fig ON inventory_minifigs(fig_num,inventory_id);
@@ -413,22 +414,13 @@ class Database:
                 p['chosen_quantity']*=child['multiplier'];out.append(p)
         return out
 
-    def containing_sets(self,item):
-        if item['source']=='ALT':
-            out=[]
-            for s in self.rows("SELECT * FROM items WHERE source='ALT' AND kind='set'"):
-                if any(p['item_id']==item['id'] for p in self.setting('alt_components_'+str(s['id']),[])):out.append(s)
-            return out
+    def containing_sets(self,item,color=None):
         if item['source']=='BA':
             from .brickarchitect import native_item
             native=native_item(self,item,'RB')
-            return self.containing_sets(native) if native else []
-        if item['source']=='BL':
-            return self.rows("SELECT DISTINCT s.* FROM bl_manual_inventory p JOIN items s ON s.id=p.set_id WHERE p.item_id=? AND p.alternate=0 AND p.counterpart=0 ORDER BY s.ref",(item['id'],))
-        if item['kind']=='minifig':
-            join='inventory_minifigs';col='fig_num'
-        else:join='inventory_parts';col='part_num'
-        return self.rows(f"SELECT DISTINCT s.* FROM {join} p JOIN inventories v ON v.id=p.inventory_id JOIN items s ON s.source='RB' AND s.kind='set' AND s.ref=v.set_num WHERE p.{col}=? AND v.version=(SELECT MAX(v2.version) FROM inventories v2 WHERE v2.set_num=v.set_num) ORDER BY s.ref",(item['ref'],))
+            return self.containing_sets(native,color) if native else []
+        from .containing_sets import find
+        return find(self,item,color)
 
     def available_colors(self,item):
         from .alternative_catalogue import original
