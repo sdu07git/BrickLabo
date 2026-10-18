@@ -1,8 +1,33 @@
-# BrickLabo — v0.1.60
+# BrickLabo — v0.1.61
 
-Windows desktop software for LEGO catalogues, stock, construction searches and labels. This version continues the published v0.1.59, based on the original v0.1.28.
+Windows desktop software for LEGO catalogues, stock, construction searches and labels. This version continues the published v0.1.60, based on the original v0.1.28.
 
-**Downloads v0.1.60 :** [complete Windows package](https://github.com/sdu07git/BrickLabo/releases/download/v0.1.60/BrickLabo_v0.1.60_Complet.zip) · [sources with resources](https://github.com/sdu07git/BrickLabo/releases/download/v0.1.60/BrickLabo_v0.1.60_Sources.zip) · [release notes](https://github.com/sdu07git/BrickLabo/releases/tag/v0.1.60).
+**Downloads v0.1.61 :** [complete Windows package](https://github.com/sdu07git/BrickLabo/releases/download/v0.1.61/BrickLabo_v0.1.61_Complet.zip) · [sources with resources](https://github.com/sdu07git/BrickLabo/releases/download/v0.1.61/BrickLabo_v0.1.61_Sources.zip) · [release notes](https://github.com/sdu07git/BrickLabo/releases/tag/v0.1.61).
+
+## Stock, alternatives and part searches — v0.1.61
+
+**Storage across all cabinets** : In My storage → Parts to store, Destination cabinet offers All cabinets for drag and drop. In Sort by category and stud size, Cabinets to use can also select every cabinet in one operation. Cabinet position determines top-to-bottom, left-to-right order, followed by top-to-bottom drawers within each cabinet. Targets include cabinet names and drawer addresses; the preview shows all selected cabinets. Named empty drawers remain protected. Reorganisation requires a category and preserves mixed-category drawers. One Undo restores the entire operation.
+
+**Independent storage criteria** : Category, Stud size and Reference checkboxes can be freely combined. Category + Size is the initial setting. Category alone groups a family; Size alone can group matching formats from different families; Reference separates each physical catalogue identity. Missing dimensions are never guessed: size-only sorting leaves these parts unassigned, while Reference includes them. Split colours is independent. Free grouping still allows multiple references in a shared drawer.
+
+**Thumbnails and multiple drawers per reference** : The proposal table includes a 3D or photo preview, a proposed quantity and a target drawer. In a group with multiple references, the thumbnail represents the first part; select the row and open Drawer contents to see every reference and preview. Drawer count per reference… chooses 1, 2, 3 or more drawers for each reference and checks Reference. With Allocate remaining quantities, known quantities are distributed as evenly as possible by colour without changing global stock: 40 pieces across 3 drawers gives 14, 13 and 13. Uncounted associations stay To be counted. Catalogue assignments never declare ownership. With Split colours enabled, the drawer count applies to each colour. Either choose all requested drawers for a reference or leave all unassigned; a partial allocation blocks Apply. Use the drawer inventory or Transfer a quantity… to adjust counts afterwards. Unchecking Reference or changing the grouping mode resets drawer counts.
+
+**Sets containing multiple parts** : The containing-sets window starts with the opened part and All colours. Add a part… opens a catalogue with search, filters and thumbnails; Ctrl/Shift selects multiple parts on the page. Choose a colour or All colours independently for each row, then Search. Results must contain every requested part and colour. Add the same reference twice to request two colours. Remove selection and Reset to this part only change criteria; Search refreshes results.
+
+**Minifigure parts and nested sets** : Reverse searches now traverse part → minifigure → set and nested sets or kits. Batch API inventories are included, with inventory versions and exact source namespaces preserved. The checked Rebrickable exports return 23 sets for 41850, including kits, instead of one direct result. Counts can change with data. Inventories must be present locally; import complete CSV exports for full coverage without an API key.
+
+**Choose usable stock** : Checked loose stock and checked owned-set inventories are independent sources. Checked sets only unchecks loose rows while retaining individual set choices. Selected sets supply their components even when every loose row is unchecked, without recording dismantling or adding loose stock. Custom counts are respected; sets without tracked components use a complete local catalogue inventory with a warning. Project reservations reduce only loose stock. The selector includes set photos and part previews.
+
+**Alternative catalogue and comments** : A set context menu offers Copy the set to the alternative catalogue… and Copy the set parts to the alternative catalogue…. The second also copies constituent references with colours, quantities, spare flags and known local minifigure compositions. An optional comment such as Lepin brand is editable in Edit reference and appears in the Comment column. Metadata, photos, 3D models and personal visual settings are retained with explicit lineage that survives renaming. Identifiable legacy copies are repaired without replacing custom visuals. Catalogue copies never declare ownership.
+
+**Alternatives in searches and projects** : Allow equivalent alternative bricks is optional and initially disabled. It matches copies with a known origin to native requirements in buildable sets and MOC suggestions. In New project, it allocates free equivalent loose parts while keeping physical references and colours. Existing reservations cannot be reused. Creation reserves nothing; reservations remain explicit. Transfer an owned set inventory to loose stock before reserving its components.
+
+**Clear the entire stock** : Clear My stock… and Clear My set stock… affect every page and filter after a quantity confirmation. Clearing loose stock releases reservations and resets known drawer counts; cabinets, assignments and unknown counts are retained. Clearing owned sets does not transfer parts to loose stock. One Undo/Redo restores the whole operation, including after restart. A stock change during confirmation prevents clearing.
+
+**Last addition date and time** : Both stock catalogues show sortable Last stock addition immediately after Reference, in local date and time. It differs from the general catalogue import date. Adding an existing reference/colour merges quantities and updates its timestamp; Undo restores the previous quantity and date. Deleting a row removes its entire quantity rather than just the last addition.
+
+
+**Validation v0.1.61:** 844 full-suite tests passed on Qt/Linux, followed by 29 storage checks after the last adjustment. Normal and compact interfaces reviewed; delivery tools validate the archives and Windows launcher. [Detailed report](documentation/CONTROLE_v0.1.61.txt). Native Windows execution remains to be confirmed.
 
 ## Direct loose stock and complete inventories — v0.1.60
 
@@ -313,7 +338,7 @@ Read [English help](documentation/AIDE.en.html) and [component licences](documen
 | 0.1.58 | Projects and previews, drawer inventories, versioned CSV imports, figure layouts and memory protection. |
 | 0.1.57 | Drawer counts and partial transfers, persistent undo/redo history, projects with requirements, reservations and missing parts. |
 
-One bilingual [NOUVEAUTES.txt](documentation/NOUVEAUTES.txt) holds cumulative notes. This branch does not document a released 0.1.29. The 0.1.28b / Range variants were not used as the baseline. The [v0.1.60 validation report](documentation/CONTROLE_v0.1.60.txt) describes the checks for this delivery.
+One bilingual [NOUVEAUTES.txt](documentation/NOUVEAUTES.txt) holds cumulative notes. This branch does not document a released 0.1.29. The 0.1.28b / Range variants were not used as the baseline. The [v0.1.61 validation report](documentation/CONTROLE_v0.1.61.txt) describes the checks for this delivery.
 
 ## Development and diagnostics
 
@@ -327,7 +352,7 @@ For a compatible future update, publish a public stable release with tag `vX.Y.Z
 
 To develop from this repository, take `ressources/complete.zip` from the source ZIP attached to the release: this LDraw archive exceeds GitHub's regular file size limit. GitHub's automatic source archives contain neither this resource nor the Windows runtime. Both attached ZIPs are the delivered and tested version; the repository READMEs are adapted for publication.
 
-The [v0.1.60 validation report](documentation/CONTROLE_v0.1.60.txt) describes the checks for this delivery. Native Windows execution remains to be confirmed.
+The [v0.1.61 validation report](documentation/CONTROLE_v0.1.61.txt) describes the checks for this delivery. Native Windows execution remains to be confirmed.
 
 
 
