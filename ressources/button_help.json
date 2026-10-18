@@ -995,6 +995,30 @@
     "Vrac uniquement": {
       "fr": "Réinclut tout le vrac, exclut les composants des sets possédés et relance la recherche avec les critères actuels.",
       "en": "Includes all loose stock again, excludes owned set components and reruns the search with the current criteria."
+    },
+    "Vider Mon stock…": {
+      "fr": "Vide toutes les pages du vrac après confirmation. Libère ses réservations et remet les comptages des tiroirs à zéro ; une seule action Annuler restaure l’ensemble.",
+      "en": "Clear all loose stock pages after confirmation. Release its reservations and reset drawer counts; one Undo restores everything."
+    },
+    "Vider Mon stock set…": {
+      "fr": "Retire tous les sets possédés et leur suivi après confirmation, sans transférer de pièces au vrac. Opération annulable.",
+      "en": "Remove all owned sets and tracked components after confirmation, without transferring loose parts. Supports Undo."
+    },
+    "Sets cochés uniquement": {
+      "fr": "Décoche le vrac et active les inventaires des sets dont la case est cochée. Valide avec OK pour enregistrer ce choix.",
+      "en": "Uncheck loose stock and enable inventories of checked sets. Confirm with OK to save this choice."
+    },
+    "Ajouter une pièce…": {
+      "fr": "Ouvre le catalogue pour ajouter une ou plusieurs pièces aux critères. Les sets trouvés doivent contenir toutes les pièces choisies.",
+      "en": "Open the catalogue to add one or more part criteria. Results must contain every chosen part."
+    },
+    "Revenir à cette pièce": {
+      "fr": "Remet la pièce de départ avec Toutes les couleurs. Clique sur Rechercher pour actualiser la liste des sets.",
+      "en": "Reset to the initial part with All colours. Click Search to update the set list."
+    },
+    "Autoriser les briques alternatives équivalentes": {
+      "fr": "Autorise uniquement les copies dont l’origine est connue, sans fusionner les marques dans le stock.",
+      "en": "Allow only copies with a known origin without merging brands in stock."
     }
   },
   "contexts": {
@@ -1081,6 +1105,14 @@
     "BuildStockDialog|Rechercher": {
       "fr": "Compare les inventaires locaux au stock utilisable et affiche les sets selon les critères choisis.",
       "en": "Compares local inventories with usable stock and displays sets matching the selected criteria."
+    },
+    "RelationFilters|Rechercher": {
+      "fr": "Recherche les sets contenant toutes les références et couleurs choisies dans les inventaires locaux, y compris les pièces des mini-figurines.",
+      "en": "Search local inventories for sets containing all chosen references and colours, including minifigure parts."
+    },
+    "RelationFilters|Retirer la sélection": {
+      "fr": "Retire les lignes sélectionnées des critères de recherche. Le stock est conservé.",
+      "en": "Remove selected rows from search criteria. Stock is retained."
     }
   }
 }
