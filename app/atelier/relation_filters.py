@@ -20,7 +20,10 @@ class PartPicker(QDialog):
         hint.setWordWrap(True)
         layout.addWidget(hint)
         self.catalogue = Catalogue(db, source=source, kind='part', selection_only=True)
+        self.catalogue.key += '_relations'
+        self.catalogue.visible_columns = db.setting(self.catalogue.key, ['ref','name','image'])
         self.catalogue.engine = engine
+        self.catalogue.reload()
         self.catalogue.table.setSelectionMode(QAbstractItemView.SelectionMode.ExtendedSelection)
         layout.addWidget(self.catalogue, 1)
         buttons = QDialogButtonBox(QDialogButtonBox.StandardButton.Ok | QDialogButtonBox.StandardButton.Cancel)

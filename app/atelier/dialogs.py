@@ -205,6 +205,7 @@ class RelationsDialog(QDialog):
             self.relation_filters.set_busy(False)
             if error:self.sets_heading.setText(tr('Recherche impossible : ')+error);return
             self.sets=rows
+            self.set_table.clearSelection();self.set_table.setCurrentCell(-1,-1)
             fill_table(self.set_table,[(row['ref'],row['name'],row['category']) for row in rows])
             self.sets_heading.setText(tr('Sets contenant toutes les pièces — ')+str(len(rows))+tr(' résultat(s)'))
             if rows:self.set_table.selectRow(0)
