@@ -102,7 +102,7 @@ class ReverseMembershipTests(unittest.TestCase):
     def test_relations_window_filters_common_sets_and_clears_empty_preview(self):
         with patch('atelier.dialogs.async_task',side_effect=lambda owner,work,done,*_:done(work(lambda *_:None))),patch('atelier.preview.async_task'),patch.object(RelationsDialog,'show_set_image'):
             window=self.keep(RelationsDialog(self.db,self.engine,self.get(self.part),None));window.relation_filters.add_items([self.get(self.other)])
-            combo=window.relation_filters.table.cellWidget(1,2);combo.setCurrentIndex(combo.findData('4'));window.search_containing_sets();self.assertEqual([r['ref'] for r in window.sets],['200-1','300-1'])
+            combo=window.relation_filters.table.cellWidget(1,2);combo.setCurrentIndex(combo.findData('4'));window.search_containing_sets();self.assertEqual([r['ref'] for r in window.sets],['200-1','300-1']);self.assertEqual(window.active_set['id'],self.indirect)
             combo=window.relation_filters.table.cellWidget(0,2);combo.setCurrentIndex(combo.findData('4'));window.search_containing_sets();self.assertEqual(window.sets,[]);self.assertEqual(window.part_table.rowCount(),0)
     def test_late_search_after_close_is_ignored(self):
         callbacks=[]
