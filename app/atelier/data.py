@@ -38,7 +38,7 @@ def part_has_print(ref,name):
     return int(reference or explicit or pattern)
 
 
-PRINT_EXPRESSION="(i.kind='part' AND (part_has_print(i.ref,i.name)=1 OR (i.source='RB' AND EXISTS (SELECT 1 FROM relationships r WHERE r.child_part_num=i.ref AND r.rel_type='P'))))"
+PRINT_EXPRESSION="(i.kind='part' AND (part_has_print(i.ref,i.name)=1 OR EXISTS (SELECT 1 FROM relationships r WHERE r.rel_type='P' AND ((i.source='RB' AND r.child_part_num=i.ref) OR (i.source='ALT' AND i.origin_source='RB' AND r.child_part_num=i.origin_ref)))))"
 STICKER_EXPRESSION="(i.kind='part' AND part_has_sticker(i.ref,i.name)=1)"
 
 
@@ -60,6 +60,7 @@ CREATE INDEX IF NOT EXISTS idx_ip_inventory ON inventory_parts(inventory_id);
 CREATE INDEX IF NOT EXISTS idx_ip_part ON inventory_parts(part_num,inventory_id);
 CREATE TABLE IF NOT EXISTS inventory_sets(inventory_id INTEGER,set_num TEXT,quantity INTEGER);
 CREATE INDEX IF NOT EXISTS idx_is_inventory ON inventory_sets(inventory_id);
+CREATE INDEX IF NOT EXISTS idx_is_set ON inventory_sets(set_num,inventory_id);
 CREATE TABLE IF NOT EXISTS inventory_minifigs(inventory_id INTEGER,fig_num TEXT,quantity INTEGER);
 CREATE INDEX IF NOT EXISTS idx_im_inventory ON inventory_minifigs(inventory_id);
 CREATE INDEX IF NOT EXISTS idx_im_fig ON inventory_minifigs(fig_num,inventory_id);
@@ -112,6 +113,8 @@ class Database:
                 c.execute("ALTER TABLE items ADD COLUMN imported_at TEXT NOT NULL DEFAULT ''")
             c.execute("CREATE TRIGGER IF NOT EXISTS items_import_date AFTER INSERT ON items WHEN NEW.imported_at='' BEGIN UPDATE items SET imported_at=datetime('now','localtime') WHERE id=NEW.id; END")
             c.execute('CREATE INDEX IF NOT EXISTS idx_items_import_date ON items(source,kind,imported_at)')
+            from .alternative_catalogue import prepare as prepare_alternatives
+            prepare_alternatives(c)
             from .search_index import prepare_index
             self.search_index_available=prepare_index(c)
             from .stock import prepare
@@ -239,19 +242,21 @@ class Database:
             clause+=(' AND ' if clause else 'WHERE ')+"TRIM(COALESCE(i.year,''))=?"
             args.append('' if year=='__unknown__' else str(year))
         if hide_decorated:clause+=(' AND ' if clause else 'WHERE ')+f'NOT ({PRINT_EXPRESSION} OR {STICKER_EXPRESSION})'
-        join=" LEFT JOIN brickarchitect ba ON i.source='BA' AND ba.ref=i.ref "; extra=',ba.rank AS architect_rank,ba.models AS ldraw_model'; prefix='i.'
+        join=" LEFT JOIN brickarchitect ba ON (i.source='BA' AND ba.ref=i.ref) OR (i.source='ALT' AND i.origin_source='BA' AND ba.ref=i.origin_ref) "; extra=',ba.rank AS architect_rank,ba.models AS ldraw_model'; prefix='i.'
         if scope in ('stock','stock_sets','stock_available','queue','history'):
             join+=f' JOIN {scope} s ON s.item_id=i.id '
             if scope!='history':clause+=(' AND ' if clause else 'WHERE ')+'s.quantity>0'
             extra+=",s.id AS entry_id,s.color AS chosen_color,s.quantity AS chosen_quantity,"+('s.date AS date,s.method AS method' if scope=='history' else 's.added AS date')
+            if scope in ('stock','stock_sets'):extra+=",datetime(COALESCE(NULLIF(s.last_added,''),s.added),'localtime') AS stock_entered_at"
             if scope=='stock':
                 reserved='COALESCE((SELECT SUM(p.reserved) FROM project_parts p WHERE p.item_id=i.id AND p.color=s.color),0)'
                 allocated='COALESCE((SELECT SUM(p.quantity) FROM storage_contents p WHERE p.item_id=i.id AND p.color=s.color),0)'
                 extra+=','+reserved+' AS reserved_quantity,MAX(0,s.quantity-'+reserved+') AS available_quantity,'+allocated+' AS allocated_quantity,MAX(0,s.quantity-'+allocated+') AS remaining_quantity'
-        allowed={'ref','name','category','year','date','chosen_quantity','chosen_color','source','method','has_print','has_sticker','architect_rank','ldraw_model','imported_at'}
+        allowed={'ref','name','category','year','date','chosen_quantity','chosen_color','source','method','has_print','has_sticker','architect_rank','ldraw_model','imported_at','comment'}
+        if scope in ('stock','stock_sets'):allowed.add('stock_entered_at')
         if scope=='stock':allowed|={'reserved_quantity','available_quantity','allocated_quantity','remaining_quantity'}
         if sort not in allowed or (sort in {'date','chosen_quantity','chosen_color','method'} and scope not in ('stock','stock_sets','stock_available','queue','history')): sort='ref'
-        if sort in {'date','chosen_quantity','chosen_color','method','has_print','has_sticker','architect_rank','ldraw_model'}: prefix=''
+        if sort in {'date','chosen_quantity','chosen_color','method','has_print','has_sticker','architect_rank','ldraw_model','stock_entered_at'}: prefix=''
         if sort in {'reserved_quantity','available_quantity','allocated_quantity','remaining_quantity'}:prefix=''
         with self.read() as c:
             c.execute('BEGIN')
@@ -329,25 +334,22 @@ class Database:
             c.executemany('UPDATE items SET catalogue_hidden=1 WHERE id=?',[(iid,) for iid in ids])
 
     def copy_alternative(self,item):
-        ref=item['source']+'-'+item['ref']
-        self.run('INSERT INTO items(source,kind,ref,name,category,image,search) VALUES(?,?,?,?,?,?,?) ON CONFLICT(source,kind,ref) DO UPDATE SET catalogue_hidden=0',
-                 ('ALT',item['kind'],ref,item['name'],item['category'],item['image'],normalize(ref+' '+item['name'])))
-        if item['kind']=='set':
-            target=self.rows("SELECT id FROM items WHERE source='ALT' AND kind='set' AND ref=?",(ref,))[0]['id']
-            parts=self.components(item)
-            self.set_setting('alt_components_'+str(target),[{'item_id':p['id'],'color':str(p.get('chosen_color','')),'quantity':p.get('chosen_quantity',1)} for p in parts])
+        from .alternative_catalogue import copy_items
+        return self.get_item(copy_items(self,[item])['target_ids'][0])
 
-    def alternative(self,kind,ref,name,category,image='',item_id=None):
-        if not ref.strip() or not name.strip(): raise ValueError(tr('Référence et nom obligatoires'))
+    def alternative(self,kind,ref,name,category,image=None,item_id=None,comment=None):
+        if not ref.strip() or not name.strip():raise ValueError(tr('Référence et nom obligatoires'))
+        old=self.get_item(item_id) if item_id else None
+        if old and old.get('origin_source') and old['kind']!=kind:raise ValueError(tr('Le type d’une copie liée à une origine ne peut pas être changé.'))
         if not item_id:
             hidden=self.rows("SELECT id FROM items WHERE source='ALT' AND kind=? AND ref=? AND catalogue_hidden=1",(kind,ref.strip()))
-            if hidden:
-                item_id=hidden[0]['id'];self.run('UPDATE items SET catalogue_hidden=0 WHERE id=?',(item_id,))
-        args=('ALT',kind,ref.strip(),name.strip(),category,image,normalize(ref+' '+name))
-        if item_id:
-            self.run('UPDATE items SET source=?,kind=?,ref=?,name=?,category=?,image=?,search=? WHERE id=?',args+(item_id,))
-        else:
-            self.run('INSERT INTO items(source,kind,ref,name,category,image,search) VALUES(?,?,?,?,?,?,?)',args)
+            if hidden:item_id=hidden[0]['id'];old=self.get_item(item_id)
+        image=(old or {}).get('image','') if image is None else image
+        value=str(comment if comment is not None else (old or {}).get('comment','')).strip()
+        args=('ALT',kind,ref.strip(),name.strip(),category,image,normalize(ref+' '+name+' '+value),value)
+        if item_id:self.run('UPDATE items SET source=?,kind=?,ref=?,name=?,category=?,image=?,search=?,comment=?,catalogue_hidden=0 WHERE id=?',args+(item_id,))
+        else:item_id=self.run('INSERT INTO items(source,kind,ref,name,category,image,search,comment) VALUES(?,?,?,?,?,?,?,?)',args)
+        return item_id
 
     def add_alt_component(self,set_id,part_id,color,quantity):
         components=self.setting('alt_components_'+str(set_id),[])
@@ -362,6 +364,9 @@ class Database:
             return []
         visited.add(key)
         if item['source']=='ALT':
+            from .alternative_catalogue import original
+            native=original(item)
+            if item['kind']=='minifig' and native['source']!='ALT' and not self.setting('alt_components_'+str(item['id']),[]):return self.components(native,visited,strict,exclude_minifigs,inventory_version)
             out=[]
             for x in self.setting('alt_components_'+str(item['id']),[]):
                 part=self.get_item(x['item_id'])
@@ -371,7 +376,7 @@ class Database:
                     children=self.components(part,visited,strict,exclude_minifigs=exclude_minifigs)
                     if strict and not children and not exclude_minifigs:raise ValueError(tr('Inventaire incomplet : ')+part['ref'])
                     out.extend(dict(child,chosen_quantity=int(child['chosen_quantity'])*int(x['quantity'])) for child in children)
-                elif part:out.append(dict(part,chosen_color=x['color'],chosen_quantity=x['quantity'],is_spare=0))
+                elif part:out.append(dict(part,chosen_color=x['color'],chosen_quantity=x['quantity'],is_spare=int(x.get('is_spare',0))))
             return out
         ref=item['ref']
         from .inventory_batches import cached_components
@@ -409,24 +414,17 @@ class Database:
                 p['chosen_quantity']*=child['multiplier'];out.append(p)
         return out
 
-    def containing_sets(self,item):
-        if item['source']=='ALT':
-            out=[]
-            for s in self.rows("SELECT * FROM items WHERE source='ALT' AND kind='set'"):
-                if any(p['item_id']==item['id'] for p in self.setting('alt_components_'+str(s['id']),[])):out.append(s)
-            return out
+    def containing_sets(self,item,color=None):
         if item['source']=='BA':
             from .brickarchitect import native_item
             native=native_item(self,item,'RB')
-            return self.containing_sets(native) if native else []
-        if item['source']=='BL':
-            return self.rows("SELECT DISTINCT s.* FROM bl_manual_inventory p JOIN items s ON s.id=p.set_id WHERE p.item_id=? AND p.alternate=0 AND p.counterpart=0 ORDER BY s.ref",(item['id'],))
-        if item['kind']=='minifig':
-            join='inventory_minifigs';col='fig_num'
-        else:join='inventory_parts';col='part_num'
-        return self.rows(f"SELECT DISTINCT s.* FROM {join} p JOIN inventories v ON v.id=p.inventory_id JOIN items s ON s.source='RB' AND s.kind='set' AND s.ref=v.set_num WHERE p.{col}=? AND v.version=(SELECT MAX(v2.version) FROM inventories v2 WHERE v2.set_num=v.set_num) ORDER BY s.ref",(item['ref'],))
+            return self.containing_sets(native,color) if native else []
+        from .containing_sets import find
+        return find(self,item,color)
 
     def available_colors(self,item):
+        from .alternative_catalogue import original
+        item=original(item)
         if item['source']=='BL':
             from .color_links import bl_palette
             palette=bl_palette(self.setting)
@@ -446,6 +444,8 @@ class Database:
     def part_image(self,item,color=None):
         if item.get('inventory_image'):return item['inventory_image']
         if item.get('image'):return item['image']
+        from .alternative_catalogue import original
+        item=original(item)
         if item['source']=='RB':
             sql='SELECT img_url FROM inventory_parts WHERE part_num=? AND img_url<>\'\'';args=[item['ref']]
             if color not in ('',None):sql+=' AND color_id=?';args.append(color)

@@ -12,7 +12,7 @@ from PySide6.QtWidgets import (QWidget,QVBoxLayout,QHBoxLayout,QLabel,QLineEdit,
 from .ui_common import edit_item,async_task,pixmap,FlowLayout,HorizontalControls
 
 
-COLUMNS=[('architect_rank',tr('Classement')),('ldraw_model',tr('Modèles LDraw')),('ref',tr('Référence')),('name',tr('Nom')),('category',tr('Catégorie')),('has_print',tr('Sérigraphie')),('has_sticker',tr('Sticker')),('image',tr('Aperçu 3D / photo')),
+COLUMNS=[('stock_entered_at',tr('Dernier ajout au stock')),('comment',tr('Commentaire')),('architect_rank',tr('Classement')),('ldraw_model',tr('Modèles LDraw')),('ref',tr('Référence')),('name',tr('Nom')),('category',tr('Catégorie')),('has_print',tr('Sérigraphie')),('has_sticker',tr('Sticker')),('image',tr('Aperçu 3D / photo')),
          ('source',tr('Source')),('year',tr('Année')),('chosen_color',tr('Couleur')),('chosen_quantity',tr('Quantité')),
          ('reserved_quantity',tr('Réservée aux projets')),('available_quantity',tr('Disponible pour construire')),('allocated_quantity',tr('Répartie dans les tiroirs')),('remaining_quantity',tr('Restant à ranger')),
          ('imported_at',tr('Date d’import')),('date',tr('Date')),('method',tr('Méthode')),('alternate',tr('Autres références')),('weight',tr('Poids (g)')),('dimensions',tr('Dimensions'))]
@@ -40,6 +40,12 @@ class Catalogue(QWidget):
         if not selection_only and not self.db.setting('import_date_column_added_'+self.key,False):
             if 'imported_at' not in self.visible_columns:self.visible_columns.insert(self.visible_columns.index('image') if 'image' in self.visible_columns else len(self.visible_columns),'imported_at')
             self.db.set_setting(self.key,self.visible_columns);self.db.set_setting('import_date_column_added_'+self.key,True)
+        if scope in ('stock','stock_sets') and not self.db.setting('stock_entry_date_added_'+self.key,False):
+            if 'stock_entered_at' not in self.visible_columns:self.visible_columns.insert(self.visible_columns.index('ref')+1 if 'ref' in self.visible_columns else 0,'stock_entered_at')
+            self.db.set_setting(self.key,self.visible_columns);self.db.set_setting('stock_entry_date_added_'+self.key,True)
+        if source=='ALT' and not selection_only and not self.db.setting('alternative_comment_added_'+self.key,False):
+            if 'comment' not in self.visible_columns:self.visible_columns.insert(self.visible_columns.index('image') if 'image' in self.visible_columns else len(self.visible_columns),'comment')
+            self.db.set_setting(self.key,self.visible_columns);self.db.set_setting('alternative_comment_added_'+self.key,True)
         outer=QVBoxLayout(self);outer.setContentsMargins(0,0,0,0);self.controls_scroll=QScrollArea();self.controls_scroll.setWidgetResizable(True);body=QWidget();layout=QVBoxLayout(body);layout.setContentsMargins(0,0,0,0);layout.setSizeConstraint(QVBoxLayout.SizeConstraint.SetMinimumSize);self.controls_scroll.setWidget(body);outer.addWidget(self.controls_scroll)
         self.filter_scroll=HorizontalControls();layout.addWidget(self.filter_scroll);filters=self.filter_scroll.row
         self.filter_scroll.setAccessibleName(tr('Recherche et filtres du catalogue'))
@@ -94,7 +100,11 @@ class Catalogue(QWidget):
                 buttons.addWidget(b)
             if scope=='catalogue' and kind!='set':
                 self.drawer_button=QPushButton(tr('Associer à un tiroir…'));self.drawer_button.clicked.connect(self.assign_drawer);buttons.addWidget(self.drawer_button)
-            b=QPushButton(tr('Copier vers catalogue alternatif'));b.clicked.connect(self.copy_selected);buttons.addWidget(b);layout.addLayout(buttons)
+            b=QPushButton(tr('Copier vers catalogue alternatif'))
+            if kind=='set':
+                choices=QMenu(b);self.alternative_choices(choices);b.setMenu(choices)
+            else:b.clicked.connect(self.copy_selected)
+            buttons.addWidget(b);layout.addLayout(buttons)
         self.timer=QTimer(self);self.timer.setSingleShot(True);self.timer.setInterval(250);self.timer.timeout.connect(self.reset)
         self.search.textChanged.connect(lambda _:self.timer.start());self.category.currentIndexChanged.connect(self.category_changed)
         self.category.values_changed.connect(self.categories_checked)
@@ -204,6 +214,10 @@ class Catalogue(QWidget):
                 cell=QTableWidgetItem(str(value or ''));cell.setData(Qt.ItemDataRole.UserRole,row['id']);self.table.setItem(r,c,cell)
             if self.row_key(row) in self.ids:self.table.selectionModel().select(self.table.model().index(r,0),QItemSelectionModel.SelectionFlag.Select|QItemSelectionModel.SelectionFlag.Rows)
         self.table.setColumnWidth(0,115)
+        if 'stock_entered_at' in self.visible_columns:
+            column=self.visible_columns.index('stock_entered_at');self.table.setColumnWidth(column,185)
+            self.table.horizontalHeaderItem(column).setToolTip(tr('Date et heure locales du dernier ajout à cette référence et couleur. Les quantités fusionnent ; Annuler restaure la quantité et la date précédentes.'))
+        if 'comment' in self.visible_columns:self.table.setColumnWidth(self.visible_columns.index('comment'),180)
         if 'name' in self.visible_columns:self.table.setColumnWidth(self.visible_columns.index('name'),300)
         if 'category' in self.visible_columns:self.table.setColumnWidth(self.visible_columns.index('category'),180)
         if 'image' in self.visible_columns:self.table.setColumnWidth(self.visible_columns.index('image'),165)
@@ -335,9 +349,39 @@ class Catalogue(QWidget):
         menu.addAction(tr('Ajouter l’inventaire à Mon stock'),lambda:self.add_selected('set_parts_stock'))
         menu.addAction(tr('Ajouter le set à Mon stock set'),lambda:self.add_selected('stock_sets'))
 
-    def copy_selected(self):
-        for row in self.selection():self.db.copy_alternative(row)
+    def alternative_choices(self,menu):
+        menu.addAction(tr('Copier le set vers le catalogue alternatif…'),self.copy_selected)
+        menu.addAction(tr('Copier les pièces du set vers le catalogue alternatif…'),lambda:self.copy_selected(include_parts=True))
+
+    def copy_selected(self,checked=False,include_parts=False):
+        selected=self.selection()
+        if not selected:QMessageBox.information(self,tr('Sélection'),tr('Sélectionne une ou plusieurs lignes.'));return
+        comment,ok=QInputDialog.getText(self,tr('Copie vers le catalogue alternatif'),tr('Commentaire facultatif, par exemple : marque Lepin'))
+        if not ok:return
+        from .alternative_catalogue import copy_items
+        try:result=copy_items(self.db,selected,include_parts,comment)
+        except ValueError as error:QMessageBox.warning(self,tr('Copie interrompue'),str(error));return
         self.changed.emit()
+        if self.source=='ALT':self.reload_categories();self.reload()
+        if include_parts:QMessageBox.information(self,tr('Copie terminée'),str(result['part_count'])+tr(' références alternatives copiées avec leur inventaire de set. Pour les recherches, choisis Alternatifs ou Toutes les sources et autorise les équivalences si souhaité. Les pièces possédées doivent être ajoutées explicitement au stock.'))
+
+    def clear_all_stock(self):
+        if self.scope not in ('stock','stock_sets'):return
+        from .stock_clear import statistics,clear
+        facts=statistics(self.db,self.scope)
+        if not facts['lines']:QMessageBox.information(self,tr('Stock'),tr('Ce stock est déjà vide.'));return
+        message=tr('Vider entièrement ce stock, sur toutes les pages et avec tous les filtres ?')+'\n'+str(facts['lines'])+tr(' ligne(s), ')+str(facts['quantity'])+tr(' exemplaire(s).')
+        if self.scope=='stock':
+            message+='\n'+tr('Mon stock set est conservé.')
+            if facts['reserved']:message+='\n'+str(facts['reserved'])+tr(' pièce(s) réservée(s) aux projets seront libérées.')
+            if facts['counted']:message+='\n'+str(facts['counted'])+tr(' pièce(s) comptée(s) dans les tiroirs seront remises à zéro. Les associations restent présentes.')
+        else:message+='\n'+tr('Les sets et leur suivi seront retirés sans transférer de pièces dans le vrac.')
+        message+='\n'+tr('Cette opération peut être annulée avec Annuler la dernière action.')
+        if QMessageBox.question(self,tr('Vider Mon stock…') if self.scope=='stock' else tr('Vider Mon stock set…'),message,QMessageBox.StandardButton.Yes|QMessageBox.StandardButton.No,QMessageBox.StandardButton.No)!=QMessageBox.StandardButton.Yes:return
+        try:clear(self.db,self.scope,facts['revision'])
+        except ValueError as error:QMessageBox.warning(self,tr('Stock modifié'),str(error));return
+        self.ids.clear();self.page=1;self.reload();self.selected.emit(None);self.changed.emit()
+
 
     def assign_drawer(self):
         selected=self.selection()
@@ -363,6 +407,7 @@ class Catalogue(QWidget):
         menu.addAction(tr('Colonnes…'),self.column_menu)
         item=dict(self.rows[index.row()]) if index.isValid() and index.row()<len(self.rows) else None
         if item and item.get('kind')=='set':
+            self.alternative_choices(menu)
             from .windows import application_owner
             owner=application_owner(self)
             if hasattr(owner,'create_project'):menu.addAction(tr('Créer un projet de construction…'),lambda:owner.create_project(item))
@@ -373,6 +418,7 @@ class Catalogue(QWidget):
             menu.addAction(tr('Supprimer la sélection'),self.delete_selected)
         if self.scope in ('stock','stock_sets','queue'):
             menu.addAction(tr('Changer la quantité'),self.change_quantity);menu.addAction(tr('Changer la couleur'),self.change_color)
+        if item and item.get('kind')!='set':menu.addAction(tr('Copier vers catalogue alternatif'),self.copy_selected)
         if self.source=='ALT':menu.addAction(tr('Modifier la référence'),self.edit_alternative)
         menu.exec(self.table.viewport().mapToGlobal(pos))
 
@@ -443,4 +489,4 @@ class Catalogue(QWidget):
 
     def edit_alternative(self):
         rows=self.selection()
-        if rows and edit_item(self,self.db,rows[0]):self.reload_categories();self.reload()
+        if rows and edit_item(self,self.db,rows[0]):self.reload_categories();self.reload();self.changed.emit()

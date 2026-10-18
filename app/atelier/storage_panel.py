@@ -305,6 +305,8 @@ class StoragePanel(QWidget):
         for wall in store.walls(self.db):self.wall.addItem(wall['name'],wall['id'])
         index=self.wall.findData(current);self.wall.setCurrentIndex(max(0,index));self.wall.blockSignals(False);self.change_wall()
     def choose_storage_destination(self,identity):
+        if identity=='all':
+            self.all_walls.setChecked(True);self.details_tabs.setCurrentWidget(self.stock_browser);self.fit_all();return
         index=self.wall.findData(identity)
         if index<0:return
         self.wall.setCurrentIndex(index);self.focus_wall();self.details_tabs.setCurrentWidget(self.stock_browser)
@@ -454,7 +456,8 @@ class StoragePanel(QWidget):
         if from_parts:
             rows=self.stock_browser.selection() or self.stock_browser.rows
             options={'entries':[(p['id'],p['chosen_color']) for p in rows],'from_catalogue':self.stock_browser.catalogue_mode(),'category':self.stock_browser.category.currentData() or '','allocate_quantities':not self.stock_browser.catalogue_mode()}
-        window=StoragePlanDialog(self.db,self.wall_id,self,self.refresh,**options);window._storage_wall_id=self.wall_id;show_window(window,self,refresh_counts=False);return window
+        destination=self.stock_browser.target_wall.currentData() if from_parts else self.wall_id
+        window=StoragePlanDialog(self.db,None if destination=='all' else destination,self,self.refresh,**options);window._storage_wall_id=None if destination=='all' else destination;show_window(window,self,refresh_counts=False);return window
     def print_wall(self):
         if self.wall_id is None:return
         from .storage_printing import StoragePrintPreview
@@ -589,7 +592,7 @@ class StoragePanel(QWidget):
         # Close cabinet-specific forms so an old editor cannot target a new
         # cabinet/drawer if SQLite subsequently reuses a deleted identifier.
         for window in list(getattr(application_owner(self),'_consultation_windows',[])):
-            if getattr(window,'_storage_wall_id',None)==captured_wall:window.reject()
+            if getattr(window,'_storage_wall_id',None)==captured_wall or captured_wall in getattr(window,'_storage_wall_ids',set()):window.reject()
         self.reload_walls()
     def edit_drawer(self,new=False):
         if self.wall_id is None:return

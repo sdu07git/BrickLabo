@@ -136,6 +136,8 @@ def label_text(layer,item,db,bounds=None):
         return ' × '.join(values)
     if kind=='dimensions':return ' × '.join(f'{bounds[i]*.04:.1f}'.replace('.',',') for i in (0,2,1))+' cm' if bounds is not None else ''
     if kind=='references':
+        from .alternative_catalogue import original
+        item=original(item)
         parts=[('Rebrickable' if item['source']=='RB' else 'BrickLink' if item['source']=='BL' else 'Réf.')+' '+item['ref']]
         if item['source']=='RB':
             r=db.rows('SELECT DISTINCT design_id FROM elements WHERE part_num=? AND design_id<>\'\' LIMIT 1',(item['ref'],))

@@ -94,10 +94,13 @@ def dimensions_text(dimensions):
 
 
 def _state(c,wall_id,entries=None,from_catalogue=False):
-    wall=c.execute('SELECT * FROM storage_walls WHERE id=?',(wall_id,)).fetchone()
-    if not wall:raise ValueError(tr('Meuble introuvable.'))
-    state={'wall':dict(wall),
-            'drawers':[dict(r) for r in c.execute('SELECT * FROM storage_drawers WHERE wall_id=? ORDER BY row,col',(wall_id,))],
+    selected=[dict(r) for r in c.execute('SELECT * FROM storage_walls'+(' WHERE id=?' if wall_id is not None else '')+' ORDER BY y,x,id',(wall_id,) if wall_id is not None else ())]
+    if not selected:raise ValueError(tr('Meuble introuvable.'))
+    order={wall['id']:index for index,wall in enumerate(selected)}
+    drawers=[dict(r) for r in c.execute('SELECT * FROM storage_drawers'+(' WHERE wall_id=?' if wall_id is not None else ''),(wall_id,) if wall_id is not None else ())]
+    drawers.sort(key=lambda drawer:(order[drawer['wall_id']],drawer['row'],drawer['col'],drawer['id']))
+    state={'wall':selected[0],'walls':selected,
+            'drawers':drawers,
             'links':[dict(r) for r in c.execute('SELECT p.*,i.category,i.source,i.ref,i.name FROM storage_contents p JOIN items i ON i.id=p.item_id ORDER BY p.drawer_id,p.item_id,p.color')],
             'stock':[dict(r) for r in c.execute("SELECT i.id,i.source,i.ref,i.name,i.category,s.color,s.quantity FROM stock s JOIN items i ON i.id=s.item_id WHERE i.kind IN ('part','minifig') AND s.quantity>0 ORDER BY i.id,s.color")]}
     if from_catalogue:
@@ -123,13 +126,20 @@ def _preview_state(c,state,entries,category,from_catalogue):
     for start in range(0,len(ordered),800):
         chunk=ordered[start:start+800]
         items.update((row['id'],dict(row)) for row in c.execute('SELECT * FROM items WHERE id IN ('+','.join('?' for _ in chunk)+')',chunk))
-    return {'wall':state['wall'],'drawers':drawers,'links':links,'items':items,'stock':[row for row in state['stock'] if row['id'] in ids]}
+    return {'wall':state['wall'],'walls':state['walls'],'drawers':drawers,'links':links,'items':items,'stock':[row for row in state['stock'] if row['id'] in ids]}
 
 
-def propose(db,wall_id,category='',split_colors=False,reorganize=False,entries=None,from_catalogue=False,grouping='size',allocate_quantities=False):
+def propose(db,wall_id,category='',split_colors=False,reorganize=False,entries=None,from_catalogue=False,grouping='size',allocate_quantities=False,criteria=None,drawer_counts=None):
     """One group per category and footprint, ordered from few to many studs."""
     if reorganize and not category:raise ValueError(tr('Choisis une catégorie pour réorganiser ses tiroirs.'))
     if grouping not in ('size','reference','manual'):raise ValueError(tr('Mode de rangement invalide.'))
+    if grouping=='manual':criteria={'reference'}
+    elif criteria is None:criteria={'category','size'}|({'reference'} if grouping=='reference' else set())
+    elif not isinstance(criteria,(list,tuple,set,frozenset)) or not criteria or any(value not in ('category','size','reference') for value in criteria):raise ValueError(tr('Coche au moins un critère : catégorie, taille ou référence.'))
+    criteria=set(criteria)
+    drawer_counts=dict(drawer_counts or {})
+    if any(type(identity) is not int or identity<=0 or type(count) is not int or not 1<=count<=1000 for identity,count in drawer_counts.items()):raise ValueError(tr('Nombre de tiroirs invalide.'))
+    if drawer_counts and ('reference' not in criteria or grouping=='manual'):raise ValueError(tr('Coche Référence pour répartir une pièce dans plusieurs tiroirs.'))
     if type(allocate_quantities) is not bool or allocate_quantities and from_catalogue:raise ValueError(tr('Les quantités se répartissent depuis le stock en vrac.'))
     with db.read() as c:
         c.execute('BEGIN');state=_state(c,wall_id,entries,from_catalogue)
@@ -165,28 +175,70 @@ def propose(db,wall_id,category='',split_colors=False,reorganize=False,entries=N
         if not allocate_quantities and entry_key in located and entry_key not in existing:continue
         physical=replaced_quantities.get(entry_key,0)+max(0,item['quantity']-allocated.get(entry_key,0)) if allocate_quantities else replaced_quantities.get(entry_key,0) if entry_key in replaced_known else None
         if allocate_quantities and not physical and entry_key not in existing:continue
-        dimensions=stud_dimensions(item['name'])
-        if not dimensions and grouping=='size':unknown.append(item);continue
+        dimensions=stud_dimensions(item['name']) if 'size' in criteria else ()
+        if not dimensions and 'size' in criteria and 'reference' not in criteria:unknown.append(item);continue
         dimensions=dimensions or ()
-        key=(item['category'],dimensions,item['id'] if grouping!='size' else None,item['source'] if split_colors else '',item['color'] if split_colors else '')
-        group=groups.setdefault(key,{'category':item['category'],'dimensions':dimensions,'color':(item['source']+' '+item['color']) if split_colors else '', 'entries':[],'references':[]})
+        key=(item['category'] if 'category' in criteria else '',dimensions,item['id'] if 'reference' in criteria else None,item['source'] if split_colors else '',item['color'] if split_colors else '')
+        group=groups.setdefault(key,{'category':item['category'],'categories':[],'dimensions':dimensions,'color':(item['source']+' '+item['color']) if split_colors else '', 'entries':[],'references':[]})
+        if item['category'] not in group['categories']:group['categories'].append(item['category'])
         group['entries'].append((item['id'],item['color']));group['references'].append(item['source']+' '+item['ref'])
         quantities[entry_key]=physical
-    ordered=sorted(groups.values(),key=lambda g:(normalize(g['category']),not bool(g['dimensions']),g['dimensions'][0]*g['dimensions'][1] if g['dimensions'] else 0,g['dimensions'][1:] if g['dimensions'] else (),g['dimensions'][:1],g['references'][0] if grouping!='size' else '',g['color']))
+    for group in groups.values():group['category']=' / '.join(sorted(group['categories'],key=normalize))
+    ordered=sorted(groups.values(),key=lambda g:(normalize(g['category']) if 'category' in criteria else '',not bool(g['dimensions']),g['dimensions'][0]*g['dimensions'][1] if g['dimensions'] else 0,g['dimensions'][1:] if g['dimensions'] else (),g['dimensions'][:1],g['references'][0] if 'reference' in criteria else '',g['color']))
+    expanded=[]
+    for group in ordered:
+        identities={identity for identity,color in group['entries']}
+        count=drawer_counts.get(next(iter(identities)),1) if len(identities)==1 else 1
+        if len(expanded)+count>20000:raise ValueError(tr('La proposition dépasse 20 000 tiroirs. Réduis la sélection ou le nombre de tiroirs par référence.'))
+        offsets={};offset=0
+        for entry in group['entries']:
+            offsets[entry]=offset
+            if quantities[entry] is not None:offset=(offset+quantities[entry]%count)%count
+        for slot in range(count):
+            row=dict(group,split_index=slot,split_count=count)
+            row['quantities']={}
+            for entry in group['entries']:
+                quantity=quantities[entry]
+                row['quantities'][entry]=None if quantity is None else quantity//count+((slot-offsets[entry])%count<quantity%count)
+            expanded.append(row)
+    ordered=expanded
     for index,group in enumerate(ordered):
         group['drawer_id']=available[index]['id'] if grouping!='manual' and index<len(available) else None
-        group['name']=' · '.join(v for v in ((group['references'][0] if grouping!='size' else ''),group['category'],dimensions_text(group['dimensions']),group['color']) if v)
-    return {'wall_id':wall_id,'fingerprint':_fingerprint(state),'available':available,'replaced':replaced,'groups':ordered,'unknown':unknown,'reorganize':reorganize,'entries':list(entries) if entries is not None else None,'from_catalogue':from_catalogue,'grouping':grouping,'shared_drawers':grouping=='manual','preview':state['preview'],'quantities':quantities,'allocate_quantities':allocate_quantities}
+        group['name']=' · '.join(v for v in ((group['references'][0] if 'reference' in criteria else ''),(group['category'] if 'category' in criteria else ''),dimensions_text(group['dimensions']),group['color']) if v)
+        if group['split_count']>1:group['name']+=' ('+str(group['split_index']+1)+'/'+str(group['split_count'])+')'
+    return {'wall_id':wall_id,'fingerprint':_fingerprint(state),'available':available,'replaced':replaced,'groups':ordered,'unknown':unknown,'reorganize':reorganize,'entries':list(entries) if entries is not None else None,'from_catalogue':from_catalogue,'grouping':grouping,'shared_drawers':grouping=='manual','criteria':sorted(criteria),'preview':state['preview'],'quantities':quantities,'allocate_quantities':allocate_quantities}
+
+
+def group_quantities(plan,group):return group.get('quantities',plan.get('quantities',{}))
+
+
+def validate_targets(plan,targets):
+    groups=plan['groups']
+    if len(targets)!=len(groups):raise ValueError(tr('Proposition de rangement invalide.'))
+    chosen=[target for target in targets if target is not None];allowed={d['id'] for d in plan['available']}
+    if any(type(target) is not int or target not in allowed for target in chosen) or not plan.get('shared_drawers') and len(chosen)!=len(set(chosen)):
+        raise ValueError(tr('Choisis un tiroir disponible différent pour chaque groupe.'))
+    series={}
+    for group,target in zip(groups,targets):
+        if group.get('split_count',1)>1:series.setdefault(tuple(group['entries']),[]).append(target)
+    if any(any(target is not None for target in values) and any(target is None for target in values) for values in series.values()):
+        raise ValueError(tr('Choisis tous les tiroirs demandés pour une référence, ou laisse-les tous sans emplacement.'))
+    if not chosen:raise ValueError(tr('Aucun tiroir choisi.'))
+    return chosen
+
+
+def drawer_label(plan,drawer):
+    from .storage_wall import address
+    if plan['wall_id'] is not None:return address(drawer)
+    selected=plan['preview']['walls'];names=[wall['name'] for wall in selected]
+    labels={wall['id']:wall['name']+(' ('+str(index+1)+')' if names.count(wall['name'])>1 else '') for index,wall in enumerate(selected)}
+    return labels[drawer['wall_id']]+' — '+address(drawer)
 
 
 def apply_proposal(db,plan,targets=None):
     """Validate a preview and commit all chosen associations in one transaction."""
     groups=plan['groups'];targets=list(targets if targets is not None else [g['drawer_id'] for g in groups])
-    if len(targets)!=len(groups):raise ValueError(tr('Proposition de rangement invalide.'))
-    chosen=[target for target in targets if target is not None];allowed={d['id'] for d in plan['available']}
-    if any(type(target) is not int or target not in allowed for target in chosen) or not plan.get('shared_drawers') and len(chosen)!=len(set(chosen)):
-        raise ValueError(tr('Choisis un tiroir disponible différent pour chaque groupe.'))
-    if not chosen:raise ValueError(tr('Aucun tiroir choisi.'))
+    chosen=validate_targets(plan,targets)
     placed={tuple(entry) for group,target in zip(groups,targets) if target is not None for entry in group['entries']}
     if plan['reorganize'] and any((link['item_id'],link['color']) not in placed for link in plan['replaced']):
         raise ValueError(tr('Tous les contenus existants doivent avoir un tiroir proposé avant la réorganisation.'))
@@ -206,5 +258,5 @@ def apply_proposal(db,plan,targets=None):
             for target,bucket in buckets.items():
                 name=bucket[0]['name'] if len(bucket)==1 else ' / '.join(dict.fromkeys(g['category'] for g in bucket))+' · '+tf('{0} référence(s)',len({identity for g in bucket for identity,color in g['entries']}))
                 c.execute('UPDATE storage_drawers SET name=? WHERE id=?',(name,target))
-                c.executemany('INSERT OR IGNORE INTO storage_contents(drawer_id,item_id,color,quantity) VALUES(?,?,?,?)',[(target,identity,color,plan.get('quantities',{}).get((identity,color))) for group in bucket for identity,color in group['entries']])
+                c.executemany('INSERT OR IGNORE INTO storage_contents(drawer_id,item_id,color,quantity) VALUES(?,?,?,?)',[(target,identity,color,group_quantities(plan,group).get((identity,color))) for group in bucket for identity,color in group['entries']])
     return len(set(chosen)),len(placed)

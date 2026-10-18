@@ -86,6 +86,8 @@ def enrich_record(db,item):
     return info
 
 def model_ref(db,item):
+    from .alternative_catalogue import original
+    item=original(item)
     if item['source']!='BA':
         if item['source']=='RB' and item['kind']=='part':
             from .model_links import rebrickable_model

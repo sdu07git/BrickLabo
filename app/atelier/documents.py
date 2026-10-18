@@ -149,6 +149,8 @@ class DocumentsPanel(QWidget):
         ref=urllib.parse.quote(item['ref'],safe='');number=ref.split('-')[0]
         return [('LEGO','https://www.lego.com/fr-fr/service/buildinginstructions/'+number),('Rebrickable','https://rebrickable.com/instructions/'+ref+'/'),('Manuall','https://manuall.fr/?s='+urllib.parse.quote('LEGO '+number))]
     def set_item(self,item):
+        from .alternative_catalogue import original
+        item=original(item)
         self.item=dict(item) if item else None;self.token+=1
         if not self.item:
             self.entries=[];self.table.setRowCount(0);self.update_remove_button();self.progress_label.setText(tr('Sélectionne un set.'));return

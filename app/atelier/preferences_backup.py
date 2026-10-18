@@ -27,7 +27,7 @@ def _portable_key(db,key):
 
 def _view_key(key):return key.startswith(('camera_','architect_model_','architect_photo_choice_','photo_choices_','edge_')) or key=='default_color'
 def _label_key(key):return key in ('template','templates') or key.startswith('label_layout_')
-def _private_or_cache(key):return key.startswith(('api_','stock_mocs_','moc_search_','rb_','bl_','alt_components_','export_rb_','stock_layout_','stock_migration_','action_history_v','downloads')) or key in ('build_excluded_entries','ldraw','ldraw_header_links','output')
+def _private_or_cache(key):return key.startswith(('api_','stock_mocs_','moc_search_','rb_','bl_','alt_components_','alternative_origins_v','export_rb_','stock_layout_','stock_migration_','action_history_v','downloads')) or key in ('build_excluded_entries','ldraw','ldraw_header_links','output')
 
 def _settings(db,predicate,strip_colors=False):
     result=[]

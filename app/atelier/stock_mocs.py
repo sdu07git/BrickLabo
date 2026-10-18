@@ -49,7 +49,7 @@ class StockMocsDialog(QDialog):
             self.status.setText(str(len(self.sets))+tr(' sets reconstituables avec le stock sélectionné.')+'\n'+'\n'.join(warnings))
             if not include_sets:self.status.setText(self.status.text()+' · '+tr('Stock en vrac uniquement'))
             if self.sets and not cancelled:self.next_batch()
-        async_task(self,lambda progress:find_builds(self.db,'RB','',False,1,100,self.cancel,progress,excluded_stock,include_set_stock=include_sets),done,self.fail,self.progress)
+        async_task(self,lambda progress:find_builds(self.db,'RB','',False,1,100,self.cancel,progress,excluded_stock,include_set_stock=include_sets,allow_alternatives=self.db.setting('build_allow_alternatives',False)),done,self.fail,self.progress)
     def progress(self,message):
         if not self.closed:self.status.setText(str(message))
     def fail(self,error):

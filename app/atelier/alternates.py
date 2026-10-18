@@ -9,6 +9,8 @@ from .result_tables import row_index,fill_table
 
 
 def set_reference(item):
+    from .alternative_catalogue import original
+    item=original(item)
     if item.get('source') not in ('RB','BL'):return ''
     ref=str(item.get('ref','')).strip()
     return ref+'-1' if re.fullmatch(r'\d+',ref) else ref

@@ -65,7 +65,7 @@ def create(db, name, parts=(), set_id=None, copies=1):
     return identity
 
 
-def from_set(db, set_id, copies=1, name='', spares=False, exclude_minifigs=False):
+def from_set(db, set_id, copies=1, name='', spares=False, exclude_minifigs=False, allow_alternatives=False):
     amount(copies, 1)
     item = db.get_item(set_id)
     if not item or item['kind'] != 'set':
@@ -76,7 +76,41 @@ def from_set(db, set_id, copies=1, name='', spares=False, exclude_minifigs=False
     parts = [{'item_id': row['id'], 'color': str(row.get('chosen_color', '')),
               'quantity': int(row.get('chosen_quantity', 1)) * copies}
              for row in components if spares or not row.get('is_spare')]
+    if allow_alternatives:parts=equivalent_parts(db,parts)
     return create(db, name or item['ref'] + ' · ' + item['name'], parts, set_id, copies)
+
+
+def equivalent_parts(db, parts):
+    """Allocate free physical identities without reserving or changing ownership."""
+    from .build_stock import InventoryReader
+    from .alternative_catalogue import original
+    needs=Counter()
+    for row in parts:needs[(row['item_id'],str(row['color']))]+=row['quantity']
+    assigned=Counter()
+    with db.read() as c:
+        c.execute('BEGIN');reader=InventoryReader(c,allow_alternatives=True)
+        rows=[dict(row) for row in c.execute('SELECT i.*,s.color,s.quantity AS stock_quantity FROM stock s JOIN items i ON i.id=s.item_id WHERE s.quantity>0')]
+        available={(row['id'],str(row['color'])):free(c,row['id'],row['color']) for row in rows}
+        def family(item,color):
+            if item['kind']=='part':
+                key=reader.canonical(item['source'],item['ref'],color)
+                return ('part',)+key if key[2] else None
+            native=original(item)
+            return native['source'],native['kind'],native['ref'],str(color)
+        # Keep each exact reference's free stock before assigning equivalents.
+        remaining={}
+        for key,quantity in needs.items():
+            take=min(quantity,available.get(key,0));available[key]=available.get(key,0)-take
+            assigned[key]+=take;remaining[key]=quantity-take
+        for (identity,color),quantity in remaining.items():
+            item=dict(c.execute('SELECT * FROM items WHERE id=?',(identity,)).fetchone());wanted=family(item,color)
+            for row in rows:
+                key=(row['id'],str(row['color']))
+                if not quantity:break
+                if key==(identity,color) or not wanted or row['kind']!=item['kind'] or 'ALT' not in (item['source'],row['source']) or family(row,row['color'])!=wanted:continue
+                take=min(quantity,available[key]);assigned[key]+=take;available[key]-=take;quantity-=take
+            assigned[(identity,color)]+=quantity
+    return [{'item_id':identity,'color':color,'quantity':quantity} for (identity,color),quantity in assigned.items() if quantity]
 
 
 def edit(db, project_id, name=None, status=None):

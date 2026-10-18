@@ -1,8 +1,33 @@
-# BrickLabo — v0.1.60
+# BrickLabo — v0.1.61
 
-Logiciel de bureau Windows pour les catalogues LEGO, les stocks, les recherches de constructions et les étiquettes. Cette version reprend la v0.1.59 publiée, issue de la v0.1.28 d’origine.
+Logiciel de bureau Windows pour les catalogues LEGO, les stocks, les recherches de constructions et les étiquettes. Cette version reprend la v0.1.60 publiée, issue de la v0.1.28 d’origine.
 
-**Téléchargements v0.1.60 :** [version complète Windows](https://github.com/sdu07git/BrickLabo/releases/download/v0.1.60/BrickLabo_v0.1.60_Complet.zip) · [sources avec ressources](https://github.com/sdu07git/BrickLabo/releases/download/v0.1.60/BrickLabo_v0.1.60_Sources.zip) · [notes de release](https://github.com/sdu07git/BrickLabo/releases/tag/v0.1.60).
+**Téléchargements v0.1.61 :** [version complète Windows](https://github.com/sdu07git/BrickLabo/releases/download/v0.1.61/BrickLabo_v0.1.61_Complet.zip) · [sources avec ressources](https://github.com/sdu07git/BrickLabo/releases/download/v0.1.61/BrickLabo_v0.1.61_Sources.zip) · [notes de release](https://github.com/sdu07git/BrickLabo/releases/tag/v0.1.61).
+
+## Stocks, alternatives et recherche par pièces — v0.1.61
+
+**Rangement dans tous les meubles** : Dans Mon rangement → Pièces à ranger, Meuble de destination propose Tous les meubles pour le glisser-déposer. Dans Ranger par catégorie et taille en tenons, Meubles à utiliser permet aussi de choisir tous les meubles en une opération. L’ordre suit leur position du haut vers le bas, de gauche à droite, puis les tiroirs du haut vers le bas dans chaque meuble. Le tableau indique le nom du meuble et l’adresse du tiroir ; l’aperçu montre tous les meubles retenus. Les tiroirs vides nommés restent protégés. La réorganisation exige une catégorie et conserve les tiroirs mixtes. Une seule action Annuler rétablit l’ensemble.
+
+**Critères de rangement à cocher** : Les cases Catégorie, Taille en tenons et Référence se combinent librement. Catégorie + Taille est le réglage initial ; Catégorie seule réunit la famille, Taille seule peut réunir plusieurs familles de même format, et Référence sépare chaque identité de pièce. Une taille absente du nom n’est jamais devinée : la pièce reste à ranger si seule la taille est demandée, mais reste incluse avec Référence. Séparer les couleurs reste indépendant. Le regroupement libre conserve le choix de plusieurs références dans un tiroir.
+
+**Aperçus et plusieurs tiroirs par référence** : Le tableau de proposition affiche un aperçu 3D ou photo, une quantité proposée et le tiroir de destination. Pour un groupe de plusieurs références, l’image représente la première pièce ; sélectionner la ligne et ouvrir Contenu du tiroir pour voir toutes les références et leurs aperçus. Nombre de tiroirs par référence… permet de choisir 1, 2, 3 tiroirs ou davantage pour chaque référence et coche Référence. Avec Répartir les quantités restantes, les quantités sont réparties aussi également que possible entre ces tiroirs, couleur par couleur, sans modifier le stock global. Par exemple, 40 pièces dans 3 tiroirs donnent 14, 13 et 13. Sans comptage, les associations restent À renseigner. Depuis un catalogue, aucune possession n’est créée. Si Séparer les couleurs est coché, le nombre de tiroirs s’applique à chaque couleur. Tous les tiroirs demandés pour une référence doivent être choisis, ou tous laissés sans emplacement ; une répartition partielle bloque l’application. Pour modifier ensuite les nombres, utiliser l’inventaire du tiroir ou Transférer une quantité…. Décocher Référence ou changer de mode remet les nombres de tiroirs à leur valeur initiale.
+
+**Sets contenant plusieurs pièces** : Dans la fenêtre Sets contenant une pièce, la pièce ouverte est déjà présente avec Toutes les couleurs. Ajouter une pièce… ouvre un catalogue avec recherche, filtres et miniatures ; Ctrl/Maj permet plusieurs choix sur la page. Choisir séparément une couleur ou Toutes les couleurs pour chaque ligne, puis Rechercher. Seuls les sets contenant toutes les pièces et couleurs demandées sont affichés. Une même référence peut être ajoutée deux fois pour demander deux couleurs. Retirer la sélection et Revenir à cette pièce modifient uniquement les critères, puis Rechercher actualise les résultats.
+
+**Pièces des mini-figurines et sous-sets** : La recherche remonte maintenant de la pièce à la mini-figurine, puis au set, et traverse les sous-sets et coffrets. Elle utilise aussi les inventaires chargés par lots via API, respecte les versions et conserve les sources et références exactes. Pour 41850, les exports Rebrickable contrôlés passent de 1 résultat direct à 23 sets, coffrets inclus. Le nombre peut évoluer avec les données. Les inventaires doivent être présents localement ; télécharger/importer les exports complets pour une couverture complète, sans clé API.
+
+**Choisir le stock utilisable** : Le vrac coché et les inventaires des sets cochés constituent deux sources indépendantes. Sets cochés uniquement décoche le vrac et conserve les choix individuels des sets. Un set sélectionné fournit ses composants même lorsque toutes les lignes de vrac sont décochées, sans démontage enregistré ni ajout au vrac. Les comptages personnalisés sont respectés ; les sets sans suivi utilisent leur inventaire local complet avec un avertissement. Les réservations des projets réduisent seulement le vrac. Le tableau affiche les photos des sets et les aperçus des pièces.
+
+**Catalogue alternatif et commentaires** : Le clic droit sur un set propose Copier le set vers le catalogue alternatif… et Copier les pièces du set vers le catalogue alternatif…. La seconde commande copie aussi les références constituant son inventaire, leurs couleurs, quantités, supplémentaires et compositions locales des mini-figurines. Le commentaire facultatif, par exemple marque Lepin, reste modifiable dans Modifier la référence et apparaît dans la colonne Commentaire. Photos, métadonnées, rendus 3D et réglages personnels sont conservés, avec une origine explicite utilisable après renommage. Les anciennes copies identifiables sont réparées sans remplacer leurs visuels personnalisés. Une copie de catalogue ne déclare aucune possession.
+
+**Alternatives dans les recherches et projets** : Autoriser les briques alternatives équivalentes est facultatif, désactivé au départ. Il permet de comparer les copies dont l’origine est connue aux besoins natifs dans les sets réalisables et les pistes de MOC. Dans Nouveau projet, la même option utilise les alternatives libres du vrac en conservant les références et couleurs physiques. Les pièces déjà réservées ne sont pas réutilisées. La création ne réserve rien ; les réservations restent explicites. Pour réserver les pièces d’un set possédé, transférer d’abord son inventaire dans le vrac.
+
+**Vider le stock en une opération** : Vider Mon stock… et Vider Mon stock set… agissent sur toutes les pages et tous les filtres, après une confirmation affichant les quantités. Le vidage du vrac libère ses réservations et met les comptages connus des tiroirs à zéro ; les meubles, associations et quantités inconnues restent conservés. Le vidage des sets ne transfère aucune pièce dans le vrac. Une seule action Annuler/Rétablir restaure le tout, même après redémarrage. Une modification du stock pendant la confirmation bloque le vidage.
+
+**Date et heure du dernier ajout** : Dans les deux catalogues de stock, Dernier ajout au stock apparaît après Référence, avec date et heure locales et tri par colonne. Cette date est distincte de la date d’import du catalogue général. Un ajout à une référence/couleur existante fusionne les quantités et actualise sa date ; Annuler restaure la quantité et la date précédentes. Supprimer une ligne retire sa quantité totale, et non uniquement le dernier ajout.
+
+
+**Validation v0.1.61 :** 844 tests de la suite complète réussis sous Qt/Linux, puis 29 contrôles de rangement après le dernier ajustement. Interfaces contrôlées en formats normal et compact ; archives et lanceur Windows vérifiés par les outils de livraison. [Rapport détaillé](documentation/CONTROLE_v0.1.61.txt). Exécution native Windows à confirmer.
 
 ## Vrac direct et inventaires complets — v0.1.60
 
@@ -319,7 +344,7 @@ L’aide complète se trouve dans [documentation/AIDE.html](documentation/AIDE.h
 | 0.1.58 | Projets et aperçus, inventaires des tiroirs, CSV versionnés, modèles Mini-figs et protection mémoire. |
 | 0.1.57 | Quantités par tiroir et transferts partiels, historique Annuler/Rétablir persistant, projets avec besoins, réservations et manquants. |
 
-Un seul [NOUVEAUTES.txt](documentation/NOUVEAUTES.txt) réunit les notes françaises et anglaises. Les notes de cette branche ne documentent pas de livraison 0.1.29. Les variantes 0.1.28b et Range n’ont pas servi de base. Le [rapport de contrôle v0.1.60](documentation/CONTROLE_v0.1.60.txt) décrit les vérifications de cette livraison.
+Un seul [NOUVEAUTES.txt](documentation/NOUVEAUTES.txt) réunit les notes françaises et anglaises. Les notes de cette branche ne documentent pas de livraison 0.1.29. Les variantes 0.1.28b et Range n’ont pas servi de base. Le [rapport de contrôle v0.1.61](documentation/CONTROLE_v0.1.61.txt) décrit les vérifications de cette livraison.
 
 ## Développement et diagnostic
 
@@ -335,7 +360,7 @@ Pour publier une future mise à jour compatible : créer une release publique st
 
 Pour développer depuis ce dépôt, reprendre `ressources/complete.zip` depuis le ZIP Sources joint à la release : cette archive LDraw dépasse la limite de taille des fichiers GitHub. Les archives automatiques « Source code » ne contiennent ni cette ressource ni le runtime Windows. Les deux ZIP joints sont ceux de la version livrée et testée ; les README du dépôt sont adaptés à la publication.
 
-Le [rapport de contrôle v0.1.60](documentation/CONTROLE_v0.1.60.txt) décrit les vérifications de cette livraison. Exécution native Windows à confirmer.
+Le [rapport de contrôle v0.1.61](documentation/CONTROLE_v0.1.61.txt) décrit les vérifications de cette livraison. Exécution native Windows à confirmer.
 
 
 

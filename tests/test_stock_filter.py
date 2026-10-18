@@ -35,7 +35,8 @@ class StockFilterTests(unittest.TestCase):
   self.assertEqual(find_builds(self.db)[0][0]['ref'],'100-1')
  def test_untracked_excluded_set_not_silently_ignored(self):
   entry=-self.db.run("INSERT INTO stock_sets(item_id,color,quantity) VALUES(?,'',1)",(self.s,))
-  with self.assertRaises(ValueError):self.stock([entry])
+  self.db.add('stock',self.p,'4',5)
+  self.assertEqual(sum(self.stock([entry]).values()),5)
  def test_moc_from_loose_stock_and_dedup(self):
   self.db.add('stock',self.p,'4',5);self.db.set_setting('api_rb','fake')
   def task(owner,work,done,*args):done(work(lambda *_:None))

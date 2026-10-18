@@ -34,9 +34,10 @@ def proposal_snapshot(plan,targets):
     for target,indices in assignments.items():
         groups=[plan['groups'][index] for index in indices]
         drawers[target]['name']=groups[0]['name'] if len(groups)==1 else ' / '.join(dict.fromkeys(g['category'] for g in groups))+' · '+tf('{0} référence(s)',len({identity for g in groups for identity,color in g['entries']}))
-        contents[target]=[part(identity,color,plan.get('quantities',{}).get((identity,color))) for group in groups for identity,color in group['entries']]
+        from .storage_assignment import group_quantities
+        contents[target]=[part(identity,color,group_quantities(plan,group).get((identity,color))) for group in groups for identity,color in group['entries']]
     conflicts={target for target,indices in assignments.items() if len(indices)>1 and not plan.get('shared_drawers')}
-    return {'wall':base['wall'],'drawers':list(drawers.values()),'contents':contents,'assignments':assignments,'conflicts':conflicts,'items':base['items'],'part':part}
+    return {'wall':base['wall'],'walls':base.get('walls',[base['wall']]),'drawers':list(drawers.values()),'contents':contents,'assignments':assignments,'conflicts':conflicts,'items':base['items'],'part':part}
 
 
 class ProposalDrawer(DrawerItem):
@@ -65,7 +66,7 @@ class StorageProposalPreview(QWidget):
             button=QPushButton(label);button.clicked.connect(lambda checked=False,f=factor:self.view.zoom(f));controls.addWidget(button)
         fit=QPushButton(tr('Vue complète'));fit.clicked.connect(self.fit);controls.addWidget(fit);body.addLayout(controls)
         self.scene=QGraphicsScene(self);self.view=WallView(self.scene);self.view.setRenderHint(QPainter.RenderHint.Antialiasing);self.view.setAcceptDrops(False);body.addWidget(self.view,1)
-        hint=QLabel(tr('Vert : placement proposé. Rouge : conflit d’affectation. Clique sur un tiroir pour son contenu ; double-clique pour ouvrir les détails.'));hint.setWordWrap(True);body.addWidget(hint)
+        self.hint=hint=QLabel(tr('Vert : placement proposé. Rouge : conflit d’affectation. Clique sur un tiroir pour son contenu ; double-clique pour ouvrir les détails.'));hint.setWordWrap(True);body.addWidget(hint);self.view.setToolTip(hint.text())
         self.tabs.addTab(board,tr('Meuble proposé'))
         details=QWidget();detail_layout=QVBoxLayout(details);detail_layout.setContentsMargins(6,6,6,6)
         self.detail_title=QLabel(tr('Sélectionne un tiroir dans l’aperçu.'));self.detail_title.setWordWrap(True);detail_layout.addWidget(self.detail_title)
@@ -86,14 +87,19 @@ class StorageProposalPreview(QWidget):
         self.plan=plan;self.token+=1;self.scene.clear();self.items={};self.snapshot=None
         if plan is None:self.rows=[];self.table.setRowCount(0);self.caption.setText(tr('Aucune proposition disponible.'));return
         self.snapshot=proposal_snapshot(plan,targets);snap=self.snapshot
-        cabinet=CabinetItem(dict(snap['wall']),0,0,False,False);self.scene.addItem(cabinet)
+        self.cabinets={}
+        for wall in snap['walls']:
+            cabinet=CabinetItem(dict(wall),0,0,len(snap['walls'])>1,False);self.scene.addItem(cabinet);self.cabinets[wall['id']]=cabinet
         for drawer in snap['drawers']:
+            cabinet=self.cabinets[drawer['wall_id']]
             entries=snap['contents'][drawer['id']]
             item=ProposalDrawer(drawer,entries,self.icons,0,0,cabinet,proposed=drawer['id'] in snap['assignments'],conflict=drawer['id'] in snap['conflicts'])
             item.chosen.connect(self.choose_drawer);item.opened.connect(self.open_drawer);self.items[drawer['id']]=item
-            item.setToolTip(walls.address(drawer)+'\n'+drawer['name']+'\n'+'\n'.join(p['source']+' '+p['ref']+' · '+(p['chosen_color'] or tr('Non précisée'))+' · '+str(p['chosen_quantity']) for p in entries))
+            from .storage_assignment import drawer_label
+            item.setToolTip(drawer_label(plan,drawer)+'\n'+drawer['name']+'\n'+'\n'.join(p['source']+' '+p['ref']+' · '+(p['chosen_color'] or tr('Non précisée'))+' · '+tr('Quantité dans ce tiroir')+' : '+(str(p['stored_quantity']) if p['stored_quantity'] is not None else tr('À renseigner'))+' · '+tr('Stock global en vrac')+' : '+str(p['chosen_quantity']) for p in entries))
         self.scene.setSceneRect(self.scene.itemsBoundingRect().adjusted(-12,-12,12,12))
-        self.caption.setText(snap['wall']['name']+' — '+tf('{0} tiroir(s) proposé(s)',len(snap['assignments'])))
+        self.caption.setText((tr('Tous les meubles') if len(snap['walls'])>1 else snap['wall']['name'])+' — '+tf('{0} tiroir(s) proposé(s)',len(snap['assignments'])))
+        self.tabs.setTabText(0,tr('Meubles proposés') if len(snap['walls'])>1 else tr('Meuble proposé'))
         if reset or self.view.transform().m11()==1:self.fit()
         if self.selected_id in self.items:self.choose_drawer(self.selected_id,emit=False)
         else:self.rows=[];self.table.setRowCount(0);self.detail_title.setText(tr('Sélectionne un tiroir dans l’aperçu.'))
@@ -119,7 +125,8 @@ class StorageProposalPreview(QWidget):
         self.selected_id=identity
         for key,item in self.items.items():item.selected=key==identity;item.update()
         drawer=self.items[identity].drawer
-        self.show_parts(self.snapshot['contents'][identity],walls.address(drawer)+' — '+(drawer['name'] or tr('Vide')))
+        from .storage_assignment import drawer_label
+        self.show_parts(self.snapshot['contents'][identity],drawer_label(self.plan,drawer)+' — '+(drawer['name'] or tr('Vide')))
         if emit:self.drawer_selected.emit(identity)
 
     def open_drawer(self,identity):
@@ -174,6 +181,9 @@ class StorageProposalPreview(QWidget):
         if self.thumbs:self.thumbs.suspend()
 
     def showEvent(self,event):super().showEvent(event);self.schedule_icons()
+    def resizeEvent(self,event):
+        super().resizeEvent(event)
+        if hasattr(self,'hint'):self.hint.setVisible(self.height()>=230)
     def hideEvent(self,event):
         self.token+=1;self.timer.stop()
         if self.thumbs:self.thumbs.suspend()
