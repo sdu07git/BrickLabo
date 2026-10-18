@@ -1,3 +1,67 @@
+BrickLabo v0.1.61 — Stocks, alternatives et recherche par pièces
+
+Rangement dans tous les meubles
+Dans Mon rangement → Pièces à ranger, Meuble de destination propose Tous les meubles pour le glisser-déposer. Dans Ranger par catégorie et taille en tenons, Meubles à utiliser permet aussi de choisir tous les meubles en une opération. L’ordre suit leur position du haut vers le bas, de gauche à droite, puis les tiroirs du haut vers le bas dans chaque meuble. Le tableau indique le nom du meuble et l’adresse du tiroir ; l’aperçu montre tous les meubles retenus. Les tiroirs vides nommés restent protégés. La réorganisation exige une catégorie et conserve les tiroirs mixtes. Une seule action Annuler rétablit l’ensemble.
+
+Critères de rangement à cocher
+Les cases Catégorie, Taille en tenons et Référence se combinent librement. Catégorie + Taille est le réglage initial ; Catégorie seule réunit la famille, Taille seule peut réunir plusieurs familles de même format, et Référence sépare chaque identité de pièce. Une taille absente du nom n’est jamais devinée : la pièce reste à ranger si seule la taille est demandée, mais reste incluse avec Référence. Séparer les couleurs reste indépendant. Le regroupement libre conserve le choix de plusieurs références dans un tiroir.
+
+Aperçus et plusieurs tiroirs par référence
+Le tableau de proposition affiche un aperçu 3D ou photo, une quantité proposée et le tiroir de destination. Pour un groupe de plusieurs références, l’image représente la première pièce ; sélectionner la ligne et ouvrir Contenu du tiroir pour voir toutes les références et leurs aperçus. Nombre de tiroirs par référence… permet de choisir 1, 2, 3 tiroirs ou davantage pour chaque référence et coche Référence. Avec Répartir les quantités restantes, les quantités sont réparties aussi également que possible entre ces tiroirs, couleur par couleur, sans modifier le stock global. Par exemple, 40 pièces dans 3 tiroirs donnent 14, 13 et 13. Sans comptage, les associations restent À renseigner. Depuis un catalogue, aucune possession n’est créée. Si Séparer les couleurs est coché, le nombre de tiroirs s’applique à chaque couleur. Tous les tiroirs demandés pour une référence doivent être choisis, ou tous laissés sans emplacement ; une répartition partielle bloque l’application. Pour modifier ensuite les nombres, utiliser l’inventaire du tiroir ou Transférer une quantité…. Décocher Référence ou changer de mode remet les nombres de tiroirs à leur valeur initiale.
+
+Sets contenant plusieurs pièces
+Dans la fenêtre Sets contenant une pièce, la pièce ouverte est déjà présente avec Toutes les couleurs. Ajouter une pièce… ouvre un catalogue avec recherche, filtres et miniatures ; Ctrl/Maj permet plusieurs choix sur la page. Choisir séparément une couleur ou Toutes les couleurs pour chaque ligne, puis Rechercher. Seuls les sets contenant toutes les pièces et couleurs demandées sont affichés. Une même référence peut être ajoutée deux fois pour demander deux couleurs. Retirer la sélection et Revenir à cette pièce modifient uniquement les critères, puis Rechercher actualise les résultats.
+
+Pièces des mini-figurines et sous-sets
+La recherche remonte maintenant de la pièce à la mini-figurine, puis au set, et traverse les sous-sets et coffrets. Elle utilise aussi les inventaires chargés par lots via API, respecte les versions et conserve les sources et références exactes. Pour 41850, les exports Rebrickable contrôlés passent de 1 résultat direct à 23 sets, coffrets inclus. Le nombre peut évoluer avec les données. Les inventaires doivent être présents localement ; télécharger/importer les exports complets pour une couverture complète, sans clé API.
+
+Choisir le stock utilisable
+Le vrac coché et les inventaires des sets cochés constituent deux sources indépendantes. Sets cochés uniquement décoche le vrac et conserve les choix individuels des sets. Un set sélectionné fournit ses composants même lorsque toutes les lignes de vrac sont décochées, sans démontage enregistré ni ajout au vrac. Les comptages personnalisés sont respectés ; les sets sans suivi utilisent leur inventaire local complet avec un avertissement. Les réservations des projets réduisent seulement le vrac. Le tableau affiche les photos des sets et les aperçus des pièces.
+
+Catalogue alternatif et commentaires
+Le clic droit sur un set propose Copier le set vers le catalogue alternatif… et Copier les pièces du set vers le catalogue alternatif…. La seconde commande copie aussi les références constituant son inventaire, leurs couleurs, quantités, supplémentaires et compositions locales des mini-figurines. Le commentaire facultatif, par exemple marque Lepin, reste modifiable dans Modifier la référence et apparaît dans la colonne Commentaire. Photos, métadonnées, rendus 3D et réglages personnels sont conservés, avec une origine explicite utilisable après renommage. Les anciennes copies identifiables sont réparées sans remplacer leurs visuels personnalisés. Une copie de catalogue ne déclare aucune possession.
+
+Alternatives dans les recherches et projets
+Autoriser les briques alternatives équivalentes est facultatif, désactivé au départ. Il permet de comparer les copies dont l’origine est connue aux besoins natifs dans les sets réalisables et les pistes de MOC. Dans Nouveau projet, la même option utilise les alternatives libres du vrac en conservant les références et couleurs physiques. Les pièces déjà réservées ne sont pas réutilisées. La création ne réserve rien ; les réservations restent explicites. Pour réserver les pièces d’un set possédé, transférer d’abord son inventaire dans le vrac.
+
+Vider le stock en une opération
+Vider Mon stock… et Vider Mon stock set… agissent sur toutes les pages et tous les filtres, après une confirmation affichant les quantités. Le vidage du vrac libère ses réservations et met les comptages connus des tiroirs à zéro ; les meubles, associations et quantités inconnues restent conservés. Le vidage des sets ne transfère aucune pièce dans le vrac. Une seule action Annuler/Rétablir restaure le tout, même après redémarrage. Une modification du stock pendant la confirmation bloque le vidage.
+
+Date et heure du dernier ajout
+Dans les deux catalogues de stock, Dernier ajout au stock apparaît après Référence, avec date et heure locales et tri par colonne. Cette date est distincte de la date d’import du catalogue général. Un ajout à une référence/couleur existante fusionne les quantités et actualise sa date ; Annuler restaure la quantité et la date précédentes. Supprimer une ligne retire sa quantité totale, et non uniquement le dernier ajout.
+
+English — v0.1.61
+
+Storage across all cabinets
+In My storage → Parts to store, Destination cabinet offers All cabinets for drag and drop. In Sort by category and stud size, Cabinets to use can also select every cabinet in one operation. Cabinet position determines top-to-bottom, left-to-right order, followed by top-to-bottom drawers within each cabinet. Targets include cabinet names and drawer addresses; the preview shows all selected cabinets. Named empty drawers remain protected. Reorganisation requires a category and preserves mixed-category drawers. One Undo restores the entire operation.
+
+Independent storage criteria
+Category, Stud size and Reference checkboxes can be freely combined. Category + Size is the initial setting. Category alone groups a family; Size alone can group matching formats from different families; Reference separates each physical catalogue identity. Missing dimensions are never guessed: size-only sorting leaves these parts unassigned, while Reference includes them. Split colours is independent. Free grouping still allows multiple references in a shared drawer.
+
+Thumbnails and multiple drawers per reference
+The proposal table includes a 3D or photo preview, a proposed quantity and a target drawer. In a group with multiple references, the thumbnail represents the first part; select the row and open Drawer contents to see every reference and preview. Drawer count per reference… chooses 1, 2, 3 or more drawers for each reference and checks Reference. With Allocate remaining quantities, known quantities are distributed as evenly as possible by colour without changing global stock: 40 pieces across 3 drawers gives 14, 13 and 13. Uncounted associations stay To be counted. Catalogue assignments never declare ownership. With Split colours enabled, the drawer count applies to each colour. Either choose all requested drawers for a reference or leave all unassigned; a partial allocation blocks Apply. Use the drawer inventory or Transfer a quantity… to adjust counts afterwards. Unchecking Reference or changing the grouping mode resets drawer counts.
+
+Sets containing multiple parts
+The containing-sets window starts with the opened part and All colours. Add a part… opens a catalogue with search, filters and thumbnails; Ctrl/Shift selects multiple parts on the page. Choose a colour or All colours independently for each row, then Search. Results must contain every requested part and colour. Add the same reference twice to request two colours. Remove selection and Reset to this part only change criteria; Search refreshes results.
+
+Minifigure parts and nested sets
+Reverse searches now traverse part → minifigure → set and nested sets or kits. Batch API inventories are included, with inventory versions and exact source namespaces preserved. The checked Rebrickable exports return 23 sets for 41850, including kits, instead of one direct result. Counts can change with data. Inventories must be present locally; import complete CSV exports for full coverage without an API key.
+
+Choose usable stock
+Checked loose stock and checked owned-set inventories are independent sources. Checked sets only unchecks loose rows while retaining individual set choices. Selected sets supply their components even when every loose row is unchecked, without recording dismantling or adding loose stock. Custom counts are respected; sets without tracked components use a complete local catalogue inventory with a warning. Project reservations reduce only loose stock. The selector includes set photos and part previews.
+
+Alternative catalogue and comments
+A set context menu offers Copy the set to the alternative catalogue… and Copy the set parts to the alternative catalogue…. The second also copies constituent references with colours, quantities, spare flags and known local minifigure compositions. An optional comment such as Lepin brand is editable in Edit reference and appears in the Comment column. Metadata, photos, 3D models and personal visual settings are retained with explicit lineage that survives renaming. Identifiable legacy copies are repaired without replacing custom visuals. Catalogue copies never declare ownership.
+
+Alternatives in searches and projects
+Allow equivalent alternative bricks is optional and initially disabled. It matches copies with a known origin to native requirements in buildable sets and MOC suggestions. In New project, it allocates free equivalent loose parts while keeping physical references and colours. Existing reservations cannot be reused. Creation reserves nothing; reservations remain explicit. Transfer an owned set inventory to loose stock before reserving its components.
+
+Clear the entire stock
+Clear My stock… and Clear My set stock… affect every page and filter after a quantity confirmation. Clearing loose stock releases reservations and resets known drawer counts; cabinets, assignments and unknown counts are retained. Clearing owned sets does not transfer parts to loose stock. One Undo/Redo restores the whole operation, including after restart. A stock change during confirmation prevents clearing.
+
+Last addition date and time
+Both stock catalogues show sortable Last stock addition immediately after Reference, in local date and time. It differs from the general catalogue import date. Adding an existing reference/colour merges quantities and updates its timestamp; Undo restores the previous quantity and date. Deleting a row removes its entire quantity rather than just the last addition.
+
 Vrac direct et inventaires complets — v0.1.60
 
 Vrac uniquement en un clic : dans Sets réalisables, le bouton Vrac uniquement réinclut toutes les pièces et mini-figurines du vrac, exclut tous les composants des sets possédés puis relance la recherche avec les critères actuels. Les inventaires de sets déjà transférés dans le vrac restent utilisables. Les réservations des projets sont respectées.
