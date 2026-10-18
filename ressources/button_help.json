@@ -869,8 +869,8 @@
       "en": "Chooses between adding inventory parts to loose stock and adding the set to set stock."
     },
     "Rangement automatique…": {
-      "fr": "Propose des tiroirs par catégorie et taille, les plus petites pièces en haut, à vérifier puis appliquer.",
-      "en": "Proposes drawers by category and size, smallest parts at the top, to review then apply."
+      "fr": "Prépare un rangement avec les critères cochés, dans un meuble ou dans tous les meubles.",
+      "en": "Prepares storage using the checked criteria, in one cabinet or all cabinets."
     },
     "Regrouper la sélection…": {
       "fr": "Choisis le regroupement libre, sélectionne les références avec Ctrl ou Maj, puis choisis leur tiroir commun.",
@@ -1019,6 +1019,10 @@
     "Autoriser les briques alternatives équivalentes": {
       "fr": "Autorise uniquement les copies dont l’origine est connue, sans fusionner les marques dans le stock.",
       "en": "Allow only copies with a known origin without merging brands in stock."
+    },
+    "Nombre de tiroirs par référence…": {
+      "fr": "Choisit le nombre de tiroirs pour chaque référence et prépare une répartition vérifiable avant application.",
+      "en": "Chooses the drawer count for each reference and prepares a reviewable allocation before applying."
     }
   },
   "contexts": {
@@ -1113,6 +1117,22 @@
     "RelationFilters|Retirer la sélection": {
       "fr": "Retire les lignes sélectionnées des critères de recherche. Le stock est conservé.",
       "en": "Remove selected rows from search criteria. Stock is retained."
+    },
+    "StoragePlanDialog|Catégorie": {
+      "fr": "Réunit les pièces par famille. Peut se combiner avec Taille en tenons et Référence.",
+      "en": "Groups parts by family. Can be combined with Stud size and Reference."
+    },
+    "StoragePlanDialog|Taille en tenons": {
+      "fr": "Réunit et trie les dimensions inscrites dans les noms, des plus petites aux plus grandes.",
+      "en": "Groups and sorts dimensions written in part names, from small to large."
+    },
+    "StoragePlanDialog|Référence": {
+      "fr": "Sépare les références exactes et permet plusieurs tiroirs pour une même pièce.",
+      "en": "Separates exact references and allows multiple drawers for one part."
+    },
+    "StoragePlanDialog|Répartir les quantités restantes": {
+      "fr": "Répartit uniquement les pièces encore à ranger, sans changer le total du stock.",
+      "en": "Allocates only the remaining unassigned pieces without changing total stock."
     }
   }
 }
