@@ -356,9 +356,8 @@ class StoragePlanDialog(QDialog):
         dialog=ReferenceDrawerCountsDialog(self.db,parts,self.drawer_counts,quantities,getattr(self.parent(),'engine',None),self)
         if dialog.exec()!=QDialog.DialogCode.Accepted:return
         self.drawer_counts=dialog.counts()
-        if self.drawer_counts:
-            if self.grouping.currentData()=='manual':self.grouping.blockSignals(True);self.grouping.setCurrentIndex(self.grouping.findData('size'));self.grouping.blockSignals(False)
-            self.criteria['reference'].blockSignals(True);self.criteria['reference'].setChecked(True);self.criteria['reference'].blockSignals(False)
+        if self.grouping.currentData()=='manual':self.grouping.blockSignals(True);self.grouping.setCurrentIndex(self.grouping.findData('size'));self.grouping.blockSignals(False)
+        self.criteria['reference'].blockSignals(True);self.criteria['reference'].setChecked(True);self.criteria['reference'].blockSignals(False)
         self.rebuild()
 
     def refresh_storage_visuals(self):
