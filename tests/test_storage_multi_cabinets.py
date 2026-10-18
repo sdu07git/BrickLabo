@@ -153,6 +153,10 @@ class ReferenceSplitTests(StorageFixture):
         with patch.object(ReferenceDrawerCountsDialog,'exec',return_value=QDialog.DialogCode.Accepted),patch.object(ReferenceDrawerCountsDialog,'counts',return_value={self.part:3}):window.choose_drawer_counts()
         self.assertTrue(window.criteria['reference'].isChecked());self.assertEqual(len([g for g in window.plan['groups'] if (self.part,'4') in g['entries']]),3)
         window.criteria['reference'].setChecked(False);self.assertEqual(window.drawer_counts,{})
+    def test_accepting_one_drawer_still_enables_reference_grouping(self):
+        self.extra('3005p01','Brick 1 x 1 with Pattern');window=self.dialog();self.assertEqual(len(window.plan['groups']),2)
+        with patch.object(ReferenceDrawerCountsDialog,'exec',return_value=QDialog.DialogCode.Accepted),patch.object(ReferenceDrawerCountsDialog,'counts',return_value={}):window.choose_drawer_counts()
+        self.assertTrue(window.criteria['reference'].isChecked());self.assertEqual(len(window.plan['groups']),3)
     def test_negative_fractional_or_excessive_drawer_counts_are_rejected(self):
         for count in (0,-1,1.5,True,1001):
             with self.assertRaises(ValueError):self.plan_split(count)
