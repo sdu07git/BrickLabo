@@ -129,7 +129,7 @@ def _preview_state(c,state,entries,category,from_catalogue):
     return {'wall':state['wall'],'walls':state['walls'],'drawers':drawers,'links':links,'items':items,'stock':[row for row in state['stock'] if row['id'] in ids]}
 
 
-def propose(db,wall_id,category='',split_colors=False,reorganize=False,entries=None,from_catalogue=False,grouping='size',allocate_quantities=False,criteria=None,drawer_counts=None):
+def propose(db,wall_id,category='',split_colors=False,reorganize=False,entries=None,from_catalogue=False,grouping='size',allocate_quantities=False,criteria=None,drawer_counts=None,category_order=None):
     """One group per category and footprint, ordered from few to many studs."""
     if reorganize and not category:raise ValueError(tr('Choisis une catégorie pour réorganiser ses tiroirs.'))
     if grouping not in ('size','reference','manual'):raise ValueError(tr('Mode de rangement invalide.'))
@@ -137,6 +137,9 @@ def propose(db,wall_id,category='',split_colors=False,reorganize=False,entries=N
     elif criteria is None:criteria={'category','size'}|({'reference'} if grouping=='reference' else set())
     elif not isinstance(criteria,(list,tuple,set,frozenset)) or not criteria or any(value not in ('category','size','reference') for value in criteria):raise ValueError(tr('Coche au moins un critère : catégorie, taille ou référence.'))
     criteria=set(criteria)
+    from .storage_order import saved,validate
+    category_order=saved(db) if category_order is None else validate(category_order)
+    priorities={category:index for index,category in enumerate(category_order)}
     drawer_counts=dict(drawer_counts or {})
     if any(type(identity) is not int or identity<=0 or type(count) is not int or not 1<=count<=1000 for identity,count in drawer_counts.items()):raise ValueError(tr('Nombre de tiroirs invalide.'))
     if drawer_counts and ('reference' not in criteria or grouping=='manual'):raise ValueError(tr('Coche Référence pour répartir une pièce dans plusieurs tiroirs.'))
@@ -184,7 +187,7 @@ def propose(db,wall_id,category='',split_colors=False,reorganize=False,entries=N
         group['entries'].append((item['id'],item['color']));group['references'].append(item['source']+' '+item['ref'])
         quantities[entry_key]=physical
     for group in groups.values():group['category']=' / '.join(sorted(group['categories'],key=normalize))
-    ordered=sorted(groups.values(),key=lambda g:(normalize(g['category']) if 'category' in criteria else '',not bool(g['dimensions']),g['dimensions'][0]*g['dimensions'][1] if g['dimensions'] else 0,g['dimensions'][1:] if g['dimensions'] else (),g['dimensions'][:1],g['references'][0] if 'reference' in criteria else '',g['color']))
+    ordered=sorted(groups.values(),key=lambda g:((priorities.get(g['category'],len(priorities)),normalize(g['category'])) if 'category' in criteria else (0,''),not bool(g['dimensions']),g['dimensions'][0]*g['dimensions'][1] if g['dimensions'] else 0,g['dimensions'][1:] if g['dimensions'] else (),g['dimensions'][:1],g['references'][0] if 'reference' in criteria else '',g['color']))
     expanded=[]
     for group in ordered:
         identities={identity for identity,color in group['entries']}
@@ -206,7 +209,7 @@ def propose(db,wall_id,category='',split_colors=False,reorganize=False,entries=N
         group['drawer_id']=available[index]['id'] if grouping!='manual' and index<len(available) else None
         group['name']=' · '.join(v for v in ((group['references'][0] if 'reference' in criteria else ''),(group['category'] if 'category' in criteria else ''),dimensions_text(group['dimensions']),group['color']) if v)
         if group['split_count']>1:group['name']+=' ('+str(group['split_index']+1)+'/'+str(group['split_count'])+')'
-    return {'wall_id':wall_id,'fingerprint':_fingerprint(state),'available':available,'replaced':replaced,'groups':ordered,'unknown':unknown,'reorganize':reorganize,'entries':list(entries) if entries is not None else None,'from_catalogue':from_catalogue,'grouping':grouping,'shared_drawers':grouping=='manual','criteria':sorted(criteria),'preview':state['preview'],'quantities':quantities,'allocate_quantities':allocate_quantities}
+    return {'wall_id':wall_id,'fingerprint':_fingerprint(state),'available':available,'replaced':replaced,'groups':ordered,'unknown':unknown,'reorganize':reorganize,'entries':list(entries) if entries is not None else None,'from_catalogue':from_catalogue,'grouping':grouping,'shared_drawers':grouping=='manual','criteria':sorted(criteria),'category_order':category_order,'preview':state['preview'],'quantities':quantities,'allocate_quantities':allocate_quantities}
 
 
 def group_quantities(plan,group):return group.get('quantities',plan.get('quantities',{}))

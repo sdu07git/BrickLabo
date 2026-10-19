@@ -1,3 +1,31 @@
+BrickLabo v0.1.62 — Formats de meubles et ordre des catégories
+
+Dupliquer un format de meuble
+Dans Mon rangement → Organiser le meuble → Dupliquer le format du meuble…, donner un nom à la copie. Le nouveau meuble reprend le nombre de colonnes et de rangées, les positions et les dimensions personnalisées des tiroirs, ainsi que les emplacements laissés sans tiroir. Les tiroirs créés ont un nom et un contenu vides, prêts pour un nouveau rangement. La copie est placée à droite des meubles existants et reste indépendante du modèle. Les stocks et les comptages du meuble original sont conservés. Si le format change pendant la saisie, rouvrir la duplication pour revoir ce format avant de créer la copie.
+
+Ordre personnalisable des catégories
+Dans Ranger par catégorie et taille en tenons, Ordre des catégories… affiche les catégories des pièces à ranger avec leur position, leur nombre de références distinctes et le nombre de tiroirs nécessaires. Saisir une position puis quitter le champ, ou sélectionner une ligne et utiliser Monter / Descendre. Les autres positions se décalent automatiquement. Ordre alphabétique rétablit cet ordre dans le brouillon. Valider active Catégorie et Taille en tenons ; chaque catégorie est alors traitée dans l’ordre choisi, puis ses formats sont triés par longueur × largeur croissante en tenons. Référence garde le choix d’un tiroir par référence et Séparer les couleurs reste indépendant. Les formats de même surface gardent un ordre déterministe par dimensions. Les dimensions absentes restent signalées ou sont incluses avec Référence, sans taille inventée.
+
+Enchaîner les catégories dans les meubles
+Avec Tous les meubles, le remplissage continue dans le meuble suivant selon la disposition du rangement. Exemple : 30 références Briques en position 1, puis 23 références Plates en position 2, avec Référence coché. Dans un format de 33 tiroirs, les 30 briques occupent les premiers tiroirs ; les 3 premières plates occupent la suite et les 20 restantes continuent dans le meuble suivant. Si Référence est décoché, plusieurs références de même format peuvent partager un tiroir et le nombre de tiroirs nécessaires est recalculé. Vérifier l’aperçu et les destinations avant Appliquer. Les tiroirs réservés et déjà occupés restent protégés selon les règles de la proposition. L’application du rangement reste annulable en une seule action.
+
+Retenir un ordre de catégories
+Retenir cet ordre pour les prochains rangements est coché au départ. Valider la fenêtre mémorise l’ordre comme préférence, même si la proposition est ensuite fermée. Décocher cette case utilise l’ordre pour cette proposition seulement ; Annuler conserve les réglages précédents. Les catégories non présentes dans la sélection restent mémorisées après celles qui viennent d’être ordonnées. Les nouvelles catégories sont ajoutées à la suite, par ordre alphabétique. L’ordre est inclus dans Sauvegardes → Autres préférences. Le regroupement libre de références conserve ses affectations manuelles.
+
+English — v0.1.62
+
+Duplicate a cabinet format
+In My storage → Organise cabinet → Duplicate cabinet format…, name the copy. The new cabinet retains the column and row counts, drawer positions and custom sizes, and gaps where drawers were removed. New drawers have empty names and contents, ready for another storage plan. The copy is placed to the right of existing cabinets and stays independent of its template. Stock and original drawer counts are preserved. If the format changes while the form is open, reopen duplication to review it before creating the copy.
+
+Custom category order
+In Sort by category and stud size, Category order… lists categories in the parts to store with their position, distinct reference count and required drawer count. Enter a position and leave the field, or select a row and use Move up / Move down. Other positions shift automatically. Alphabetical order resets the draft. Accepting enables Category and Stud size; categories then follow the chosen sequence and formats inside each category sort by increasing length × width in studs. Reference retains the one-reference-per-drawer option, and Split colours is independent. Equal footprints use deterministic dimension ordering. Missing dimensions stay reported or remain included with Reference, without invented sizes.
+
+Continue categories across cabinets
+With All cabinets, filling continues into the next cabinet in the storage layout. Example: 30 Brick references in position 1, then 23 Plate references in position 2, with Reference checked. In a 33-drawer format, 30 bricks fill the first drawers; the first 3 plates follow, and the remaining 20 continue in the next cabinet. With Reference unchecked, references of the same format can share a drawer and required capacity is recalculated. Check the preview and targets before Apply. Reserved and occupied drawers remain protected under the proposal rules. Applying storage remains a single undoable action.
+
+Remember a category sequence
+Remember this order for future storage plans is initially checked. Accepting saves the sequence as a preference, including if the proposal is later closed. Uncheck it to use the order for this proposal only; Cancel retains prior preferences. Categories absent from the selection stay remembered after the newly ordered categories. New categories append alphabetically. The sequence is included in Backups → Other preferences. Free reference grouping retains manual assignments.
+
 BrickLabo v0.1.61 — Stocks, alternatives et recherche par pièces
 
 Rangement dans tous les meubles

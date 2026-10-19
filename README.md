@@ -1,8 +1,21 @@
-# BrickLabo — v0.1.61
+# BrickLabo — v0.1.62
 
-Logiciel de bureau Windows pour les catalogues LEGO, les stocks, les recherches de constructions et les étiquettes. Cette version reprend la v0.1.60 publiée, issue de la v0.1.28 d’origine.
+Logiciel de bureau Windows pour les catalogues LEGO, les stocks, les recherches de constructions et les étiquettes. Cette version reprend la v0.1.61 publiée, issue de la v0.1.28 d’origine.
 
-**Téléchargements v0.1.61 :** [version complète Windows](https://github.com/sdu07git/BrickLabo/releases/download/v0.1.61/BrickLabo_v0.1.61_Complet.zip) · [sources avec ressources](https://github.com/sdu07git/BrickLabo/releases/download/v0.1.61/BrickLabo_v0.1.61_Sources.zip) · [notes de release](https://github.com/sdu07git/BrickLabo/releases/tag/v0.1.61).
+**Téléchargements v0.1.62 :** [version complète Windows](https://github.com/sdu07git/BrickLabo/releases/download/v0.1.62/BrickLabo_v0.1.62_Complet.zip) · [sources avec ressources](https://github.com/sdu07git/BrickLabo/releases/download/v0.1.62/BrickLabo_v0.1.62_Sources.zip) · [notes de release](https://github.com/sdu07git/BrickLabo/releases/tag/v0.1.62).
+
+## Formats de meubles et ordre des catégories — v0.1.62
+
+**Dupliquer un format de meuble** : Dans Mon rangement → Organiser le meuble → Dupliquer le format du meuble…, donner un nom à la copie. Le nouveau meuble reprend le nombre de colonnes et de rangées, les positions et les dimensions personnalisées des tiroirs, ainsi que les emplacements laissés sans tiroir. Les tiroirs créés ont un nom et un contenu vides, prêts pour un nouveau rangement. La copie est placée à droite des meubles existants et reste indépendante du modèle. Les stocks et les comptages du meuble original sont conservés. Si le format change pendant la saisie, rouvrir la duplication pour revoir ce format avant de créer la copie.
+
+**Ordre personnalisable des catégories** : Dans Ranger par catégorie et taille en tenons, Ordre des catégories… affiche les catégories des pièces à ranger avec leur position, leur nombre de références distinctes et le nombre de tiroirs nécessaires. Saisir une position puis quitter le champ, ou sélectionner une ligne et utiliser Monter / Descendre. Les autres positions se décalent automatiquement. Ordre alphabétique rétablit cet ordre dans le brouillon. Valider active Catégorie et Taille en tenons ; chaque catégorie est alors traitée dans l’ordre choisi, puis ses formats sont triés par longueur × largeur croissante en tenons. Référence garde le choix d’un tiroir par référence et Séparer les couleurs reste indépendant. Les formats de même surface gardent un ordre déterministe par dimensions. Les dimensions absentes restent signalées ou sont incluses avec Référence, sans taille inventée.
+
+**Enchaîner les catégories dans les meubles** : Avec Tous les meubles, le remplissage continue dans le meuble suivant selon la disposition du rangement. Exemple : 30 références Briques en position 1, puis 23 références Plates en position 2, avec Référence coché. Dans un format de 33 tiroirs, les 30 briques occupent les premiers tiroirs ; les 3 premières plates occupent la suite et les 20 restantes continuent dans le meuble suivant. Si Référence est décoché, plusieurs références de même format peuvent partager un tiroir et le nombre de tiroirs nécessaires est recalculé. Vérifier l’aperçu et les destinations avant Appliquer. Les tiroirs réservés et déjà occupés restent protégés selon les règles de la proposition. L’application du rangement reste annulable en une seule action.
+
+**Retenir un ordre de catégories** : Retenir cet ordre pour les prochains rangements est coché au départ. Valider la fenêtre mémorise l’ordre comme préférence, même si la proposition est ensuite fermée. Décocher cette case utilise l’ordre pour cette proposition seulement ; Annuler conserve les réglages précédents. Les catégories non présentes dans la sélection restent mémorisées après celles qui viennent d’être ordonnées. Les nouvelles catégories sont ajoutées à la suite, par ordre alphabétique. L’ordre est inclus dans Sauvegardes → Autres préférences. Le regroupement libre de références conserve ses affectations manuelles.
+
+
+**Validation v0.1.62 :** 870 tests de la suite complète réussis sous Qt/Linux, dont 25 nouveaux ; scénario de 30 briques puis 23 plates vérifié sur deux meubles. Interfaces contrôlées en formats normal et compact ; archives et lanceur contrôlés par les outils de livraison. [Rapport détaillé](documentation/CONTROLE_v0.1.62.txt). Exécution native Windows à confirmer.
 
 ## Stocks, alternatives et recherche par pièces — v0.1.61
 
@@ -344,7 +357,7 @@ L’aide complète se trouve dans [documentation/AIDE.html](documentation/AIDE.h
 | 0.1.58 | Projets et aperçus, inventaires des tiroirs, CSV versionnés, modèles Mini-figs et protection mémoire. |
 | 0.1.57 | Quantités par tiroir et transferts partiels, historique Annuler/Rétablir persistant, projets avec besoins, réservations et manquants. |
 
-Un seul [NOUVEAUTES.txt](documentation/NOUVEAUTES.txt) réunit les notes françaises et anglaises. Les notes de cette branche ne documentent pas de livraison 0.1.29. Les variantes 0.1.28b et Range n’ont pas servi de base. Le [rapport de contrôle v0.1.61](documentation/CONTROLE_v0.1.61.txt) décrit les vérifications de cette livraison.
+Un seul [NOUVEAUTES.txt](documentation/NOUVEAUTES.txt) réunit les notes françaises et anglaises. Les notes de cette branche ne documentent pas de livraison 0.1.29. Les variantes 0.1.28b et Range n’ont pas servi de base. Le [rapport de contrôle v0.1.62](documentation/CONTROLE_v0.1.62.txt) décrit les vérifications de cette livraison.
 
 ## Développement et diagnostic
 
@@ -360,7 +373,7 @@ Pour publier une future mise à jour compatible : créer une release publique st
 
 Pour développer depuis ce dépôt, reprendre `ressources/complete.zip` depuis le ZIP Sources joint à la release : cette archive LDraw dépasse la limite de taille des fichiers GitHub. Les archives automatiques « Source code » ne contiennent ni cette ressource ni le runtime Windows. Les deux ZIP joints sont ceux de la version livrée et testée ; les README du dépôt sont adaptés à la publication.
 
-Le [rapport de contrôle v0.1.61](documentation/CONTROLE_v0.1.61.txt) décrit les vérifications de cette livraison. Exécution native Windows à confirmer.
+Le [rapport de contrôle v0.1.62](documentation/CONTROLE_v0.1.62.txt) décrit les vérifications de cette livraison. Exécution native Windows à confirmer.
 
 
 

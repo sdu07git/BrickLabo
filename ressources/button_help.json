@@ -1023,6 +1023,26 @@
     "Nombre de tiroirs par référence…": {
       "fr": "Choisit le nombre de tiroirs pour chaque référence et prépare une répartition vérifiable avant application.",
       "en": "Chooses the drawer count for each reference and prepares a reviewable allocation before applying."
+    },
+    "Ordre des catégories…": {
+      "fr": "Choisit la priorité des catégories et prépare un tri par taille dans chaque catégorie.",
+      "en": "Chooses category priorities and prepares size sorting within each category."
+    },
+    "Monter": {
+      "fr": "Avance la catégorie sélectionnée d’une position.",
+      "en": "Moves the selected category up one position."
+    },
+    "Descendre": {
+      "fr": "Recule la catégorie sélectionnée d’une position.",
+      "en": "Moves the selected category down one position."
+    },
+    "Ordre alphabétique": {
+      "fr": "Remet les catégories du brouillon par ordre alphabétique.",
+      "en": "Resets draft categories to alphabetical order."
+    },
+    "Retenir cet ordre pour les prochains rangements": {
+      "fr": "Mémorise cet ordre à la validation pour les prochains rangements.",
+      "en": "Remembers this sequence on acceptance for future storage plans."
     }
   },
   "contexts": {
@@ -1133,6 +1153,22 @@
     "StoragePlanDialog|Répartir les quantités restantes": {
       "fr": "Répartit uniquement les pièces encore à ranger, sans changer le total du stock.",
       "en": "Allocates only the remaining unassigned pieces without changing total stock."
+    },
+    "StorageCategoryOrderDialog|Monter": {
+      "fr": "Avance la catégorie sélectionnée d’une position.",
+      "en": "Moves the selected category up one position."
+    },
+    "StorageCategoryOrderDialog|Descendre": {
+      "fr": "Recule la catégorie sélectionnée d’une position.",
+      "en": "Moves the selected category down one position."
+    },
+    "StorageCategoryOrderDialog|Ordre alphabétique": {
+      "fr": "Remet les catégories du brouillon par ordre alphabétique.",
+      "en": "Resets draft categories to alphabetical order."
+    },
+    "StorageCategoryOrderDialog|Retenir cet ordre pour les prochains rangements": {
+      "fr": "Mémorise cet ordre à la validation pour les prochains rangements.",
+      "en": "Remembers this sequence on acceptance for future storage plans."
     }
   }
 }
