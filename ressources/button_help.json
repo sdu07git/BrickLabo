@@ -1027,6 +1027,22 @@
     "Ordre des catégories…": {
       "fr": "Choisit la priorité des catégories et prépare un tri par taille dans chaque catégorie.",
       "en": "Chooses category priorities and prepares size sorting within each category."
+    },
+    "Monter": {
+      "fr": "Avance la catégorie sélectionnée d’une position.",
+      "en": "Moves the selected category up one position."
+    },
+    "Descendre": {
+      "fr": "Recule la catégorie sélectionnée d’une position.",
+      "en": "Moves the selected category down one position."
+    },
+    "Ordre alphabétique": {
+      "fr": "Remet les catégories du brouillon par ordre alphabétique.",
+      "en": "Resets draft categories to alphabetical order."
+    },
+    "Retenir cet ordre pour les prochains rangements": {
+      "fr": "Mémorise cet ordre à la validation pour les prochains rangements.",
+      "en": "Remembers this sequence on acceptance for future storage plans."
     }
   },
   "contexts": {
