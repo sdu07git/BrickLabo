@@ -1,8 +1,21 @@
-# BrickLabo — v0.1.61
+# BrickLabo — v0.1.62
 
-Windows desktop software for LEGO catalogues, stock, construction searches and labels. This version continues the published v0.1.60, based on the original v0.1.28.
+Windows desktop software for LEGO catalogues, stock, construction searches and labels. This version continues the published v0.1.61, based on the original v0.1.28.
 
-**Downloads v0.1.61 :** [complete Windows package](https://github.com/sdu07git/BrickLabo/releases/download/v0.1.61/BrickLabo_v0.1.61_Complet.zip) · [sources with resources](https://github.com/sdu07git/BrickLabo/releases/download/v0.1.61/BrickLabo_v0.1.61_Sources.zip) · [release notes](https://github.com/sdu07git/BrickLabo/releases/tag/v0.1.61).
+**Downloads v0.1.62 :** [complete Windows package](https://github.com/sdu07git/BrickLabo/releases/download/v0.1.62/BrickLabo_v0.1.62_Complet.zip) · [sources with resources](https://github.com/sdu07git/BrickLabo/releases/download/v0.1.62/BrickLabo_v0.1.62_Sources.zip) · [release notes](https://github.com/sdu07git/BrickLabo/releases/tag/v0.1.62).
+
+## Cabinet formats and category order — v0.1.62
+
+**Duplicate a cabinet format** : In My storage → Organise cabinet → Duplicate cabinet format…, name the copy. The new cabinet retains the column and row counts, drawer positions and custom sizes, and gaps where drawers were removed. New drawers have empty names and contents, ready for another storage plan. The copy is placed to the right of existing cabinets and stays independent of its template. Stock and original drawer counts are preserved. If the format changes while the form is open, reopen duplication to review it before creating the copy.
+
+**Custom category order** : In Sort by category and stud size, Category order… lists categories in the parts to store with their position, distinct reference count and required drawer count. Enter a position and leave the field, or select a row and use Move up / Move down. Other positions shift automatically. Alphabetical order resets the draft. Accepting enables Category and Stud size; categories then follow the chosen sequence and formats inside each category sort by increasing length × width in studs. Reference retains the one-reference-per-drawer option, and Split colours is independent. Equal footprints use deterministic dimension ordering. Missing dimensions stay reported or remain included with Reference, without invented sizes.
+
+**Continue categories across cabinets** : With All cabinets, filling continues into the next cabinet in the storage layout. Example: 30 Brick references in position 1, then 23 Plate references in position 2, with Reference checked. In a 33-drawer format, 30 bricks fill the first drawers; the first 3 plates follow, and the remaining 20 continue in the next cabinet. With Reference unchecked, references of the same format can share a drawer and required capacity is recalculated. Check the preview and targets before Apply. Reserved and occupied drawers remain protected under the proposal rules. Applying storage remains a single undoable action.
+
+**Remember a category sequence** : Remember this order for future storage plans is initially checked. Accepting saves the sequence as a preference, including if the proposal is later closed. Uncheck it to use the order for this proposal only; Cancel retains prior preferences. Categories absent from the selection stay remembered after the newly ordered categories. New categories append alphabetically. The sequence is included in Backups → Other preferences. Free reference grouping retains manual assignments.
+
+
+**Validation v0.1.62:** 870 full-suite tests passed on Qt/Linux, including 25 new checks; the 30-brick then 23-plate scenario passed across two cabinets. Normal and compact interfaces reviewed; delivery tools validate archives and launcher. [Detailed report](documentation/CONTROLE_v0.1.62.txt). Native Windows execution remains to be confirmed.
 
 ## Stock, alternatives and part searches — v0.1.61
 
@@ -338,7 +351,7 @@ Read [English help](documentation/AIDE.en.html) and [component licences](documen
 | 0.1.58 | Projects and previews, drawer inventories, versioned CSV imports, figure layouts and memory protection. |
 | 0.1.57 | Drawer counts and partial transfers, persistent undo/redo history, projects with requirements, reservations and missing parts. |
 
-One bilingual [NOUVEAUTES.txt](documentation/NOUVEAUTES.txt) holds cumulative notes. This branch does not document a released 0.1.29. The 0.1.28b / Range variants were not used as the baseline. The [v0.1.61 validation report](documentation/CONTROLE_v0.1.61.txt) describes the checks for this delivery.
+One bilingual [NOUVEAUTES.txt](documentation/NOUVEAUTES.txt) holds cumulative notes. This branch does not document a released 0.1.29. The 0.1.28b / Range variants were not used as the baseline. The [v0.1.62 validation report](documentation/CONTROLE_v0.1.62.txt) describes the checks for this delivery.
 
 ## Development and diagnostics
 
@@ -352,7 +365,7 @@ For a compatible future update, publish a public stable release with tag `vX.Y.Z
 
 To develop from this repository, take `ressources/complete.zip` from the source ZIP attached to the release: this LDraw archive exceeds GitHub's regular file size limit. GitHub's automatic source archives contain neither this resource nor the Windows runtime. Both attached ZIPs are the delivered and tested version; the repository READMEs are adapted for publication.
 
-The [v0.1.61 validation report](documentation/CONTROLE_v0.1.61.txt) describes the checks for this delivery. Native Windows execution remains to be confirmed.
+The [v0.1.62 validation report](documentation/CONTROLE_v0.1.62.txt) describes the checks for this delivery. Native Windows execution remains to be confirmed.
 
 
 
