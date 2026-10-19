@@ -65,6 +65,31 @@ def create_wall(db,name,columns=4,rows=6,x=None,y=0):
 def walls(db):return db.rows('SELECT * FROM storage_walls ORDER BY id')
 
 
+def _wall_format(c,wall_id):
+    wall=c.execute('SELECT columns,rows FROM storage_walls WHERE id=?',(wall_id,)).fetchone()
+    if not wall:raise ValueError(tr('Meuble introuvable.'))
+    return {'columns':wall['columns'],'rows':wall['rows'],'drawers':[dict(row) for row in c.execute('SELECT col,row,width,height FROM storage_drawers WHERE wall_id=? ORDER BY row,col',(wall_id,))]}
+
+
+def wall_format(db,wall_id):
+    with db.read() as c:
+        c.execute('BEGIN');return _wall_format(c,wall_id)
+
+
+def duplicate_wall(db,wall_id,name,expected_format=None):
+    """Copy geometry into an empty cabinet, in a single locked transaction."""
+    name=name.strip()
+    if not name:raise ValueError(tr('Nom du meuble invalide.'))
+    with db.connect() as c:
+        c.execute('BEGIN IMMEDIATE');layout=_wall_format(c,wall_id)
+        if expected_format is not None and layout!=expected_format:raise ValueError(tr('Le format du meuble a changé. Rouvre la duplication pour vérifier le nouveau format.'))
+        x=round(c.execute('SELECT COALESCE(MAX(x+columns+.5),0) FROM storage_walls').fetchone()[0],1)
+        x,y=check_position(c,None,x,0,layout['columns'],layout['rows'])
+        identity=c.execute('INSERT INTO storage_walls(name,columns,rows,x,y) VALUES(?,?,?,?,?)',(name,layout['columns'],layout['rows'],x,y)).lastrowid
+        c.executemany('INSERT INTO storage_drawers(wall_id,col,row,width,height) VALUES(?,?,?,?,?)',[(identity,d['col'],d['row'],d['width'],d['height']) for d in layout['drawers']])
+    return identity
+
+
 def update_wall(db,wall_id,name,x,y):
     if not name.strip():raise ValueError(tr('Nom du meuble invalide.'))
     with db.connect() as c:

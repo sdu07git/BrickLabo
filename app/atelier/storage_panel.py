@@ -230,7 +230,7 @@ class StoragePanel(QWidget):
         super().__init__(parent);self.db=db;self.engine=engine;self.drawer_id=None;self.wall_id=None;self.rows=[];self.matches=[];self.drawers=[];self.items={};self.cabinets={};self.wall_drawers={};self.icons=OrderedDict();self.loading=False;self.icon_token=0
         outer=QVBoxLayout(self);outer.setContentsMargins(0,0,0,0);self.controls_scroll=QScrollArea();self.controls_scroll.setWidgetResizable(True);content=QWidget();layout=QVBoxLayout(content);layout.setSizeConstraint(QVBoxLayout.SizeConstraint.SetMinimumSize);self.controls_scroll.setWidget(content);outer.addWidget(self.controls_scroll);self.wall=QComboBox();self.wall.setSizeAdjustPolicy(QComboBox.SizeAdjustPolicy.AdjustToMinimumContentsLengthWithIcon);self.wall.setMinimumContentsLength(16);layout.addWidget(self.wall);bar=FlowLayout()
         organise=QPushButton(tr('Organiser le meuble'));menu=QMenu(organise)
-        for name,fn in [(tr('Créer un meuble'),self.new_wall),(tr('Renommer le meuble…'),self.rename_dialog),(tr('Positionner le meuble…'),self.position_dialog),(tr('Supprimer le meuble'),self.remove_wall),(tr('Ajouter un tiroir'),lambda:self.edit_drawer(True)),(tr('Modifier le tiroir'),self.edit_drawer),(tr('Supprimer le tiroir'),self.remove_drawer)]:menu.addAction(name,fn)
+        for name,fn in [(tr('Créer un meuble'),self.new_wall),(tr('Dupliquer le format du meuble…'),self.duplicate_dialog),(tr('Renommer le meuble…'),self.rename_dialog),(tr('Positionner le meuble…'),self.position_dialog),(tr('Supprimer le meuble'),self.remove_wall),(tr('Ajouter un tiroir'),lambda:self.edit_drawer(True)),(tr('Modifier le tiroir'),self.edit_drawer),(tr('Supprimer le tiroir'),self.remove_drawer)]:menu.addAction(name,fn)
         menu.addSeparator();self.drag_drawers=menu.addAction(tr('Déplacer les tiroirs'));self.drag_drawers.setCheckable(True)
         self.print_action=menu.addAction(tr('Imprimer les meubles sur A4…'),self.print_wall)
         self.plan_action=menu.addAction(tr('Ranger par catégorie et taille…'),self.plan_storage)
@@ -553,6 +553,21 @@ class StoragePanel(QWidget):
             cabinet=self.cabinets.get(captured_wall)
             if cabinet:cabinet.wall['name']=value;cabinet.setToolTip(value);cabinet.update()
             self.search();dialog.accept()
+        buttons.accepted.connect(save);show_window(dialog,self);name.setFocus();return dialog
+    def duplicate_dialog(self):
+        captured_wall=self.wall_id
+        if captured_wall is None:return
+        try:template=store.wall_format(self.db,captured_wall)
+        except (ValueError,sqlite3.Error,OSError) as error:QMessageBox.warning(self,tr('Meuble invalide'),str(error));return
+        dialog=QDialog(self);dialog._storage_wall_id=captured_wall;dialog.setWindowTitle(tr('Dupliquer le format du meuble'));dialog.resize(520,260);form=QFormLayout(dialog)
+        source=QLabel(self.wall.currentText());source.setWordWrap(True);form.addRow(tr('Modèle'),source)
+        name=QLineEdit(tf('{} — copie',self.wall.currentText()));name.setObjectName('duplicate_cabinet_name');name.selectAll();form.addRow(tr('Nom du nouveau meuble'),name)
+        note=QLabel(tf('{0} colonne(s), {1} tiroir(s) par colonne ; {2} tiroir(s) dans ce format. La copie reprend les dimensions et les positions des tiroirs, avec des noms et des contenus vides. Elle sera placée à droite des meubles existants.',template['columns'],template['rows'],len(template['drawers'])));note.setWordWrap(True);form.addRow(note)
+        buttons=QDialogButtonBox(QDialogButtonBox.StandardButton.Save|QDialogButtonBox.StandardButton.Cancel);form.addRow(buttons);buttons.rejected.connect(dialog.reject)
+        def save():
+            try:identity=store.duplicate_wall(self.db,captured_wall,name.text(),template)
+            except (ValueError,sqlite3.Error,OSError) as error:QMessageBox.warning(dialog,tr('Duplication impossible'),str(error));return
+            self.reload_walls(identity);self.focus_wall();dialog.accept()
         buttons.accepted.connect(save);show_window(dialog,self);name.setFocus();return dialog
     def position_dialog(self):
         captured_wall=self.wall_id

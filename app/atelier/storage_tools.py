@@ -220,7 +220,8 @@ class ReferenceDrawerCountsDialog(QDialog):
 class StoragePlanDialog(QDialog):
     def __init__(self,db,wall_id,parent=None,changed=lambda:None,entries=None,from_catalogue=False,category='',allocate_quantities=False):
         super().__init__(parent);self.db=db;self.wall_id=wall_id;self.changed=changed;self.plan=None;self.targets=[]
-        self.entries=list(entries) if entries is not None else None;self.from_catalogue=from_catalogue;self.drawer_counts={};self.thumbnail_rows=[]
+        from . import storage_order
+        self.entries=list(entries) if entries is not None else None;self.from_catalogue=from_catalogue;self.drawer_counts={};self.thumbnail_rows=[];self.category_order=storage_order.saved(db)
         self.setWindowTitle(tr('Ranger par catégorie et taille en tenons'));self.setMinimumSize(800,480)
         available=self.screen().availableGeometry();self.resize(min(1360,max(800,available.width()-32)),min(820,max(480,available.height()-56)))
         layout=QVBoxLayout(self)
@@ -229,7 +230,8 @@ class StoragePlanDialog(QDialog):
             scope_hint=QLabel(tr('Cette proposition utilise la sélection de Pièces à ranger, ou les références affichées si aucune ligne n’est sélectionnée.'));scope_hint.setWordWrap(True);layout.addWidget(scope_hint)
         destination=FlowLayout();destination.addWidget(QLabel(tr('Meubles à utiliser')));self.destination=QComboBox();self.destination.setAccessibleName(tr('Meubles à utiliser'));self.destination.setMaximumWidth(300);self.destination.addItem(tr('Tous les meubles'),None)
         for wall in walls.walls(db):self.destination.addItem(wall['name'],wall['id'])
-        self.destination.setCurrentIndex(max(0,self.destination.findData(wall_id)));destination.addWidget(self.destination);layout.addLayout(destination)
+        self.destination.setCurrentIndex(max(0,self.destination.findData(wall_id)));destination.addWidget(self.destination)
+        self.category_order_button=QPushButton(tr('Ordre des catégories…'));self.category_order_button.clicked.connect(self.choose_category_order);destination.addWidget(self.category_order_button);layout.addLayout(destination)
         self.destination_hint=QLabel(tr('Tous les meubles : ordre du haut vers le bas, de gauche à droite. Dans chaque meuble, les tiroirs sont remplis depuis le haut.'));self.destination_hint.setWordWrap(True);layout.addWidget(self.destination_hint)
         controls=FlowLayout();self.category=QComboBox();self.category.setMaximumWidth(280);self.category.addItem(tr('Toutes les catégories'),'')
         for row in db.rows("SELECT DISTINCT category FROM (SELECT i.category FROM stock s JOIN items i ON i.id=s.item_id WHERE s.quantity>0 AND i.kind IN ('part','minifig') UNION SELECT i.category FROM storage_contents p JOIN storage_drawers d ON d.id=p.drawer_id JOIN items i ON i.id=p.item_id WHERE (? IS NULL OR d.wall_id=?)) WHERE category<>'' ORDER BY category",(None,None)):self.category.addItem(row['category'],row['category'])
@@ -291,7 +293,8 @@ class StoragePlanDialog(QDialog):
         self.scope_explanation.setText(tr('Par défaut : pièces sans emplacement et tiroirs vides sans nom. La réorganisation remplace uniquement les tiroirs contenant cette catégorie ; les tiroirs mixtes et le stock sont conservés.'))
         category=self.category.currentData() or '';self.reorganize.setEnabled(bool(category))
         if not category:self.reorganize.blockSignals(True);self.reorganize.setChecked(False);self.reorganize.blockSignals(False)
-        try:self.plan=assignment.propose(self.db,self.wall_id,category,self.colors.isChecked(),self.reorganize.isChecked(),self.entries,self.from_catalogue,self.grouping.currentData(),self.quantities.isChecked(),[key for key,checkbox in self.criteria.items() if checkbox.isChecked()],self.drawer_counts)
+        self.category_order_button.setEnabled(self.grouping.currentData()!='manual')
+        try:self.plan=assignment.propose(self.db,self.wall_id,category,self.colors.isChecked(),self.reorganize.isChecked(),self.entries,self.from_catalogue,self.grouping.currentData(),self.quantities.isChecked(),[key for key,checkbox in self.criteria.items() if checkbox.isChecked()],self.drawer_counts,self.category_order)
         except (ValueError,sqlite3.Error,OSError) as error:
             self.plan=None;self.thumbnail_rows=[];self.table.setRowCount(0);self.proposal_preview.set_proposal(None,[]);self.summary.setText(str(error));self.apply_button.setEnabled(False);self.combine.setEnabled(False);self.split_references.setEnabled(False)
             if self.thumbs:self.thumbs.reset()
@@ -359,6 +362,27 @@ class StoragePlanDialog(QDialog):
         if self.grouping.currentData()=='manual':self.grouping.blockSignals(True);self.grouping.setCurrentIndex(self.grouping.findData('size'));self.grouping.blockSignals(False)
         self.criteria['reference'].blockSignals(True);self.criteria['reference'].setChecked(True);self.criteria['reference'].blockSignals(False)
         self.rebuild()
+
+    def choose_category_order(self):
+        if self.grouping.currentData()=='manual':return
+        from . import storage_order
+        from .storage_order_dialog import StorageCategoryOrderDialog
+        from .windows import show_window
+        criteria=['category','size']+(['reference'] if self.criteria['reference'].isChecked() else [])
+        try:
+            basis=assignment.propose(self.db,self.destination.currentData(),self.category.currentData() if self.reorganize.isChecked() else '',self.colors.isChecked(),self.reorganize.isChecked(),self.entries,self.from_catalogue,'size',self.quantities.isChecked(),criteria,self.drawer_counts,self.category_order)
+        except (ValueError,sqlite3.Error,OSError) as error:QMessageBox.warning(self,tr('Rangement impossible'),str(error));return
+        rows=storage_order.category_rows(basis)
+        if not rows:QMessageBox.information(self,tr('Rangement'),tr('Aucune catégorie à ordonner dans cette sélection de pièces.'));return
+        dialog=StorageCategoryOrderDialog(self.db,rows,self.category_order,self)
+        def accepted():
+            self.category_order=dialog.order()
+            self.grouping.blockSignals(True);self.grouping.setCurrentIndex(self.grouping.findData('size'));self.grouping.blockSignals(False)
+            for key,checkbox in self.criteria.items():
+                checkbox.setEnabled(True)
+                if key in ('category','size'):checkbox.blockSignals(True);checkbox.setChecked(True);checkbox.blockSignals(False)
+            self.rebuild()
+        dialog.accepted.connect(accepted);self.finished.connect(dialog.reject);show_window(dialog,self,refresh_counts=False);return dialog
 
     def refresh_storage_visuals(self):
         if self.thumbs:self.thumbs.reset()
