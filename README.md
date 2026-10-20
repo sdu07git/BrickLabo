@@ -1,8 +1,20 @@
-# BrickLabo — v0.1.63
+# BrickLabo — v0.1.64
 
-Logiciel de bureau Windows pour les catalogues LEGO, les stocks, les recherches de constructions et les étiquettes. Cette version reprend la v0.1.62 publiée, issue de la v0.1.28 d’origine.
+Logiciel de bureau Windows pour les catalogues LEGO, les stocks, les recherches de constructions et les étiquettes. Cette version reprend la v0.1.63 publiée, issue de la v0.1.28 d’origine.
 
-**Téléchargements v0.1.63 :** [version complète Windows](https://github.com/sdu07git/BrickLabo/releases/download/v0.1.63/BrickLabo_v0.1.63_Complet.zip) · [sources avec ressources](https://github.com/sdu07git/BrickLabo/releases/download/v0.1.63/BrickLabo_v0.1.63_Sources.zip) · [notes de release](https://github.com/sdu07git/BrickLabo/releases/tag/v0.1.63).
+**Téléchargements v0.1.64 :** [version complète Windows](https://github.com/sdu07git/BrickLabo/releases/download/v0.1.64/BrickLabo_v0.1.64_Complet.zip) · [sources avec ressources](https://github.com/sdu07git/BrickLabo/releases/download/v0.1.64/BrickLabo_v0.1.64_Sources.zip) · [notes de release](https://github.com/sdu07git/BrickLabo/releases/tag/v0.1.64).
+
+## Glisser-déposer et clic droit dans la proposition — v0.1.64
+
+**Échanger ou déplacer dans l’aperçu** : Dans Mon rangement → Ranger par catégorie et taille en tenons, maintenir le bouton gauche sur un tiroir proposé, le glisser sur un autre tiroir puis relâcher. Si la destination contient une proposition, les deux contenus complets sont échangés. Sur un tiroir libre admissible, le contenu est déplacé. Une bordure bleue indique la destination. Références, couleurs et quantités restent ensemble ; le tableau et la sélection suivent. Avec Tous les meubles, le déplacement peut traverser les meubles retenus.
+
+**Ajouter une référence par clic droit** : Dans l’aperçu, clic droit sur un tiroir → Ajouter une autre référence… ouvre un choix avec recherche, tri et aperçus. Choisir une référence puis Ajouter au tiroir : elle quitte son ancien tiroir proposé pour rejoindre la destination. Les autres références du tiroir source restent en place. Les placements déjà choisis sont conservés, même si une ligne regroupait plusieurs références. Référence et Plusieurs références par tiroir sont activés si nécessaire. Annuler le choix conserve le brouillon. Dans la vue habituelle de Mon rangement, la même commande ouvre les références du stock et les ajoute au tiroir cliqué sans remplacer son contenu.
+
+**Partager un tiroir et conserver les comptages** : La case Plusieurs références par tiroir autorise le mélange de références dans une proposition automatique, tout en conservant Nombre de tiroirs. Les différents tiroirs comptés d’une même référence et couleur restent distincts ; les réunir bloque l’application et affiche un conflit. Un déplacement ultérieur échange tout le contenu proposé du tiroir partagé. Les choix sont conservés lors d’un changement du nombre de tiroirs. Une fenêtre de choix devenue ancienne demande de rouvrir le choix.
+
+**Valider la proposition** : Ces gestes dans l’aperçu modifient uniquement le brouillon. Les tiroirs occupés ou réservés hors de la proposition restent protégés. Échap annule le glissement en cours ; un dépôt hors des tiroirs n’applique aucun changement. Seul Appliquer le rangement proposé enregistre les placements ; le stock global reste inchangé et une seule action Annuler restaure le rangement. Le double-clic ouvre toujours le détail du tiroir.
+
+**Validation v0.1.64 :** 927 tests réussis dans la suite complète Qt/Linux, puis 92 contrôles ciblés après les derniers ajustements de présentation, dont 34 nouveaux cas. Six vues Qt examinées, avec aperçus LDraw officiels et fenêtre 800 × 540. [Rapport détaillé](documentation/CONTROLE_v0.1.64.txt). Exécution native Windows à confirmer.
 
 ## Réglages des tiroirs dans la proposition — v0.1.63
 
@@ -368,7 +380,7 @@ L’aide complète se trouve dans [documentation/AIDE.html](documentation/AIDE.h
 | 0.1.58 | Projets et aperçus, inventaires des tiroirs, CSV versionnés, modèles Mini-figs et protection mémoire. |
 | 0.1.57 | Quantités par tiroir et transferts partiels, historique Annuler/Rétablir persistant, projets avec besoins, réservations et manquants. |
 
-Un seul [NOUVEAUTES.txt](documentation/NOUVEAUTES.txt) réunit les notes françaises et anglaises. Les notes de cette branche ne documentent pas de livraison 0.1.29. Les variantes 0.1.28b et Range n’ont pas servi de base. Le [rapport de contrôle v0.1.63](documentation/CONTROLE_v0.1.63.txt) décrit les vérifications de cette livraison.
+Un seul [NOUVEAUTES.txt](documentation/NOUVEAUTES.txt) réunit les notes françaises et anglaises. Les notes de cette branche ne documentent pas de livraison 0.1.29. Les variantes 0.1.28b et Range n’ont pas servi de base. Le [rapport de contrôle v0.1.64](documentation/CONTROLE_v0.1.64.txt) décrit les vérifications de cette livraison.
 
 ## Développement et diagnostic
 
@@ -384,7 +396,7 @@ Pour publier une future mise à jour compatible : créer une release publique st
 
 Pour développer depuis ce dépôt, reprendre `ressources/complete.zip` depuis le ZIP Sources joint à la release : cette archive LDraw dépasse la limite de taille des fichiers GitHub. Les archives automatiques « Source code » ne contiennent ni cette ressource ni le runtime Windows. Les deux ZIP joints sont ceux de la version livrée et testée ; les README du dépôt sont adaptés à la publication.
 
-Le [rapport de contrôle v0.1.63](documentation/CONTROLE_v0.1.63.txt) décrit les vérifications de cette livraison. Exécution native Windows à confirmer.
+Le [rapport de contrôle v0.1.64](documentation/CONTROLE_v0.1.64.txt) décrit les vérifications de cette livraison. Exécution native Windows à confirmer.
 
 
 
