@@ -1,3 +1,19 @@
+v0.1.63 — Réglages des tiroirs dans la proposition
+
+Nombre de tiroirs dans le tableau : Dans Mon rangement → Ranger par catégorie et taille en tenons, régler Nombre de tiroirs directement à côté de Références. Les flèches actualisent la proposition et l’aperçu ; après une saisie, appuyer sur Entrée ou quitter le champ. Le critère Référence est activé automatiquement. Si une ligne réunit plusieurs références de même format, cocher Référence pour disposer d’un réglage par pièce. Les lignes (1/2), (2/2)… partagent le même nombre total ; si les couleurs sont séparées, le nombre s’applique à chaque couleur.
+
+Conserver les choix et rapprocher les tiroirs : Changer ce nombre conserve les destinations choisies manuellement, les critères, les couleurs, l’ordre des catégories et le cadrage de l’aperçu. Les placements automatiques peuvent se décaler pour libérer les places voisines. Le logiciel cherche des tiroirs voisins dans le même meuble, de préférence sur la même rangée, en respectant les tiroirs personnalisés, occupés et réservés. Si les destinations restent espacées, un message le signale dans la proposition ; les listes Tiroir proposé restent réglables. Avec Répartir les quantités restantes, 40 pièces dans deux tiroirs donnent 20 + 20. Seul Appliquer le rangement proposé enregistre les emplacements ; le stock global est conservé et le rangement reste annulable en une action.
+
+Tri par colonne : Cliquer sur les en-têtes du tableau de proposition ou de Nombre de tiroirs par référence… pour trier dans les deux sens. Quantités et nombres de tiroirs suivent un tri numérique. Les aperçus, champs, sélections et destinations suivent toujours leur référence, y compris après un recalcul. La fenêtre de réglage séparée conserve également les destinations choisies à la main quand elle est validée.
+
+EN — v0.1.63
+
+Drawer count in the proposal table: In My storage → Sort by category and stud size, edit Drawer count next to References. Arrow buttons update the proposal and preview; after typing, press Enter or leave the field. Reference is enabled automatically. If a row groups several references of the same footprint, check Reference to get a count for each part. Rows (1/2), (2/2)… share the same total count; when colours are separated, the count applies to each colour.
+
+Retain choices and keep drawers together: Changing the count retains manually chosen destinations, criteria, colours, category order and the preview framing. Automatic placements may move to make neighbouring spaces available. BrickLabo looks for neighbouring drawers in the same cabinet, preferably on the same row, respecting custom, occupied and reserved drawers. Spaced destinations are reported in the proposal; Proposed drawer lists remain editable. With Allocate remaining quantities, 40 parts in two drawers become 20 + 20. Only Apply proposed storage writes the placement; global stock is unchanged and one Undo restores the placement.
+
+Column sorting: Click proposal-table headers or Drawer count per reference… headers to sort both ways. Quantities and drawer counts sort numerically. Previews, fields, selection and destinations stay with their reference, including after recalculation. Accepting the separate count window also retains manually chosen destinations.
+
 BrickLabo v0.1.62 — Formats de meubles et ordre des catégories
 
 Dupliquer un format de meuble
