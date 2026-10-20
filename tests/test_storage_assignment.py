@@ -14,6 +14,7 @@ from PySide6.QtWidgets import QApplication,QMessageBox
 from atelier import storage_wall as walls
 from atelier import storage_assignment as assignment
 from atelier.storage_tools import StoragePlanDialog,MIME,read_drag
+from atelier.result_tables import row_index
 from atelier.storage_panel import StoragePanel
 from atelier.thumbnails import ThumbnailContext,load_thumbnail
 from atelier.labels import individual_template_key
@@ -87,10 +88,13 @@ class ProposalTests(Fixture):
         before=walls.print_snapshot(self.db);another=self.keep(StoragePlanDialog(self.db,self.wall));another.reject();self.assertEqual(walls.print_snapshot(self.db),before)
     def test_preview_keeps_categories_dimensions_and_destination_widgets_aligned(self):
         self.extra('tile','Tile 2 x 2','Tiles');window=self.keep(StoragePlanDialog(self.db,self.wall))
-        self.assertFalse(window.table.isSortingEnabled())
-        for row,group in enumerate(window.plan['groups']):
-            self.assertEqual(window.table.item(row,0).text(),group['category']);self.assertEqual(window.table.item(row,1).text(),assignment.dimensions_text(group['dimensions']))
-            self.assertEqual(window.table.cellWidget(row,4).currentData(),group['drawer_id'])
+        self.assertTrue(window.table.isSortingEnabled())
+        for column in (0,1,3,4,6,7):
+            window.table.sortItems(column,Qt.SortOrder.DescendingOrder)
+            for row in range(window.table.rowCount()):
+                group=window.plan['groups'][row_index(window.table,row)]
+                self.assertEqual(window.table.item(row,0).text(),group['category']);self.assertEqual(window.table.item(row,1).text(),assignment.dimensions_text(group['dimensions']))
+                self.assertEqual(window.table.cellWidget(row,4).currentData(),group['drawer_id'])
     def test_fractional_dimensions_and_bad_names(self):
         self.assertEqual(assignment.stud_dimensions('Brick 1 1/2 x 2 x 1/3'),(1.5,2.,1/3))
         self.assertEqual(assignment.stud_dimensions('Brique 2,5 × 1'),(1.,2.5))
