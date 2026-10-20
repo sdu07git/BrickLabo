@@ -129,10 +129,11 @@ def _preview_state(c,state,entries,category,from_catalogue):
     return {'wall':state['wall'],'walls':state['walls'],'drawers':drawers,'links':links,'items':items,'stock':[row for row in state['stock'] if row['id'] in ids]}
 
 
-def propose(db,wall_id,category='',split_colors=False,reorganize=False,entries=None,from_catalogue=False,grouping='size',allocate_quantities=False,criteria=None,drawer_counts=None,category_order=None):
+def propose(db,wall_id,category='',split_colors=False,reorganize=False,entries=None,from_catalogue=False,grouping='size',allocate_quantities=False,criteria=None,drawer_counts=None,category_order=None,share_drawers=False):
     """One group per category and footprint, ordered from few to many studs."""
     if reorganize and not category:raise ValueError(tr('Choisis une catégorie pour réorganiser ses tiroirs.'))
     if grouping not in ('size','reference','manual'):raise ValueError(tr('Mode de rangement invalide.'))
+    if type(share_drawers) is not bool:raise ValueError(tr('Mode de rangement invalide.'))
     if grouping=='manual':criteria={'reference'}
     elif criteria is None:criteria={'category','size'}|({'reference'} if grouping=='reference' else set())
     elif not isinstance(criteria,(list,tuple,set,frozenset)) or not criteria or any(value not in ('category','size','reference') for value in criteria):raise ValueError(tr('Coche au moins un critère : catégorie, taille ou référence.'))
@@ -209,7 +210,7 @@ def propose(db,wall_id,category='',split_colors=False,reorganize=False,entries=N
         group['drawer_id']=available[index]['id'] if grouping!='manual' and index<len(available) else None
         group['name']=' · '.join(v for v in ((group['references'][0] if 'reference' in criteria else ''),(group['category'] if 'category' in criteria else ''),dimensions_text(group['dimensions']),group['color']) if v)
         if group['split_count']>1:group['name']+=' ('+str(group['split_index']+1)+'/'+str(group['split_count'])+')'
-    plan={'wall_id':wall_id,'fingerprint':_fingerprint(state),'available':available,'replaced':replaced,'groups':ordered,'unknown':unknown,'reorganize':reorganize,'entries':list(entries) if entries is not None else None,'from_catalogue':from_catalogue,'grouping':grouping,'shared_drawers':grouping=='manual','criteria':sorted(criteria),'category_order':category_order,'preview':state['preview'],'quantities':quantities,'allocate_quantities':allocate_quantities}
+    plan={'wall_id':wall_id,'fingerprint':_fingerprint(state),'available':available,'replaced':replaced,'groups':ordered,'unknown':unknown,'reorganize':reorganize,'entries':list(entries) if entries is not None else None,'from_catalogue':from_catalogue,'grouping':grouping,'shared_drawers':grouping=='manual' or share_drawers,'criteria':sorted(criteria),'category_order':category_order,'preview':state['preview'],'quantities':quantities,'allocate_quantities':allocate_quantities}
     if drawer_counts:
         from .storage_draft import arrange_targets
         for group,target in zip(ordered,arrange_targets(plan)):group['drawer_id']=target
@@ -225,8 +226,13 @@ def validate_targets(plan,targets):
     chosen=[target for target in targets if target is not None];allowed={d['id'] for d in plan['available']}
     if any(type(target) is not int or target not in allowed for target in chosen) or not plan.get('shared_drawers') and len(chosen)!=len(set(chosen)):
         raise ValueError(tr('Choisis un tiroir disponible différent pour chaque groupe.'))
-    series={}
+    series={};seen=set()
     for group,target in zip(groups,targets):
+        if target is not None:
+            for identity,color in group['entries']:
+                key=(target,identity,color)
+                if key in seen:raise ValueError(tr('Les différents tiroirs d’une même référence doivent rester distincts.'))
+                seen.add(key)
         if group.get('split_count',1)>1:series.setdefault(tuple(group['entries']),[]).append(target)
     if any(any(target is not None for target in values) and any(target is None for target in values) for values in series.values()):
         raise ValueError(tr('Choisis tous les tiroirs demandés pour une référence, ou laisse-les tous sans emplacement.'))

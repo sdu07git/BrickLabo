@@ -45,7 +45,7 @@ def arrange_targets(plan,previous=None,previous_targets=(),overrides=None,change
     """Only explicit destination choices are fixed; automatic rows can make room."""
     groups=plan['groups'];available=plan['available'];allowed={drawer['id'] for drawer in available};overrides=overrides or {};changed=set(changed)
     keys=[group_key(group) for group in groups];fixed={index:overrides[key] for index,key in enumerate(keys) if key in overrides and (overrides[key] is None or overrides[key] in allowed)}
-    if plan.get('shared_drawers'):return [fixed.get(index,group['drawer_id']) for index,group in enumerate(groups)]
+    if plan.get('grouping')=='manual':return [fixed.get(index,group['drawer_id']) for index,group in enumerate(groups)]
     old={group_key(group):target for group,target in zip(previous['groups'],previous_targets)} if previous else {}
     series=OrderedDict()
     for index,group in enumerate(groups):series.setdefault(series_key(group),[]).append(index)

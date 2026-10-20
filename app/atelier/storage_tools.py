@@ -254,6 +254,7 @@ class StoragePlanDialog(QDialog):
         for label,key in [(tr('Catégorie'),'category'),(tr('Taille en tenons'),'size'),(tr('Référence'),'reference')]:
             checkbox=QCheckBox(label);checkbox.setChecked(key in ('category','size'));checkbox.setAccessibleName(tr('Regrouper par ')+label);self.criteria[key]=checkbox;controls.addWidget(checkbox)
         self.colors=QCheckBox(tr('Séparer les couleurs'));controls.addWidget(self.colors)
+        self.shared=QCheckBox(tr('Plusieurs références par tiroir'));self.shared.setToolTip(tr('Autorise plusieurs références dans un tiroir proposé. Les tiroirs demandés pour une même référence restent distincts.'));controls.addWidget(self.shared)
         self.quantities=QCheckBox(tr('Répartir les quantités restantes'));self.quantities.setChecked(bool(allocate_quantities) and not from_catalogue);self.quantities.setEnabled(not from_catalogue);controls.addWidget(self.quantities)
         self.reorganize=QCheckBox(tr('Réorganiser cette catégorie dans ce meuble'));controls.addWidget(self.reorganize);layout.addLayout(controls)
         self.scope_explanation=explanation=QLabel(tr('Par défaut : pièces sans emplacement et tiroirs vides sans nom. La réorganisation remplace les liens des tiroirs contenant uniquement cette catégorie. Les tiroirs mixtes, les autres meubles et toutes les quantités sont conservés.'));explanation.setWordWrap(True);layout.addWidget(explanation)
@@ -268,6 +269,8 @@ class StoragePlanDialog(QDialog):
         if self.thumbs:self.table.model().layoutChanged.connect(lambda *_:self.thumbs.reset())
         from .storage_preview import StorageProposalPreview
         self.proposal_preview=StorageProposalPreview(db,getattr(parent,'engine',None),self)
+        self.proposal_preview.drawer_exchange_requested.connect(self.exchange_preview_drawers)
+        self.proposal_preview.drawer_add_requested.connect(self.choose_preview_reference)
         self.splitter=QSplitter(Qt.Orientation.Horizontal);self.splitter.setChildrenCollapsible(False);self.splitter.addWidget(self.table);self.splitter.addWidget(self.proposal_preview);self.splitter.setSizes([800,560]);layout.addWidget(self.splitter,1)
         self.summary=QLabel();self.summary.setWordWrap(True);layout.addWidget(self.summary)
         row=FlowLayout();prepare=QPushButton(tr('Préparer une proposition'));prepare.clicked.connect(self.rebuild);row.addWidget(prepare)
@@ -278,10 +281,13 @@ class StoragePlanDialog(QDialog):
         self.category.currentIndexChanged.connect(self.rebuild);self.grouping.currentIndexChanged.connect(self.change_grouping);self.colors.toggled.connect(self.rebuild);self.reorganize.toggled.connect(self.rebuild)
         for checkbox in self.criteria.values():checkbox.toggled.connect(self.change_criteria)
         self.quantities.toggled.connect(self.rebuild);self.destination.currentIndexChanged.connect(self.rebuild)
+        self.shared.toggled.connect(lambda:self.rebuild(preserve_targets=True))
         self.table.currentCellChanged.connect(self.group_selected);self.proposal_preview.drawer_selected.connect(self.drawer_selected);self.rebuild()
 
     def change_grouping(self,*_):
         mode=self.grouping.currentData()
+        was_manual=not self.shared.isEnabled();self.shared.setEnabled(mode!='manual')
+        if mode=='manual' or was_manual:self.shared.blockSignals(True);self.shared.setChecked(mode=='manual');self.shared.blockSignals(False)
         if mode!='reference':self.drawer_counts={}
         for key,checkbox in self.criteria.items():
             checkbox.setEnabled(mode!='manual')
@@ -310,7 +316,10 @@ class StoragePlanDialog(QDialog):
     def target_changed(self,index,*_):
         self.remember_target(index);self.update_summary()
 
-    def rebuild(self,*_,preserve_targets=False):
+    def make_plan(self,criteria=None,share_drawers=None):
+        return assignment.propose(self.db,self.destination.currentData(),self.category.currentData() or '',self.colors.isChecked(),self.reorganize.isChecked(),self.entries,self.from_catalogue,self.grouping.currentData(),self.quantities.isChecked(),criteria if criteria is not None else [key for key,checkbox in self.criteria.items() if checkbox.isChecked()],self.drawer_counts,self.category_order,self.shared.isChecked() if share_drawers is None else share_drawers)
+
+    def rebuild(self,*_,preserve_targets=False,prepared_plan=None):
         self.count_timer.stop();changed=set(self.changed_counts);self.changed_counts.clear();preserve_targets=preserve_targets or bool(changed)
         previous=self.plan if preserve_targets else None;previous_targets=[target.currentData() for target in self.targets] if previous else []
         if not preserve_targets:self.target_overrides={}
@@ -325,7 +334,7 @@ class StoragePlanDialog(QDialog):
         category=self.category.currentData() or '';self.reorganize.setEnabled(bool(category))
         if not category:self.reorganize.blockSignals(True);self.reorganize.setChecked(False);self.reorganize.blockSignals(False)
         self.category_order_button.setEnabled(self.grouping.currentData()!='manual')
-        try:self.plan=assignment.propose(self.db,self.wall_id,category,self.colors.isChecked(),self.reorganize.isChecked(),self.entries,self.from_catalogue,self.grouping.currentData(),self.quantities.isChecked(),[key for key,checkbox in self.criteria.items() if checkbox.isChecked()],self.drawer_counts,self.category_order)
+        try:self.plan=prepared_plan if prepared_plan is not None else self.make_plan()
         except (ValueError,sqlite3.Error,OSError) as error:
             self.plan=None;self.thumbnail_rows=[];self.table.setRowCount(0);self.proposal_preview.set_proposal(None,[]);self.summary.setText(str(error));self.apply_button.setEnabled(False);self.combine.setEnabled(False);self.split_references.setEnabled(False)
             if self.thumbs:self.thumbs.reset()
@@ -355,13 +364,13 @@ class StoragePlanDialog(QDialog):
             target.activated.connect(lambda value,i=index:self.remember_target(i))
             identities={identity for identity,color in group['entries']}
             if len(identities)==1:
-                identity=next(iter(identities));spin=QSpinBox();spin.setRange(1,1000);spin.setKeyboardTracking(False);spin.setValue(group['split_count']);spin.setEnabled(not self.plan['shared_drawers']);spin.setAccessibleName(tr('Nombre de tiroirs')+' '+self.plan['preview']['items'][identity]['source']+' '+self.plan['preview']['items'][identity]['ref']);self.table.setCellWidget(index,7,spin);self.count_spins.append((identity,spin))
+                identity=next(iter(identities));spin=QSpinBox();spin.setRange(1,1000);spin.setKeyboardTracking(False);spin.setValue(group['split_count']);spin.setEnabled(self.grouping.currentData()!='manual');spin.setAccessibleName(tr('Nombre de tiroirs')+' '+self.plan['preview']['items'][identity]['source']+' '+self.plan['preview']['items'][identity]['ref']);self.table.setCellWidget(index,7,spin);self.count_spins.append((identity,spin))
                 spin.setToolTip(tr('Nombre total de tiroirs pour cette référence, par couleur si les couleurs sont séparées. Modifier une ligne actualise toutes les lignes de la référence et l’aperçu.'))
                 spin.valueChanged.connect(lambda value,item=identity:self.change_drawer_count(item,value))
             else:self.table.item(index,7).setText('—');self.table.item(index,7).setToolTip(tr('Coche Référence pour régler le nombre de tiroirs de chaque pièce directement dans ce tableau.'))
         self.table.setSortingEnabled(True)
         if sort_column>=0:self.table.sortItems(sort_column,sort_order)
-        self.table.blockSignals(False);self.combine.setEnabled(self.grouping.currentData()=='manual' and bool(self.plan['available']))
+        self.table.blockSignals(False);self.combine.setEnabled(self.plan['shared_drawers'] and bool(self.plan['available']))
         self.split_references.setEnabled(self.grouping.currentData()!='manual' and bool(self.plan['groups']))
         if self.thumbs:self.thumbs.reset()
         self.reset_preview=not preserve_targets;self.update_summary()
@@ -384,12 +393,57 @@ class StoragePlanDialog(QDialog):
     def group_selected(self,row,*_):
         if self.plan and len(self.targets)==len(self.plan['groups']):self.proposal_preview.show_group(row_index(self.table,row),[w.currentData() for w in self.targets])
 
+    def exchange_preview_drawers(self,source,destination):
+        if not self.plan or self.proposal_preview.closed or source==destination:return
+        allowed={drawer['id'] for drawer in self.plan['available']}
+        if source not in allowed or destination not in allowed:return
+        origin=[index for index,target in enumerate(self.targets) if target.currentData()==source]
+        other=[index for index,target in enumerate(self.targets) if target.currentData()==destination]
+        if not origin:return
+        cells={row_index(self.table,row):self.table.item(row,4) for row in range(self.table.rowCount())}
+        blocked=self.table.blockSignals(True)
+        for indices,target in ((origin,destination),(other,source)):
+            for index in indices:
+                combo=self.targets[index];combo.blockSignals(True);combo.setCurrentIndex(combo.findData(target));combo.blockSignals(False)
+                cells[index].setText(combo.currentText());combo.setToolTip(combo.currentText());self.remember_target(index)
+        self.table.blockSignals(blocked)
+        self.update_summary();self.proposal_preview.choose_drawer(destination);self.proposal_preview.tabs.setCurrentIndex(0)
+
     def drawer_selected(self,identity):
         indices=[row for row in range(self.table.rowCount()) if self.targets[row_index(self.table,row)].currentData()==identity]
+        horizontal=self.table.horizontalScrollBar().value()
         self.table.blockSignals(True);self.table.clearSelection()
         for index in indices:self.table.selectionModel().select(self.table.model().index(index,0),QItemSelectionModel.SelectionFlag.Select|QItemSelectionModel.SelectionFlag.Rows)
         if indices:self.table.scrollToItem(self.table.item(indices[0],0))
+        self.table.horizontalScrollBar().setValue(horizontal)
         self.table.blockSignals(False)
+
+    def choose_preview_reference(self,identity):
+        if self.count_timer.isActive():self.rebuild(preserve_targets=True)
+        if not self.plan or self.proposal_preview.closed or identity not in {drawer['id'] for drawer in self.plan['available']}:return
+        revision=self.proposal_preview.revision
+        try:plan=self.make_plan(criteria=sorted(set(self.plan['criteria'])|{'reference'}),share_drawers=True)
+        except (ValueError,sqlite3.Error,OSError) as error:QMessageBox.warning(self,tr('Rangement'),str(error));return
+        if plan['fingerprint']!=self.plan['fingerprint']:
+            QMessageBox.warning(self,tr('Rangement'),tr('Le stock ou le rangement a changé. Prépare une nouvelle proposition.'));return
+        old={(entry,group['split_index']):target.currentData() for group,target in zip(self.plan['groups'],self.targets) for entry in group['entries']}
+        targets=[old.get((group['entries'][0],group['split_index'])) for group in plan['groups']]
+        from .storage_proposal_picker import ProposalReferencePicker
+        from .windows import show_window
+        dialog=ProposalReferencePicker(self.db,plan,targets,identity,getattr(self.parent(),'engine',None),self)
+        def accepted(result):
+            if result!=QDialog.DialogCode.Accepted or self.proposal_preview.closed:return
+            if revision!=self.proposal_preview.revision:
+                QMessageBox.warning(self,tr('Rangement'),tr('La proposition a changé. Rouvre le choix des références depuis le tiroir.'));return
+            index=dialog.selected_index
+            if index is None:return
+            targets[index]=identity
+            for group,target in zip(plan['groups'],targets):group['drawer_id']=target
+            self.shared.blockSignals(True);self.shared.setChecked(True);self.shared.blockSignals(False)
+            if self.grouping.currentData()!='manual':self.criteria['reference'].blockSignals(True);self.criteria['reference'].setChecked(True);self.criteria['reference'].blockSignals(False)
+            self.target_overrides={group_key(group):target for group,target in zip(plan['groups'],targets)}
+            self.rebuild(preserve_targets=True,prepared_plan=plan);self.proposal_preview.choose_drawer(identity);self.proposal_preview.tabs.setCurrentIndex(0)
+        show_window(dialog,self,accepted);return dialog
 
     def combine_selection(self):
         if not self.plan or not self.plan.get('shared_drawers'):return
