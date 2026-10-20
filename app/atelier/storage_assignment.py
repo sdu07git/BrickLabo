@@ -209,7 +209,11 @@ def propose(db,wall_id,category='',split_colors=False,reorganize=False,entries=N
         group['drawer_id']=available[index]['id'] if grouping!='manual' and index<len(available) else None
         group['name']=' · '.join(v for v in ((group['references'][0] if 'reference' in criteria else ''),(group['category'] if 'category' in criteria else ''),dimensions_text(group['dimensions']),group['color']) if v)
         if group['split_count']>1:group['name']+=' ('+str(group['split_index']+1)+'/'+str(group['split_count'])+')'
-    return {'wall_id':wall_id,'fingerprint':_fingerprint(state),'available':available,'replaced':replaced,'groups':ordered,'unknown':unknown,'reorganize':reorganize,'entries':list(entries) if entries is not None else None,'from_catalogue':from_catalogue,'grouping':grouping,'shared_drawers':grouping=='manual','criteria':sorted(criteria),'category_order':category_order,'preview':state['preview'],'quantities':quantities,'allocate_quantities':allocate_quantities}
+    plan={'wall_id':wall_id,'fingerprint':_fingerprint(state),'available':available,'replaced':replaced,'groups':ordered,'unknown':unknown,'reorganize':reorganize,'entries':list(entries) if entries is not None else None,'from_catalogue':from_catalogue,'grouping':grouping,'shared_drawers':grouping=='manual','criteria':sorted(criteria),'category_order':category_order,'preview':state['preview'],'quantities':quantities,'allocate_quantities':allocate_quantities}
+    if drawer_counts:
+        from .storage_draft import arrange_targets
+        for group,target in zip(ordered,arrange_targets(plan)):group['drawer_id']=target
+    return plan
 
 
 def group_quantities(plan,group):return group.get('quantities',plan.get('quantities',{}))
