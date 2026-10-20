@@ -1,4 +1,16 @@
-BrickLabo v0.1.63
+BrickLabo v0.1.64
+
+Échanger ou déplacer dans l’aperçu
+Dans Mon rangement → Ranger par catégorie et taille en tenons, maintenir le bouton gauche sur un tiroir proposé, le glisser sur un autre tiroir puis relâcher. Si la destination contient une proposition, les deux contenus complets sont échangés. Sur un tiroir libre admissible, le contenu est déplacé. Une bordure bleue indique la destination. Références, couleurs et quantités restent ensemble ; le tableau et la sélection suivent. Avec Tous les meubles, le déplacement peut traverser les meubles retenus.
+
+Ajouter une référence par clic droit
+Dans l’aperçu, clic droit sur un tiroir → Ajouter une autre référence… ouvre un choix avec recherche, tri et aperçus. Choisir une référence puis Ajouter au tiroir : elle quitte son ancien tiroir proposé pour rejoindre la destination. Les autres références du tiroir source restent en place. Les placements déjà choisis sont conservés, même si une ligne regroupait plusieurs références. Référence et Plusieurs références par tiroir sont activés si nécessaire. Annuler le choix conserve le brouillon. Dans la vue habituelle de Mon rangement, la même commande ouvre les références du stock et les ajoute au tiroir cliqué sans remplacer son contenu.
+
+Partager un tiroir et conserver les comptages
+La case Plusieurs références par tiroir autorise le mélange de références dans une proposition automatique, tout en conservant Nombre de tiroirs. Les différents tiroirs comptés d’une même référence et couleur restent distincts ; les réunir bloque l’application et affiche un conflit. Un déplacement ultérieur échange tout le contenu proposé du tiroir partagé. Les choix sont conservés lors d’un changement du nombre de tiroirs. Une fenêtre de choix devenue ancienne demande de rouvrir le choix.
+
+Valider la proposition
+Ces gestes dans l’aperçu modifient uniquement le brouillon. Les tiroirs occupés ou réservés hors de la proposition restent protégés. Échap annule le glissement en cours ; un dépôt hors des tiroirs n’applique aucun changement. Seul Appliquer le rangement proposé enregistre les placements ; le stock global reste inchangé et une seule action Annuler restaure le rangement. Le double-clic ouvre toujours le détail du tiroir.
 
 Nombre de tiroirs dans le tableau
 Dans Mon rangement → Ranger par catégorie et taille en tenons, régler Nombre de tiroirs directement à côté de Références. Les flèches actualisent la proposition et l’aperçu ; après une saisie, appuyer sur Entrée ou quitter le champ. Le critère Référence est activé automatiquement. Si une ligne réunit plusieurs références de même format, cocher Référence pour disposer d’un réglage par pièce. Les lignes (1/2), (2/2)… partagent le même nombre total ; si les couleurs sont séparées, le nombre s’applique à chaque couleur.

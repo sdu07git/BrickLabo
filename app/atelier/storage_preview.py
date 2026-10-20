@@ -3,10 +3,11 @@ from collections import OrderedDict
 
 from PySide6.QtCore import Qt,Signal,QTimer
 from PySide6.QtGui import QColor,QPen,QPainter
-from PySide6.QtWidgets import QWidget,QVBoxLayout,QLabel,QPushButton,QTabWidget,QTableWidget,QHeaderView,QAbstractItemView,QGraphicsScene
+from PySide6.QtWidgets import QWidget,QVBoxLayout,QLabel,QPushButton,QTabWidget,QTableWidget,QHeaderView,QAbstractItemView,QGraphicsScene,QMenu
 
 from .i18n import tr,tf
-from .storage_panel import CabinetItem,DrawerItem,WallView
+from .storage_panel import CabinetItem,DrawerItem
+from .storage_preview_drag import ProposalView
 from .thumbnails import ThumbnailContext,PartThumbnails,load_thumbnail
 from .ui_common import FlowLayout,async_task,pixmap
 from .result_tables import fill_table,row_index
@@ -37,26 +38,35 @@ def proposal_snapshot(plan,targets):
         from .storage_assignment import group_quantities
         contents[target]=[part(identity,color,group_quantities(plan,group).get((identity,color))) for group in groups for identity,color in group['entries']]
     conflicts={target for target,indices in assignments.items() if len(indices)>1 and not plan.get('shared_drawers')}
+    for target,indices in assignments.items():
+        entries=[entry for index in indices for entry in plan['groups'][index]['entries']]
+        if len(entries)!=len(set(entries)):conflicts.add(target)
     return {'wall':base['wall'],'walls':base.get('walls',[base['wall']]),'drawers':list(drawers.values()),'contents':contents,'assignments':assignments,'conflicts':conflicts,'items':base['items'],'part':part}
 
 
 class ProposalDrawer(DrawerItem):
     opened=Signal(int)
     def __init__(self,*args,proposed=False,conflict=False,**kwargs):
-        super().__init__(*args,**kwargs);self.drop_active=proposed;self.conflict=conflict
+        super().__init__(*args,**kwargs);self.drop_active=proposed;self.conflict=conflict;self.drag_target=False
+        if proposed:self.setCursor(Qt.CursorShape.OpenHandCursor)
     def paint(self,painter,option,widget=None):
         super().paint(painter,option,widget)
         if self.conflict:
             painter.save();painter.setTransform(self.transform_face,True);painter.setPen(QPen(QColor('#ff806d'),3));painter.setBrush(Qt.BrushStyle.NoBrush);painter.drawPolygon(self.front);painter.restore()
+        if self.drag_target:
+            painter.save();painter.setPen(QPen(QColor('#6ee7ff'),4,Qt.PenStyle.DashLine));painter.setBrush(Qt.BrushStyle.NoBrush);painter.drawPolygon(self.front);painter.restore()
     def mouseDoubleClickEvent(self,event):
-        self.opened.emit(self.drawer['id']);event.accept()
+        if event.button()==Qt.MouseButton.LeftButton:self.opened.emit(self.drawer['id']);event.accept()
+        else:super().mouseDoubleClickEvent(event)
 
 
 class StorageProposalPreview(QWidget):
     drawer_selected=Signal(int)
+    drawer_exchange_requested=Signal(int,int)
+    drawer_add_requested=Signal(int)
     def __init__(self,db,engine=None,parent=None):
         super().__init__(parent);self.db=db;self.engine=engine;self.plan=None;self.snapshot=None;self.selected_id=None;self.items={};self.rows=[]
-        self.icons=OrderedDict();self.context=ThumbnailContext(db);self.token=0;self.running=False;self.closed=False
+        self.icons=OrderedDict();self.context=ThumbnailContext(db);self.token=0;self.running=False;self.closed=False;self.revision=0
         layout=QVBoxLayout(self);layout.setContentsMargins(0,0,0,0)
         self.tabs=QTabWidget();layout.addWidget(self.tabs)
         board=QWidget();body=QVBoxLayout(board);body.setContentsMargins(6,6,6,6)
@@ -65,8 +75,8 @@ class StorageProposalPreview(QWidget):
         for label,factor in [('−',1/1.25),('+',1.25)]:
             button=QPushButton(label);button.clicked.connect(lambda checked=False,f=factor:self.view.zoom(f));controls.addWidget(button)
         fit=QPushButton(tr('Vue complète'));fit.clicked.connect(self.fit);controls.addWidget(fit);body.addLayout(controls)
-        self.scene=QGraphicsScene(self);self.view=WallView(self.scene);self.view.setRenderHint(QPainter.RenderHint.Antialiasing);self.view.setAcceptDrops(False);body.addWidget(self.view,1)
-        self.hint=hint=QLabel(tr('Vert : placement proposé. Rouge : conflit d’affectation. Clique sur un tiroir pour son contenu ; double-clique pour ouvrir les détails.'));hint.setWordWrap(True);body.addWidget(hint);self.view.setToolTip(hint.text())
+        self.scene=QGraphicsScene(self);self.view=ProposalView(self.scene,self);self.view.setRenderHint(QPainter.RenderHint.Antialiasing);body.addWidget(self.view,1)
+        self.hint=hint=QLabel(tr('Glisse un tiroir proposé pour échanger ou déplacer son contenu. Clic droit : ajouter une référence. Vert : proposé ; rouge : conflit. Double-clic : détails.'));hint.setWordWrap(True);body.addWidget(hint);self.view.setToolTip(hint.text())
         self.tabs.addTab(board,tr('Meuble proposé'))
         details=QWidget();detail_layout=QVBoxLayout(details);detail_layout.setContentsMargins(6,6,6,6)
         self.detail_title=QLabel(tr('Sélectionne un tiroir dans l’aperçu.'));self.detail_title.setWordWrap(True);detail_layout.addWidget(self.detail_title)
@@ -84,6 +94,7 @@ class StorageProposalPreview(QWidget):
     def visible_rows(self):return [self.rows[row_index(self.table,index)] for index in range(self.table.rowCount())]
 
     def set_proposal(self,plan,targets,reset=False):
+        self.view.cancel_gesture();self.revision+=1
         self.plan=plan;self.token+=1;self.scene.clear();self.items={};self.snapshot=None
         if plan is None:self.rows=[];self.table.setRowCount(0);self.caption.setText(tr('Aucune proposition disponible.'));return
         self.snapshot=proposal_snapshot(plan,targets);snap=self.snapshot
@@ -132,6 +143,13 @@ class StorageProposalPreview(QWidget):
     def open_drawer(self,identity):
         self.choose_drawer(identity);self.tabs.setCurrentIndex(1)
 
+    def drawer_menu(self,identity,position):
+        if self.closed or identity not in self.items:return
+        self.choose_drawer(identity);menu=QMenu(self);menu.setAttribute(Qt.WidgetAttribute.WA_DeleteOnClose)
+        menu.addAction(tr('Ouvrir l’inventaire du tiroir…'),lambda:self.open_drawer(identity))
+        add=menu.addAction(tr('Ajouter une autre référence…'),lambda:self.drawer_add_requested.emit(identity));add.setEnabled(self.view.eligible(identity))
+        menu.popup(position);return menu
+
     def show_group(self,index,targets):
         if not self.plan or not 0<=index<len(targets):return
         target=targets[index]
@@ -177,7 +195,7 @@ class StorageProposalPreview(QWidget):
         async_task(self,work,finished,finished,delivered)
 
     def stop(self):
-        self.closed=True;self.token+=1;self.timer.stop()
+        self.closed=True;self.view.cancel_gesture();self.revision+=1;self.token+=1;self.timer.stop()
         if self.thumbs:self.thumbs.suspend()
 
     def showEvent(self,event):super().showEvent(event);self.schedule_icons()

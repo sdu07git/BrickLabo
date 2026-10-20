@@ -632,7 +632,11 @@ class StoragePanel(QWidget):
         self.db.run('DELETE FROM storage_drawers WHERE id=?',(self.drawer_id,));self.drawer_id=None;self.redraw();self.load_contents();self.search()
     def pick_stock(self):
         if not self.drawer_id:return
-        dialog=StockPicker(self.db,self.engine,self.drawer_id,self,self.refresh);dialog._storage_wall_id=self.wall_id;show_window(dialog,self)
+        return self.pick_stock_for_drawer(self.drawer_id)
+    def pick_stock_for_drawer(self,drawer_id):
+        drawer=self.db.rows('SELECT wall_id FROM storage_drawers WHERE id=?',(drawer_id,))
+        if not drawer:return
+        dialog=StockPicker(self.db,self.engine,drawer_id,self,self.refresh);dialog._storage_wall_id=drawer[0]['wall_id'];show_window(dialog,self);return dialog
     def pick_catalogue(self):
         self.stock_browser.origin.setCurrentIndex(self.stock_browser.origin.findData('catalogue'));self.details_tabs.setCurrentWidget(self.stock_browser)
     def unassign(self):
@@ -649,7 +653,7 @@ class StoragePanel(QWidget):
         item=self.view.itemAt(pos)
         if not isinstance(item,DrawerItem):return
         drawer_id=item.drawer['id'];self.choose_drawer(drawer_id);parts=store.contents(self.db,drawer_id)
-        menu=QMenu(self);menu.addAction(tr('Ouvrir l’inventaire du tiroir…'),lambda:self.open_drawer_inventory(drawer_id));references=menu.addMenu(tr('Retirer une référence du tiroir'));references.setEnabled(bool(parts))
+        menu=QMenu(self);menu.addAction(tr('Ouvrir l’inventaire du tiroir…'),lambda:self.open_drawer_inventory(drawer_id));menu.addAction(tr('Ajouter une autre référence…'),lambda:self.pick_stock_for_drawer(drawer_id));references=menu.addMenu(tr('Retirer une référence du tiroir'));references.setEnabled(bool(parts))
         for part in parts[:30]:
             label=part['source']+' '+part['ref']+' — '+part['name']+' · '+(part['chosen_color'] or tr('Non précisée'))
             references.addAction(label,lambda checked=False,p=part:self.remove_drawer_references(drawer_id,[(p['id'],p['chosen_color'])]))

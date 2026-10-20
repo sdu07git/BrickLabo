@@ -1,0 +1,75 @@
+BRICKLABO v0.1.64 — CONTRÔLE DE LIVRAISON
+20 octobre 2026
+Base publiée v0.1.63 : 4729a697de584c170cd554fd4f625530e00afaf7.
+
+Environnement : Python 3.12.14, Qt/Linux offscreen,
+PySide6/shiboken6 6.11.2, NumPy 2.5.3, Pillow 12.3.0.
+Suite complète : 927 tests réussis en 581.251 secondes.
+Après les derniers ajustements de présentation et de textes :
+92 contrôles ciblés réussis en 18.271 secondes, dont les 34 nouveaux cas.
+Compilation Python, différences Git et traductions vérifiées.
+
+Glissement dans la proposition
+- Gestes réels de souris Qt sur la façade et les miniatures : échanger deux
+  contenus proposés complets ou déplacer le contenu sur un tiroir libre admissible.
+- Couleurs, comptages connus ou inconnus, lignes réparties et groupes partagés
+  restent associés aux bonnes références. Les listes et sélections du tableau
+  suivent les changements, même après un tri. Le cadrage horizontal est conservé.
+- Bordure bleue pendant le survol de la destination ; curseur de refus pour
+  un emplacement interdit. Un clic simple conserve la sélection ; le double-clic
+  ouvre les détails. Échap, fermeture et recalcul interrompent le geste.
+- Les tiroirs occupés ou nommés hors de la proposition et les meubles exclus
+  restent protégés. Tous les meubles permet de déplacer entre meubles retenus.
+- Les destinations choisies sont retenues lors du changement de Nombre de tiroirs.
+  Les gestes ne lancent aucune boucle QDrag native et ne détruisent pas la scène
+  avant le retour du traitement de relâchement du graphics-item.
+
+Clic droit et choix d’une référence
+- Ajouter une autre référence… est accessible dans l’aperçu sur un tiroir
+  admissible, avec une fenêtre indépendante de recherche, tri et miniatures.
+- Une référence quitte son ancien tiroir proposé pour rejoindre la destination.
+  Les autres références du tiroir source restent en place. Une ancienne ligne
+  de plusieurs références est séparée sans perdre ses destinations examinées.
+- Référence et Plusieurs références par tiroir sont activés selon le besoin.
+  Le choix Annuler ne change pas le brouillon. Un choix devenu ancien après
+  changement de proposition est refusé ; un stock déjà modifié demande un recalcul.
+- Le clic droit de la vue habituelle Mon rangement ouvre les références du stock.
+  Le tiroir cliqué est capturé : changer la sélection ne détourne pas l’ajout.
+  L’ajout conserve les autres contenus, sans changer les quantités du stock global.
+- Les propositions issues des catalogues peuvent partager des références sans
+  créer de possession ni de quantité fictive.
+
+Comptages et enregistrement
+- Plusieurs références peuvent partager un tiroir dans une proposition automatique
+  tout en conservant le réglage du nombre de tiroirs par référence.
+- Les deux portions comptées d’une même référence et couleur ne peuvent pas être
+  réunies dans le même tiroir. La fenêtre de choix les exclut ; une affectation
+  manuelle incompatible affiche un conflit et est également refusée en backend.
+- Un tiroir partagé se déplace ou s’échange comme un contenu complet.
+- Les brouillons ne modifient pas SQLite. Appliquer enregistre exactement le
+  contenu examiné ; une seule action Annuler restaure le rangement et les noms.
+  Le stock global reste conservé. Un stock modifié après examen bloque l’application.
+
+Interface
+Six captures Qt réelles examinées : proposition normale, destination survolée,
+échange effectué, choix filtré avec miniature, tiroir partagé et format 800 × 540.
+La ressource LDraw officielle fournit les visuels de 3005, 3001, 3023 et 3024.
+La dernière interface compacte conserve les boutons accessibles et le tableau
+avec aperçus. La recherche réaffiche la bonne miniature après changement de lignes.
+Aide, notes de version, présentation et textes nouveaux disponibles en français
+et en anglais ; couverture des bulles d’aide vérifiée.
+
+Fabrication
+Runtime Windows et LDraw repris de l’archive complète v0.1.63 vérifiée :
+323667356 octets ; SHA-256
+d9dc7e4dbc6ce3363ba6b456b8a67fb109dc84788bdb1e1f2493fcf7dd52e1bf.
+MinGW-w64 provient de six paquets officiels Ubuntu dont tailles et SHA-256
+sont contrôlés à partir de l’index signé et validé par la clé Ubuntu.
+L’outil de livraison contrôle le lanceur AMD64 v0.1.64, les sept tailles
+d’icône, le manifeste et les dépendances Windows épinglées, la structure,
+les CRC ZIP et la concordance des sources entre archives.
+Aucune base personnelle, cache, journal ou préparation temporaire n’est livré.
+Les notes publiques de la release donnent les tailles et SHA-256 finaux.
+
+Limite : exécution native Windows et confirmation du plantage 0xc0000374
+sur le PC concerné à vérifier. Cette livraison ne prétend pas les valider.

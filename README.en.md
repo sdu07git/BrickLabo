@@ -1,8 +1,20 @@
-# BrickLabo — v0.1.63
+# BrickLabo — v0.1.64
 
-Windows desktop software for LEGO catalogues, stock, construction searches and labels. This version continues the published v0.1.62, based on the original v0.1.28.
+Windows desktop software for LEGO catalogues, stock, construction searches and labels. This version continues the published v0.1.63, based on the original v0.1.28.
 
-**Downloads v0.1.63 :** [complete Windows package](https://github.com/sdu07git/BrickLabo/releases/download/v0.1.63/BrickLabo_v0.1.63_Complet.zip) · [sources with resources](https://github.com/sdu07git/BrickLabo/releases/download/v0.1.63/BrickLabo_v0.1.63_Sources.zip) · [release notes](https://github.com/sdu07git/BrickLabo/releases/tag/v0.1.63).
+**Downloads v0.1.64 :** [complete Windows package](https://github.com/sdu07git/BrickLabo/releases/download/v0.1.64/BrickLabo_v0.1.64_Complet.zip) · [sources with resources](https://github.com/sdu07git/BrickLabo/releases/download/v0.1.64/BrickLabo_v0.1.64_Sources.zip) · [release notes](https://github.com/sdu07git/BrickLabo/releases/tag/v0.1.64).
+
+## Drag and right-click in the proposal — v0.1.64
+
+**Swap or move within the preview** : In My storage → Sort by category and stud size, hold the left mouse button on a proposed drawer, drag it onto another drawer and release. If the destination contains a proposal, both complete contents are swapped. An eligible empty destination receives the moved contents. A blue outline marks the destination. References, colours and quantities stay together; the table and selection follow. With All cabinets, moves may cross the selected cabinets.
+
+**Add a reference by right-clicking** : In the preview, right-click a drawer → Add another reference… opens a searchable, sortable choice with previews. Select a reference and Add to drawer: it moves from its previous proposed drawer to the destination. Other references in its source drawer stay in place. Existing destination choices are retained, including when a row grouped several references. Reference and Multiple references per drawer are enabled when needed. Cancelling keeps the draft. In the regular My storage view, the same command opens loose-stock references and adds them to the clicked drawer without replacing its contents.
+
+**Share a drawer and retain counts** : Multiple references per drawer allows mixing references in an automatic proposal while keeping Drawer count available. Separate counted drawers for the same reference and colour must remain distinct; merging them blocks Apply and displays a conflict. A later drag swaps the complete proposed contents of a shared drawer. Choices survive drawer-count changes. A stale choice window asks you to reopen it.
+
+**Apply the proposal** : Preview gestures edit only the draft. Occupied or reserved drawers outside the proposal remain protected. Escape cancels the current drag; dropping outside a drawer changes nothing. Only Apply proposed storage saves the placements; global stock stays unchanged and one Undo restores storage. Double-click still opens drawer details.
+
+**Validation v0.1.64:** 927 full-suite tests passed on Qt/Linux, followed by 92 targeted checks after final presentation adjustments, including 34 new cases. Six Qt views reviewed with official LDraw previews and an 800 × 540 window. [Detailed report](documentation/CONTROLE_v0.1.64.txt). Native Windows execution remains unconfirmed.
 
 ## Drawer settings directly in the proposal — v0.1.63
 

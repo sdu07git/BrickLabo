@@ -1043,6 +1043,14 @@
     "Retenir cet ordre pour les prochains rangements": {
       "fr": "Mémorise cet ordre à la validation pour les prochains rangements.",
       "en": "Remembers this sequence on acceptance for future storage plans."
+    },
+    "Plusieurs références par tiroir": {
+      "fr": "Autorise le partage des tiroirs proposés entre références, en conservant les tiroirs distincts demandés pour une même référence et couleur.",
+      "en": "Allows proposed drawers to be shared by references while keeping requested drawers distinct for the same reference and colour."
+    },
+    "Ajouter au tiroir": {
+      "fr": "Déplace la référence choisie dans ce tiroir proposé avec ses couleurs et quantités. Les autres placements sont conservés.",
+      "en": "Moves the chosen reference into this proposed drawer with its colours and quantities. Other placements are retained."
     }
   },
   "contexts": {
