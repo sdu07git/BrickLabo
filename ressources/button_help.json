@@ -149,12 +149,12 @@
       "en": "Shows the next table page."
     },
     "Précédent": {
-      "fr": "Affiche la page précédente des résultats.",
-      "en": "Shows the previous page of results."
+      "fr": "Revient à l’étape précédente de l’assistant.",
+      "en": "Returns to the previous assistant step."
     },
     "Suivant": {
-      "fr": "Affiche la page suivante des résultats.",
-      "en": "Shows the next page of results."
+      "fr": "Passe à l’étape suivante de l’assistant.",
+      "en": "Goes to the next assistant step."
     },
     "Page précédente": {
       "fr": "Affiche la page précédente de l’aperçu.",
@@ -1051,6 +1051,138 @@
     "Ajouter au tiroir": {
       "fr": "Déplace la référence choisie dans ce tiroir proposé avec ses couleurs et quantités. Les autres placements sont conservés.",
       "en": "Moves the chosen reference into this proposed drawer with its colours and quantities. Other placements are retained."
+    },
+    "Outils de collection": {
+      "fr": "Ouvre les comptages, la comparaison de reconstructions, les lots et l’assistant de démarrage.",
+      "en": "Opens counts, multiple-build comparison, purchase lots and the getting-started assistant."
+    },
+    "Inventaire guidé…": {
+      "fr": "Démarre ou reprend le comptage d’un set ou d’un meuble, sans modifier le stock.",
+      "en": "Starts or resumes a set or cabinet count without changing stock."
+    },
+    "Inventaire guidé du meuble…": {
+      "fr": "Démarre un comptage des quantités attendues dans les tiroirs du meuble sélectionné.",
+      "en": "Starts a count of the expected contents of the selected cabinet."
+    },
+    "Comparer plusieurs reconstructions…": {
+      "fr": "Compare jusqu’à 16 sets ensemble en partageant le stock utilisable, sans compter une pièce deux fois.",
+      "en": "Compares up to 16 sets together using shared usable stock without counting any part twice."
+    },
+    "Lots d’achat et d’import…": {
+      "fr": "Nomme les lots, conserve provenance, prix et commentaire, corrige ou annule leurs apports au stock.",
+      "en": "Names lots, keeps provenance, price and comments, and corrects or removes their stock contributions."
+    },
+    "Assistant de démarrage…": {
+      "fr": "Guide les premiers réglages des catalogues, des rendus LDraw, du stock et des meubles.",
+      "en": "Guides initial catalogue, LDraw, stock and cabinet setup."
+    },
+    "Enregistrer un brouillon…": {
+      "fr": "Conserve les réglages, les tiroirs demandés et les destinations de cette proposition pour la reprendre plus tard.",
+      "en": "Saves settings, requested drawer counts and proposal destinations for later."
+    },
+    "Reprendre un brouillon…": {
+      "fr": "Rouvre une proposition enregistrée et propose un recalcul si le stock ou les meubles ont changé.",
+      "en": "Reopens a saved proposal and offers recalculation if stock or cabinets changed."
+    },
+    "Aligner les meubles…": {
+      "fr": "Aligne tous les meubles horizontalement ou verticalement avec un écart réglable.",
+      "en": "Aligns all cabinets horizontally or vertically with an adjustable gap."
+    },
+    "Enregistrer le comptage": {
+      "fr": "Enregistre les quantités observées sans modifier les quantités possédées ni le contenu des tiroirs.",
+      "en": "Saves observed counts without changing owned quantities or drawer contents."
+    },
+    "Exporter le comptage…": {
+      "fr": "Exporte en CSV les quantités attendues, comptées, manquantes et en surplus.",
+      "en": "Exports expected, counted, missing and surplus quantities to CSV."
+    },
+    "Compter le meuble sélectionné": {
+      "fr": "Crée un comptage des tiroirs du meuble choisi, séparé du stock possédé.",
+      "en": "Creates a count of the chosen cabinet’s drawers, separate from owned stock."
+    },
+    "Compter un set…": {
+      "fr": "Choisit un set et démarre un comptage d’après son inventaire local.",
+      "en": "Chooses a set and starts a count against its local inventory."
+    },
+    "Reprendre un comptage…": {
+      "fr": "Rouvre un comptage enregistré avec ses quantités déjà observées.",
+      "en": "Reopens a saved count with its existing observations."
+    },
+    "Nouveau lot": {
+      "fr": "Prépare un nouveau lot d’achat avec nom, provenance, prix et commentaire.",
+      "en": "Prepares a new purchase lot with name, provenance, price and comment."
+    },
+    "Enregistrer le lot": {
+      "fr": "Enregistre les informations du lot sélectionné ou crée le nouveau lot.",
+      "en": "Saves the selected lot’s details or creates a new lot."
+    },
+    "Ajouter au lot…": {
+      "fr": "Ajoute une référence du catalogue au stock en suivant précisément sa contribution dans ce lot.",
+      "en": "Adds a catalogue item to stock while tracking its exact contribution to this lot."
+    },
+    "Annuler les apports du lot…": {
+      "fr": "Retire seulement les quantités suivies de ce lot si elles restent disponibles ; l’action est annulable.",
+      "en": "Removes only this lot’s tracked quantities if still available; this action can be undone."
+    },
+    "Corriger la quantité du lot…": {
+      "fr": "Corrige la quantité apportée par une ligne du lot, sans modifier les autres lots.",
+      "en": "Corrects one lot entry’s contribution without changing other lots."
+    },
+    "Liste de prélèvement…": {
+      "fr": "Liste les tiroirs où prendre les pièces du projet et suit les quantités réellement prélevées.",
+      "en": "Lists drawers supplying project parts and tracks quantities actually picked."
+    },
+    "Prélever la ligne…": {
+      "fr": "Déplace la quantité réellement prise du tiroir vers le projet et la réserve, sans diminuer le stock possédé.",
+      "en": "Moves the quantity actually taken from its drawer to the project and reserves it without reducing ownership."
+    },
+    "Retourner tous les prélèvements": {
+      "fr": "Remet les quantités du projet dans leurs tiroirs d’origine après confirmation du retour physique.",
+      "en": "Returns project quantities to their original drawers after confirming the physical return."
+    },
+    "Exporter la liste…": {
+      "fr": "Exporte les adresses des tiroirs, les références, les couleurs et les quantités à prendre ou déjà prélevées.",
+      "en": "Exports drawer addresses, references, colours and quantities to take or already picked."
+    },
+    "Ajouter un set…": {
+      "fr": "Choisit un set à inclure dans la comparaison, avec son nombre d’exemplaires.",
+      "en": "Chooses a set and copy count to include in the comparison."
+    },
+    "Retirer le set sélectionné": {
+      "fr": "Retire le set sélectionné de cette comparaison sans toucher au catalogue ni au stock.",
+      "en": "Removes the selected set from this comparison without changing catalogues or stock."
+    },
+    "Comparer les reconstructions": {
+      "fr": "Recherche le plus grand nombre de sets choisis réalisables ensemble avec les pièces disponibles.",
+      "en": "Finds the largest number of chosen sets that can be built together from available parts."
+    },
+    "Créer les projets retenus…": {
+      "fr": "Crée en une action les projets proposés par la comparaison sans réserver les pièces.",
+      "en": "Creates the projects selected by the comparison in one action without reserving parts."
+    },
+    "Utiliser les pièces de mon stock set": {
+      "fr": "Autorise les pièces des sets possédés et cochés dans le choix du stock utilisable.",
+      "en": "Allows parts from owned sets selected in usable stock."
+    },
+    "Terminer": {
+      "fr": "Mémorise la fin de l’assistant de démarrage.",
+      "en": "Records completion of the getting-started assistant."
+    },
+    "Reprendre plus tard": {
+      "fr": "Ferme l’assistant ; il reste accessible dans Outils de collection.",
+      "en": "Closes the assistant; it remains available in Collection tools."
+    },
+    "Ouvrir les données": {
+      "fr": "Ouvre les imports des catalogues et la mise à jour de la bibliothèque LDraw.",
+      "en": "Opens catalogue imports and LDraw library updates."
+    },
+    "Importer mon stock": {
+      "fr": "Ouvre l’assistant d’import des collections de pièces ou de sets.",
+      "en": "Opens the parts or sets collection import assistant."
+    },
+    "Ouvrir Mon rangement": {
+      "fr": "Ouvre Mon rangement pour créer un meuble et ses tiroirs.",
+      "en": "Opens My storage to create a cabinet and its drawers."
     }
   },
   "contexts": {
