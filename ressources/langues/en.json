@@ -1581,5 +1581,15 @@
   "Coche les critères, puis règle Nombre de tiroirs directement dans le tableau. L’aperçu s’actualise ; les destinations choisies manuellement sont conservées lors de ce réglage.": "Choose the criteria, then edit Drawer count directly in the table. The preview updates and manually chosen destinations are retained during this adjustment.",
   "Nombre total de tiroirs pour cette référence, par couleur si les couleurs sont séparées. Modifier une ligne actualise toutes les lignes de la référence et l’aperçu.": "Total drawer count for this reference, per colour if colours are separated. Editing one row updates all rows of the reference and the preview.",
   "Coche Référence pour régler le nombre de tiroirs de chaque pièce directement dans ce tableau.": "Check Reference to edit each part’s drawer count directly in this table.",
-  "Tiroirs espacés pour {0} : les places voisines sont indisponibles ou des destinations ont été choisies manuellement.": "Spaced drawers for {0}: neighbouring spaces are unavailable or destinations were chosen manually."
+  "Tiroirs espacés pour {0} : les places voisines sont indisponibles ou des destinations ont été choisies manuellement.": "Spaced drawers for {0}: neighbouring spaces are unavailable or destinations were chosen manually.",
+  "Glisse un tiroir proposé pour échanger ou déplacer son contenu. Clic droit : ajouter une référence. Vert : proposé ; rouge : conflit. Double-clic : détails.": "Drag a proposed drawer to swap or move its contents. Right-click: add a reference. Green: proposed; red: conflict. Double-click: details.",
+  "Ajouter une autre référence…": "Add another reference…",
+  "Ajouter une autre référence au tiroir": "Add another reference to the drawer",
+  "Ajouter au tiroir": "Add to drawer",
+  "Plusieurs références par tiroir": "Multiple references per drawer",
+  "Autorise plusieurs références dans un tiroir proposé. Les tiroirs demandés pour une même référence restent distincts.": "Allows multiple references in a proposed drawer. Requested drawers for the same reference remain distinct.",
+  "Les différents tiroirs d’une même référence doivent rester distincts.": "Separate drawers for the same reference must remain distinct.",
+  "Choisis une référence de la proposition. Elle sera déplacée de son tiroir proposé vers ce tiroir, avec ses couleurs et ses quantités. Les autres placements sont conservés.": "Choose a reference from the proposal. It will move from its proposed drawer to this drawer, with its colours and quantities. Other placements are retained.",
+  "La proposition a changé. Rouvre le choix des références depuis le tiroir.": "The proposal has changed. Reopen the reference choice from the drawer.",
+  "Sélectionne les lignes avec Ctrl ou Maj, puis choisis leur tiroir commun. Active Plusieurs références par tiroir ou le regroupement libre.": "Select rows with Ctrl or Shift, then choose their shared drawer. Enable Multiple references per drawer or free reference grouping."
 }
