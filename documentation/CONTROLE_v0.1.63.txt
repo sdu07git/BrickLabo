@@ -1,0 +1,70 @@
+BRICKLABO v0.1.63 — CONTRÔLE DE LIVRAISON
+20 octobre 2026
+Base publiée v0.1.62 : da57c12314cf0a44a042b278af7e1dc74ff80d29.
+
+Environnement de contrôle : Python 3.12.14, Qt/Linux offscreen,
+PySide6/shiboken6 6.11.2, NumPy 2.5.3, Pillow 12.3.0.
+Suite complète : 893 tests réussis en 512.479 secondes.
+23 nouveaux contrôles réussis séparément en 4,224 secondes.
+110 contrôles de rangement réussis avant les 7 derniers cas ajoutés.
+Compilation Python, traductions des nouveaux textes et différences Git vérifiées.
+
+Réglage dans la proposition
+- Nombre de tiroirs se règle dans le tableau principal ; le critère Référence
+  est activé et l’aperçu se recalcule sans fenêtre supplémentaire ni écriture.
+  Une ligne contenant plusieurs identités demande de cocher Référence.
+- Les champs des lignes issues d’une même référence restent synchronisés.
+  Le nombre s’applique séparément à chaque couleur si leur séparation est cochée.
+- Plusieurs clics rapides retiennent le dernier nombre. Une saisie suivie
+  directement d’un clic sur Appliquer est prise en compte. Fermer abandonne
+  les réglages encore en attente. Le stock n’est modifié par aucun brouillon.
+- 40 pièces dans deux tiroirs donnent 20 + 20 dans l’aperçu et après application.
+  Le rangement reste atomique, annulable en une action, et le stock est conservé.
+  Une modification du stock après l’aperçu bloque toujours l’application.
+
+Destinations et voisinage
+- Les destinations choisies manuellement sont conservées lors du changement
+  du nombre, y compris par validation de l’ancienne fenêtre de réglage.
+  Les placements automatiques peuvent être déplacés pour faire de la place.
+- Recherche de tiroirs voisins dans le même meuble, avec préférence pour
+  une même rangée. La fin d’une rangée et le début éloigné de la suivante
+  ne sont pas considérés comme des voisins.
+- Les tiroirs larges sont traités suivant leurs bords réels. Les tiroirs
+  occupés, vides mais nommés et hors du périmètre restent protégés.
+- Le périmètre Tous les meubles permet une paire dans un autre meuble
+  disposant de places voisines. Les contraintes manuelles restent prioritaires.
+- Quand les destinations restent espacées, un message explicite le signale
+  dans la proposition. Les listes de destination restent réglables ; aucun
+  placement voisin n’est promis sans place disponible. Les références et
+  les couleurs physiques restent distinctes, y compris entre RB et BL.
+
+Tri des tableaux
+- Tri des en-têtes dans les deux sens, tri numérique des quantités et nombres.
+- Chaque champ, destination, sélection et aperçu reste associé à l’identité
+  de pièce après le tri. Un clic sur un tiroir sélectionne les bonnes lignes.
+- Les résultats de miniatures asynchrones devenus anciens sont écartés après
+  changement d’ordre. Contrôle avec modèles LDraw de test et rendus effectifs.
+- Le regroupement libre reste disponible, avec compteurs directs désactivés.
+  Sa sélection triée continue d’associer les bonnes références au tiroir commun.
+
+Interface
+Trois captures Qt réelles examinées : proposition à 1360 × 820 et 800 × 540,
+fenêtre de comptes triée à 900 × 540. La ressource officielle complète sert
+aux aperçus des références 3005, 3001, 3023 et 3024. Le cas de démonstration
+conserve une destination manuelle et affiche les deux tiroirs voisins de
+3005, chacun à 20 pièces. Les commandes restent accessibles en format compact.
+Aide, présentation et textes d’interface disponibles en français et anglais.
+
+Fabrication
+Runtime Windows et bibliothèque LDraw repris de l’archive complète v0.1.62
+vérifiée (323658034 octets) :
+77cf2ee87e7000fc9af38717c7eb9d9eb0720cc47b75a240f60963c5a27617df.
+MinGW-w64 provient de six paquets Ubuntu officiels, dont les SHA-256 sont
+vérifiés depuis l’index signé GPG Ubuntu. Le lanceur 64 bits porte la v0.1.63.
+L’outil de fabrication vérifie icônes, versions, dépendances, structure,
+CRC ZIP et concordance des sources entre archives. Aucune base personnelle,
+cache, journal ou fichier temporaire n’entre dans les distributions.
+Les notes de release donnent tailles et SHA-256 finaux.
+
+Limite : exécution native Windows et confirmation du plantage 0xc0000374
+sur le PC concerné à vérifier. Cette livraison ne prétend pas le valider.
