@@ -274,7 +274,7 @@ class StoragePlanDialog(QDialog):
         self.splitter=QSplitter(Qt.Orientation.Horizontal);self.splitter.setChildrenCollapsible(False);self.splitter.addWidget(self.table);self.splitter.addWidget(self.proposal_preview);self.splitter.setSizes([800,560]);layout.addWidget(self.splitter,1)
         self.summary=QLabel();self.summary.setWordWrap(True);layout.addWidget(self.summary)
         row=FlowLayout();prepare=QPushButton(tr('Préparer une proposition'));prepare.clicked.connect(self.rebuild);row.addWidget(prepare)
-        self.combine=QPushButton(tr('Regrouper la sélection…'));self.combine.clicked.connect(self.combine_selection);self.combine.setToolTip(tr('Choisis Regroupement libre de références, puis sélectionne les lignes avec Ctrl ou Maj.'));row.addWidget(self.combine)
+        self.combine=QPushButton(tr('Regrouper la sélection…'));self.combine.clicked.connect(self.combine_selection);self.combine.setToolTip(tr('Sélectionne les lignes avec Ctrl ou Maj, puis choisis leur tiroir commun. Active Plusieurs références par tiroir ou le regroupement libre.'));row.addWidget(self.combine)
         self.split_references=QPushButton(tr('Nombre de tiroirs par référence…'));self.split_references.clicked.connect(self.choose_drawer_counts);row.addWidget(self.split_references)
         self.apply_button=QPushButton(tr('Appliquer le rangement proposé'));self.apply_button.clicked.connect(self.apply);row.addWidget(self.apply_button)
         close=QPushButton(tr('Fermer'));close.clicked.connect(self.reject);row.addWidget(close);layout.addLayout(row)

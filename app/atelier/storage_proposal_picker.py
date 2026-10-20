@@ -15,6 +15,7 @@ class ProposalReferencePicker(QDialog):
         layout=QVBoxLayout(self);note=QLabel(tr('Choisis une référence de la proposition. Elle sera déplacée de son tiroir proposé vers ce tiroir, avec ses couleurs et ses quantités. Les autres placements sont conservés.'));note.setWordWrap(True);layout.addWidget(note)
         self.search=QLineEdit();self.search.setPlaceholderText(tr('Référence, nom ou catégorie'));layout.addWidget(self.search)
         self.table=QTableWidget(0,7);self.table.setHorizontalHeaderLabels([tr('Aperçu'),tr('Source'),tr('Référence'),tr('Pièce'),tr('Couleur'),tr('Quantité proposée'),tr('Tiroir proposé')]);self.table.setEditTriggers(QAbstractItemView.EditTrigger.NoEditTriggers);self.table.setSelectionBehavior(QAbstractItemView.SelectionBehavior.SelectRows);self.table.setSelectionMode(QAbstractItemView.SelectionMode.SingleSelection);self.table.horizontalHeader().setSectionResizeMode(QHeaderView.ResizeMode.Interactive)
+        self.table.ensurePolished()
         for column,width in enumerate((100,65,115,220,110,120,210)):self.table.setColumnWidth(column,max(width,self.table.fontMetrics().horizontalAdvance(self.table.horizontalHeaderItem(column).text())+28))
         layout.addWidget(self.table,1);self.thumbs=PartThumbnails(self.table,db,engine,self.visible_rows,0,self) if engine else None
         if self.thumbs:self.table.model().layoutChanged.connect(lambda *_:self.thumbs.reset())
