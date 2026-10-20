@@ -1,4 +1,6 @@
-BrickLabo v0.1.64
+BrickLabo v0.1.65
+
+Nouveautés : brouillons de rangement enregistrés, inventaire guidé, comparaison de reconstructions, lots d’achat/import, prélèvements de projets et assistant de démarrage. Ouvrir Données et réglages → Outils de collection. Les meubles s’alignent horizontalement ou verticalement et restent en vue de face. Mode d’emploi : documentation/FONCTIONS_v0.1.65.md. Une sauvegarde complète conserve les nouveaux suivis. Les comptages sont des observations ; les prélèvements conservent la possession totale.
 
 Échanger ou déplacer dans l’aperçu
 Dans Mon rangement → Ranger par catégorie et taille en tenons, maintenir le bouton gauche sur un tiroir proposé, le glisser sur un autre tiroir puis relâcher. Si la destination contient une proposition, les deux contenus complets sont échangés. Sur un tiroir libre admissible, le contenu est déplacé. Une bordure bleue indique la destination. Références, couleurs et quantités restent ensemble ; le tableau et la sélection suivent. Avec Tous les meubles, le déplacement peut traverser les meubles retenus.
