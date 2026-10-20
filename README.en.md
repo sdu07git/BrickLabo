@@ -1,8 +1,19 @@
-# BrickLabo — v0.1.62
+# BrickLabo — v0.1.63
 
-Windows desktop software for LEGO catalogues, stock, construction searches and labels. This version continues the published v0.1.61, based on the original v0.1.28.
+Windows desktop software for LEGO catalogues, stock, construction searches and labels. This version continues the published v0.1.62, based on the original v0.1.28.
 
-**Downloads v0.1.62 :** [complete Windows package](https://github.com/sdu07git/BrickLabo/releases/download/v0.1.62/BrickLabo_v0.1.62_Complet.zip) · [sources with resources](https://github.com/sdu07git/BrickLabo/releases/download/v0.1.62/BrickLabo_v0.1.62_Sources.zip) · [release notes](https://github.com/sdu07git/BrickLabo/releases/tag/v0.1.62).
+**Downloads v0.1.63 :** [complete Windows package](https://github.com/sdu07git/BrickLabo/releases/download/v0.1.63/BrickLabo_v0.1.63_Complet.zip) · [sources with resources](https://github.com/sdu07git/BrickLabo/releases/download/v0.1.63/BrickLabo_v0.1.63_Sources.zip) · [release notes](https://github.com/sdu07git/BrickLabo/releases/tag/v0.1.63).
+
+## Drawer settings directly in the proposal — v0.1.63
+
+**Drawer count in the proposal table**: In My storage → Sort by category and stud size, edit Drawer count next to References. Arrow buttons update the proposal and preview; after typing, press Enter or leave the field. Reference is enabled automatically. If a row groups several references of the same footprint, check Reference to get a count for each part. Rows (1/2), (2/2)… share the same total count; when colours are separated, the count applies to each colour.
+
+**Retain choices and keep drawers together**: Changing the count retains manually chosen destinations, criteria, colours, category order and the preview framing. Automatic placements may move to make neighbouring spaces available. BrickLabo looks for neighbouring drawers in the same cabinet, preferably on the same row, respecting custom, occupied and reserved drawers. Spaced destinations are reported in the proposal; Proposed drawer lists remain editable. With Allocate remaining quantities, 40 parts in two drawers become 20 + 20. Only Apply proposed storage writes the placement; global stock is unchanged and one Undo restores the placement.
+
+**Column sorting**: Click proposal-table headers or Drawer count per reference… headers to sort both ways. Quantities and drawer counts sort numerically. Previews, fields, selection and destinations stay with their reference, including after recalculation. Accepting the separate count window also retains manually chosen destinations.
+
+
+**Validation v0.1.63:** 893 full-suite tests passed on Qt/Linux, including 23 new checks for inline editing, retained destinations, neighbouring drawers and sorting. Normal and compact interfaces reviewed; delivery tools validate archives and launcher. [Detailed report](documentation/CONTROLE_v0.1.63.txt). Native Windows execution remains unconfirmed.
 
 ## Cabinet formats and category order — v0.1.62
 
@@ -351,7 +362,7 @@ Read [English help](documentation/AIDE.en.html) and [component licences](documen
 | 0.1.58 | Projects and previews, drawer inventories, versioned CSV imports, figure layouts and memory protection. |
 | 0.1.57 | Drawer counts and partial transfers, persistent undo/redo history, projects with requirements, reservations and missing parts. |
 
-One bilingual [NOUVEAUTES.txt](documentation/NOUVEAUTES.txt) holds cumulative notes. This branch does not document a released 0.1.29. The 0.1.28b / Range variants were not used as the baseline. The [v0.1.62 validation report](documentation/CONTROLE_v0.1.62.txt) describes the checks for this delivery.
+One bilingual [NOUVEAUTES.txt](documentation/NOUVEAUTES.txt) holds cumulative notes. This branch does not document a released 0.1.29. The 0.1.28b / Range variants were not used as the baseline. The [v0.1.63 validation report](documentation/CONTROLE_v0.1.63.txt) describes the checks for this delivery.
 
 ## Development and diagnostics
 
@@ -365,7 +376,7 @@ For a compatible future update, publish a public stable release with tag `vX.Y.Z
 
 To develop from this repository, take `ressources/complete.zip` from the source ZIP attached to the release: this LDraw archive exceeds GitHub's regular file size limit. GitHub's automatic source archives contain neither this resource nor the Windows runtime. Both attached ZIPs are the delivered and tested version; the repository READMEs are adapted for publication.
 
-The [v0.1.62 validation report](documentation/CONTROLE_v0.1.62.txt) describes the checks for this delivery. Native Windows execution remains to be confirmed.
+The [v0.1.63 validation report](documentation/CONTROLE_v0.1.63.txt) describes the checks for this delivery. Native Windows execution remains to be confirmed.
 
 
 

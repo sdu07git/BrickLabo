@@ -1,8 +1,19 @@
-# BrickLabo — v0.1.62
+# BrickLabo — v0.1.63
 
-Logiciel de bureau Windows pour les catalogues LEGO, les stocks, les recherches de constructions et les étiquettes. Cette version reprend la v0.1.61 publiée, issue de la v0.1.28 d’origine.
+Logiciel de bureau Windows pour les catalogues LEGO, les stocks, les recherches de constructions et les étiquettes. Cette version reprend la v0.1.62 publiée, issue de la v0.1.28 d’origine.
 
-**Téléchargements v0.1.62 :** [version complète Windows](https://github.com/sdu07git/BrickLabo/releases/download/v0.1.62/BrickLabo_v0.1.62_Complet.zip) · [sources avec ressources](https://github.com/sdu07git/BrickLabo/releases/download/v0.1.62/BrickLabo_v0.1.62_Sources.zip) · [notes de release](https://github.com/sdu07git/BrickLabo/releases/tag/v0.1.62).
+**Téléchargements v0.1.63 :** [version complète Windows](https://github.com/sdu07git/BrickLabo/releases/download/v0.1.63/BrickLabo_v0.1.63_Complet.zip) · [sources avec ressources](https://github.com/sdu07git/BrickLabo/releases/download/v0.1.63/BrickLabo_v0.1.63_Sources.zip) · [notes de release](https://github.com/sdu07git/BrickLabo/releases/tag/v0.1.63).
+
+## Réglages des tiroirs dans la proposition — v0.1.63
+
+**Nombre de tiroirs dans le tableau** : Dans Mon rangement → Ranger par catégorie et taille en tenons, régler Nombre de tiroirs directement à côté de Références. Les flèches actualisent la proposition et l’aperçu ; après une saisie, appuyer sur Entrée ou quitter le champ. Le critère Référence est activé automatiquement. Si une ligne réunit plusieurs références de même format, cocher Référence pour disposer d’un réglage par pièce. Les lignes (1/2), (2/2)… partagent le même nombre total ; si les couleurs sont séparées, le nombre s’applique à chaque couleur.
+
+**Conserver les choix et rapprocher les tiroirs** : Changer ce nombre conserve les destinations choisies manuellement, les critères, les couleurs, l’ordre des catégories et le cadrage de l’aperçu. Les placements automatiques peuvent se décaler pour libérer les places voisines. Le logiciel cherche des tiroirs voisins dans le même meuble, de préférence sur la même rangée, en respectant les tiroirs personnalisés, occupés et réservés. Si les destinations restent espacées, un message le signale dans la proposition ; les listes Tiroir proposé restent réglables. Avec Répartir les quantités restantes, 40 pièces dans deux tiroirs donnent 20 + 20. Seul Appliquer le rangement proposé enregistre les emplacements ; le stock global est conservé et le rangement reste annulable en une action.
+
+**Tri par colonne** : Cliquer sur les en-têtes du tableau de proposition ou de Nombre de tiroirs par référence… pour trier dans les deux sens. Quantités et nombres de tiroirs suivent un tri numérique. Les aperçus, champs, sélections et destinations suivent toujours leur référence, y compris après un recalcul. La fenêtre de réglage séparée conserve également les destinations choisies à la main quand elle est validée.
+
+
+**Validation v0.1.63 :** 893 tests de la suite complète réussis sous Qt/Linux, dont 23 nouveaux contrôles du réglage direct, des destinations conservées, du voisinage et du tri. Interfaces normales et compactes examinées ; archives et lanceur contrôlés par les outils de livraison. [Rapport détaillé](documentation/CONTROLE_v0.1.63.txt). Exécution native Windows à confirmer.
 
 ## Formats de meubles et ordre des catégories — v0.1.62
 
@@ -357,7 +368,7 @@ L’aide complète se trouve dans [documentation/AIDE.html](documentation/AIDE.h
 | 0.1.58 | Projets et aperçus, inventaires des tiroirs, CSV versionnés, modèles Mini-figs et protection mémoire. |
 | 0.1.57 | Quantités par tiroir et transferts partiels, historique Annuler/Rétablir persistant, projets avec besoins, réservations et manquants. |
 
-Un seul [NOUVEAUTES.txt](documentation/NOUVEAUTES.txt) réunit les notes françaises et anglaises. Les notes de cette branche ne documentent pas de livraison 0.1.29. Les variantes 0.1.28b et Range n’ont pas servi de base. Le [rapport de contrôle v0.1.62](documentation/CONTROLE_v0.1.62.txt) décrit les vérifications de cette livraison.
+Un seul [NOUVEAUTES.txt](documentation/NOUVEAUTES.txt) réunit les notes françaises et anglaises. Les notes de cette branche ne documentent pas de livraison 0.1.29. Les variantes 0.1.28b et Range n’ont pas servi de base. Le [rapport de contrôle v0.1.63](documentation/CONTROLE_v0.1.63.txt) décrit les vérifications de cette livraison.
 
 ## Développement et diagnostic
 
@@ -373,7 +384,7 @@ Pour publier une future mise à jour compatible : créer une release publique st
 
 Pour développer depuis ce dépôt, reprendre `ressources/complete.zip` depuis le ZIP Sources joint à la release : cette archive LDraw dépasse la limite de taille des fichiers GitHub. Les archives automatiques « Source code » ne contiennent ni cette ressource ni le runtime Windows. Les deux ZIP joints sont ceux de la version livrée et testée ; les README du dépôt sont adaptés à la publication.
 
-Le [rapport de contrôle v0.1.62](documentation/CONTROLE_v0.1.62.txt) décrit les vérifications de cette livraison. Exécution native Windows à confirmer.
+Le [rapport de contrôle v0.1.63](documentation/CONTROLE_v0.1.63.txt) décrit les vérifications de cette livraison. Exécution native Windows à confirmer.
 
 
 
