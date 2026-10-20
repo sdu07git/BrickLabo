@@ -1577,5 +1577,9 @@
   "Tiroirs nécessaires": "Required drawers",
   "{0} colonne(s), {1} tiroir(s) par colonne ; {2} tiroir(s) dans ce format. La copie reprend les dimensions et les positions des tiroirs, avec des noms et des contenus vides. Elle sera placée à droite des meubles existants.": "{0} column(s), {1} drawer(s) per column; {2} drawer(s) in this format. The copy keeps drawer sizes and positions, with empty names and contents. It is placed to the right of existing cabinets.",
   "{0} référence(s) sans dimensions : elles restent à ranger manuellement, sauf si Référence est coché.": "{0} reference(s) without dimensions: they remain for manual storage unless Reference is checked.",
-  "{} — copie": "{} — copy"
+  "{} — copie": "{} — copy",
+  "Coche les critères, puis règle Nombre de tiroirs directement dans le tableau. L’aperçu s’actualise ; les destinations choisies manuellement sont conservées lors de ce réglage.": "Choose the criteria, then edit Drawer count directly in the table. The preview updates and manually chosen destinations are retained during this adjustment.",
+  "Nombre total de tiroirs pour cette référence, par couleur si les couleurs sont séparées. Modifier une ligne actualise toutes les lignes de la référence et l’aperçu.": "Total drawer count for this reference, per colour if colours are separated. Editing one row updates all rows of the reference and the preview.",
+  "Coche Référence pour régler le nombre de tiroirs de chaque pièce directement dans ce tableau.": "Check Reference to edit each part’s drawer count directly in this table.",
+  "Tiroirs espacés pour {0} : les places voisines sont indisponibles ou des destinations ont été choisies manuellement.": "Spaced drawers for {0}: neighbouring spaces are unavailable or destinations were chosen manually."
 }
