@@ -183,6 +183,13 @@ from PySide6.QtWidgets import QDialog,QWidget,QVBoxLayout,QHBoxLayout,QLabel,QPu
 from .ui_common import async_task,FlowLayout,HorizontalControls
 
 class BuildStockDialog(QDialog):
+    def compare_rebuilds(self):
+        from .collection_dialogs import BuildComparisonDialog
+        options=dict(ignore_colors=self.ignore.isChecked(),exclude_minifigs=self.exclude_minifigs.isChecked(),
+          include_set_stock=self.db.setting('build_include_set_stock',True),allow_alternatives=self.alternatives.isChecked(),
+          excluded_entries=self.db.setting('build_excluded_entries',[]))
+        show_window(BuildComparisonDialog(self.db,self.engine,self,options),self)
+
     def __init__(self,db,engine=None,parent=None):
         super().__init__(parent);self.db=db;self.engine=engine;self.results=[];self.closed=False;self.busy=False;self.cancel=threading.Event();self.detail_token=0;self.last_excluded=[];self.last_ignore=False;self.last_copies=1;self.last_exclude_minifigs=False;self.detail_exclude_minifigs=False;self.detail_rows=[];self.detail_item=None
         self.setWindowTitle(tr('Sets réalisables avec Mon stock'));self.resize(1120,780);self.setWindowFlag(Qt.WindowType.WindowMaximizeButtonHint)
@@ -206,6 +213,7 @@ class BuildStockDialog(QDialog):
         self.loose_only=QPushButton(tr('Vrac uniquement'));self.loose_only.setToolTip(tr('Réinclut toutes les pièces et mini-figurines du vrac, exclut les composants des sets possédés et relance la recherche avec les critères actuels.'));self.loose_only.clicked.connect(self.use_loose_stock);options.addWidget(self.loose_only)
         self.mocs=QPushButton(tr('Autres recherches'));searches=QMenu(self.mocs)
         searches.addAction(tr('MOC avec les pièces disponibles…'),self.find_mocs);searches.addAction(tr('MOC par mot clé / créateur'),self.global_search);self.mocs.setMenu(searches);options.addWidget(self.mocs)
+        comparison=QPushButton(tr('Comparer plusieurs reconstructions…'));comparison.clicked.connect(self.compare_rebuilds);options.addWidget(comparison)
         self.project_button=QPushButton(tr('Créer un projet avec ce set…'));self.project_button.clicked.connect(lambda:self.create_project());self.project_button.setEnabled(False);options.addWidget(self.project_button);layout.addLayout(options)
         self.status=QLabel(tr('Choisis les critères puis lance la recherche. À 100 %, seuls les sets complets sont affichés.'));self.status.setWordWrap(True);layout.addWidget(self.status)
         self.table=QTableWidget(0,8);self.table.setHorizontalHeaderLabels([tr('Source'),tr('Référence'),tr('Set'),tr('Année'),tr('Possédé %'),tr('Pièces requises'),tr('Manquantes'),tr('Aperçu du set')]);self.table.horizontalHeader().setSectionResizeMode(QHeaderView.ResizeMode.Interactive);self.table.horizontalHeader().setStretchLastSection(False);self.table.setSelectionBehavior(QAbstractItemView.SelectionBehavior.SelectRows);self.table.setSelectionMode(QAbstractItemView.SelectionMode.SingleSelection);self.table.setEditTriggers(QAbstractItemView.EditTrigger.NoEditTriggers);layout.addWidget(self.table,1)

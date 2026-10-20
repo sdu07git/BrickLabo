@@ -24,6 +24,7 @@ def clear(db, scope, expected_revision=None):
         if expected_revision is not None and c.execute('SELECT version FROM stock_revision WHERE id=1').fetchone()[0] != expected_revision:
             raise ValueError(tr('Le stock a changé pendant la confirmation. Recommence pour vérifier les quantités actuelles.'))
         if scope == 'stock':
+            if c.execute('SELECT 1 FROM project_pick_rows LIMIT 1').fetchone():raise ValueError(tr('Retourne les prélèvements avant de vider le stock.'))
             c.execute('UPDATE stock SET quantity=0 WHERE quantity<>0')
             c.execute('UPDATE project_parts SET reserved=0 WHERE reserved>0')
             c.execute('UPDATE storage_contents SET quantity=0 WHERE quantity>0')

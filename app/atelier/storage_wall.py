@@ -276,3 +276,22 @@ def search(db,query,wall_id=None):
     for row in rows:
         if row['source']=='BL':row['color_name']=palette.get(row['color'],{}).get('name','')
     return [r for r in rows if all(word in normalize(' '.join(str(r[k]) for k in ('ref','piece_name','category','dimensions','color','color_name','name','wall_name'))) for word in words)]
+
+
+def align_walls(db,direction='horizontal',gap=.2,expected=None):
+    """Align every cabinet in current reading order, atomically and undoably."""
+    from .action_history import change
+    if direction not in ('horizontal','vertical'):raise ValueError(tr('Alignement du meuble invalide.'))
+    gap=coordinate(gap)
+    if gap<0:raise ValueError(tr('Position relative du meuble invalide.'))
+    with db.connect() as c,change(c,('storage_walls',),tr('Alignement des meubles')):
+        selected=[dict(row) for row in c.execute('SELECT * FROM storage_walls ORDER BY y,x,id')]
+        if expected is not None and selected!=expected:raise ValueError(tr('Les meubles ont changé. Rouvre la fenêtre d’alignement.'))
+        if not selected:return
+        x,y=selected[0]['x'],selected[0]['y'];positions=[]
+        for wall in selected:
+            positions.append((coordinate(x),coordinate(y),wall['id']))
+            width,height=extent(wall)
+            if direction=='horizontal':x=round(x+width+gap,1)
+            else:y=round(y+height+gap,1)
+        c.executemany('UPDATE storage_walls SET x=?,y=? WHERE id=?',positions)

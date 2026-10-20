@@ -235,6 +235,11 @@ class StoragePlanDialog(QDialog):
         hint=QLabel(tr('Coche les critères, puis règle Nombre de tiroirs directement dans le tableau. L’aperçu s’actualise ; les destinations choisies manuellement sont conservées lors de ce réglage.'));hint.setWordWrap(True);layout.addWidget(hint)
         if self.entries is not None:
             scope_hint=QLabel(tr('Cette proposition utilise la sélection de Pièces à ranger, ou les références affichées si aucune ligne n’est sélectionnée.'));scope_hint.setWordWrap(True);layout.addWidget(scope_hint)
+        drafts=FlowLayout()
+        from .storage_sessions import save as save_draft,load as load_draft
+        for title,callback in [(tr('Enregistrer un brouillon…'),lambda:save_draft(self)),(tr('Reprendre un brouillon…'),lambda:load_draft(self))]:
+            button=QPushButton(title);button.clicked.connect(callback);drafts.addWidget(button)
+        layout.addLayout(drafts)
         destination=FlowLayout();destination.addWidget(QLabel(tr('Meubles à utiliser')));self.destination=QComboBox();self.destination.setAccessibleName(tr('Meubles à utiliser'));self.destination.setMaximumWidth(300);self.destination.addItem(tr('Tous les meubles'),None)
         for wall in walls.walls(db):self.destination.addItem(wall['name'],wall['id'])
         self.destination.setCurrentIndex(max(0,self.destination.findData(wall_id)));destination.addWidget(self.destination)
@@ -504,6 +509,8 @@ class StoragePlanDialog(QDialog):
     def done(self,result):
         self.count_timer.stop()
         if self.thumbs:self.thumbs.stop()
+        from .collection_dialogs import close_children
+        close_children(self)
         self.proposal_preview.stop();super().done(result)
 
     def apply(self):

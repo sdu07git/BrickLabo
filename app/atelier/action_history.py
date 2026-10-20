@@ -18,6 +18,9 @@ TABLES = {
     'storage_contents': ('drawer_id', 'item_id', 'color'),
     'construction_projects': ('id',),
     'project_parts': ('project_id', 'item_id', 'color'),
+    'purchase_lots': ('id',),
+    'purchase_lot_entries': ('lot_id','scope','item_id','color'),
+    'project_pick_rows': ('project_id','item_id','color','drawer_id'),
 }
 ORDER = {table: index for index, table in enumerate(TABLES)}
 
@@ -134,6 +137,8 @@ def validate(c):
     from .projects import validate as validate_projects
     validate_quantities(c)
     validate_projects(c)
+    from .collection_workflows import validate_picks
+    validate_picks(c)
 
 
 def description(db, redo=False):

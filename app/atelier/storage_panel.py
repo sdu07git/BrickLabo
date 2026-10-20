@@ -231,6 +231,8 @@ class StoragePanel(QWidget):
         outer=QVBoxLayout(self);outer.setContentsMargins(0,0,0,0);self.controls_scroll=QScrollArea();self.controls_scroll.setWidgetResizable(True);content=QWidget();layout=QVBoxLayout(content);layout.setSizeConstraint(QVBoxLayout.SizeConstraint.SetMinimumSize);self.controls_scroll.setWidget(content);outer.addWidget(self.controls_scroll);self.wall=QComboBox();self.wall.setSizeAdjustPolicy(QComboBox.SizeAdjustPolicy.AdjustToMinimumContentsLengthWithIcon);self.wall.setMinimumContentsLength(16);layout.addWidget(self.wall);bar=FlowLayout()
         organise=QPushButton(tr('Organiser le meuble'));menu=QMenu(organise)
         for name,fn in [(tr('Créer un meuble'),self.new_wall),(tr('Dupliquer le format du meuble…'),self.duplicate_dialog),(tr('Renommer le meuble…'),self.rename_dialog),(tr('Positionner le meuble…'),self.position_dialog),(tr('Supprimer le meuble'),self.remove_wall),(tr('Ajouter un tiroir'),lambda:self.edit_drawer(True)),(tr('Modifier le tiroir'),self.edit_drawer),(tr('Supprimer le tiroir'),self.remove_drawer)]:menu.addAction(name,fn)
+        menu.addAction(tr('Aligner les meubles…'),self.align_dialog)
+        menu.addAction(tr('Inventaire guidé du meuble…'),self.count_cabinet)
         menu.addSeparator();self.drag_drawers=menu.addAction(tr('Déplacer les tiroirs'));self.drag_drawers.setCheckable(True)
         self.print_action=menu.addAction(tr('Imprimer les meubles sur A4…'),self.print_wall)
         self.plan_action=menu.addAction(tr('Ranger par catégorie et taille…'),self.plan_storage)
@@ -239,8 +241,8 @@ class StoragePanel(QWidget):
         self.plan_button=QPushButton(tr('Ranger par catégorie et taille…'));self.plan_button.clicked.connect(self.plan_storage);bar.addWidget(self.plan_button)
         layout.addLayout(bar);self.query=QLineEdit();self.query.setPlaceholderText(tr('Pièce, référence, dimensions, couleur ou nom du tiroir'));layout.addWidget(self.query);bar=QHBoxLayout()
         self.all_walls=QCheckBox(tr('Tous les meubles'));self.all_walls.setChecked(True);bar.addWidget(self.all_walls)
-        self.front=QCheckBox(tr('Vue de face'));bar.addWidget(self.front);bar.addWidget(QLabel(tr('Angle')))
-        self.angle=QSlider(Qt.Orientation.Horizontal);self.angle.setRange(-35,35);self.angle.setValue(db.setting('storage_wall_angle',18));self.angle.setMaximumWidth(120);bar.addWidget(self.angle);layout.addLayout(bar)
+        self.front=QCheckBox(tr('Vue de face'),self);self.front.setChecked(True);self.front.hide()
+        self.angle=QSlider(Qt.Orientation.Horizontal,self);self.angle.setValue(0);self.angle.hide();layout.addLayout(bar)
         bar=FlowLayout();bar.addWidget(QLabel(tr('Zoom')))
         self.zoom_out=QPushButton('−');self.zoom_in=QPushButton('+')
         for button,label in [(self.zoom_out,tr('Dézoomer')),(self.zoom_in,tr('Zoomer'))]:button.setFixedWidth(36);button.setToolTip(label);button.setAccessibleName(label);bar.addWidget(button)
@@ -344,7 +346,7 @@ class StoragePanel(QWidget):
         for p in store.wall_contents(self.db,None if overview else self.wall_id):parts.setdefault(p['drawer_id'],[]).append(p)
         for drawer in store.layout_drawers(self.db,None if overview else self.wall_id):self.wall_drawers.setdefault(drawer['wall_id'],[]).append(drawer)
         self.drawers=self.wall_drawers.get(self.wall_id,[])
-        yaw=0 if self.front.isChecked() else self.angle.value();pitch=0 if self.front.isChecked() else 10
+        yaw=0;pitch=0
         for wall in visible_walls:
             cabinet=CabinetItem(wall,yaw,pitch,overview,arranging);cabinet.chosen.connect(self.choose_wall);cabinet.moved.connect(self.move_wall);self.scene.addItem(cabinet);self.cabinets[wall['id']]=cabinet
             for drawer in self.wall_drawers.get(wall['id'],[]):
@@ -569,6 +571,27 @@ class StoragePanel(QWidget):
             except (ValueError,sqlite3.Error,OSError) as error:QMessageBox.warning(dialog,tr('Duplication impossible'),str(error));return
             self.reload_walls(identity);self.focus_wall();dialog.accept()
         buttons.accepted.connect(save);show_window(dialog,self);name.setFocus();return dialog
+    def count_cabinet(self):
+        if self.wall_id is None:return
+        from .collection_dialogs import CountDialog,safe
+        from .collection_workflows import start_count
+        identity=safe(self,lambda:start_count(self.db,'cabinet',self.wall_id))
+        if identity:show_window(CountDialog(self.db,identity,self.engine,self),self)
+
+    def align_dialog(self):
+        captured=self.db.rows('SELECT * FROM storage_walls ORDER BY y,x,id')
+        if not captured:return
+        dialog=QDialog(self);dialog.setWindowTitle(tr('Aligner les meubles'));form=QFormLayout(dialog)
+        direction=QComboBox();direction.addItem(tr('Horizontalement'),'horizontal');direction.addItem(tr('Verticalement'),'vertical');form.addRow(tr('Direction'),direction)
+        gap=QDoubleSpinBox();gap.setRange(0,100);gap.setDecimals(1);gap.setSingleStep(.1);gap.setValue(.2);form.addRow(tr('Écart entre les meubles'),gap)
+        note=QLabel(tr('Aligne tous les meubles dans leur ordre actuel de lecture, depuis le premier. Les tiroirs et leurs contenus sont conservés.'));note.setWordWrap(True);form.addRow(note)
+        buttons=QDialogButtonBox(QDialogButtonBox.StandardButton.Apply|QDialogButtonBox.StandardButton.Cancel);form.addRow(buttons);buttons.rejected.connect(dialog.reject)
+        def apply():
+            try:store.align_walls(self.db,direction.currentData(),gap.value(),captured)
+            except (ValueError,sqlite3.Error) as error:QMessageBox.warning(dialog,tr('Aligner les meubles'),str(error));return
+            self.all_walls.setChecked(True);self.reload_walls();self.fit();notify_changed(self);dialog.accept()
+        buttons.button(QDialogButtonBox.StandardButton.Apply).clicked.connect(apply);show_window(dialog,self);return dialog
+
     def position_dialog(self):
         captured_wall=self.wall_id
         current=next((w for w in store.walls(self.db) if w['id']==captured_wall),None)
