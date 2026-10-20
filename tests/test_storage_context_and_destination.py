@@ -80,7 +80,8 @@ class DestinationTests(Fixture):
         self.assertEqual(walls.print_snapshot(self.db),before)
         def empty_menu(menu):
             self.assertTrue(menu.actions()[0].isEnabled()) # Empty drawers can still be edited.
-            self.assertTrue(all(not action.isEnabled() for action in menu.actions()[1:]))
+            self.assertTrue(next(action for action in menu.actions() if action.text()=='Ajouter une autre référence…').isEnabled())
+            self.assertTrue(all(not action.isEnabled() for action in menu.actions()[2:]))
         self.context(panel,empty,empty_menu);self.assertEqual(walls.print_snapshot(self.db),before)
     def test_destination_list_refreshes_after_rename_and_removal(self):
         panel,a,b=self.panel();panel.stock_browser.target_wall.setCurrentIndex(panel.stock_browser.target_wall.findData(b))
