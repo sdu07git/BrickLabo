@@ -128,6 +128,7 @@ class ProjectsPanel(QWidget):
         self.view_set=QPushButton(tr('Voir le set'));self.view_set.clicked.connect(self.open_project);actions.addWidget(self.view_set)
         self.manage=QPushButton(tr('Gérer le projet'));menu=QMenu(self.manage)
         menu.addAction(tr('Renommer le projet…'),self.rename);menu.addAction(tr('Supprimer le projet…'),self.delete);self.manage.setMenu(menu);actions.addWidget(self.manage)
+        self.pick_button=QPushButton(tr('Liste de prélèvement…'));self.pick_button.clicked.connect(self.pick_list);actions.addWidget(self.pick_button)
         self.status = QComboBox()
         for key,label in projects.STATES.items(): self.status.addItem(tr(label),key)
         self.status.activated.connect(self.change_status); actions.addWidget(self.status); layout.addLayout(actions)
@@ -184,12 +185,18 @@ class ProjectsPanel(QWidget):
         if self.thumbnails: self.thumbnails.reset()
         self.view_set.setEnabled(self.project_item() is not None);self.publish_selection()
         self.status.setEnabled(self.project_id is not None)
+        self.pick_button.setEnabled(self.project_id is not None)
         self.manage.setEnabled(self.project_id is not None);self.part_button.setEnabled(self.project_id is not None)
         self.reserve_button.setEnabled(any(row['reserved'] < row['required'] and row['free_quantity'] > 0 for row in self.parts))
         self.release_button.setEnabled(any(row['reserved'] > 0 for row in self.parts))
         if self.project_id is None: self.summary.setText(tr('Crée un projet depuis un set ou prépare une construction personnelle.')); return
         project = self.rows[index]; self.status.setCurrentIndex(self.status.findData(project['status']))
         self.summary.setText(tf('{0} · {1} pièce(s) nécessaire(s) · {2} réservée(s) · {3} manquante(s)',project['name'],project['required'],project['reserved'],project['missing']))
+
+    def pick_list(self):
+        if self.project_id is None:return
+        from .collection_dialogs import PickListDialog
+        show_window(PickListDialog(self.db,self.project_id,self.engine,self),self,lambda *_:self.refresh())
 
     def project_item(self):
         row=next((row for row in self.rows if row['id']==self.project_id),None)

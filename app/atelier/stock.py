@@ -5,7 +5,7 @@ from contextlib import closing,nullcontext
 from .i18n import tr
 from .sqlite_file import connect
 
-TABLES={'stock':('id',),'stock_sets':('id',),'stock_set_components':('set_entry_id','item_id','color'),'queue':('id',),'settings':('key',),'stock_import_jobs':('id',),'stock_import_applied':('job_id','ordinal'),'storage_contents':('drawer_id','item_id','color')}
+TABLES={'purchase_lots':('id',),'purchase_lot_entries':('lot_id','scope','item_id','color'),'stock':('id',),'stock_sets':('id',),'stock_set_components':('set_entry_id','item_id','color'),'queue':('id',),'settings':('key',),'stock_import_jobs':('id',),'stock_import_applied':('job_id','ordinal'),'storage_contents':('drawer_id','item_id','color')}
 
 def prepare(db,c):
     legacy=list(c.execute("SELECT s.* FROM stock s JOIN items i ON i.id=s.item_id WHERE i.kind='set'"))
@@ -142,8 +142,24 @@ def _apply(c,action):
 def mutate(db,actions,description,connection=None):
     with (db.connect() if connection is None else nullcontext(connection)) as c:
         if not c.in_transaction:c.execute('BEGIN IMMEDIATE')
+        actions=list(actions)
         before=_state(c)
         for action in actions:_apply(c,action)
+        from .collection_workflows import record_lot_actions
+        completion=next((a for a in actions if a['op']=='import_complete'),None)
+        if completion:
+            job=c.execute('SELECT filename FROM stock_import_jobs WHERE id=?',(completion['job_id'],)).fetchone()
+            if job:
+                from pathlib import Path
+                import uuid
+                job_id=completion['job_id']
+                active=c.execute('SELECT id FROM purchase_lots WHERE import_job=? AND cancelled=0 ORDER BY rowid DESC LIMIT 1',(job_id,)).fetchone()
+                lot_id=active['id'] if active else uuid.uuid4().hex
+                record_lot_actions(c,lot_id,actions,Path(job['filename']).name)
+                c.execute('UPDATE purchase_lots SET import_job=? WHERE id=?',(job_id,lot_id))
+        else:
+            for lot_id in dict.fromkeys(a['lot_id'] for a in actions if a.get('lot_id')):
+                record_lot_actions(c,lot_id,[a for a in actions if a.get('lot_id')==lot_id])
         from .storage_quantities import follow_stock_additions
         follow_stock_additions(c,before['stock'])
         from .action_history import validate,record_changes

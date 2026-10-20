@@ -1,8 +1,26 @@
-# BrickLabo — v0.1.64
+# BrickLabo — v0.1.65
 
-Windows desktop software for LEGO catalogues, stock, construction searches and labels. This version continues the published v0.1.63, based on the original v0.1.28.
+Windows desktop software for LEGO catalogues, stock, construction searches and labels. This version continues the published v0.1.64, based on the original v0.1.28.
 
-**Downloads v0.1.64 :** [complete Windows package](https://github.com/sdu07git/BrickLabo/releases/download/v0.1.64/BrickLabo_v0.1.64_Complet.zip) · [sources with resources](https://github.com/sdu07git/BrickLabo/releases/download/v0.1.64/BrickLabo_v0.1.64_Sources.zip) · [release notes](https://github.com/sdu07git/BrickLabo/releases/tag/v0.1.64).
+**Downloads v0.1.65 :** [complete Windows package](https://github.com/sdu07git/BrickLabo/releases/download/v0.1.65/BrickLabo_v0.1.65_Complet.zip) · [sources with resources](https://github.com/sdu07git/BrickLabo/releases/download/v0.1.65/BrickLabo_v0.1.65_Sources.zip) · [release notes](https://github.com/sdu07git/BrickLabo/releases/tag/v0.1.65).
+
+## Collection, inventories and projects — v0.1.65
+
+The new **Data and settings → Collection tools** menu provides:
+
+- **Persistent storage drafts**: save and resume criteria, grouping, counts and destinations; explicitly recalculate if stock changed.
+- **Guided set or cabinet counts**: expected, counted, missing and surplus quantities, filters, previews, autosave and CSV. Observations do not change stock.
+- **Simultaneous build comparison**: up to 16 set references, loose stock and/or sets to dismantle, colours, minifigures and alternatives. Parts cannot be reused across selected builds. Create the selected projects together without automatically reserving parts.
+- **Purchase and import lots**: name, provenance, price and comment; automatically track new imports, correct one contribution or remove a lot’s additions while protecting drawer counts and reservations.
+- **Project pick lists**: cabinet, drawer, reference, colour and quantity, partial picks, taken-parts tracking, returns and CSV. Total ownership is preserved.
+- **Getting-started assistant**: catalogues, LDraw, stock and cabinets; resumes the last step.
+
+**My storage → Organize cabinet → Align cabinets…** arranges all cabinets horizontally or vertically with an adjustable gap. Cabinets always use a front view; the angle control is removed.
+
+[Detailed instructions](documentation/FEATURES_v0.1.65.md). Full backups include the new records. Picks, returns, quantity corrections and alignment support persistent undo. Photo-based reference recognition is not included. Native Windows execution remains unconfirmed.
+
+
+**Validation v0.1.65:** 946 full-suite tests passed under Qt/Linux, followed by 223 targeted checks after final adjustments, including 30 new cases. Five views reviewed at 800 × 540; AMD64 launcher, icon, dependencies and archives checked. [Detailed report](documentation/CONTROLE_v0.1.65.txt). Native Windows execution remains unconfirmed.
 
 ## Drag and right-click in the proposal — v0.1.64
 

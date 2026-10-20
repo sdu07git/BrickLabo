@@ -1,3 +1,37 @@
+FR — v0.1.65
+
+Collection, inventaires et projets — v0.1.65
+
+Le nouveau menu **Données et réglages → Outils de collection** rassemble les ajouts :
+
+- **Brouillons de rangement persistants** : enregistrer puis reprendre les critères, les regroupements, les comptages et les destinations de la proposition ; recalcul explicite si le stock a changé.
+- **Inventaire guidé d’un set ou d’un meuble** : attendu, compté, manquant et surplus, filtres, aperçus, sauvegarde automatique et export CSV. Le comptage ne modifie pas le stock.
+- **Comparaison de reconstructions simultanées** : jusqu’à 16 références, vrac et/ou sets à démonter, couleurs, minifigurines et alternatives. Les pièces ne sont pas réutilisées entre les constructions retenues. Création groupée de projets sans réservation automatique.
+- **Lots d’achat et d’import** : nom, provenance, prix, commentaire ; suivi automatique des nouveaux imports, correction d’une contribution ou annulation des apports d’un lot, avec protection des tiroirs et réservations.
+- **Listes de prélèvement des projets** : meuble, tiroir, référence, couleur et quantité, prélèvements partiels, suivi des pièces prises, retour aux tiroirs d’origine et CSV. La possession totale est conservée.
+- **Assistant de démarrage** : catalogues, LDraw, stock, meubles ; reprise de l’étape après fermeture.
+
+Dans **Mon rangement → Organiser le meuble → Aligner les meubles…**, aligner tous les meubles horizontalement ou verticalement avec un écart réglable. La vue des meubles reste de face ; le contrôle d’angle est retiré.
+
+[Mode d’emploi détaillé des six fonctions](documentation/FONCTIONS_v0.1.65.md). Les nouvelles données entrent dans les sauvegardes complètes. Les prélèvements, retours, corrections de quantités et alignements utilisent l’annulation persistante. La reconnaissance de référence par photo n’est pas incluse. Exécution native Windows à confirmer.
+
+EN — v0.1.65
+
+Collection, inventories and projects — v0.1.65
+
+The new **Data and settings → Collection tools** menu provides:
+
+- **Persistent storage drafts**: save and resume criteria, grouping, counts and destinations; explicitly recalculate if stock changed.
+- **Guided set or cabinet counts**: expected, counted, missing and surplus quantities, filters, previews, autosave and CSV. Observations do not change stock.
+- **Simultaneous build comparison**: up to 16 set references, loose stock and/or sets to dismantle, colours, minifigures and alternatives. Parts cannot be reused across selected builds. Create the selected projects together without automatically reserving parts.
+- **Purchase and import lots**: name, provenance, price and comment; automatically track new imports, correct one contribution or remove a lot’s additions while protecting drawer counts and reservations.
+- **Project pick lists**: cabinet, drawer, reference, colour and quantity, partial picks, taken-parts tracking, returns and CSV. Total ownership is preserved.
+- **Getting-started assistant**: catalogues, LDraw, stock and cabinets; resumes the last step.
+
+**My storage → Organize cabinet → Align cabinets…** arranges all cabinets horizontally or vertically with an adjustable gap. Cabinets always use a front view; the angle control is removed.
+
+[Detailed instructions](documentation/FEATURES_v0.1.65.md). Full backups include the new records. Picks, returns, quantity corrections and alignment support persistent undo. Photo-based reference recognition is not included. Native Windows execution remains unconfirmed.
+
 v0.1.64 — Glisser-déposer et clic droit dans la proposition
 
 Échanger ou déplacer dans l’aperçu : Dans Mon rangement → Ranger par catégorie et taille en tenons, maintenir le bouton gauche sur un tiroir proposé, le glisser sur un autre tiroir puis relâcher. Si la destination contient une proposition, les deux contenus complets sont échangés. Sur un tiroir libre admissible, le contenu est déplacé. Une bordure bleue indique la destination. Références, couleurs et quantités restent ensemble ; le tableau et la sélection suivent. Avec Tous les meubles, le déplacement peut traverser les meubles retenus.

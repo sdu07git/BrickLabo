@@ -1,8 +1,26 @@
-# BrickLabo — v0.1.64
+# BrickLabo — v0.1.65
 
-Logiciel de bureau Windows pour les catalogues LEGO, les stocks, les recherches de constructions et les étiquettes. Cette version reprend la v0.1.63 publiée, issue de la v0.1.28 d’origine.
+Logiciel de bureau Windows pour les catalogues LEGO, les stocks, les recherches de constructions et les étiquettes. Cette version reprend la v0.1.64 publiée, issue de la v0.1.28 d’origine.
 
-**Téléchargements v0.1.64 :** [version complète Windows](https://github.com/sdu07git/BrickLabo/releases/download/v0.1.64/BrickLabo_v0.1.64_Complet.zip) · [sources avec ressources](https://github.com/sdu07git/BrickLabo/releases/download/v0.1.64/BrickLabo_v0.1.64_Sources.zip) · [notes de release](https://github.com/sdu07git/BrickLabo/releases/tag/v0.1.64).
+**Téléchargements v0.1.65 :** [version complète Windows](https://github.com/sdu07git/BrickLabo/releases/download/v0.1.65/BrickLabo_v0.1.65_Complet.zip) · [sources avec ressources](https://github.com/sdu07git/BrickLabo/releases/download/v0.1.65/BrickLabo_v0.1.65_Sources.zip) · [notes de release](https://github.com/sdu07git/BrickLabo/releases/tag/v0.1.65).
+
+## Collection, inventaires et projets — v0.1.65
+
+Le nouveau menu **Données et réglages → Outils de collection** rassemble les ajouts :
+
+- **Brouillons de rangement persistants** : enregistrer puis reprendre les critères, les regroupements, les comptages et les destinations de la proposition ; recalcul explicite si le stock a changé.
+- **Inventaire guidé d’un set ou d’un meuble** : attendu, compté, manquant et surplus, filtres, aperçus, sauvegarde automatique et export CSV. Le comptage ne modifie pas le stock.
+- **Comparaison de reconstructions simultanées** : jusqu’à 16 références, vrac et/ou sets à démonter, couleurs, minifigurines et alternatives. Les pièces ne sont pas réutilisées entre les constructions retenues. Création groupée de projets sans réservation automatique.
+- **Lots d’achat et d’import** : nom, provenance, prix, commentaire ; suivi automatique des nouveaux imports, correction d’une contribution ou annulation des apports d’un lot, avec protection des tiroirs et réservations.
+- **Listes de prélèvement des projets** : meuble, tiroir, référence, couleur et quantité, prélèvements partiels, suivi des pièces prises, retour aux tiroirs d’origine et CSV. La possession totale est conservée.
+- **Assistant de démarrage** : catalogues, LDraw, stock, meubles ; reprise de l’étape après fermeture.
+
+Dans **Mon rangement → Organiser le meuble → Aligner les meubles…**, aligner tous les meubles horizontalement ou verticalement avec un écart réglable. La vue des meubles reste de face ; le contrôle d’angle est retiré.
+
+[Mode d’emploi détaillé des six fonctions](documentation/FONCTIONS_v0.1.65.md). Les nouvelles données entrent dans les sauvegardes complètes. Les prélèvements, retours, corrections de quantités et alignements utilisent l’annulation persistante. La reconnaissance de référence par photo n’est pas incluse. Exécution native Windows à confirmer.
+
+
+**Validation v0.1.65 :** 946 tests de la suite complète réussis sous Qt/Linux, puis 223 contrôles ciblés après les derniers ajustements, dont 30 nouveaux cas. Cinq vues contrôlées à 800 × 540 ; lanceur AMD64, icône, dépendances et archives vérifiés. [Rapport détaillé](documentation/CONTROLE_v0.1.65.txt). Exécution native Windows à confirmer.
 
 ## Glisser-déposer et clic droit dans la proposition — v0.1.64
 

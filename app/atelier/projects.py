@@ -181,6 +181,8 @@ def release(db, project_id):
 def delete(db, project_id):
     from .action_history import change
     with db.connect() as c, change(c, TABLES, tr('Suppression d’un projet')):
+        if c.execute('SELECT 1 FROM project_pick_rows WHERE project_id=? LIMIT 1',(project_id,)).fetchone():
+            raise ValueError(tr('Retourne les prélèvements avant de supprimer le projet.'))
         c.execute('DELETE FROM construction_projects WHERE id=?', (project_id,))
 
 

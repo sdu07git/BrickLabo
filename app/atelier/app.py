@@ -65,6 +65,12 @@ class MainWindow(QMainWindow):
         tools=QGroupBox(tr('Données et réglages'));trow=FlowLayout(tools,spacing=8);trow.setContentsMargins(8,18,8,8)
         for index,(name,func) in enumerate([(tr('Langue'),self.language_settings),(tr('Clés API'),self.api),(tr('Aide'),lambda:help_dialog(self)),(tr('Mise à jour des données'),self.imports),(tr('Dossier PNG / PDF'),self.output_folder),(tr('Logs'),self.open_logs),(tr('Espace disque'),self.cache_settings),(tr('Sauvegardes'),self.backup_settings),(tr('Sources et licences'),self.sources_licenses)]):
             b=QPushButton(name);b.clicked.connect(func);trow.addWidget(b)
+        collection=QPushButton(tr('Outils de collection'));collection_menu=QMenu(collection)
+        collection_menu.addAction(tr('Inventaire guidé…'),self.guided_inventory)
+        collection_menu.addAction(tr('Comparer plusieurs reconstructions…'),self.compare_rebuilds)
+        collection_menu.addAction(tr('Lots d’achat et d’import…'),self.purchase_lots)
+        collection_menu.addAction(tr('Assistant de démarrage…'),self.start_assistant)
+        collection.setMenu(collection_menu);trow.addWidget(collection)
         top.addWidget(tools,1,Qt.AlignmentFlag.AlignTop)
         content=QWidget();body=QVBoxLayout(content);body.setContentsMargins(0,0,0,0);body.setSpacing(6);self.workspace_splitter.addWidget(content);self.workspace_splitter.setStretchFactor(0,0);self.workspace_splitter.setStretchFactor(1,1)
         handle=self.workspace_splitter.handle(1);handle.setCursor(Qt.CursorShape.SplitVCursor);handle.setAccessibleName(tr('Hauteur du volet supérieur'));handle.setToolTip(tr('Glisse cette bordure vers le haut ou le bas pour régler la hauteur du volet supérieur.'))
@@ -246,8 +252,26 @@ class MainWindow(QMainWindow):
             paths=[p for p in paths if Path(p).name.lower() in supplemental]
         if paths:
             if empty:
-                d=ImportDialog(self.db,self,paths,auto_start=True);d.finished_import.connect(self.refresh_all);self.import_window=d;show_window(d,self)
+                d=ImportDialog(self.db,self,paths,auto_start=True);d.finished_import.connect(self.refresh_all);self.import_window=d;show_window(d,self,lambda result:self.start_assistant() if result and not self._closing and not self.db.setting('start_assistant_seen',False) else None)
             else:self.imports(paths)
+        elif empty and not self.db.setting('start_assistant_seen',False):self.start_assistant()
+
+    def guided_inventory(self):
+        from .collection_dialogs import InventoryHub
+        show_window(InventoryHub(self.db,self.engine,self),self)
+
+    def compare_rebuilds(self):
+        from .collection_dialogs import BuildComparisonDialog
+        show_window(BuildComparisonDialog(self.db,self.engine,self),self)
+
+    def purchase_lots(self):
+        from .collection_dialogs import LotsDialog
+        show_window(LotsDialog(self.db,self.engine,self),self)
+
+    def start_assistant(self):
+        from .collection_dialogs import StartAssistant
+        self.db.set_setting('start_assistant_seen',True)
+        show_window(StartAssistant(self),self)
 
     def sources_licenses(self):
         from PySide6.QtWidgets import QTextBrowser

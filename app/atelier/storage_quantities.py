@@ -2,7 +2,7 @@
 from .i18n import tr
 
 
-ALLOCATED = 'COALESCE((SELECT SUM(p.quantity) FROM storage_contents p WHERE p.item_id=s.item_id AND p.color=s.color),0)'
+ALLOCATED = '(COALESCE((SELECT SUM(p.quantity) FROM storage_contents p WHERE p.item_id=s.item_id AND p.color=s.color),0)+COALESCE((SELECT SUM(p.quantity) FROM project_pick_rows p WHERE p.item_id=s.item_id AND p.color=s.color),0))'
 
 
 def integer(value):
@@ -55,8 +55,9 @@ def follow_stock_additions(c, previous):
         before=old.get((row['item_id'],str(row['color'])),0)
         if row['quantity']<=before:continue
         locations=c.execute('SELECT drawer_id,quantity FROM storage_contents WHERE item_id=? AND color=?',(row['item_id'],row['color'])).fetchall()
-        if len(locations)==1 and locations[0]['quantity']==before:
-            c.execute('UPDATE storage_contents SET quantity=? WHERE drawer_id=? AND item_id=? AND color=?',(row['quantity'],locations[0]['drawer_id'],row['item_id'],row['color']))
+        picked=c.execute('SELECT COALESCE(SUM(quantity),0) FROM project_pick_rows WHERE item_id=? AND color=?',(row['item_id'],row['color'])).fetchone()[0]
+        if len(locations)==1 and locations[0]['quantity']==before-picked:
+            c.execute('UPDATE storage_contents SET quantity=? WHERE drawer_id=? AND item_id=? AND color=?',(row['quantity']-picked,locations[0]['drawer_id'],row['item_id'],row['color']))
 
 
 def transfer_entries(db, source_drawer, target_drawer, entries):
