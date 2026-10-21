@@ -22,6 +22,8 @@ def prepare(c):
     prepare_colors(c)
     from .project_stock import prepare as prepare_stock
     prepare_stock(c)
+    from .project_picks import prepare as prepare_picks
+    prepare_picks(c)
     for table in TABLES:
         for operation in ('INSERT', 'UPDATE', 'DELETE'):
             c.execute('CREATE TRIGGER IF NOT EXISTS revision_' + table + '_' + operation.lower() + ' AFTER ' + operation + ' ON ' + table + ' BEGIN UPDATE stock_revision SET version=version+1 WHERE id=1; END')
@@ -196,9 +198,11 @@ def release(db, project_id):
 
 def delete(db, project_id):
     from .action_history import change
-    with db.connect() as c, change(c, TABLES, tr('Suppression d’un projet')):
-        if c.execute('SELECT 1 FROM project_physical_picks WHERE project_id=? LIMIT 1',(project_id,)).fetchone():
-            raise ValueError(tr('Retourne les prélèvements avant de supprimer le projet.'))
+    from .project_picks import TABLES as PICK_TABLES
+    with db.connect() as c, change(c, TABLES+PICK_TABLES, tr('Suppression d’un projet')):
+        # Picked pieces remain owned, free and without a counted drawer. Do not
+        # pretend they were physically put back into their original drawers.
+        for table in PICK_TABLES:c.execute('DELETE FROM '+table+' WHERE project_id=?',(project_id,))
         c.execute('DELETE FROM construction_projects WHERE id=?', (project_id,))
 
 

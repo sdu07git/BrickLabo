@@ -209,12 +209,12 @@ def pick_list(db,project_id):
 
 def picked_list(db,project_id):
     """Keep completed picks, grouped by their actual reference, colour and drawer."""
-    return db.rows('''SELECT w.name AS cabinet,d.col,d.row,p.drawer_id,p.item_id,
+    return db.rows('''SELECT COALESCE(w.name,?) AS cabinet,d.col,d.row,p.drawer_id,p.item_id,
       i.source,i.ref,p.color,SUM(p.quantity) AS quantity
-      FROM project_physical_picks p JOIN storage_drawers d ON d.id=p.drawer_id
-      JOIN storage_walls w ON w.id=d.wall_id JOIN items i ON i.id=p.item_id
+      FROM project_physical_picks p LEFT JOIN storage_drawers d ON d.id=p.drawer_id
+      LEFT JOIN storage_walls w ON w.id=d.wall_id JOIN items i ON i.id=p.item_id
       WHERE p.project_id=? GROUP BY p.drawer_id,p.item_id,p.color
-      ORDER BY w.y,w.x,w.id,d.row,d.col,i.source,i.ref,p.color''',(project_id,))
+      ORDER BY w.y,w.x,w.id,d.row,d.col,i.source,i.ref,p.color''',(tr('Aucun tiroir défini'),project_id))
 
 
 def pick(db,project_id,item_id,color,drawer_id,quantity,expected=None,need_color=None):
@@ -248,15 +248,16 @@ def pick(db,project_id,item_id,color,drawer_id,quantity,expected=None,need_color
 
 def return_picks(db,project_id):
     from .action_history import change
-    with db.connect() as c,change(c,('storage_contents','project_pick_rows','project_color_pick_rows'),tr('Retour des prélèvements dans les tiroirs')):
+    from .project_picks import TABLES as PICK_TABLES
+    with db.connect() as c,change(c,('storage_contents',)+PICK_TABLES,tr('Retour des prélèvements dans les tiroirs')):
         for row in c.execute('SELECT * FROM project_physical_picks WHERE project_id=?',(project_id,)).fetchall():
+            if row['drawer_id'] is None:continue
             existing=c.execute('SELECT quantity FROM storage_contents WHERE drawer_id=? AND item_id=? AND color=?',(row['drawer_id'],row['item_id'],row['color'])).fetchone()
             if existing and existing['quantity'] is None:raise ValueError(tr('Renseigne la quantité du tiroir avant de retourner les pièces.'))
             c.execute('''INSERT INTO storage_contents(drawer_id,item_id,color,quantity) VALUES(?,?,?,?)
               ON CONFLICT(drawer_id,item_id,color) DO UPDATE SET quantity=storage_contents.quantity+excluded.quantity''',
               (row['drawer_id'],row['item_id'],row['color'],row['quantity']))
-        c.execute('DELETE FROM project_pick_rows WHERE project_id=?',(project_id,))
-        c.execute('DELETE FROM project_color_pick_rows WHERE project_id=?',(project_id,))
+        for table in PICK_TABLES:c.execute('DELETE FROM '+table+' WHERE project_id=?',(project_id,))
 
 
 def compare_builds(db,candidates,ignore_colors=False,exclude_minifigs=False,include_set_stock=True,allow_alternatives=False,excluded_entries=None):

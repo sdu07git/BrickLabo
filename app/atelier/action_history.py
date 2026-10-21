@@ -23,6 +23,7 @@ TABLES = {
     'purchase_lot_entries': ('lot_id','scope','item_id','color'),
     'project_pick_rows': ('project_id','item_id','color','drawer_id'),
     'project_color_pick_rows': ('project_id','item_id','color','stock_color','drawer_id'),
+    'project_unlocated_picks': ('project_id','item_id','color','stock_color'),
 }
 ORDER = {table: index for index, table in enumerate(TABLES)}
 

@@ -286,7 +286,7 @@ class ProjectsPanel(QWidget):
         if self.project_id is not None: self.run(lambda:projects.edit(self.db,self.project_id,status=self.status.currentData()))
     def delete(self):
         if self.project_id is None: return
-        if QMessageBox.question(self,tr('Projet'),tr('Supprimer ce projet et libérer ses réservations ?'))==QMessageBox.StandardButton.Yes:
+        if QMessageBox.question(self,tr('Projet'),tr('Supprimer ce projet et libérer ses réservations ? Les pièces prélevées restent dans le stock, sans affectation comptée à un tiroir.'))==QMessageBox.StandardButton.Yes:
             self.run(lambda:projects.delete(self.db,self.project_id))
 
     def add_part(self):

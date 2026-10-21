@@ -628,7 +628,7 @@ class StoragePanel(QWidget):
         # cabinet/drawer if SQLite subsequently reuses a deleted identifier.
         for window in list(getattr(application_owner(self),'_consultation_windows',[])):
             if getattr(window,'_storage_wall_id',None)==captured_wall or captured_wall in getattr(window,'_storage_wall_ids',set()):window.reject()
-        self.reload_walls()
+        self.reload_walls();notify_changed(self)
     def edit_drawer(self,new=False):
         if self.wall_id is None:return
         drawer=next((d for d in self.drawers if d['id']==self.drawer_id),None)
@@ -642,14 +642,16 @@ class StoragePanel(QWidget):
         buttons=QDialogButtonBox(QDialogButtonBox.StandardButton.Save|QDialogButtonBox.StandardButton.Cancel);form.addRow(buttons);buttons.rejected.connect(dialog.reject)
         def save():
             try:identity=store.save_drawer(self.db,captured_wall,fields['col'].value(),fields['row'].value(),fields['width'].value(),fields['height'].value(),name.text(),captured_id)
-            except ValueError as e:QMessageBox.warning(dialog,tr('Tiroir invalide'),str(e));return
+            except (ValueError,sqlite3.Error,OSError) as e:QMessageBox.warning(dialog,tr('Tiroir invalide'),str(e));return
             if self.wall_id!=captured_wall:self.wall.setCurrentIndex(self.wall.findData(captured_wall))
             self.redraw();self.choose_drawer(identity);self.search();dialog.accept()
         buttons.accepted.connect(save);show_window(dialog,self)
     def remove_drawer(self):
         if not self.drawer_id:return
         if QMessageBox.question(self,tr('Supprimer le tiroir'),tr('Supprimer ce tiroir et ses liens de rangement ? Les pièces restent dans le stock.'))!=QMessageBox.StandardButton.Yes:return
-        self.db.run('DELETE FROM storage_drawers WHERE id=?',(self.drawer_id,));self.drawer_id=None;self.redraw();self.load_contents();self.search()
+        try:store.delete_drawer(self.db,self.drawer_id)
+        except (ValueError,sqlite3.Error,OSError) as error:QMessageBox.warning(self,tr('Tiroir invalide'),str(error));return
+        self.drawer_id=None;self.redraw();self.load_contents();self.search();notify_changed(self)
     def pick_stock(self):
         if not self.drawer_id:return
         return self.pick_stock_for_drawer(self.drawer_id)

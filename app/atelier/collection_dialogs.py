@@ -248,7 +248,7 @@ class LotsDialog(WorkflowDialog):
 class PickListDialog(WorkflowDialog):
     def __init__(self,db,project_id,engine=None,parent=None):
         super().__init__(parent);self.db=db;self.project_id=project_id;self.rows=[];self.palette=color_names(db);self.setWindowTitle(tr('Liste de prélèvement'));self.resize(1050,640)
-        layout=QVBoxLayout(self);note=QLabel(tr('Prélève les quantités réellement prises dans les tiroirs. Elles restent possédées et sont réservées au projet. Retourne les prélèvements avant de supprimer le projet ou de libérer ces réservations.'));note.setWordWrap(True);layout.addWidget(note)
+        layout=QVBoxLayout(self);note=QLabel(tr('Prélève les quantités réellement prises dans les tiroirs. Elles restent possédées et réservées au projet. Un tiroir supprimé devient Aucun tiroir défini. Supprimer le projet libère les pièces prélevées dans le stock sans les remettre dans un tiroir.'));note.setWordWrap(True);layout.addWidget(note)
         self.table=table([tr('Meuble'),tr('Tiroir'),tr('Source'),tr('Référence'),tr('Couleur'),tr('À prendre'),tr('Déjà prélevée'),tr('Aperçu')]);layout.addWidget(self.table,1)
         self.taken_table=table([tr('Meuble'),tr('Tiroir'),tr('Source'),tr('Référence'),tr('Couleur'),tr('Déjà prélevée'),tr('Aperçu')])
         from PySide6.QtWidgets import QTabWidget
@@ -272,7 +272,7 @@ class PickListDialog(WorkflowDialog):
         self.rows=work.pick_list(self.db,self.project_id)
         fill_table(self.table,[(r['cabinet'],str(r['col'])+'/'+str(r['row']) if r['drawer_id'] else '',r['source'],r['ref'],tr('Toutes les couleurs') if r.get('ignore_colors') and not r['drawer_id'] else color_label(dict(r,chosen_color=r['color']),self.palette),r['suggested'],r['taken'],tr('3D / photo à charger')) for r in self.rows])
         self.taken_rows=work.picked_list(self.db,self.project_id)
-        fill_table(self.taken_table,[(r['cabinet'],str(r['col'])+'/'+str(r['row']),r['source'],r['ref'],color_label(dict(r,chosen_color=r['color']),self.palette),r['quantity'],tr('3D / photo à charger')) for r in self.taken_rows])
+        fill_table(self.taken_table,[(r['cabinet'],str(r['col'])+'/'+str(r['row']) if r['drawer_id'] is not None else '',r['source'],r['ref'],color_label(dict(r,chosen_color=r['color']),self.palette),r['quantity'],tr('3D / photo à charger')) for r in self.taken_rows])
         total=sum(r['quantity'] for r in self.taken_rows)
         self.status.setText(tf('{0} pièce(s) prélevée(s) pour ce projet. Les lignes sans emplacement compté ne peuvent pas être prélevées ici.',total))
         if self.thumbs:self.thumbs.reset()
@@ -299,12 +299,12 @@ class PickListDialog(WorkflowDialog):
             work.pick(self.db,self.project_id,row['item_id'],row['color'],row['drawer_id'],qty,row['quantity'],need_color=row.get('need_color',row['color']));self.refresh();notify_changed(self)
         safe(self,run)
     def return_all(self):
-        if QMessageBox.question(self,tr('Retour des pièces'),tr('Confirme que toutes les pièces prélevées ont été remises dans leurs tiroirs d’origine.'))!=QMessageBox.StandardButton.Yes:return
+        if QMessageBox.question(self,tr('Retour des pièces'),tr('Confirme le retour des pièces aux tiroirs encore existants. Les pièces dont le tiroir a été supprimé restent dans le stock sans tiroir défini.'))!=QMessageBox.StandardButton.Yes:return
         def run():work.return_picks(self.db,self.project_id);self.refresh();notify_changed(self)
         safe(self,run)
     def export(self):
         rows=[(r['cabinet'],str(r['col'])+'/'+str(r['row']) if r['drawer_id'] else '',r['source'],r['ref'],'*' if r.get('ignore_colors') and not r['drawer_id'] else r['color'],r['suggested'],0) for r in self.rows]
-        rows.extend((r['cabinet'],str(r['col'])+'/'+str(r['row']),r['source'],r['ref'],r['color'],0,r['quantity']) for r in self.taken_rows)
+        rows.extend((r['cabinet'],str(r['col'])+'/'+str(r['row']) if r['drawer_id'] is not None else '',r['source'],r['ref'],r['color'],0,r['quantity']) for r in self.taken_rows)
         export_rows(self,[tr('Meuble'),tr('Tiroir'),tr('Source'),tr('Référence'),tr('Couleur'),tr('À prendre'),tr('Déjà prélevée')],rows,'BrickLabo_prelevements.csv')
     def done(self,result):
         if self.thumbs:self.thumbs.stop()
