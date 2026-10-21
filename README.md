@@ -1,8 +1,18 @@
-# BrickLabo — v0.1.65
+# BrickLabo — v0.1.66
 
-Logiciel de bureau Windows pour les catalogues LEGO, les stocks, les recherches de constructions et les étiquettes. Cette version reprend la v0.1.64 publiée, issue de la v0.1.28 d’origine.
+Logiciel de bureau Windows pour les catalogues LEGO, les stocks, les recherches de constructions et les étiquettes. Cette version reprend la v0.1.65 publiée, issue de la v0.1.28 d’origine.
 
-**Téléchargements v0.1.65 :** [version complète Windows](https://github.com/sdu07git/BrickLabo/releases/download/v0.1.65/BrickLabo_v0.1.65_Complet.zip) · [sources avec ressources](https://github.com/sdu07git/BrickLabo/releases/download/v0.1.65/BrickLabo_v0.1.65_Sources.zip) · [notes de release](https://github.com/sdu07git/BrickLabo/releases/tag/v0.1.65).
+**Téléchargements v0.1.66 :** [version complète Windows](https://github.com/sdu07git/BrickLabo/releases/download/v0.1.66/BrickLabo_v0.1.66_Complet.zip) · [sources avec ressources](https://github.com/sdu07git/BrickLabo/releases/download/v0.1.66/BrickLabo_v0.1.66_Sources.zip) · [notes de release](https://github.com/sdu07git/BrickLabo/releases/tag/v0.1.66).
+
+## Repérer les pièces déjà rangées — v0.1.66
+
+La colonne **Rangement**, visible par défaut dans les catalogues de pièces et mini-figurines ainsi que dans le stock en vrac, indique **Aucun tiroir** ou **Déjà rangée**, avec les adresses des meubles et tiroirs. Le survol donne la liste complète, les codes couleur et les quantités renseignées. Une référence déjà associée dans une autre couleur est signalée dans le stock.
+
+Plusieurs références peuvent partager un tiroir et une étiquette : chacune est retrouvée si elle figure dans le contenu enregistré du tiroir. Du texte ajouté uniquement à une étiquette ne crée pas d’association de rangement. L’indicateur décrit un emplacement enregistré, y compris un tiroir à zéro, et ne confirme pas l’impression d’une étiquette. Les sources restent distinctes. La colonne peut être masquée dans **Colonnes** ; ce choix est conservé. Les adresses sont relues après les changements et à la réouverture du catalogue.
+
+Cette version stable conserve les fonctions de la v0.1.65 et **ne contient pas la reconnaissance par photo**.
+
+**Validation v0.1.66 :** 126 tests ciblés réussis sous Qt/Linux, dont six contrôles de l’indicateur ; affichage vérifié à 1240 × 660 et 800 × 540. [Rapport de contrôle](documentation/CONTROLE_v0.1.66.txt). Exécution native Windows à confirmer.
 
 ## Collection, inventaires et projets — v0.1.65
 

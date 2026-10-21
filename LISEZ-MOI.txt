@@ -1,4 +1,6 @@
-BrickLabo v0.1.65
+BrickLabo v0.1.66
+
+Nouveau : la colonne Rangement des catalogues de pièces et du stock indique Aucun tiroir, Déjà rangée et les adresses associées. Le survol donne les couleurs et quantités renseignées. Plusieurs références d’un même tiroir sont reconnues séparément si elles figurent dans son contenu. Cette version ne contient pas de reconnaissance par photo.
 
 Nouveautés : brouillons de rangement enregistrés, inventaire guidé, comparaison de reconstructions, lots d’achat/import, prélèvements de projets et assistant de démarrage. Ouvrir Données et réglages → Outils de collection. Les meubles s’alignent horizontalement ou verticalement et restent en vue de face. Mode d’emploi : documentation/FONCTIONS_v0.1.65.md. Une sauvegarde complète conserve les nouveaux suivis. Les comptages sont des observations ; les prélèvements conservent la possession totale.
 
