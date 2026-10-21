@@ -1735,5 +1735,11 @@
   "Création des projets comparés": "Create compared projects",
   "Non retenu : {0} pièce(s) manquante(s)": "Not selected: {0} missing part(s)",
   "Le stock a changé. Relance la comparaison.": "Stock changed. Run the comparison again.",
-  "Retourne les prélèvements avant de vider le stock.": "Return picked parts before clearing stock."
+  "Retourne les prélèvements avant de vider le stock.": "Return picked parts before clearing stock.",
+  "Aucun tiroir": "No drawer",
+  "Déjà rangée": "Already assigned",
+  "Tiroir dans une autre couleur": "Drawer for another colour",
+  "Couleur : {}": "Colour: {}",
+  "Toutes couleurs / non précisée": "All colours / unspecified",
+  "{} pièce(s)": "{} piece(s)"
 }
