@@ -1,0 +1,52 @@
+BrickLabo v0.1.69 — contrôle avant publication
+Base : main ea6fb6672fab5b136214622860f9eb35d62bfdd2 (v0.1.68).
+
+Fonctions
+- Case par projet « Compter aussi les pièces de mes sets possédés » : création,
+  modification, recalcul de la liste, du détail et du pourcentage.
+- Les composants suivis des sets sont déjà multipliés par les exemplaires.
+  Le calcul conserve leurs quantités personnalisées et les zéros enregistrés.
+- Apport des sets réparti après le vrac libre et les réservations du projet,
+  sans réutiliser une unité entre besoins de couleurs ignorées.
+- Aucun transfert au vrac, aucune réservation implicite de composants de set.
+  Leurs contributions sont évaluées séparément pour chaque projet. La comparaison
+  de reconstructions reste l’outil pour évaluer des constructions simultanées.
+- Anciens sets sans suivi : inventaire local complet si disponible, avec message.
+  Inventaire absent ou incomplet signalé. Les minifigurines restent exprimées
+  dans les mêmes unités que les besoins du projet.
+- Choix conservé au redémarrage, dans Annuler/Rétablir et les JSON de projets.
+  Les anciens projets et anciens JSON restent sur le vrac seul par défaut.
+- Depuis une recherche ou comparaison : reprise du choix d’inclure les sets.
+  Le projet utilise tous les sets possédés, indépendamment du filtre de recherche.
+- Déjà prélevées / Already picked : liste indépendante des besoins restants,
+  regroupement par tiroir, référence et couleur physique, aperçu partagé.
+- Fenêtre de prélèvement réactualisée après changement du stock, retour,
+  prélèvement et Annuler/Rétablir dans la fenêtre principale ; onglets relus.
+  Message explicatif sans prélèvement ; prélever s’applique à À prélever.
+- CSV : les prélèvements apparaissent une seule fois, même si plusieurs tiroirs
+  restent à visiter pour une même référence.
+
+Contrôles ciblés et visuels
+- 70 tests ciblés réussis après ajout des aides bilingues des deux contrôles :
+  test_button_help, test_project_set_stock, test_collection_workflows.
+- 26 nouveaux tests : 20 pour les sources des projets, 6 pour les prélèvements.
+- Cas 30363-1 reproduit avec un petit inventaire représentatif de test ; ses
+  quantités fictives ne prétendent pas décrire l’inventaire officiel du set.
+- Six vues Qt examinées : vrac seul et sets inclus à 1120 × 700, projet à
+  800 × 540, création à 640 × 480, Already picked vide puis complet à 900 × 600.
+- Aperçu LDraw réel contrôlé pour une 3005 rouge entièrement prélevée ; quantité
+  et référence restent visibles dans Already picked avec couleurs ignorées.
+- Aucun détecteur de référence par photo introduit dans cette version stable.
+
+Distribution
+La fabrication reprend le runtime Windows du ZIP complet v0.1.68 dont le SHA-256
+et le CRC ont été vérifiés, puis recompile le lanceur versionné avec MinGW-w64.
+Elle contrôle l’exécutable AMD64, l’icône d’origine en sept tailles bitmap,
+les versions des dépendances et la concordance des sources dans les deux ZIP.
+Le contrôle de l’archive d’installation vérifie aussi la version v0.1.69.
+Les archives distribuées excluent Donnees, journaux, caches et fichiers de test.
+
+Limites
+Tests exécutés sous Python 3.12 / Qt 6.11.2 Linux. Lancement et interaction natifs
+Windows à confirmer sur un PC Windows. Aucun diagnostic du crash 0xc0000374
+sur le poste de l’utilisateur n’est déduit de ces contrôles.
