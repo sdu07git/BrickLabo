@@ -1750,5 +1750,17 @@
   "{0} meuble(s) · {1} rangée(s) · jusqu’à {2} meuble(s) par rangée": "{0} cabinet(s) · {1} row(s) · up to {2} cabinet(s) per row",
   "Disposition": "Layout",
   "L’ordre suit la disposition actuelle, de gauche à droite puis de haut en bas. En grille, les colonnes s’alignent sur le meuble le plus large et les rangées sur le plus haut. Appliquer enregistre la disposition.": "Order follows the current layout, left to right then top to bottom. In a grid, columns fit the widest cabinet and rows fit the tallest. Apply saves the layout.",
-  "Meuble {0} : {1}": "Cabinet {0}: {1}"
+  "Meuble {0} : {1}": "Cabinet {0}: {1}",
+  " · Disponible : {:.1f} %": " · Available: {:.1f}%",
+  "Aucune réservation": "No reservation",
+  "Ce choix est enregistré pour le projet sélectionné. Les réservations suivent les couleurs réelles du stock.": "This choice is saved for the selected project. Reservations track actual stock colours.",
+  "Couleurs réellement réservées : {}": "Actual reserved colours: {}",
+  "Le projet reprend le choix Ignorer les couleurs de cette recherche.": "The project inherits this search’s Ignore colours choice.",
+  "Les réservations utilisent le stock en vrac. Ignorer les couleurs autorise toutes les couleurs de la même référence ; les couleurs réellement réservées restent suivies. Un projet terminé garde ses réservations jusqu’à leur libération.": "Reservations use loose stock. Ignore colours allows all colours of the same reference; actual reserved colours remain tracked. A completed project keeps its reservations until they are released.",
+  "Libère les réservations dans d’autres couleurs avant de rétablir les couleurs prévues.": "Release reservations in other colours before restoring the requested colours.",
+  "Réglage des couleurs du projet invalide.": "Invalid project colour option.",
+  "Réglage des couleurs d’un projet": "Change project colour option",
+  "Réservations de couleurs incohérentes pour ce projet.": "Inconsistent colour reservations for this project.",
+  "Utiliser toutes les couleurs de chaque référence, en conservant les couleurs prévues pour pouvoir revenir au mode officiel.": "Use all colours of each reference while retaining the requested colours to return to the official-colour mode.",
+  "{} (ignorée)": "{} (ignored)"
 }
