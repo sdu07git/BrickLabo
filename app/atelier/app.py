@@ -226,6 +226,7 @@ class MainWindow(QMainWindow):
         if self._closing:return
         for c in self.catalogues:
             if c.scope in ('stock','stock_sets','queue','history') or c.source=='ALT':c.reload()
+            elif c.isVisible():c.refresh_storage_locations()
         for panel in self.owned_panels:panel.refresh()
         if hasattr(self,'projects'):self.projects.refresh()
         self.update_undo()

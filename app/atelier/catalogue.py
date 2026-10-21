@@ -12,7 +12,7 @@ from PySide6.QtWidgets import (QWidget,QVBoxLayout,QHBoxLayout,QLabel,QLineEdit,
 from .ui_common import edit_item,async_task,pixmap,FlowLayout,HorizontalControls
 
 
-COLUMNS=[('stock_entered_at',tr('Dernier ajout au stock')),('comment',tr('Commentaire')),('architect_rank',tr('Classement')),('ldraw_model',tr('Modèles LDraw')),('ref',tr('Référence')),('name',tr('Nom')),('category',tr('Catégorie')),('has_print',tr('Sérigraphie')),('has_sticker',tr('Sticker')),('image',tr('Aperçu 3D / photo')),
+COLUMNS=[('storage_location',tr('Rangement')),('stock_entered_at',tr('Dernier ajout au stock')),('comment',tr('Commentaire')),('architect_rank',tr('Classement')),('ldraw_model',tr('Modèles LDraw')),('ref',tr('Référence')),('name',tr('Nom')),('category',tr('Catégorie')),('has_print',tr('Sérigraphie')),('has_sticker',tr('Sticker')),('image',tr('Aperçu 3D / photo')),
          ('source',tr('Source')),('year',tr('Année')),('chosen_color',tr('Couleur')),('chosen_quantity',tr('Quantité')),
          ('reserved_quantity',tr('Réservée aux projets')),('available_quantity',tr('Disponible pour construire')),('allocated_quantity',tr('Répartie dans les tiroirs')),('remaining_quantity',tr('Restant à ranger')),
          ('imported_at',tr('Date d’import')),('date',tr('Date')),('method',tr('Méthode')),('alternate',tr('Autres références')),('weight',tr('Poids (g)')),('dimensions',tr('Dimensions'))]
@@ -46,6 +46,9 @@ class Catalogue(QWidget):
         if source=='ALT' and not selection_only and not self.db.setting('alternative_comment_added_'+self.key,False):
             if 'comment' not in self.visible_columns:self.visible_columns.insert(self.visible_columns.index('image') if 'image' in self.visible_columns else len(self.visible_columns),'comment')
             self.db.set_setting(self.key,self.visible_columns);self.db.set_setting('alternative_comment_added_'+self.key,True)
+        if kind!='set' and scope!='stock_sets' and not selection_only and not self.db.setting('storage_location_added_'+self.key,False):
+            if 'storage_location' not in self.visible_columns:self.visible_columns.insert(self.visible_columns.index('name') if 'name' in self.visible_columns else len(self.visible_columns),'storage_location')
+            self.db.set_setting(self.key,self.visible_columns);self.db.set_setting('storage_location_added_'+self.key,True)
         outer=QVBoxLayout(self);outer.setContentsMargins(0,0,0,0);self.controls_scroll=QScrollArea();self.controls_scroll.setWidgetResizable(True);body=QWidget();layout=QVBoxLayout(body);layout.setContentsMargins(0,0,0,0);layout.setSizeConstraint(QVBoxLayout.SizeConstraint.SetMinimumSize);self.controls_scroll.setWidget(body);outer.addWidget(self.controls_scroll)
         self.filter_scroll=HorizontalControls();layout.addWidget(self.filter_scroll);filters=self.filter_scroll.row
         self.filter_scroll.setAccessibleName(tr('Recherche et filtres du catalogue'))
@@ -202,17 +205,24 @@ class Catalogue(QWidget):
         self.loading=True
         if self.selection_only:self.ids.clear()
         self.rows,self.total,n_pages,self.page=self.db.query(self.source,self.kind,self.search.text(),self.category.currentData() or '',self.scope,self.page,int(self.page_size.currentText()),self.sort,self.desc,self.hide_decorated,year=(self.year.currentData() or '') if self.year is not None else '',advanced=self.advanced,reference=self.reference_filter)
+        from .storage_presence import locations
+        storage_locations=locations(self.db,[r['id'] for r in self.rows]) if 'storage_location' in self.visible_columns else {}
         self.table.setColumnCount(len(self.visible_columns));self.table.setHorizontalHeaderLabels([dict(COLUMNS).get(k,k) for k in self.visible_columns]);self.table.setRowCount(len(self.rows))
         self.table.clearSelection()
         for r,row in enumerate(self.rows):
             row['_scope']=self.scope
             for c,key in enumerate(self.visible_columns):
                 value=row.get(key,'')
+                if key=='storage_location':
+                    from .storage_presence import describe
+                    value=describe(row,storage_locations.get(row['id'],[]),self.scope)
                 if key in ('has_print','has_sticker'):value=tr('Oui') if value else tr('Non')
                 if key=='imported_at' and not value:value=tr('Inconnue')
                 if key=='image':value=tr('Photo') if row.get('image') else tr('3D / photo à charger')
                 cell=QTableWidgetItem(str(value or ''));cell.setData(Qt.ItemDataRole.UserRole,row['id']);self.table.setItem(r,c,cell)
+                if key=='storage_location':cell.setToolTip(value)
             if self.row_key(row) in self.ids:self.table.selectionModel().select(self.table.model().index(r,0),QItemSelectionModel.SelectionFlag.Select|QItemSelectionModel.SelectionFlag.Rows)
+        if 'storage_location' in self.visible_columns:self.table.setColumnWidth(self.visible_columns.index('storage_location'),265)
         self.table.setColumnWidth(0,115)
         if 'stock_entered_at' in self.visible_columns:
             column=self.visible_columns.index('stock_entered_at');self.table.setColumnWidth(column,185)
@@ -253,8 +263,17 @@ class Catalogue(QWidget):
                 if 'chosen_color' in self.visible_columns:self.table.item(index,self.visible_columns.index('chosen_color')).setText(str(row['chosen_color']))
         if affected:self.load_thumbnails(affected)
 
+    def refresh_storage_locations(self):
+        if 'storage_location' not in self.visible_columns:return
+        from .storage_presence import locations,describe
+        entries=locations(self.db,[row['id'] for row in self.rows]);column=self.visible_columns.index('storage_location')
+        for index,row in enumerate(self.rows):
+            cell=self.table.item(index,column)
+            if cell is not None:
+                text=describe(row,entries.get(row['id'],[]),self.scope);cell.setText(text);cell.setToolTip(text)
+
     def showEvent(self,event):
-        super().showEvent(event);self.load_thumbnails()
+        super().showEvent(event);self.refresh_storage_locations();self.load_thumbnails()
 
     def hideEvent(self,event):
         self.thumbnail_token+=1
@@ -296,7 +315,7 @@ class Catalogue(QWidget):
 
     def sort_changed(self,col):
         key=self.visible_columns[col]
-        if key=='image':return
+        if key in ('image','storage_location'):return
         self.desc=not self.desc if self.sort==key else False;self.sort=key;self.page=1;self.reload()
 
     def column_menu(self,position=None):
