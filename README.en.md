@@ -23,6 +23,8 @@ The **Choose a set** window can be closed and reopened without “SetPicker alre
 
 **Deleting a project** releases its reservations and picked parts. Owned quantities remain unchanged; picked parts become available without a counted drawer assignment, without assuming they were physically returned to their former drawer. This also works after deleting the cabinet. **Return all picks** remains available to restore quantities to original drawers that still exist; parts without a drawer remain unassigned. Cabinet, drawer and project deletion can be undone, restoring picks and their locations.
 
+**Validation v0.1.69:** 1,043 full-suite tests passed under Qt/Linux and 16 targeted checks of the final unlocated-pick workflow. Eight views reviewed, including creation at 640 × 480 and unlocated picks in French and English. [Validation report](documentation/CONTROLE_v0.1.69.txt). Native Windows execution remains to be confirmed.
+
 ## Build a project with or without the set’s colours — v0.1.68
 
 **New construction project** and **My projects** now offer **Ignore colours**. Unchecked, requested colours are required; checked, all colours of each reference can be used. The option is saved per project. **Create a project with this set…** inherits the build search choice, and projects created from a comparison retain it too.

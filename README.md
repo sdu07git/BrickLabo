@@ -23,6 +23,8 @@ La fenêtre **Choisir un set** peut être fermée puis rouverte sans l’erreur 
 
 **Supprimer un projet** libère ses réservations et ses pièces prélevées. Les quantités possédées restent inchangées ; les pièces prises deviennent disponibles sans affectation comptée à un tiroir, sans supposer qu’elles ont été remises physiquement dans leur ancien tiroir. Cela fonctionne aussi après suppression du meuble. **Retourner tous les prélèvements** reste disponible pour remettre les quantités dans les tiroirs d’origine encore existants ; celles sans tiroir restent non affectées. La suppression d’un meuble, d’un tiroir ou d’un projet est annulable, avec restauration des prélèvements et de leurs emplacements.
 
+**Validation v0.1.69 :** 1 043 tests de la suite complète réussis sous Qt/Linux et 16 contrôles ciblés du suivi final sans tiroir. Huit vues examinées, dont la création à 640 × 480 et les prélèvements sans tiroir en français et anglais. [Rapport de contrôle](documentation/CONTROLE_v0.1.69.txt). Exécution native Windows à confirmer.
+
 ## Reconstruire un projet avec ou sans les couleurs du set — v0.1.68
 
 Dans **Nouveau projet de construction** et **Mes projets**, la case **Ignorer les couleurs** permet de choisir : décochée, respecter les couleurs prévues ; cochée, utiliser toutes les couleurs de chaque référence. Le réglage est conservé pour chaque projet. **Créer un projet avec ce set…**, depuis Sets réalisables, reprend le choix de la recherche ; les projets issus d’une comparaison le conservent aussi.
