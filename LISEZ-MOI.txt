@@ -1,4 +1,6 @@
-BrickLabo v0.1.67
+BrickLabo v0.1.68
+
+Nouveau : Nouveau projet de construction et Mes projets → Ignorer les couleurs. Choisir une reconstruction aux couleurs prévues ou avec toutes les couleurs des références disponibles. La recherche de sets réalisables transmet ce choix au projet. Les couleurs réellement réservées et prélevées restent suivies, sans changer le stock possédé.
 
 Nouveau : Mon rangement → Organiser le meuble → Aligner les meubles… → En grille. Choisir 4 meubles par rangée pour disposer 8 meubles en deux rangées de 4. L’aperçu suit les réglages ; Appliquer enregistre la disposition. Les contenus sont conservés et les positions s’annulent en une action.
 
