@@ -44,7 +44,7 @@ et le CRC ont été vérifiés, puis recompile le lanceur versionné avec MinGW-
 Elle contrôle l’exécutable AMD64, l’icône d’origine en sept tailles bitmap,
 les versions des dépendances et la concordance des sources dans les deux ZIP.
 Le contrôle de l’archive d’installation vérifie aussi la version v0.1.69.
-Les archives distribuées excluent Donnees, journaux, caches et fichiers de test.
+Les archives distribuées excluent Donnees, journaux, caches et fichiers temporaires.
 
 Limites
 Tests exécutés sous Python 3.12 / Qt 6.11.2 Linux. Lancement et interaction natifs
