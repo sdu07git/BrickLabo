@@ -1,41 +1,51 @@
 BrickLabo v0.1.69 — contrôle avant publication
 Base : main ea6fb6672fab5b136214622860f9eb35d62bfdd2 (v0.1.68).
 
-Fonctions
-- Case par projet « Compter aussi les pièces de mes sets possédés » : création,
-  modification, recalcul de la liste, du détail et du pourcentage.
-- Les composants suivis des sets sont déjà multipliés par les exemplaires.
-  Le calcul conserve leurs quantités personnalisées et les zéros enregistrés.
-- Apport des sets réparti après le vrac libre et les réservations du projet,
-  sans réutiliser une unité entre besoins de couleurs ignorées.
-- Aucun transfert au vrac, aucune réservation implicite de composants de set.
-  Leurs contributions sont évaluées séparément pour chaque projet. La comparaison
-  de reconstructions reste l’outil pour évaluer des constructions simultanées.
-- Anciens sets sans suivi : inventaire local complet si disponible, avec message.
-  Inventaire absent ou incomplet signalé. Les minifigurines restent exprimées
-  dans les mêmes unités que les besoins du projet.
-- Choix conservé au redémarrage, dans Annuler/Rétablir et les JSON de projets.
-  Les anciens projets et anciens JSON restent sur le vrac seul par défaut.
-- Depuis une recherche ou comparaison : reprise du choix d’inclure les sets.
-  Le projet utilise tous les sets possédés, indépendamment du filtre de recherche.
-- Déjà prélevées / Already picked : liste indépendante des besoins restants,
-  regroupement par tiroir, référence et couleur physique, aperçu partagé.
-- Fenêtre de prélèvement réactualisée après changement du stock, retour,
-  prélèvement et Annuler/Rétablir dans la fenêtre principale ; onglets relus.
-  Message explicatif sans prélèvement ; prélever s’applique à À prélever.
-- CSV : les prélèvements apparaissent une seule fois, même si plusieurs tiroirs
-  restent à visiter pour une même référence.
+Fonctions et conservation des données
+- Compter aussi les pièces de mes sets possédés : choix indépendant par projet,
+  conservé au redémarrage, dans Annuler/Rétablir et les sauvegardes de projets.
+- Vrac libre, quantités réellement suivies dans les sets, inventaires partiels,
+  exemplaires, couleurs exactes ou ignorées. Aucune unité comptée deux fois.
+  La colonne Apport des sets détaille ce qui complète le vrac disponible.
+- Les anciens projets restent sur le vrac seul par défaut ; la création depuis
+  une recherche ou comparaison transmet le choix d’inclure les sets. Le projet
+  compte tous les sets possédés indépendamment du filtre de cette recherche.
+- Les apports des sets sont évalués séparément pour chaque projet, sans transfert
+  ou réservation implicite de leurs composants. Les réservations utilisent le vrac.
+- Cas réel 30363-1 : inventaire Rebrickable embarqué, version 1. Sans vrac,
+  passage de 0 % à 100 % en activant les sets possédés ; vrac inchangé à zéro.
+  Les tests unitaires utilisent aussi un petit inventaire représentatif fictif.
+- Already picked / Déjà prélevées conserve les prélèvements complets, regroupe
+  leurs couleurs réelles par tiroir et référence et affiche l’aperçu partagé.
+  Fenêtres ouvertes actualisées après changement, retour et Annuler/Rétablir.
+  L’onglet vide explique l’enregistrement ; le CSV compte chaque unité une fois.
+- Supprimer un meuble ou un tiroir conserve les pièces et détache les prélèvements
+  dans un suivi persistant Aucun tiroir défini, avec référence, couleur, quantité
+  et réservation. Les nouveaux meubles ne récupèrent pas ces prélèvements même
+  si SQLite réutilise les anciens identifiants de tiroirs.
+- Supprimer un projet libère ses réservations et prélèvements sans changer le
+  stock possédé ni réaffecter les pièces prises aux anciens tiroirs. Les pièces
+  redeviennent disponibles sans affectation comptée. Aucun retour physique fictif.
+- Retourner les prélèvements rétablit les quantités des tiroirs encore existants ;
+  les pièces déjà sans tiroir restent non affectées. Les suppressions de meuble,
+  de tiroir et de projet sont annulables ; emplacements et prélèvements reviennent.
+- Sélecteur de sets : références nettoyées à la destruction native, fermeture
+  idempotente, pas de réutilisation d’un SetPicker détruit, ancien sélecteur
+  incapable d’effacer son remplaçant, photo tardive ignorée après destruction.
 
 Contrôles ciblés et visuels
-- 70 tests ciblés réussis après ajout des aides bilingues des deux contrôles :
-  test_button_help, test_project_set_stock, test_collection_workflows.
-- 26 nouveaux tests : 20 pour les sources des projets, 6 pour les prélèvements.
-- Cas 30363-1 reproduit avec un petit inventaire représentatif de test ; ses
-  quantités fictives ne prétendent pas décrire l’inventaire officiel du set.
-- Six vues Qt examinées : vrac seul et sets inclus à 1120 × 700, projet à
-  800 × 540, création à 640 × 480, Already picked vide puis complet à 900 × 600.
-- Aperçu LDraw réel contrôlé pour une 3005 rouge entièrement prélevée ; quantité
-  et référence restent visibles dans Already picked avec couleurs ignorées.
+- Suite complète : 1043 tests réussis en 697,170 s sous Qt/Linux.
+- 16 contrôles ciblés du fonctionnement final sans tiroir réussis en 2,759 s,
+  dont l’actualisation d’une pick list ouverte après suppression du meuble
+  et la restauration de son emplacement par Annuler.
+- 47 nouveaux cas : 20 sources de projets, 6 prélèvements, 5 sélecteur et photos,
+  16 suppressions, conservation du stock, quantités, couleurs, migration v0.1.68,
+  redémarrage, réutilisation des identifiants, Annuler/Rétablir et fenêtres ouvertes.
+- Huit vues Qt examinées : vrac seul et sets inclus à 1120 × 700, projet à
+  800 × 540, création à 640 × 480, Already picked vide puis complet à 900 × 600,
+  prélèvements sans tiroir en français et en anglais à 900 × 600.
+- Aperçu LDraw réel contrôlé pour une 3005 rouge entièrement prélevée, puis sans
+  tiroir après suppression du meuble. Référence, couleur et quantité sont conservées.
 - Aucun détecteur de référence par photo introduit dans cette version stable.
 
 Distribution
@@ -44,9 +54,8 @@ et le CRC ont été vérifiés, puis recompile le lanceur versionné avec MinGW-
 Elle contrôle l’exécutable AMD64, l’icône d’origine en sept tailles bitmap,
 les versions des dépendances et la concordance des sources dans les deux ZIP.
 Le contrôle de l’archive d’installation vérifie aussi la version v0.1.69.
-Les archives distribuées excluent Donnees, journaux, caches et fichiers temporaires.
+Les archives excluent Donnees, journaux, caches et fichiers temporaires.
 
 Limites
-Tests exécutés sous Python 3.12 / Qt 6.11.2 Linux. Lancement et interaction natifs
-Windows à confirmer sur un PC Windows. Aucun diagnostic du crash 0xc0000374
-sur le poste de l’utilisateur n’est déduit de ces contrôles.
+Tests sous Python 3.12 / Qt 6.11.2 Linux. Lancement et interaction natifs Windows
+à confirmer sur un PC Windows.
