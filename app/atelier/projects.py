@@ -4,7 +4,7 @@ from collections import Counter
 from .i18n import tr
 
 STATES = {'planned': 'À préparer', 'active': 'En cours', 'completed': 'Terminé'}
-TABLES = ('construction_projects', 'project_parts')
+TABLES = ('construction_projects', 'project_parts', 'project_color_reservations')
 
 
 def prepare(c):
@@ -18,6 +18,8 @@ def prepare(c):
         required INTEGER NOT NULL CHECK(required>0),reserved INTEGER NOT NULL DEFAULT 0 CHECK(reserved>=0 AND reserved<=required),
         PRIMARY KEY(project_id,item_id,color));
         CREATE INDEX IF NOT EXISTS idx_project_parts_stock ON project_parts(item_id,color);''')
+    from .project_colors import prepare as prepare_colors
+    prepare_colors(c)
     for table in TABLES:
         for operation in ('INSERT', 'UPDATE', 'DELETE'):
             c.execute('CREATE TRIGGER IF NOT EXISTS revision_' + table + '_' + operation.lower() + ' AFTER ' + operation + ' ON ' + table + ' BEGIN UPDATE stock_revision SET version=version+1 WHERE id=1; END')
@@ -30,7 +32,9 @@ def amount(value, minimum=0):
 
 
 def validate(c):
-    bad = c.execute('''SELECT p.item_id,p.color FROM project_parts p
+    from .project_colors import validate as validate_colors
+    validate_colors(c)
+    bad = c.execute('''SELECT p.item_id,p.color FROM project_stock_reservations p
         LEFT JOIN stock s ON s.item_id=p.item_id AND s.color=p.color
         GROUP BY p.item_id,p.color
         HAVING SUM(p.reserved)>COALESCE(MAX(s.quantity),0) LIMIT 1''').fetchone()
@@ -40,12 +44,13 @@ def validate(c):
 
 def free(c, item_id, color, own_project=None):
     stock = c.execute('SELECT quantity FROM stock WHERE item_id=? AND color=?', (item_id, str(color))).fetchone()
-    reserved = c.execute('SELECT COALESCE(SUM(reserved),0) FROM project_parts WHERE item_id=? AND color=? AND project_id<>?', (item_id, str(color), own_project or -1)).fetchone()[0]
+    reserved = c.execute('SELECT COALESCE(SUM(reserved),0) FROM project_stock_reservations WHERE item_id=? AND color=? AND project_id<>?', (item_id, str(color), own_project or -1)).fetchone()[0]
     return max(0, int(stock['quantity']) - int(reserved)) if stock else 0
 
 
-def create(db, name, parts=(), set_id=None, copies=1):
+def create(db, name, parts=(), set_id=None, copies=1, ignore_colors=False):
     from .action_history import change
+    if type(ignore_colors) is not bool:raise ValueError(tr('Réglage des couleurs du projet invalide.'))
     name = name.strip()
     if not name:
         raise ValueError(tr('Nom du projet obligatoire.'))
@@ -56,7 +61,7 @@ def create(db, name, parts=(), set_id=None, copies=1):
     with db.connect() as c, change(c, TABLES, tr('Création d’un projet')):
         if set_id is not None and not c.execute("SELECT 1 FROM items WHERE id=? AND kind='set'", (set_id,)).fetchone():
             raise ValueError(tr('Set introuvable.'))
-        identity = c.execute('INSERT INTO construction_projects(name,set_id,copies) VALUES(?,?,?)', (name, set_id, copies)).lastrowid
+        identity = c.execute('INSERT INTO construction_projects(name,set_id,copies,ignore_colors) VALUES(?,?,?,?)', (name, set_id, copies, int(ignore_colors))).lastrowid
         for (item_id, color), quantity in totals.items():
             amount(quantity, 1)
             if not c.execute("SELECT 1 FROM items WHERE id=? AND kind IN ('part','minifig')", (item_id,)).fetchone():
@@ -65,7 +70,7 @@ def create(db, name, parts=(), set_id=None, copies=1):
     return identity
 
 
-def from_set(db, set_id, copies=1, name='', spares=False, exclude_minifigs=False, allow_alternatives=False):
+def from_set(db, set_id, copies=1, name='', spares=False, exclude_minifigs=False, allow_alternatives=False, ignore_colors=False):
     amount(copies, 1)
     item = db.get_item(set_id)
     if not item or item['kind'] != 'set':
@@ -76,11 +81,11 @@ def from_set(db, set_id, copies=1, name='', spares=False, exclude_minifigs=False
     parts = [{'item_id': row['id'], 'color': str(row.get('chosen_color', '')),
               'quantity': int(row.get('chosen_quantity', 1)) * copies}
              for row in components if spares or not row.get('is_spare')]
-    if allow_alternatives:parts=equivalent_parts(db,parts)
-    return create(db, name or item['ref'] + ' · ' + item['name'], parts, set_id, copies)
+    if allow_alternatives:parts=equivalent_parts(db,parts,ignore_colors=ignore_colors)
+    return create(db, name or item['ref'] + ' · ' + item['name'], parts, set_id, copies, ignore_colors)
 
 
-def equivalent_parts(db, parts):
+def equivalent_parts(db, parts, ignore_colors=False):
     """Allocate free physical identities without reserving or changing ownership."""
     from .build_stock import InventoryReader
     from .alternative_catalogue import original
@@ -88,7 +93,7 @@ def equivalent_parts(db, parts):
     for row in parts:needs[(row['item_id'],str(row['color']))]+=row['quantity']
     assigned=Counter()
     with db.read() as c:
-        c.execute('BEGIN');reader=InventoryReader(c,allow_alternatives=True)
+        c.execute('BEGIN');reader=InventoryReader(c,ignore_colors=ignore_colors,allow_alternatives=True)
         rows=[dict(row) for row in c.execute('SELECT i.*,s.color,s.quantity AS stock_quantity FROM stock s JOIN items i ON i.id=s.item_id WHERE s.quantity>0')]
         available={(row['id'],str(row['color'])):free(c,row['id'],row['color']) for row in rows}
         def family(item,color):
@@ -96,12 +101,15 @@ def equivalent_parts(db, parts):
                 key=reader.canonical(item['source'],item['ref'],color)
                 return ('part',)+key if key[2] else None
             native=original(item)
-            return native['source'],native['kind'],native['ref'],str(color)
+            return native['source'],native['kind'],native['ref'],'*' if ignore_colors else str(color)
         # Keep each exact reference's free stock before assigning equivalents.
         remaining={}
         for key,quantity in needs.items():
-            take=min(quantity,available.get(key,0));available[key]=available.get(key,0)-take
-            assigned[key]+=take;remaining[key]=quantity-take
+            candidates=sorted((k for k in available if k[0]==key[0]),key=lambda k:(k!=key,k[1])) if ignore_colors else [key]
+            for candidate in candidates:
+                take=min(quantity,available.get(candidate,0));available[candidate]=available.get(candidate,0)-take
+                assigned[key]+=take;quantity-=take
+            remaining[key]=quantity
         for (identity,color),quantity in remaining.items():
             item=dict(c.execute('SELECT * FROM items WHERE id=?',(identity,)).fetchone());wanted=family(item,color)
             for row in rows:
@@ -157,13 +165,17 @@ def reserve(db, project_id, entries=None, quantity=None):
     with db.connect() as c, change(c, TABLES, tr('Réservation de pièces pour un projet')):
         if not c.execute('SELECT 1 FROM construction_projects WHERE id=?', (project_id,)).fetchone():
             raise ValueError(tr('Projet introuvable.'))
-        rows = list(c.execute('SELECT * FROM project_parts WHERE project_id=?', (project_id,)))
+        from .project_colors import enabled,reserve as reserve_colors
+        ignore_colors=enabled(c,project_id)
+        rows = list(c.execute('SELECT * FROM project_parts WHERE project_id=? ORDER BY item_id,color', (project_id,)))
         keys = {(row['item_id'], row['color']) for row in rows}
         if wanted is not None and not wanted <= keys:
             raise ValueError(tr('Les pièces du projet ont changé.'))
         for row in rows:
             if wanted is not None and (row['item_id'], row['color']) not in wanted:
                 continue
+            if ignore_colors:
+                reserve_colors(c,project_id,row,quantity);continue
             available = free(c, row['item_id'], row['color'], project_id)
             value = min(row['required'], available) if quantity is None else quantity
             if value > row['required'] or value > available:
@@ -176,30 +188,61 @@ def release(db, project_id):
     from .action_history import change
     with db.connect() as c, change(c, TABLES, tr('Libération des pièces d’un projet')):
         c.execute('UPDATE project_parts SET reserved=0 WHERE project_id=? AND reserved<>0', (project_id,))
+        c.execute('DELETE FROM project_color_reservations WHERE project_id=?',(project_id,))
 
 
 def delete(db, project_id):
     from .action_history import change
     with db.connect() as c, change(c, TABLES, tr('Suppression d’un projet')):
-        if c.execute('SELECT 1 FROM project_pick_rows WHERE project_id=? LIMIT 1',(project_id,)).fetchone():
+        if c.execute('SELECT 1 FROM project_physical_picks WHERE project_id=? LIMIT 1',(project_id,)).fetchone():
             raise ValueError(tr('Retourne les prélèvements avant de supprimer le projet.'))
         c.execute('DELETE FROM construction_projects WHERE id=?', (project_id,))
 
 
 def detail(db, project_id):
-    return db.rows('''SELECT i.*,p.project_id,p.color AS chosen_color,p.required,p.reserved,
+    with db.read() as c:
+        c.execute('BEGIN')
+        rows=[dict(r) for r in c.execute('''SELECT i.*,p.project_id,p.color AS chosen_color,p.required,p.reserved,
         COALESCE(s.quantity,0) AS chosen_quantity,
-        MAX(0,COALESCE(s.quantity,0)-(SELECT COALESCE(SUM(x.reserved),0) FROM project_parts x WHERE x.item_id=p.item_id AND x.color=p.color)) AS free_quantity,
-        MAX(0,p.required-p.reserved-MAX(0,COALESCE(s.quantity,0)-(SELECT COALESCE(SUM(x.reserved),0) FROM project_parts x WHERE x.item_id=p.item_id AND x.color=p.color))) AS missing
+        MAX(0,COALESCE(s.quantity,0)-(SELECT COALESCE(SUM(x.reserved),0) FROM project_stock_reservations x WHERE x.item_id=p.item_id AND x.color=p.color)) AS free_quantity,
+        MAX(0,p.required-p.reserved-MAX(0,COALESCE(s.quantity,0)-(SELECT COALESCE(SUM(x.reserved),0) FROM project_stock_reservations x WHERE x.item_id=p.item_id AND x.color=p.color))) AS missing
         FROM project_parts p JOIN items i ON i.id=p.item_id
         LEFT JOIN stock s ON s.item_id=p.item_id AND s.color=p.color
-        WHERE p.project_id=? ORDER BY i.source,i.ref,p.color''', (project_id,))
+        WHERE p.project_id=? ORDER BY i.source,i.ref,p.color''', (project_id,))]
+        from .project_colors import enabled,decorate_detail
+        if not rows:return rows
+        if enabled(c,project_id):return decorate_detail(c,project_id,rows)
+        for row in rows:row.update(ignore_colors=False,reserved_colors={row['chosen_color']:row['reserved']} if row['reserved'] else {})
+        return rows
 
 
 def list_projects(db):
-    return db.rows('''SELECT p.*,COALESCE(i.ref,'') AS set_ref,
+    with db.read() as c:
+        c.execute('BEGIN')
+        rows=[dict(r) for r in c.execute('''SELECT p.*,COALESCE(i.ref,'') AS set_ref,
         COALESCE((SELECT SUM(required) FROM project_parts x WHERE x.project_id=p.id),0) AS required,
         COALESCE((SELECT SUM(reserved) FROM project_parts x WHERE x.project_id=p.id),0) AS reserved,
-        COALESCE((SELECT SUM(MAX(0,x.required-x.reserved-MAX(0,COALESCE(s.quantity,0)-(SELECT COALESCE(SUM(z.reserved),0) FROM project_parts z WHERE z.item_id=x.item_id AND z.color=x.color))))
+        COALESCE((SELECT SUM(MAX(0,x.required-x.reserved-MAX(0,COALESCE(s.quantity,0)-(SELECT COALESCE(SUM(z.reserved),0) FROM project_stock_reservations z WHERE z.item_id=x.item_id AND z.color=x.color))))
         FROM project_parts x LEFT JOIN stock s ON s.item_id=x.item_id AND s.color=x.color WHERE x.project_id=p.id),0) AS missing
-        FROM construction_projects p LEFT JOIN items i ON i.id=p.set_id ORDER BY p.id DESC''')
+        FROM construction_projects p LEFT JOIN items i ON i.id=p.set_id ORDER BY p.id DESC''')]
+        from .project_colors import missing
+        for row in rows:
+            if row['ignore_colors']:row['missing']=missing(c,row['id'])
+        return rows
+
+
+def set_ignore_colors(db,project_id,value):
+    from .action_history import change
+    from .project_colors import enabled
+    if type(value) is not bool:raise ValueError(tr('Réglage des couleurs du projet invalide.'))
+    with db.connect() as c,change(c,TABLES,tr('Réglage des couleurs d’un projet')):
+        old=enabled(c,project_id)
+        if old==value:return
+        if value:
+            c.execute('''INSERT INTO project_color_reservations(project_id,item_id,color,stock_color,quantity)
+              SELECT project_id,item_id,color,color,reserved FROM project_parts WHERE project_id=? AND reserved>0''',(project_id,))
+        else:
+            if c.execute('SELECT 1 FROM project_color_reservations WHERE project_id=? AND color<>stock_color LIMIT 1',(project_id,)).fetchone():
+                raise ValueError(tr('Libère les réservations dans d’autres couleurs avant de rétablir les couleurs prévues.'))
+            c.execute('DELETE FROM project_color_reservations WHERE project_id=?',(project_id,))
+        c.execute('UPDATE construction_projects SET ignore_colors=? WHERE id=?',(int(value),project_id))

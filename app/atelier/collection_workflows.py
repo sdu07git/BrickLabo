@@ -167,13 +167,20 @@ def cancel_lot(db,identity):
 
 
 def validate_picks(c):
-    bad=c.execute('''SELECT p.project_id FROM project_pick_rows p JOIN project_parts r
-      ON r.project_id=p.project_id AND r.item_id=p.item_id AND r.color=p.color
-      GROUP BY p.project_id,p.item_id,p.color HAVING SUM(p.quantity)>MAX(r.reserved) LIMIT 1''').fetchone()
+    bad=c.execute('''SELECT p.project_id FROM project_physical_picks p JOIN project_parts r
+      ON r.project_id=p.project_id AND r.item_id=p.item_id AND r.color=p.need_color
+      GROUP BY p.project_id,p.item_id,p.need_color HAVING SUM(p.quantity)>MAX(r.reserved) LIMIT 1''').fetchone()
+    if not bad:
+        bad=c.execute('''SELECT k.project_id FROM project_physical_picks k JOIN construction_projects p ON p.id=k.project_id
+          WHERE (p.ignore_colors=0 AND k.color<>k.need_color) OR (p.ignore_colors=1 AND
+          (SELECT COALESCE(SUM(x.quantity),0) FROM project_physical_picks x WHERE x.project_id=k.project_id
+          AND x.item_id=k.item_id AND x.need_color=k.need_color AND x.color=k.color)>
+          (SELECT COALESCE(SUM(a.quantity),0) FROM project_color_reservations a WHERE a.project_id=k.project_id
+          AND a.item_id=k.item_id AND a.color=k.need_color AND a.stock_color=k.color)) LIMIT 1''').fetchone()
     if bad:raise ValueError(tr('Remets les pièces prélevées dans leurs tiroirs avant de libérer ou réduire la réservation.'))
     bad=c.execute('''WITH allocated AS (
       SELECT item_id,color,COALESCE(quantity,0) AS quantity FROM storage_contents
-      UNION ALL SELECT item_id,color,quantity FROM project_pick_rows)
+      UNION ALL SELECT item_id,color,quantity FROM project_physical_picks)
       SELECT a.item_id FROM allocated a LEFT JOIN stock s ON s.item_id=a.item_id AND s.color=a.color
       GROUP BY a.item_id,a.color HAVING SUM(a.quantity)>COALESCE(MAX(s.quantity),0) LIMIT 1''').fetchone()
     if bad:raise ValueError(tr('Les quantités dans les tiroirs et prélevées pour les projets dépassent le stock.'))
@@ -184,9 +191,12 @@ def pick_list(db,project_id):
     rows=[]
     with db.read() as c:
         c.execute('BEGIN')
+        from .project_colors import enabled,pick_list as color_pick_list
+        if not c.execute('SELECT 1 FROM construction_projects WHERE id=?',(project_id,)).fetchone():return []
+        if enabled(c,project_id):return color_pick_list(c,project_id)
         for part in c.execute('''SELECT p.*,i.ref,i.name,i.source FROM project_parts p JOIN items i ON i.id=p.item_id
           WHERE p.project_id=? ORDER BY i.ref,p.color''',(project_id,)).fetchall():
-            taken=c.execute('SELECT COALESCE(SUM(quantity),0) FROM project_pick_rows WHERE project_id=? AND item_id=? AND color=?',(project_id,part['item_id'],part['color'])).fetchone()[0]
+            taken=c.execute('SELECT COALESCE(SUM(quantity),0) FROM project_physical_picks WHERE project_id=? AND item_id=? AND need_color=?',(project_id,part['item_id'],part['color'])).fetchone()[0]
             needed=part['required']-taken
             for location in c.execute('''SELECT d.id AS drawer_id,d.col,d.row,w.name AS cabinet,p.quantity
               FROM storage_contents p JOIN storage_drawers d ON d.id=p.drawer_id JOIN storage_walls w ON w.id=d.wall_id
@@ -197,35 +207,46 @@ def pick_list(db,project_id):
     return rows
 
 
-def pick(db,project_id,item_id,color,drawer_id,quantity,expected=None):
+def pick(db,project_id,item_id,color,drawer_id,quantity,expected=None,need_color=None):
     from .action_history import change
-    number(quantity,1);color=str(color)
-    with db.connect() as c,change(c,('project_parts','storage_contents','project_pick_rows'),tr('Prélèvement de pièces pour un projet')):
-        part=c.execute('SELECT * FROM project_parts WHERE project_id=? AND item_id=? AND color=?',(project_id,item_id,color)).fetchone()
+    from .project_colors import enabled,reserve as reserve_colors
+    number(quantity,1);color=str(color);need_color=color if need_color is None else str(need_color)
+    with db.connect() as c,change(c,('project_parts','project_color_reservations','storage_contents','project_pick_rows','project_color_pick_rows'),tr('Prélèvement de pièces pour un projet')):
+        ignore=enabled(c,project_id)
+        part=c.execute('SELECT * FROM project_parts WHERE project_id=? AND item_id=? AND color=?',(project_id,item_id,need_color)).fetchone()
         location=c.execute('SELECT quantity FROM storage_contents WHERE drawer_id=? AND item_id=? AND color=?',(drawer_id,item_id,color)).fetchone()
         if not part or not location or location['quantity'] is None or location['quantity']<quantity or expected is not None and expected!=location['quantity']:
             raise ValueError(tr('Le contenu du tiroir a changé. Actualise la liste.'))
-        taken=c.execute('SELECT COALESCE(SUM(quantity),0) FROM project_pick_rows WHERE project_id=? AND item_id=? AND color=?',(project_id,item_id,color)).fetchone()[0]
+        taken=c.execute('SELECT COALESCE(SUM(quantity),0) FROM project_physical_picks WHERE project_id=? AND item_id=? AND need_color=?',(project_id,item_id,need_color)).fetchone()[0]
         if taken+quantity>part['required']:raise ValueError(tr('La quantité prélevée dépasse les besoins du projet.'))
-        from .projects import free
         reserve=max(part['reserved'],taken+quantity)
-        if reserve>free(c,item_id,color,project_id):raise ValueError(tr('Ces pièces sont réservées à un autre projet.'))
-        c.execute('UPDATE project_parts SET reserved=? WHERE project_id=? AND item_id=? AND color=?',(reserve,project_id,item_id,color))
+        if ignore:
+            taken_color=c.execute('SELECT COALESCE(SUM(quantity),0) FROM project_physical_picks WHERE project_id=? AND item_id=? AND need_color=? AND color=?',(project_id,item_id,need_color,color)).fetchone()[0]
+            reserve_colors(c,project_id,part,reserve,{color:taken_color+quantity})
+        else:
+            from .projects import free
+            if color!=need_color or reserve>free(c,item_id,color,project_id):raise ValueError(tr('Ces pièces sont réservées à un autre projet.'))
+            c.execute('UPDATE project_parts SET reserved=? WHERE project_id=? AND item_id=? AND color=?',(reserve,project_id,item_id,need_color))
         c.execute('UPDATE storage_contents SET quantity=quantity-? WHERE drawer_id=? AND item_id=? AND color=?',(quantity,drawer_id,item_id,color))
-        c.execute('''INSERT INTO project_pick_rows VALUES(?,?,?,?,?) ON CONFLICT(project_id,item_id,color,drawer_id)
-          DO UPDATE SET quantity=project_pick_rows.quantity+excluded.quantity''',(project_id,item_id,color,drawer_id,quantity))
+        if ignore:
+            c.execute('''INSERT INTO project_color_pick_rows VALUES(?,?,?,?,?,?) ON CONFLICT(project_id,item_id,color,stock_color,drawer_id)
+              DO UPDATE SET quantity=project_color_pick_rows.quantity+excluded.quantity''',(project_id,item_id,need_color,color,drawer_id,quantity))
+        else:
+            c.execute('''INSERT INTO project_pick_rows VALUES(?,?,?,?,?) ON CONFLICT(project_id,item_id,color,drawer_id)
+              DO UPDATE SET quantity=project_pick_rows.quantity+excluded.quantity''',(project_id,item_id,color,drawer_id,quantity))
 
 
 def return_picks(db,project_id):
     from .action_history import change
-    with db.connect() as c,change(c,('storage_contents','project_pick_rows'),tr('Retour des prélèvements dans les tiroirs')):
-        for row in c.execute('SELECT * FROM project_pick_rows WHERE project_id=?',(project_id,)).fetchall():
+    with db.connect() as c,change(c,('storage_contents','project_pick_rows','project_color_pick_rows'),tr('Retour des prélèvements dans les tiroirs')):
+        for row in c.execute('SELECT * FROM project_physical_picks WHERE project_id=?',(project_id,)).fetchall():
             existing=c.execute('SELECT quantity FROM storage_contents WHERE drawer_id=? AND item_id=? AND color=?',(row['drawer_id'],row['item_id'],row['color'])).fetchone()
             if existing and existing['quantity'] is None:raise ValueError(tr('Renseigne la quantité du tiroir avant de retourner les pièces.'))
             c.execute('''INSERT INTO storage_contents(drawer_id,item_id,color,quantity) VALUES(?,?,?,?)
               ON CONFLICT(drawer_id,item_id,color) DO UPDATE SET quantity=storage_contents.quantity+excluded.quantity''',
               (row['drawer_id'],row['item_id'],row['color'],row['quantity']))
         c.execute('DELETE FROM project_pick_rows WHERE project_id=?',(project_id,))
+        c.execute('DELETE FROM project_color_pick_rows WHERE project_id=?',(project_id,))
 
 
 def compare_builds(db,candidates,ignore_colors=False,exclude_minifigs=False,include_set_stock=True,allow_alternatives=False,excluded_entries=None):
@@ -259,7 +280,7 @@ def compare_builds(db,candidates,ignore_colors=False,exclude_minifigs=False,incl
         used=Counter()
         for index in best:used.update(choices[index]['required'])
         return dict(choices=choices,selected=best,available=available,remaining=available-used,stock_revision=c.execute('SELECT version FROM stock_revision WHERE id=1').fetchone()[0],
-                    warnings=list(reader.warnings) if hasattr(reader,'warnings') else [])
+                    warnings=list(reader.warnings) if hasattr(reader,'warnings') else [],ignore_colors=bool(ignore_colors))
 
 
 def correct_lot_quantity(db,lot_id,scope,item_id,color,quantity):
@@ -293,10 +314,12 @@ def correct_lot_quantity(db,lot_id,scope,item_id,color,quantity):
         follow_stock_additions(c,before)
 
 
-def create_comparison_projects(db,result,exclude_minifigs=False,allow_alternatives=False):
+def create_comparison_projects(db,result,exclude_minifigs=False,allow_alternatives=False,ignore_colors=None):
     """Prepare all requirements first; publish the selected projects atomically."""
     from .action_history import change
     from .projects import equivalent_parts
+    if ignore_colors is None:ignore_colors=result.get('ignore_colors',False)
+    if type(ignore_colors) is not bool:raise ValueError(tr('Réglage des couleurs du projet invalide.'))
     prepared=[]
     for index in result['selected']:
         choice=result['choices'][index];item=db.get_item(choice['id'])
@@ -304,14 +327,14 @@ def create_comparison_projects(db,result,exclude_minifigs=False,allow_alternativ
         components=db.components(item,strict=True,exclude_minifigs=exclude_minifigs)
         parts=[dict(item_id=p['id'],color=str(p.get('chosen_color','')),quantity=int(p.get('chosen_quantity',1))*choice['copies']) for p in components if not p.get('is_spare')]
         if not parts:raise ValueError(tr('Charge d’abord l’inventaire complet de ce set.'))
-        if allow_alternatives:parts=equivalent_parts(db,parts)
+        if allow_alternatives:parts=equivalent_parts(db,parts,ignore_colors=ignore_colors)
         prepared.append((item,choice['copies'],parts))
     identities=[]
     with db.connect() as c,change(c,('construction_projects','project_parts'),tr('Création des projets comparés')):
         for item,copies,parts in prepared:
             current=c.execute('SELECT source,ref FROM items WHERE id=?',(item['id'],)).fetchone()
             if not current or (current['source'],current['ref'])!=(item['source'],item['ref']):raise ValueError(tr('Les références des sets ont changé. Relance la comparaison.'))
-            identity=c.execute('INSERT INTO construction_projects(name,set_id,copies) VALUES(?,?,?)',(item['ref']+' · '+item['name'],item['id'],copies)).lastrowid
+            identity=c.execute('INSERT INTO construction_projects(name,set_id,copies,ignore_colors) VALUES(?,?,?,?)',(item['ref']+' · '+item['name'],item['id'],copies,int(ignore_colors))).lastrowid
             totals=Counter()
             for part in parts:totals[(part['item_id'],part['color'])]+=number(part['quantity'],1)
             c.executemany('INSERT INTO project_parts(project_id,item_id,color,required) VALUES(?,?,?,?)',[(identity,k[0],k[1],number(v,1)) for k,v in totals.items()]);identities.append(identity)

@@ -103,7 +103,7 @@ class InventoryReader:
         return counts,complete and (bool(counts) or self.exclude_minifigs)
     def stock(self):
         available=Counter();ignored=0;reserved=Counter()
-        for row in self.c.execute('SELECT item_id,color,SUM(reserved) AS reserved FROM project_parts GROUP BY item_id,color'):
+        for row in self.c.execute('SELECT item_id,color,SUM(reserved) AS reserved FROM project_stock_reservations GROUP BY item_id,color'):
             reserved[(row['item_id'],str(row['color']))]+=int(row['reserved'])
         def add(row,quantity):
             nonlocal ignored
@@ -296,13 +296,13 @@ class BuildStockDialog(QDialog):
             item=self.results[index]
         item=self.db.get_item(item['id'])
         if not item:return
-        note=tr('La recherche ignore les couleurs. Le projet utilise les couleurs exactes de l’inventaire du set.') if self.last_ignore else ''
+        note=tr('Le projet reprend le choix Ignorer les couleurs de cette recherche.') if self.last_ignore else ''
         if getattr(self,'last_alternatives',False):note+=' '+tr('Les alternatives équivalentes libres du vrac peuvent être utilisées. Pour réserver des pièces d’un set possédé, transfère d’abord son inventaire dans le vrac.')
         from .windows import application_owner
         owner=application_owner(self)
-        if owner is not self and hasattr(owner,'create_project'):return owner.create_project(item,self.last_copies,self.last_exclude_minifigs,note)
+        if owner is not self and hasattr(owner,'create_project'):return owner.create_project(item,self.last_copies,self.last_exclude_minifigs,note,ignore_colors=self.last_ignore)
         from .projects_panel import ProjectsPanel,NewProjectDialog
-        panel=ProjectsPanel(self.db,self.engine,self);panel.hide();window=NewProjectDialog(panel,item,self.last_copies,self.last_exclude_minifigs,note)
+        panel=ProjectsPanel(self.db,self.engine,self);panel.hide();window=NewProjectDialog(panel,item,self.last_copies,self.last_exclude_minifigs,note,ignore_colors=self.last_ignore)
         show_window(window,self,lambda *_:panel.deleteLater());return window
 
     def show_alternates(self,item):

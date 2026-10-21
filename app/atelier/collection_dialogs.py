@@ -264,12 +264,12 @@ class PickListDialog(WorkflowDialog):
     def visible_parts(self):return [preview_item(self.db,self.rows[row_index(self.table,n)]['item_id'],self.rows[row_index(self.table,n)]['color']) for n in range(self.table.rowCount())]
     def refresh(self):
         self.rows=work.pick_list(self.db,self.project_id)
-        fill_table(self.table,[(r['cabinet'],str(r['col'])+'/'+str(r['row']) if r['drawer_id'] else '',r['source'],r['ref'],color_label(dict(r,chosen_color=r['color']),self.palette),r['suggested'],r['taken'],tr('3D / photo à charger')) for r in self.rows])
+        fill_table(self.table,[(r['cabinet'],str(r['col'])+'/'+str(r['row']) if r['drawer_id'] else '',r['source'],r['ref'],tr('Toutes les couleurs') if r.get('ignore_colors') and not r['drawer_id'] else color_label(dict(r,chosen_color=r['color']),self.palette),r['suggested'],r['taken'],tr('3D / photo à charger')) for r in self.rows])
         self.taken_rows=self.db.rows('''SELECT w.name AS cabinet,d.col,d.row,i.source,i.ref,p.color,p.quantity
-          FROM project_pick_rows p JOIN storage_drawers d ON d.id=p.drawer_id JOIN storage_walls w ON w.id=d.wall_id
+          FROM project_physical_picks p JOIN storage_drawers d ON d.id=p.drawer_id JOIN storage_walls w ON w.id=d.wall_id
           JOIN items i ON i.id=p.item_id WHERE p.project_id=? ORDER BY w.y,w.x,d.row,d.col,i.ref,p.color''',(self.project_id,))
         fill_table(self.taken_table,[(r['cabinet'],str(r['col'])+'/'+str(r['row']),r['source'],r['ref'],color_label(dict(r,chosen_color=r['color']),self.palette),r['quantity']) for r in self.taken_rows])
-        total=self.db.rows('SELECT COALESCE(SUM(quantity),0) AS n FROM project_pick_rows WHERE project_id=?',(self.project_id,))[0]['n']
+        total=self.db.rows('SELECT COALESCE(SUM(quantity),0) AS n FROM project_physical_picks WHERE project_id=?',(self.project_id,))[0]['n']
         self.status.setText(tf('{0} pièce(s) prélevée(s) pour ce projet. Les lignes sans emplacement compté ne peuvent pas être prélevées ici.',total))
         if self.thumbs:self.thumbs.reset()
     def take(self):
@@ -280,14 +280,14 @@ class PickListDialog(WorkflowDialog):
         qty,ok=QInputDialog.getInt(self,tr('Prélèvement'),tr('Quantité réellement prise'),row['suggested'],1,row['suggested'])
         if not ok:return
         def run():
-            work.pick(self.db,self.project_id,row['item_id'],row['color'],row['drawer_id'],qty,row['quantity']);self.refresh();notify_changed(self)
+            work.pick(self.db,self.project_id,row['item_id'],row['color'],row['drawer_id'],qty,row['quantity'],need_color=row.get('need_color',row['color']));self.refresh();notify_changed(self)
         safe(self,run)
     def return_all(self):
         if QMessageBox.question(self,tr('Retour des pièces'),tr('Confirme que toutes les pièces prélevées ont été remises dans leurs tiroirs d’origine.'))!=QMessageBox.StandardButton.Yes:return
         def run():work.return_picks(self.db,self.project_id);self.refresh();notify_changed(self)
         safe(self,run)
     def export(self):
-        rows=[(r['cabinet'],str(r['col'])+'/'+str(r['row']) if r['drawer_id'] else '',r['source'],r['ref'],r['color'],r['suggested'],r['taken']) for r in self.rows]
+        rows=[(r['cabinet'],str(r['col'])+'/'+str(r['row']) if r['drawer_id'] else '',r['source'],r['ref'],'*' if r.get('ignore_colors') and not r['drawer_id'] else r['color'],r['suggested'],r['taken']) for r in self.rows]
         rows.extend((r['cabinet'],str(r['col'])+'/'+str(r['row']),r['source'],r['ref'],r['color'],0,r['quantity']) for r in self.taken_rows)
         export_rows(self,[tr('Meuble'),tr('Tiroir'),tr('Source'),tr('Référence'),tr('Couleur'),tr('À prendre'),tr('Déjà prélevée')],rows,'BrickLabo_prelevements.csv')
     def done(self,result):
@@ -384,7 +384,7 @@ class BuildComparisonDialog(WorkflowDialog):
         # Projects store requirements, without silently reserving set stock.
         if QMessageBox.question(self,tr('Projets'),tr('Créer les projets retenus sans réserver ni déplacer les pièces ?'))!=QMessageBox.StandardButton.Yes:return
         def run():
-            work.create_comparison_projects(self.db,self.result,self.exclude.isChecked(),self.alternatives.isChecked())
+            work.create_comparison_projects(self.db,self.result,self.exclude.isChecked(),self.alternatives.isChecked(),ignore_colors=self.ignore.isChecked())
             notify_changed(self);self.buttons[3].setEnabled(False)
         safe(self,run)
     def done(self,result):self.closed=True;super().done(result)

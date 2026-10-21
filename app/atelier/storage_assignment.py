@@ -103,7 +103,7 @@ def _state(c,wall_id,entries=None,from_catalogue=False):
             'drawers':drawers,
             'links':[dict(r) for r in c.execute('SELECT p.*,i.category,i.source,i.ref,i.name FROM storage_contents p JOIN items i ON i.id=p.item_id ORDER BY p.drawer_id,p.item_id,p.color')],
             'stock':[dict(r) for r in c.execute("SELECT i.id,i.source,i.ref,i.name,i.category,s.color,s.quantity FROM stock s JOIN items i ON i.id=s.item_id WHERE i.kind IN ('part','minifig') AND s.quantity>0 ORDER BY i.id,s.color")]}
-    state['picked']=[dict(r) for r in c.execute('SELECT project_id,item_id,color,drawer_id,quantity FROM project_pick_rows ORDER BY project_id,item_id,color,drawer_id')]
+    state['picked']=[dict(r) for r in c.execute('SELECT project_id,item_id,color,drawer_id,quantity FROM project_physical_picks ORDER BY project_id,item_id,color,drawer_id')]
     if from_catalogue:
         identities=sorted({identity for identity,color in entries or []});items=[]
         for start in range(0,len(identities),900):
