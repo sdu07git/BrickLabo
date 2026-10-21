@@ -1137,8 +1137,8 @@
       "en": "Moves the quantity actually taken from its drawer to the project and reserves it without reducing ownership."
     },
     "Retourner tous les prélèvements": {
-      "fr": "Remet les quantités du projet dans leurs tiroirs d’origine après confirmation du retour physique.",
-      "en": "Returns project quantities to their original drawers after confirming the physical return."
+      "fr": "Retourne les pièces aux tiroirs existants après confirmation. Celles sans tiroir restent dans le stock sans affectation.",
+      "en": "Returns parts to existing drawers after confirmation. Parts without a drawer stay in stock without an assignment."
     },
     "Exporter la liste…": {
       "fr": "Exporte les adresses des tiroirs, les références, les couleurs et les quantités à prendre ou déjà prélevées.",
