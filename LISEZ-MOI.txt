@@ -1,4 +1,6 @@
-BrickLabo v0.1.66
+BrickLabo v0.1.67
+
+Nouveau : Mon rangement → Organiser le meuble → Aligner les meubles… → En grille. Choisir 4 meubles par rangée pour disposer 8 meubles en deux rangées de 4. L’aperçu suit les réglages ; Appliquer enregistre la disposition. Les contenus sont conservés et les positions s’annulent en une action.
 
 Nouveau : la colonne Rangement des catalogues de pièces et du stock indique Aucun tiroir, Déjà rangée et les adresses associées. Le survol donne les couleurs et quantités renseignées. Plusieurs références d’un même tiroir sont reconnues séparément si elles figurent dans son contenu. Cette version ne contient pas de reconnaissance par photo.
 

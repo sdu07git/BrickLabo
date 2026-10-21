@@ -1,8 +1,18 @@
-# BrickLabo — v0.1.66
+# BrickLabo — v0.1.67
 
-Logiciel de bureau Windows pour les catalogues LEGO, les stocks, les recherches de constructions et les étiquettes. Cette version reprend la v0.1.65 publiée, issue de la v0.1.28 d’origine.
+Logiciel de bureau Windows pour les catalogues LEGO, les stocks, les recherches de constructions et les étiquettes. Cette version reprend la v0.1.66 publiée, issue de la v0.1.28 d’origine.
 
-**Téléchargements v0.1.66 :** [version complète Windows](https://github.com/sdu07git/BrickLabo/releases/download/v0.1.66/BrickLabo_v0.1.66_Complet.zip) · [sources avec ressources](https://github.com/sdu07git/BrickLabo/releases/download/v0.1.66/BrickLabo_v0.1.66_Sources.zip) · [notes de release](https://github.com/sdu07git/BrickLabo/releases/tag/v0.1.66).
+**Téléchargements v0.1.67 :** [version complète Windows](https://github.com/sdu07git/BrickLabo/releases/download/v0.1.67/BrickLabo_v0.1.67_Complet.zip) · [sources avec ressources](https://github.com/sdu07git/BrickLabo/releases/download/v0.1.67/BrickLabo_v0.1.67_Sources.zip) · [notes de release](https://github.com/sdu07git/BrickLabo/releases/tag/v0.1.67).
+
+## Meubles sur plusieurs rangées — v0.1.67
+
+Dans **Mon rangement → Organiser le meuble → Aligner les meubles…**, choisir **En grille**, puis **Meubles par rangée**. Avec 8 meubles et 4 par rangée, la disposition comporte 4 meubles en haut et 4 en dessous. Avec 12 meubles, le même réglage donne 3 rangées de 4 ; une dernière rangée incomplète reste possible.
+
+L’aperçu s’actualise quand le nombre ou l’écart change. Les meubles gardent leur ordre actuel, de gauche à droite puis de haut en bas, à partir du premier meuble. Chaque colonne tient compte du meuble le plus large et chaque rangée du plus haut pour éviter les chevauchements. Les numéros restent lisibles et le survol montre le nom complet. **Appliquer** enregistre la disposition ; **Annuler** la ferme sans modification. Une seule action **Annuler la dernière action** restaure ensuite les positions précédentes. Les alignements horizontal et vertical restent disponibles.
+
+Les contenus des tiroirs, leurs quantités et les stocks sont conservés. Si un meuble change pendant l’ouverture de la fenêtre, rouvrir l’alignement avant de l’appliquer. Les fonctions de la v0.1.66 et la colonne Rangement sont conservées. La reconnaissance par photo reste absente de cette version stable.
+
+**Validation v0.1.67 :** 184 tests ciblés réussis sous Qt/Linux, dont 9 nouveaux contrôles de grille. Aperçus 8 et 12 meubles et dimensions mixtes examinés à 660 × 530 et 480 × 460. [Rapport de contrôle](documentation/CONTROLE_v0.1.67.txt). Exécution native Windows à confirmer.
 
 ## Repérer les pièces déjà rangées — v0.1.66
 
