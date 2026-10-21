@@ -18,9 +18,11 @@ TABLES = {
     'storage_contents': ('drawer_id', 'item_id', 'color'),
     'construction_projects': ('id',),
     'project_parts': ('project_id', 'item_id', 'color'),
+    'project_color_reservations': ('project_id','item_id','color','stock_color'),
     'purchase_lots': ('id',),
     'purchase_lot_entries': ('lot_id','scope','item_id','color'),
     'project_pick_rows': ('project_id','item_id','color','drawer_id'),
+    'project_color_pick_rows': ('project_id','item_id','color','stock_color','drawer_id'),
 }
 ORDER = {table: index for index, table in enumerate(TABLES)}
 
@@ -178,6 +180,10 @@ def restore(db, redo=False):
         if payload.get('version') != 1:
             raise ValueError(tr('Format d’action inconnu.'))
         changes = payload['changes']
+        for change in changes:
+            if change['table']=='construction_projects':
+                for state in ('before','after'):
+                    if change[state] is not None:change[state].setdefault('ignore_colors',0)
         source, target = ('before', 'after') if redo else ('after', 'before')
         if identities(c, changes) != payload['items']:
             raise ValueError(tr('Les références ont changé ; cette action ne peut pas être restaurée.'))

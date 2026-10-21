@@ -251,8 +251,8 @@ class Database:
             extra+=",s.id AS entry_id,s.color AS chosen_color,s.quantity AS chosen_quantity,"+('s.date AS date,s.method AS method' if scope=='history' else 's.added AS date')
             if scope in ('stock','stock_sets'):extra+=",datetime(COALESCE(NULLIF(s.last_added,''),s.added),'localtime') AS stock_entered_at"
             if scope=='stock':
-                reserved='COALESCE((SELECT SUM(p.reserved) FROM project_parts p WHERE p.item_id=i.id AND p.color=s.color),0)'
-                allocated='(COALESCE((SELECT SUM(p.quantity) FROM storage_contents p WHERE p.item_id=i.id AND p.color=s.color),0)+COALESCE((SELECT SUM(p.quantity) FROM project_pick_rows p WHERE p.item_id=i.id AND p.color=s.color),0))'
+                reserved='COALESCE((SELECT SUM(p.reserved) FROM project_stock_reservations p WHERE p.item_id=i.id AND p.color=s.color),0)'
+                allocated='(COALESCE((SELECT SUM(p.quantity) FROM storage_contents p WHERE p.item_id=i.id AND p.color=s.color),0)+COALESCE((SELECT SUM(p.quantity) FROM project_physical_picks p WHERE p.item_id=i.id AND p.color=s.color),0))'
                 extra+=','+reserved+' AS reserved_quantity,MAX(0,s.quantity-'+reserved+') AS available_quantity,'+allocated+' AS allocated_quantity,MAX(0,s.quantity-'+allocated+') AS remaining_quantity'
         allowed={'ref','name','category','year','date','chosen_quantity','chosen_color','source','method','has_print','has_sticker','architect_rank','ldraw_model','imported_at','comment'}
         if scope in ('stock','stock_sets'):allowed.add('stock_entered_at')

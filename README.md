@@ -1,8 +1,20 @@
-# BrickLabo — v0.1.67
+# BrickLabo — v0.1.68
 
-Logiciel de bureau Windows pour les catalogues LEGO, les stocks, les recherches de constructions et les étiquettes. Cette version reprend la v0.1.66 publiée, issue de la v0.1.28 d’origine.
+Logiciel de bureau Windows pour les catalogues LEGO, les stocks, les recherches de constructions et les étiquettes. Cette version reprend la v0.1.67 publiée, issue de la v0.1.28 d’origine.
 
-**Téléchargements v0.1.67 :** [version complète Windows](https://github.com/sdu07git/BrickLabo/releases/download/v0.1.67/BrickLabo_v0.1.67_Complet.zip) · [sources avec ressources](https://github.com/sdu07git/BrickLabo/releases/download/v0.1.67/BrickLabo_v0.1.67_Sources.zip) · [notes de release](https://github.com/sdu07git/BrickLabo/releases/tag/v0.1.67).
+**Téléchargements v0.1.68 :** [version complète Windows](https://github.com/sdu07git/BrickLabo/releases/download/v0.1.68/BrickLabo_v0.1.68_Complet.zip) · [sources avec ressources](https://github.com/sdu07git/BrickLabo/releases/download/v0.1.68/BrickLabo_v0.1.68_Sources.zip) · [notes de release](https://github.com/sdu07git/BrickLabo/releases/tag/v0.1.68).
+
+## Reconstruire un projet avec ou sans les couleurs du set — v0.1.68
+
+Dans **Nouveau projet de construction** et **Mes projets**, la case **Ignorer les couleurs** permet de choisir : décochée, respecter les couleurs prévues ; cochée, utiliser toutes les couleurs de chaque référence. Le réglage est conservé pour chaque projet. **Créer un projet avec ce set…**, depuis Sets réalisables, reprend le choix de la recherche ; les projets issus d’une comparaison le conservent aussi.
+
+Les couleurs prévues restent enregistrées et sont signalées comme ignorées dans le tableau. Les quantités disponibles sont réparties entre les besoins de même référence ; une pièce n’est pas comptée deux fois. Le récapitulatif affiche le pourcentage disponible. Exemple : un besoin de 30 pièces bleues et 10 rouges, avec 20 rouges et 20 vertes en vrac, passe de 25 % à 100 % disponibles en ignorant les couleurs.
+
+Les réservations suivent les références et couleurs réellement utilisées, sans changer les quantités possédées. Le survol de la couleur montre les couleurs réservées ; la liste de prélèvement présente les couleurs et tiroirs réels. Les autres projets et les recherches de constructions voient les réservations correspondantes. Pour rétablir les couleurs prévues, libérer d’abord les réservations d’autres couleurs ; retourner les prélèvements avant de libérer des pièces déjà prises.
+
+Le réglage et les réservations sont conservés au redémarrage, dans les sauvegardes et par Annuler/Rétablir. La création reste sans réservation automatique. Les projets utilisent le stock en vrac ; pour réserver les composants d’un set possédé, transférer son inventaire au vrac. Les autres fonctions de la v0.1.67 restent disponibles, dont les meubles en grille et la colonne Rangement.
+
+**Validation v0.1.68 :** 996 tests de la suite complète réussis sous Qt/Linux, puis 25 contrôles ciblés incluant la migration d’une base v0.1.67 avec réservations, prélèvements et historique d’annulation. Cinq vues examinées, dont une fenêtre de création à 640 × 480. [Rapport de contrôle](documentation/CONTROLE_v0.1.68.txt). Exécution native Windows à confirmer.
 
 ## Meubles sur plusieurs rangées — v0.1.67
 

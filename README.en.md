@@ -1,8 +1,20 @@
-# BrickLabo — v0.1.67
+# BrickLabo — v0.1.68
 
-Windows desktop software for LEGO catalogues, stock, construction searches and labels. This version continues the published v0.1.66, based on the original v0.1.28.
+Windows desktop software for LEGO catalogues, stock, construction searches and labels. This version continues the published v0.1.67, based on the original v0.1.28.
 
-**Downloads v0.1.67 :** [complete Windows package](https://github.com/sdu07git/BrickLabo/releases/download/v0.1.67/BrickLabo_v0.1.67_Complet.zip) · [sources with resources](https://github.com/sdu07git/BrickLabo/releases/download/v0.1.67/BrickLabo_v0.1.67_Sources.zip) · [release notes](https://github.com/sdu07git/BrickLabo/releases/tag/v0.1.67).
+**Downloads v0.1.68 :** [complete Windows package](https://github.com/sdu07git/BrickLabo/releases/download/v0.1.68/BrickLabo_v0.1.68_Complet.zip) · [sources with resources](https://github.com/sdu07git/BrickLabo/releases/download/v0.1.68/BrickLabo_v0.1.68_Sources.zip) · [release notes](https://github.com/sdu07git/BrickLabo/releases/tag/v0.1.68).
+
+## Build a project with or without the set’s colours — v0.1.68
+
+**New construction project** and **My projects** now offer **Ignore colours**. Unchecked, requested colours are required; checked, all colours of each reference can be used. The option is saved per project. **Create a project with this set…** inherits the build search choice, and projects created from a comparison retain it too.
+
+Requested colours remain recorded and are marked as ignored in the parts table. Availability is shared across requirements of the same reference so a stock unit is counted once. The summary shows the available percentage. A project needing 30 blue and 10 red parts, with 20 red and 20 green in loose stock, goes from 25% to 100% available when colours are ignored.
+
+Reservations track actual physical references and colours without changing ownership. Hover over the colour for the reserved colours; pick lists show real drawer colours. Other projects and build searches account for these reservations. Release other-colour reservations before restoring requested colours, and return taken pieces before releasing their reservations.
+
+The choice and reservations survive restart, backups and undo/redo. Creating a project does not reserve automatically. Projects use loose stock; transfer an owned set’s inventory to loose stock before reserving its components. All v0.1.67 features, including cabinet grids and the Storage column, remain available.
+
+**Validation v0.1.68:** all 996 tests passed under Qt/Linux, followed by 25 targeted checks including migration from a v0.1.67 database with reservations, picks and undo history. Five views reviewed, including project creation at 640 × 480. [Validation report](documentation/CONTROLE_v0.1.68.txt). Native Windows execution remains unconfirmed.
 
 ## Cabinets across multiple rows — v0.1.67
 
