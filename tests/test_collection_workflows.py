@@ -97,7 +97,7 @@ class CollectionTests(Fixture):
         self.assertEqual(work.pick_list(self.db,pid)[0]['suggested'],2)
         with self.db.read() as c:self.assertEqual(available(c,self.part,'4'),0)
         with self.assertRaises(ValueError):projects.release(self.db,pid)
-        with self.assertRaises(ValueError):projects.delete(self.db,pid)
+        projects.delete(self.db,pid);self.assertFalse(projects.list_projects(self.db));self.db.undo_last_action()
         work.return_picks(self.db,pid);self.assertFalse(self.db.rows('SELECT * FROM project_pick_rows'))
         self.assertEqual(self.db.rows('SELECT quantity FROM storage_contents')[0]['quantity'],40)
         self.db.undo_last_action();self.assertEqual(self.db.rows('SELECT quantity FROM project_pick_rows')[0]['quantity'],4)
@@ -119,8 +119,10 @@ class CollectionTests(Fixture):
         wall,drawer=self.cabinet();pid=projects.create(self.db,'Projet',[dict(item_id=self.part,color='4',quantity=4)])
         work.pick(self.db,pid,self.part,'4',drawer,4)
         d=self.keep(PickListDialog(self.db,pid));self.assertEqual(d.table.rowCount(),0);self.assertEqual(d.taken_table.item(0,3).text(),'3005')
-        with self.assertRaises(Exception):walls.delete_wall(self.db,wall)
-        self.assertTrue(self.db.rows('SELECT * FROM storage_walls'))
+        walls.delete_wall(self.db,wall);d.refresh()
+        self.assertFalse(self.db.rows('SELECT * FROM storage_walls'))
+        self.assertEqual(d.taken_table.item(0,0).text(),'Aucun tiroir défini')
+        self.assertEqual(d.taken_table.item(0,5).text(),'4')
     def test_pick_dialog_records_partial_then_completed_picks_in_already_picked(self):
         from PySide6.QtWidgets import QInputDialog
         wall,drawer=self.cabinet();pid=projects.create(self.db,'Projet',[dict(item_id=self.part,color='4',quantity=6)])
