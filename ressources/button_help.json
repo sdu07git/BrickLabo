@@ -1183,6 +1183,14 @@
     "Ouvrir Mon rangement": {
       "fr": "Ouvre Mon rangement pour créer un meuble et ses tiroirs.",
       "en": "Opens My storage to create a cabinet and its drawers."
+    },
+    "Compter aussi les pièces de mes sets possédés": {
+      "fr": "Ajoute les pièces des sets possédés au calcul de ce projet, sans les transférer dans le vrac.",
+      "en": "Adds parts from owned sets to this project’s availability without transferring them to loose stock."
+    },
+    "Réserver le vrac disponible": {
+      "fr": "Réserve le vrac libre pour ce projet, dans la limite de ses besoins.",
+      "en": "Reserves free loose stock for this project up to its requirements."
     }
   },
   "contexts": {
