@@ -1762,5 +1762,17 @@
   "Réglage des couleurs d’un projet": "Change project colour option",
   "Réservations de couleurs incohérentes pour ce projet.": "Inconsistent colour reservations for this project.",
   "Utiliser toutes les couleurs de chaque référence, en conservant les couleurs prévues pour pouvoir revenir au mode officiel.": "Use all colours of each reference while retaining the requested colours to return to the official-colour mode.",
-  "{} (ignorée)": "{} (ignored)"
+  "{} (ignorée)": "{} (ignored)",
+  "Réglage du stock du projet invalide.": "Invalid project stock setting.",
+  "Réglage du stock d’un projet": "Project stock setting",
+  "Compter aussi les pièces de mes sets possédés": "Also count parts from my owned sets",
+  "Ajouter au calcul les inventaires de tous les sets de Mon stock set, sans les transférer dans le vrac. Les réservations et prélèvements utilisent le vrac.": "Include the inventories of all sets in My set stock in the calculation without transferring them to loose stock. Reservations and picking use loose stock.",
+  "Libre en vrac": "Free in loose stock",
+  "Apport des sets": "From owned sets",
+  "Pièces des sets possédés utilisées pour compléter le besoin après le vrac libre et les réservations de ce projet.": "Parts from owned sets used to cover requirements after free loose stock and this project’s reservations.",
+  "Réserver le vrac disponible": "Reserve available loose stock",
+  "Le calcul utilise le vrac libre et, si la case est cochée, les pièces de tous les sets possédés. Les sets restent intacts ; leur apport est une possibilité de construction, sans réservation entre projets. Les réservations et prélèvements utilisent uniquement le vrac. Un projet terminé garde ses réservations jusqu’à leur libération.": "The calculation uses free loose stock and, when checked, parts from all owned sets. Sets stay intact; their contribution is a build possibility, without reservations across projects. Reservations and picking use loose stock only. Completed projects keep their reservations until released.",
+  "Quantité présente dans les sets possédés pour cette référence et ce choix de couleurs : {}": "Quantity in owned sets for this reference and colour choice: {}",
+  "Aucune pièce à prélever. Consulte Déjà prélevées pour les pièces déjà prises.": "No parts left to pick. See Already picked for parts already taken.",
+  "Aucun prélèvement enregistré pour ce projet. Dans À prélever, sélectionne un tiroir puis Prélever la ligne… et confirme la quantité réellement prise.": "No picks have been recorded for this project. In To pick, select a drawer, choose Pick from selected row… and confirm the quantity actually taken."
 }
