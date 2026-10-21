@@ -1,5 +1,6 @@
 """Construction projects, their requirements, and explicit loose-stock reservations."""
 import sqlite3
+from shiboken6 import isValid
 from PySide6.QtCore import Qt,QTimer,Signal,QEvent
 from PySide6.QtWidgets import (QWidget,QDialog,QVBoxLayout,QHBoxLayout,QFormLayout,QLabel,
     QPushButton,QLineEdit,QComboBox,QSpinBox,QCheckBox,QDialogButtonBox,QTableWidget,
@@ -96,13 +97,18 @@ class NewProjectDialog(QDialog):
         self.name.setText(item['ref']+' · '+item['name']);self.preview.set_item(item)
 
     def choose_set(self):
-        if self.picker is not None:
+        if self.closed or not isValid(self):return
+        if self.picker is not None and isValid(self.picker) and not self.picker.closed:
             self.picker.show();self.picker.raise_();self.picker.activateWindow();return
+        self.picker=None
         from .set_picker import SetPicker
         picker=SetPicker(self.db,self.panel.engine,self);self.picker=picker
+        def forget(*_):
+            if self.picker is picker:self.picker=None
+        picker.destroyed.connect(forget)
         def chosen(result):
-            self.picker=None
-            if not self.closed and result==QDialog.DialogCode.Accepted and picker.chosen:self.set_item(picker.chosen)
+            forget()
+            if not self.closed and isValid(self) and result==QDialog.DialogCode.Accepted and picker.chosen:self.set_item(picker.chosen)
         show_window(picker,self,chosen,refresh_counts=False)
 
     def save(self):
@@ -116,8 +122,10 @@ class NewProjectDialog(QDialog):
 
 
     def done(self,result):
+        if self.closed or not isValid(self):return
         self.closed=True;self.preview.stop()
-        if self.picker is not None:self.picker.reject()
+        picker,self.picker=self.picker,None
+        if picker is not None and isValid(picker):picker.reject()
         super().done(result)
 
 
