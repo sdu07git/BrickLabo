@@ -1,8 +1,25 @@
-# BrickLabo — v0.1.68
+# BrickLabo — v0.1.69
 
-Windows desktop software for LEGO catalogues, stock, construction searches and labels. This version continues the published v0.1.67, based on the original v0.1.28.
+Windows desktop software for LEGO catalogues, stock, construction searches and labels. This version continues the published v0.1.68, based on the original v0.1.28.
 
-**Downloads v0.1.68 :** [complete Windows package](https://github.com/sdu07git/BrickLabo/releases/download/v0.1.68/BrickLabo_v0.1.68_Complet.zip) · [sources with resources](https://github.com/sdu07git/BrickLabo/releases/download/v0.1.68/BrickLabo_v0.1.68_Sources.zip) · [release notes](https://github.com/sdu07git/BrickLabo/releases/tag/v0.1.68).
+**Downloads v0.1.69 :** [complete Windows package](https://github.com/sdu07git/BrickLabo/releases/download/v0.1.69/BrickLabo_v0.1.69_Complet.zip) · [sources with resources](https://github.com/sdu07git/BrickLabo/releases/download/v0.1.69/BrickLabo_v0.1.69_Sources.zip) · [release notes](https://github.com/sdu07git/BrickLabo/releases/tag/v0.1.69).
+
+
+## Count parts from owned sets in My projects — v0.1.69
+
+In **New construction project** and **My projects**, check **Also count parts from my owned sets** to add the inventories of all sets in **My set stock** to free loose stock. Uncheck it to use loose stock only. This is a per-project choice; existing projects stay loose-only until enabled. The table and available percentage update immediately, with exact or ignored colours.
+
+**From owned sets** shows the parts used to cover requirements after loose stock and the project’s own reservations. Hover for the corresponding total in owned sets. Tracked inventories use actual quantities, which already include owned copies, preserving recorded missing pieces. Each part is counted once within a project, including across several requested colours when colours are ignored. An older set without tracked components uses its complete local catalogue inventory when available, with a notice; missing or incomplete inventories are reported.
+
+Sets stay in their catalogue and their components are not transferred to loose stock. Their contribution is a build possibility assessed separately for each project, without reservations across projects. **Reserve available loose stock** and pick lists use loose stock and counted drawers. Use **Compare several rebuilds…** to evaluate simultaneous builds using sets for dismantling. Projects created from searches or comparisons inherit whether sets are included; each project then counts all owned sets, independently of the search’s row filter.
+
+The setting survives restart, undo/redo and selective project backups. Set inventories are preserved in the Sets and their parts backup family.
+
+## Pick list: Already picked — v0.1.69
+
+**Already picked** lists quantities confirmed using **Pick from selected row…** in **To pick**. A reservation alone is not a pick. An empty tab explains how to record parts actually taken. Rows without counted locations cannot be picked here.
+
+Fully picked parts remain visible with cabinet, drawer, reference, actual colour, quantity and preview. Picks of the same reference and colour from one drawer are grouped. Open windows refresh after stock changes, picks, returns and undo/redo; switching tabs reloads current data. The pick button applies to To pick. CSV exports count each already-picked quantity once, even when several drawers remain to visit.
 
 ## Build a project with or without the set’s colours — v0.1.68
 

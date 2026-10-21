@@ -1,8 +1,25 @@
-# BrickLabo — v0.1.68
+# BrickLabo — v0.1.69
 
-Logiciel de bureau Windows pour les catalogues LEGO, les stocks, les recherches de constructions et les étiquettes. Cette version reprend la v0.1.67 publiée, issue de la v0.1.28 d’origine.
+Logiciel de bureau Windows pour les catalogues LEGO, les stocks, les recherches de constructions et les étiquettes. Cette version reprend la v0.1.68 publiée, issue de la v0.1.28 d’origine.
 
-**Téléchargements v0.1.68 :** [version complète Windows](https://github.com/sdu07git/BrickLabo/releases/download/v0.1.68/BrickLabo_v0.1.68_Complet.zip) · [sources avec ressources](https://github.com/sdu07git/BrickLabo/releases/download/v0.1.68/BrickLabo_v0.1.68_Sources.zip) · [notes de release](https://github.com/sdu07git/BrickLabo/releases/tag/v0.1.68).
+**Téléchargements v0.1.69 :** [version complète Windows](https://github.com/sdu07git/BrickLabo/releases/download/v0.1.69/BrickLabo_v0.1.69_Complet.zip) · [sources avec ressources](https://github.com/sdu07git/BrickLabo/releases/download/v0.1.69/BrickLabo_v0.1.69_Sources.zip) · [notes de release](https://github.com/sdu07git/BrickLabo/releases/tag/v0.1.69).
+
+
+## Compter les pièces des sets possédés dans Mes projets — v0.1.69
+
+Dans **Nouveau projet de construction** et **Mes projets**, cocher **Compter aussi les pièces de mes sets possédés** pour additionner le vrac libre et les inventaires de tous les sets de **Mon stock set**. Décocher pour utiliser uniquement le vrac. Le choix est propre au projet ; les projets existants restent en vrac uniquement jusqu’à l’activation de la case. Le tableau et le pourcentage se recalculent immédiatement, avec ou sans les couleurs officielles.
+
+La colonne **Apport des sets** indique les pièces des sets qui complètent le besoin après le vrac et les réservations du projet. Le survol donne la quantité totale correspondante dans les sets. Les inventaires suivis utilisent leurs quantités réelles, déjà multipliées par le nombre d’exemplaires : les manquants enregistrés restent des manquants. Une même pièce n’est utilisée qu’une fois dans le calcul d’un projet, y compris entre plusieurs besoins de couleurs ignorées. Un ancien set sans inventaire suivi utilise son inventaire local complet si disponible, avec un avertissement ; un inventaire absent ou incomplet est signalé.
+
+Les sets restent dans leur catalogue et leurs pièces ne sont pas transférées au vrac. Leurs apports représentent une possibilité de construction évaluée séparément pour chaque projet ; ils ne sont pas réservés entre plusieurs projets. **Réserver le vrac disponible** et la liste de prélèvement concernent le vrac et les tiroirs comptés. Pour comparer plusieurs constructions simultanées avec des sets à démonter, utiliser **Comparer plusieurs reconstructions…**. La création depuis une recherche ou une comparaison reprend son choix d’inclure les sets ; chaque projet utilise ensuite tous les sets possédés, indépendamment du filtre de lignes de cette recherche.
+
+Le réglage survit au redémarrage, à Annuler/Rétablir et aux sauvegardes sélectives de projets. Les inventaires des sets sont conservés dans la famille de sauvegarde Sets et leurs pièces.
+
+## Liste de prélèvement : Déjà prélevées — v0.1.69
+
+**Déjà prélevées** correspond aux quantités confirmées avec **Prélever la ligne…** depuis **À prélever**. Une réservation seule ne constitue pas un prélèvement. L’onglet vide explique comment enregistrer les pièces réellement prises. Les lignes sans emplacement compté ne peuvent pas être prélevées ici.
+
+Les pièces entièrement prélevées restent dans cet onglet avec leur meuble, tiroir, référence, couleur réelle, quantité et aperçu. Les prélèvements d’une même référence et couleur dans un même tiroir sont regroupés. Une fenêtre ouverte s’actualise après les modifications du stock, les prélèvements, les retours et Annuler/Rétablir ; changer d’onglet relit les données. Le bouton de prélèvement concerne l’onglet À prélever. L’export CSV compte chaque quantité déjà prise une seule fois, même si plusieurs tiroirs restent à visiter.
 
 ## Reconstruire un projet avec ou sans les couleurs du set — v0.1.68
 
