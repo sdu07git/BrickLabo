@@ -342,7 +342,7 @@ class NewInterfaceTests(Fixture):
             dialog=window.projects.create_from_item();dialog.kind.setCurrentIndex(1);dialog.name.setText('Ma construction');dialog.save();app.processEvents()
             project=window.projects.project_id;self.assertIsNotNone(project)
             projects.put_part(self.db,project,self.part,'4',60);window.refresh_counts()
-            next(button for button in window.projects.findChildren(QPushButton) if button.text()=='Réserver le stock disponible').click()
+            window.projects.reserve_button.click()
             self.assertEqual(projects.detail(self.db,project)[0]['reserved'],60)
             window.undo_shortcut.trigger();self.assertEqual(projects.detail(self.db,project)[0]['reserved'],0)
             self.assertTrue(window.redo_button.isEnabled());window.redo_shortcut.trigger();self.assertEqual(projects.detail(self.db,project)[0]['reserved'],60)
