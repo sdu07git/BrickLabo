@@ -1,3 +1,27 @@
+FR — v0.1.67
+
+## Meubles sur plusieurs rangées — v0.1.67
+
+Dans **Mon rangement → Organiser le meuble → Aligner les meubles…**, choisir **En grille**, puis **Meubles par rangée**. Avec 8 meubles et 4 par rangée, la disposition comporte 4 meubles en haut et 4 en dessous. Avec 12 meubles, le même réglage donne 3 rangées de 4 ; une dernière rangée incomplète reste possible.
+
+L’aperçu s’actualise quand le nombre ou l’écart change. Les meubles gardent leur ordre actuel, de gauche à droite puis de haut en bas, à partir du premier meuble. Chaque colonne tient compte du meuble le plus large et chaque rangée du plus haut pour éviter les chevauchements. Les numéros restent lisibles et le survol montre le nom complet. **Appliquer** enregistre la disposition ; **Annuler** la ferme sans modification. Une seule action **Annuler la dernière action** restaure ensuite les positions précédentes. Les alignements horizontal et vertical restent disponibles.
+
+Les contenus des tiroirs, leurs quantités et les stocks sont conservés. Si un meuble change pendant l’ouverture de la fenêtre, rouvrir l’alignement avant de l’appliquer. Les fonctions de la v0.1.66 et la colonne Rangement sont conservées. La reconnaissance par photo reste absente de cette version stable.
+
+**Validation v0.1.67 :** 184 tests ciblés réussis sous Qt/Linux, dont 9 nouveaux contrôles de grille. Aperçus 8 et 12 meubles et dimensions mixtes examinés à 660 × 530 et 480 × 460. [Rapport de contrôle](CONTROLE_v0.1.67.txt). Exécution native Windows à confirmer.
+
+EN — v0.1.67
+
+## Cabinets across multiple rows — v0.1.67
+
+In **My storage → Organise cabinet → Align cabinets…**, choose **In a grid** and **Cabinets per row**. Eight cabinets with 4 per row give four on top and four below. Twelve cabinets give three rows of four; the last row may be incomplete.
+
+The preview updates with the row count and gap. Cabinets follow their current reading order, left to right then top to bottom, starting at the first cabinet. Each column fits its widest cabinet and each row its tallest, avoiding overlap. Numbers stay visible and hovering shows the full name. **Apply** saves; **Cancel** closes without changes. A single **Undo last action** restores the previous positions. Horizontal and vertical alignment remain available.
+
+Drawer contents, counts and stock are preserved. If cabinets change while the dialog is open, reopen it before applying. All v0.1.66 features, including the Storage column, remain available. Photo recognition is not included in this stable release.
+
+**Validation v0.1.67:** 184 targeted tests passed under Qt/Linux, including 9 new grid checks. Eight/twelve-cabinet and mixed-size previews reviewed at 660 × 530 and 480 × 460. [Validation report](CONTROLE_v0.1.67.txt). Native Windows execution remains unconfirmed.
+
 FR — v0.1.66
 
 ## Repérer les pièces déjà rangées — v0.1.66

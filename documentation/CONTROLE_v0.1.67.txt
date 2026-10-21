@@ -1,0 +1,37 @@
+BrickLabo by SDU7 — contrôle v0.1.67
+
+Base : main v0.1.66 (1c8fcc3e3ba3427fc6ceb58640d5d991854d90be).
+
+Périmètre
+- Disposition en grille des meubles, avec nombre de meubles par rangée et écart réglables.
+- Proposition visuelle immédiate, numérotation et noms complets au survol.
+- Colonnes dimensionnées selon leur meuble le plus large, rangées selon le plus haut.
+- Ordre actuel de lecture et ancrage du premier meuble conservés.
+- Enregistrement explicite, contrôle des modifications simultanées, annulation et rétablissement.
+- Aucune modification des tiroirs, contenus, quantités, stocks et étiquettes.
+- Alignements horizontal et vertical conservés. Aucun détecteur photo ajouté.
+
+Validation du 21 octobre 2026
+- 184 tests ciblés réussis en 20,408 s sous Qt/Linux : Python 3.12, PySide6 6.11.2.
+- Modules : test_storage_grid, test_collection_workflows, test_storage_presence,
+  test_storage_and_inventory_batches, test_storage_multi_cabinets, test_storage_layout,
+  test_i18n, test_button_help, test_software_updates.
+- 9 nouveaux tests : huit meubles en 4 × 2 ; tailles mixtes et dernière rangée incomplète ;
+  ordre et ancrage ; valeurs invalides ; conflit de modification ; dépassement de coordonnées
+  sans changement partiel ; zéro ou un meuble ; aperçu identique à l’application ;
+  annulation de la fenêtre et conservation des modes existants.
+- Annuler/Rétablir restaure le groupe en une seule action, sans modifier le contenu des tiroirs.
+- Six vues Qt examinées : 8 meubles Parkside 3 × 11, 12 meubles en 4 × 3, tailles mixtes,
+  à 660 × 530 et 480 × 460. Numéros lisibles et boutons accessibles.
+- Lanceur Windows AMD64 recompilé ; icône, versions et dépendances exactes contrôlées.
+- Concordance des sources avec le paquet Windows, licences et CRC des deux ZIP vérifiés.
+- La ressource LDraw et le runtime proviennent de la distribution v0.1.66 dont le SHA-256
+  est vérifié. Aucun changement de dépendance.
+
+Limites
+- Les meubles sont proposés dans leur ordre actuel de lecture ; les déplacer avant de relancer
+  l’alignement permet de changer cet ordre. La grille peut réserver des espaces autour des
+  meubles plus petits pour conserver des colonnes et rangées alignées.
+- La grille est un placement de meubles ; elle ne déplace pas les pièces entre leurs tiroirs.
+- Suite complète non relancée pour ce changement localisé ; contrôles ciblés ci-dessus.
+- Exécution native Windows à confirmer sur un PC Windows.
