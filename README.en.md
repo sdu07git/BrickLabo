@@ -1,8 +1,29 @@
-# BrickLabo — v0.1.68
+# BrickLabo — v0.1.69
 
-Windows desktop software for LEGO catalogues, stock, construction searches and labels. This version continues the published v0.1.67, based on the original v0.1.28.
+Windows desktop software for LEGO catalogues, stock, construction searches and labels. This version continues the published v0.1.68, based on the original v0.1.28.
 
-**Downloads v0.1.68 :** [complete Windows package](https://github.com/sdu07git/BrickLabo/releases/download/v0.1.68/BrickLabo_v0.1.68_Complet.zip) · [sources with resources](https://github.com/sdu07git/BrickLabo/releases/download/v0.1.68/BrickLabo_v0.1.68_Sources.zip) · [release notes](https://github.com/sdu07git/BrickLabo/releases/tag/v0.1.68).
+**Downloads v0.1.69 :** [complete Windows package](https://github.com/sdu07git/BrickLabo/releases/download/v0.1.69/BrickLabo_v0.1.69_Complet.zip) · [sources with resources](https://github.com/sdu07git/BrickLabo/releases/download/v0.1.69/BrickLabo_v0.1.69_Sources.zip) · [release notes](https://github.com/sdu07git/BrickLabo/releases/tag/v0.1.69).
+
+
+## Count parts from owned sets in My projects — v0.1.69
+
+In **New construction project** and **My projects**, check **Also count parts from my owned sets** to add the inventories of all sets in **My set stock** to free loose stock. Uncheck it to use loose stock only. The choice is saved per project, in undo/redo and backups. Existing projects stay loose-only until enabled. Availability updates immediately, with exact or ignored colours.
+
+**From owned sets** covers requirements after loose stock and this project’s reservations. Hover for the corresponding total in owned sets. The calculation uses actual recorded quantities, partial inventories and owned copy counts, without using a part twice across ignored-colour requirements. Older sets without tracked components use a complete local inventory with a notice; unavailable or incomplete inventories are reported. A check using the bundled Rebrickable inventory of **30363-1** reaches 100% when the complete set is owned and the option enabled, leaving loose stock unchanged.
+
+Sets remain in their catalogue without a transfer to loose stock. Their contribution is a build possibility assessed separately for each project, without reservations across projects. **Reserve available loose stock** and picking use loose stock. Use **Compare several rebuilds…** for simultaneous builds using sets for dismantling. Projects inherit whether sets were included in a search or comparison, then count all owned sets independently of the search’s row filter.
+
+The **Choose a set** window can be closed and reopened without “SetPicker already deleted”. Closing the project and late photo results are also guarded.
+
+## Pick list and removing storage — v0.1.69
+
+**Already picked** shows quantities confirmed using **Pick from selected row…** in **To pick**, including fully picked references. Actual reference, colour, quantity and preview remain visible. Picks from the same drawer, reference and colour are grouped. Open windows refresh after changes, returns and undo/redo; switching tabs reloads current data. An empty tab explains how to record a pick. CSV exports count each picked quantity once.
+
+**Deleting a cabinet or drawer** keeps all parts in stock. Parts already picked for projects remain in **Already picked** with **No drawer assigned**, preserving reference, colour, quantity and reservations. “FOREIGN KEY constraint failed” no longer blocks this action. Creating new storage never reassigns those picks to new drawers.
+
+**Deleting a project** releases its reservations and picked parts. Owned quantities remain unchanged; picked parts become available without a counted drawer assignment, without assuming they were physically returned to their former drawer. This also works after deleting the cabinet. **Return all picks** remains available to restore quantities to original drawers that still exist; parts without a drawer remain unassigned. Cabinet, drawer and project deletion can be undone, restoring picks and their locations.
+
+**Validation v0.1.69:** 1,043 full-suite tests passed under Qt/Linux and 16 targeted checks of the final unlocated-pick workflow. Eight views reviewed, including creation at 640 × 480 and unlocated picks in French and English. [Validation report](documentation/CONTROLE_v0.1.69.txt). Native Windows execution remains to be confirmed.
 
 ## Build a project with or without the set’s colours — v0.1.68
 

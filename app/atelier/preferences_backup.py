@@ -51,7 +51,7 @@ def collect_family(db,family):
         return {'walls':[{'name':w['name'],'columns':w['columns'],'rows':w['rows'],'x':w['x'],'y':w['y'],'drawers':[dict({k:d[k] for k in ('col','row','width','height','name')},parts=[{'item':identity(p),'color':p['chosen_color'],'quantity':p['stored_quantity']} for p in contents(db,d['id'])]) for d in drawers(db,w['id'])]} for w in walls(db)]}
     if family=='projects':
         from .projects import list_projects,detail
-        return {'projects':[{'name':p['name'],'status':p['status'],'copies':p['copies'],'ignore_colors':bool(p['ignore_colors']),'set':identity(db.get_item(p['set_id'])) if p['set_id'] is not None else None,
+        return {'projects':[{'name':p['name'],'status':p['status'],'copies':p['copies'],'ignore_colors':bool(p['ignore_colors']),'include_set_stock':bool(p['include_set_stock']),'set':identity(db.get_item(p['set_id'])) if p['set_id'] is not None else None,
             'parts':[{'item':identity(part),'color':part['chosen_color'],'required':part['required'],'reserved':part['reserved'],'allocations':[{'color':color,'quantity':quantity} for color,quantity in part['reserved_colors'].items()] if p['ignore_colors'] else []} for part in detail(db,p['id'])]} for p in list_projects(db)]}
     if family in ('loose','sets','queue'):
         table={'loose':'stock','sets':'stock_sets','queue':'queue'}[family];entries=[]
@@ -167,9 +167,11 @@ def restore_families(db,paths):
                     amount(copies,1)
                     ignore_colors=project.get('ignore_colors',False)
                     if type(ignore_colors) is not bool:raise ValueError(tr('Projet invalide.'))
+                    include_set_stock=project.get('include_set_stock',False)
+                    if type(include_set_stock) is not bool:raise ValueError(tr('Projet invalide.'))
                     set_id=_item(c,project['set']) if project.get('set') else None
                     if project.get('set') and project['set'].get('kind')!='set':raise ValueError(tr('Un set est attendu.'))
-                    pid=c.execute('INSERT INTO construction_projects(name,status,set_id,copies,ignore_colors) VALUES(?,?,?,?,?)',(name,status,set_id,copies,int(ignore_colors))).lastrowid
+                    pid=c.execute('INSERT INTO construction_projects(name,status,set_id,copies,ignore_colors,include_set_stock) VALUES(?,?,?,?,?,?)',(name,status,set_id,copies,int(ignore_colors),int(include_set_stock))).lastrowid
                     for part in project.get('parts',[]):
                         required=amount(part['required'],1);reserved=amount(part.get('reserved',0))
                         if part['item'].get('kind') not in ('part','minifig') or reserved>required:raise ValueError(tr('Pièce de projet invalide.'))

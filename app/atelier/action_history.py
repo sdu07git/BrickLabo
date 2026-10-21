@@ -23,6 +23,7 @@ TABLES = {
     'purchase_lot_entries': ('lot_id','scope','item_id','color'),
     'project_pick_rows': ('project_id','item_id','color','drawer_id'),
     'project_color_pick_rows': ('project_id','item_id','color','stock_color','drawer_id'),
+    'project_unlocated_picks': ('project_id','item_id','color','stock_color'),
 }
 ORDER = {table: index for index, table in enumerate(TABLES)}
 
@@ -183,7 +184,9 @@ def restore(db, redo=False):
         for change in changes:
             if change['table']=='construction_projects':
                 for state in ('before','after'):
-                    if change[state] is not None:change[state].setdefault('ignore_colors',0)
+                    if change[state] is not None:
+                        change[state].setdefault('ignore_colors',0)
+                        change[state].setdefault('include_set_stock',0)
         source, target = ('before', 'after') if redo else ('after', 'before')
         if identities(c, changes) != payload['items']:
             raise ValueError(tr('Les références ont changé ; cette action ne peut pas être restaurée.'))

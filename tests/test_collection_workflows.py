@@ -97,7 +97,7 @@ class CollectionTests(Fixture):
         self.assertEqual(work.pick_list(self.db,pid)[0]['suggested'],2)
         with self.db.read() as c:self.assertEqual(available(c,self.part,'4'),0)
         with self.assertRaises(ValueError):projects.release(self.db,pid)
-        with self.assertRaises(ValueError):projects.delete(self.db,pid)
+        projects.delete(self.db,pid);self.assertFalse(projects.list_projects(self.db));self.db.undo_last_action()
         work.return_picks(self.db,pid);self.assertFalse(self.db.rows('SELECT * FROM project_pick_rows'))
         self.assertEqual(self.db.rows('SELECT quantity FROM storage_contents')[0]['quantity'],40)
         self.db.undo_last_action();self.assertEqual(self.db.rows('SELECT quantity FROM project_pick_rows')[0]['quantity'],4)
@@ -119,8 +119,69 @@ class CollectionTests(Fixture):
         wall,drawer=self.cabinet();pid=projects.create(self.db,'Projet',[dict(item_id=self.part,color='4',quantity=4)])
         work.pick(self.db,pid,self.part,'4',drawer,4)
         d=self.keep(PickListDialog(self.db,pid));self.assertEqual(d.table.rowCount(),0);self.assertEqual(d.taken_table.item(0,3).text(),'3005')
-        with self.assertRaises(Exception):walls.delete_wall(self.db,wall)
-        self.assertTrue(self.db.rows('SELECT * FROM storage_walls'))
+        walls.delete_wall(self.db,wall);d.refresh()
+        self.assertFalse(self.db.rows('SELECT * FROM storage_walls'))
+        self.assertEqual(d.taken_table.item(0,0).text(),'Aucun tiroir défini')
+        self.assertEqual(d.taken_table.item(0,5).text(),'4')
+    def test_pick_dialog_records_partial_then_completed_picks_in_already_picked(self):
+        from PySide6.QtWidgets import QInputDialog
+        wall,drawer=self.cabinet();pid=projects.create(self.db,'Projet',[dict(item_id=self.part,color='4',quantity=6)])
+        d=self.keep(PickListDialog(self.db,pid));d.table.selectRow(0)
+        self.assertTrue(d.take_button.isEnabled())
+        with patch.object(QInputDialog,'getInt',return_value=(4,True)):d.take_button.click()
+        d.tabs.setCurrentIndex(1)
+        self.assertEqual(d.taken_table.item(0,5).text(),'4');self.assertFalse(d.take_button.isEnabled())
+        self.assertTrue(d.empty_note.isHidden())
+        d.tabs.setCurrentIndex(0);d.table.selectRow(0)
+        with patch.object(QInputDialog,'getInt',return_value=(2,True)):d.take_button.click()
+        self.assertEqual(d.table.rowCount(),0)
+        d.tabs.setCurrentIndex(1);self.assertEqual(d.taken_table.item(0,5).text(),'6')
+        self.assertEqual(self.db.rows('SELECT quantity FROM storage_contents')[0]['quantity'],34)
+    def test_open_pick_dialog_refreshes_after_undo_redo_and_return(self):
+        wall,drawer=self.cabinet();pid=projects.create(self.db,'Projet',[dict(item_id=self.part,color='4',quantity=4)])
+        d=self.keep(PickListDialog(self.db,pid));d.tabs.setCurrentIndex(1)
+        self.assertEqual(d.taken_table.rowCount(),0);self.assertIn('Aucun prélèvement',d.empty_note.text())
+        work.pick(self.db,pid,self.part,'4',drawer,4);d.stock_changed()
+        self.assertEqual(d.taken_table.item(0,5).text(),'4')
+        self.db.undo_last_action();d.stock_changed();self.assertEqual(d.taken_table.rowCount(),0)
+        self.db.redo_last_action();d.stock_changed();self.assertEqual(d.taken_table.rowCount(),1)
+        work.return_picks(self.db,pid);d.stock_changed();self.assertEqual(d.taken_table.rowCount(),0)
+        self.assertFalse(d.return_button.isEnabled())
+    def test_already_picked_groups_actual_colour_across_requested_colours(self):
+        wall,drawer=self.cabinet()
+        pid=projects.create(self.db,'Couleurs ignorées',[dict(item_id=self.part,color=color,quantity=3) for color in ('1','4')],ignore_colors=True)
+        work.pick(self.db,pid,self.part,'4',drawer,3,need_color='1')
+        work.pick(self.db,pid,self.part,'4',drawer,3,need_color='4')
+        d=self.keep(PickListDialog(self.db,pid));d.tabs.setCurrentIndex(1)
+        self.assertEqual(d.table.rowCount(),0);self.assertEqual(d.taken_table.rowCount(),1)
+        self.assertEqual(d.taken_table.item(0,5).text(),'6');self.assertEqual(d.taken_rows[0]['color'],'4')
+        self.assertEqual(d.visible_taken_parts()[0]['chosen_color'],'4')
+    def test_pick_export_counts_taken_units_once_with_multiple_remaining_drawers(self):
+        wall,drawer=self.cabinet();other=walls.drawers(self.db,wall)[1]['id']
+        from atelier.storage_quantities import set_quantity
+        set_quantity(self.db,drawer,self.part,'4',20);put_entry(self.db,other,self.part,'4',20)
+        pid=projects.create(self.db,'Projet',[dict(item_id=self.part,color='4',quantity=30)])
+        work.pick(self.db,pid,self.part,'4',drawer,4)
+        d=self.keep(PickListDialog(self.db,pid))
+        with patch('atelier.collection_dialogs.export_rows') as export:d.export()
+        rows=export.call_args.args[2]
+        self.assertEqual(sum(r[5] for r in rows),26);self.assertEqual(sum(r[6] for r in rows),4)
+    def test_reserving_without_taking_keeps_already_picked_empty(self):
+        wall,drawer=self.cabinet();pid=projects.create(self.db,'Projet',[dict(item_id=self.part,color='4',quantity=4)])
+        projects.reserve(self.db,pid);d=self.keep(PickListDialog(self.db,pid));d.tabs.setCurrentIndex(1)
+        self.assertEqual(d.taken_table.rowCount(),0);self.assertIn('Prélever la ligne',d.empty_note.text())
+        self.assertFalse(d.return_button.isEnabled());self.assertFalse(d.take_button.isEnabled())
+    def test_main_window_undo_updates_an_open_already_picked_tab(self):
+        from atelier.app import MainWindow
+        from atelier.windows import show_window
+        wall,drawer=self.cabinet();pid=projects.create(self.db,'Projet',[dict(item_id=self.part,color='4',quantity=4)])
+        with patch('atelier.catalogue.Catalogue.load_thumbnails'),patch('atelier.thumbnails.PartThumbnails.schedule'),patch('atelier.storage_panel.StoragePanel.schedule_icons'),patch('atelier.preview.Preview.refresh'):
+            owner=self.keep(MainWindow(self.db));owner.startup_timer.stop();owner.cleanup_timer.stop()
+            d=show_window(PickListDialog(self.db,pid,parent=owner),owner);d.tabs.setCurrentIndex(1)
+            work.pick(self.db,pid,self.part,'4',drawer,4);owner.refresh_counts()
+            self.assertEqual(d.taken_table.item(0,5).text(),'4')
+            owner.undo_shortcut.trigger();self.assertEqual(d.taken_table.rowCount(),0)
+            owner.redo_shortcut.trigger();self.assertEqual(d.taken_table.item(0,5).text(),'4')
     def test_comparison_finds_two_small_builds_instead_of_one_big(self):
         a=self.build('A-1',[(self.part,40)]);b=self.build('B-1',[(self.part,20)]);c=self.build('C-1',[(self.part,20)])
         result=work.compare_builds(self.db,[(a,1),(b,1),(c,1)],include_set_stock=False)

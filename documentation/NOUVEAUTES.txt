@@ -1,3 +1,43 @@
+FR — v0.1.69
+
+## Compter les pièces des sets possédés dans Mes projets — v0.1.69
+
+Dans **Nouveau projet de construction** et **Mes projets**, cocher **Compter aussi les pièces de mes sets possédés** pour additionner le vrac libre et les inventaires de tous les sets de **Mon stock set**. Décocher pour utiliser uniquement le vrac. Le choix est conservé par projet, dans Annuler/Rétablir et les sauvegardes. Les projets existants restent en vrac uniquement jusqu’à l’activation de la case. Le tableau et le pourcentage se recalculent immédiatement, avec ou sans les couleurs officielles.
+
+La colonne **Apport des sets** complète le besoin après le vrac et les réservations du projet. Le survol indique la quantité totale correspondante dans les sets. Le calcul respecte les quantités réellement enregistrées, les inventaires partiels et le nombre d’exemplaires, sans compter une pièce deux fois entre besoins de couleurs ignorées. Un ancien set sans suivi utilise son inventaire local complet avec un message ; un inventaire absent ou incomplet est signalé. Le contrôle avec l’inventaire Rebrickable embarqué du **30363-1** donne 100 % disponibles quand le set complet est possédé et que la case est cochée, avec le vrac inchangé.
+
+Les sets restent dans leur catalogue, sans transfert au vrac. Leurs apports sont des possibilités de construction évaluées séparément pour chaque projet ; ils ne sont pas réservés entre projets. **Réserver le vrac disponible** et les prélèvements concernent le vrac. Pour plusieurs constructions simultanées avec des sets à démonter, utiliser **Comparer plusieurs reconstructions…**. La création depuis une recherche ou comparaison reprend son choix d’inclure les sets ; chaque projet utilise ensuite tous les sets possédés, indépendamment du filtre de lignes de cette recherche.
+
+La fenêtre **Choisir un set** peut être fermée puis rouverte sans l’erreur « SetPicker already deleted ». La fermeture du projet et les retours tardifs de photo sont également protégés.
+
+## Liste de prélèvement et suppression des rangements — v0.1.69
+
+**Déjà prélevées / Already picked** présente les quantités confirmées avec **Prélever la ligne…** depuis **À prélever**, même lorsqu’une référence est entièrement prise. Les lignes conservent leur référence, couleur réelle, quantité et aperçu. Les prélèvements d’un même tiroir, référence et couleur sont regroupés. Une fenêtre ouverte s’actualise après les changements, les retours et Annuler/Rétablir ; changer d’onglet relit les données. L’onglet vide indique comment confirmer un prélèvement. Le CSV compte chaque quantité prise une seule fois.
+
+**Supprimer un meuble ou un tiroir** conserve toutes les pièces dans le stock. Les pièces déjà prélevées pour les projets restent suivies dans **Déjà prélevées** avec **Aucun tiroir défini** ; les références, couleurs, quantités et réservations sont conservées. Aucun blocage « FOREIGN KEY constraint failed ». Recréer un meuble ne réattribue pas ces prélèvements à de nouveaux tiroirs.
+
+**Supprimer un projet** libère ses réservations et ses pièces prélevées. Les quantités possédées restent inchangées ; les pièces prises deviennent disponibles sans affectation comptée à un tiroir, sans supposer qu’elles ont été remises physiquement dans leur ancien tiroir. Cela fonctionne aussi après suppression du meuble. **Retourner tous les prélèvements** reste disponible pour remettre les quantités dans les tiroirs d’origine encore existants ; celles sans tiroir restent non affectées. La suppression d’un meuble, d’un tiroir ou d’un projet est annulable, avec restauration des prélèvements et de leurs emplacements.
+
+EN — v0.1.69
+
+## Count parts from owned sets in My projects — v0.1.69
+
+In **New construction project** and **My projects**, check **Also count parts from my owned sets** to add the inventories of all sets in **My set stock** to free loose stock. Uncheck it to use loose stock only. The choice is saved per project, in undo/redo and backups. Existing projects stay loose-only until enabled. Availability updates immediately, with exact or ignored colours.
+
+**From owned sets** covers requirements after loose stock and this project’s reservations. Hover for the corresponding total in owned sets. The calculation uses actual recorded quantities, partial inventories and owned copy counts, without using a part twice across ignored-colour requirements. Older sets without tracked components use a complete local inventory with a notice; unavailable or incomplete inventories are reported. A check using the bundled Rebrickable inventory of **30363-1** reaches 100% when the complete set is owned and the option enabled, leaving loose stock unchanged.
+
+Sets remain in their catalogue without a transfer to loose stock. Their contribution is a build possibility assessed separately for each project, without reservations across projects. **Reserve available loose stock** and picking use loose stock. Use **Compare several rebuilds…** for simultaneous builds using sets for dismantling. Projects inherit whether sets were included in a search or comparison, then count all owned sets independently of the search’s row filter.
+
+The **Choose a set** window can be closed and reopened without “SetPicker already deleted”. Closing the project and late photo results are also guarded.
+
+## Pick list and removing storage — v0.1.69
+
+**Already picked** shows quantities confirmed using **Pick from selected row…** in **To pick**, including fully picked references. Actual reference, colour, quantity and preview remain visible. Picks from the same drawer, reference and colour are grouped. Open windows refresh after changes, returns and undo/redo; switching tabs reloads current data. An empty tab explains how to record a pick. CSV exports count each picked quantity once.
+
+**Deleting a cabinet or drawer** keeps all parts in stock. Parts already picked for projects remain in **Already picked** with **No drawer assigned**, preserving reference, colour, quantity and reservations. “FOREIGN KEY constraint failed” no longer blocks this action. Creating new storage never reassigns those picks to new drawers.
+
+**Deleting a project** releases its reservations and picked parts. Owned quantities remain unchanged; picked parts become available without a counted drawer assignment, without assuming they were physically returned to their former drawer. This also works after deleting the cabinet. **Return all picks** remains available to restore quantities to original drawers that still exist; parts without a drawer remain unassigned. Cabinet, drawer and project deletion can be undone, restoring picks and their locations.
+
 FR — v0.1.68
 
 ## Reconstruire un projet avec ou sans les couleurs du set — v0.1.68

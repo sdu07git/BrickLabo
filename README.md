@@ -1,8 +1,29 @@
-# BrickLabo — v0.1.68
+# BrickLabo — v0.1.69
 
-Logiciel de bureau Windows pour les catalogues LEGO, les stocks, les recherches de constructions et les étiquettes. Cette version reprend la v0.1.67 publiée, issue de la v0.1.28 d’origine.
+Logiciel de bureau Windows pour les catalogues LEGO, les stocks, les recherches de constructions et les étiquettes. Cette version reprend la v0.1.68 publiée, issue de la v0.1.28 d’origine.
 
-**Téléchargements v0.1.68 :** [version complète Windows](https://github.com/sdu07git/BrickLabo/releases/download/v0.1.68/BrickLabo_v0.1.68_Complet.zip) · [sources avec ressources](https://github.com/sdu07git/BrickLabo/releases/download/v0.1.68/BrickLabo_v0.1.68_Sources.zip) · [notes de release](https://github.com/sdu07git/BrickLabo/releases/tag/v0.1.68).
+**Téléchargements v0.1.69 :** [version complète Windows](https://github.com/sdu07git/BrickLabo/releases/download/v0.1.69/BrickLabo_v0.1.69_Complet.zip) · [sources avec ressources](https://github.com/sdu07git/BrickLabo/releases/download/v0.1.69/BrickLabo_v0.1.69_Sources.zip) · [notes de release](https://github.com/sdu07git/BrickLabo/releases/tag/v0.1.69).
+
+
+## Compter les pièces des sets possédés dans Mes projets — v0.1.69
+
+Dans **Nouveau projet de construction** et **Mes projets**, cocher **Compter aussi les pièces de mes sets possédés** pour additionner le vrac libre et les inventaires de tous les sets de **Mon stock set**. Décocher pour utiliser uniquement le vrac. Le choix est conservé par projet, dans Annuler/Rétablir et les sauvegardes. Les projets existants restent en vrac uniquement jusqu’à l’activation de la case. Le tableau et le pourcentage se recalculent immédiatement, avec ou sans les couleurs officielles.
+
+La colonne **Apport des sets** complète le besoin après le vrac et les réservations du projet. Le survol indique la quantité totale correspondante dans les sets. Le calcul respecte les quantités réellement enregistrées, les inventaires partiels et le nombre d’exemplaires, sans compter une pièce deux fois entre besoins de couleurs ignorées. Un ancien set sans suivi utilise son inventaire local complet avec un message ; un inventaire absent ou incomplet est signalé. Le contrôle avec l’inventaire Rebrickable embarqué du **30363-1** donne 100 % disponibles quand le set complet est possédé et que la case est cochée, avec le vrac inchangé.
+
+Les sets restent dans leur catalogue, sans transfert au vrac. Leurs apports sont des possibilités de construction évaluées séparément pour chaque projet ; ils ne sont pas réservés entre projets. **Réserver le vrac disponible** et les prélèvements concernent le vrac. Pour plusieurs constructions simultanées avec des sets à démonter, utiliser **Comparer plusieurs reconstructions…**. La création depuis une recherche ou comparaison reprend son choix d’inclure les sets ; chaque projet utilise ensuite tous les sets possédés, indépendamment du filtre de lignes de cette recherche.
+
+La fenêtre **Choisir un set** peut être fermée puis rouverte sans l’erreur « SetPicker already deleted ». La fermeture du projet et les retours tardifs de photo sont également protégés.
+
+## Liste de prélèvement et suppression des rangements — v0.1.69
+
+**Déjà prélevées / Already picked** présente les quantités confirmées avec **Prélever la ligne…** depuis **À prélever**, même lorsqu’une référence est entièrement prise. Les lignes conservent leur référence, couleur réelle, quantité et aperçu. Les prélèvements d’un même tiroir, référence et couleur sont regroupés. Une fenêtre ouverte s’actualise après les changements, les retours et Annuler/Rétablir ; changer d’onglet relit les données. L’onglet vide indique comment confirmer un prélèvement. Le CSV compte chaque quantité prise une seule fois.
+
+**Supprimer un meuble ou un tiroir** conserve toutes les pièces dans le stock. Les pièces déjà prélevées pour les projets restent suivies dans **Déjà prélevées** avec **Aucun tiroir défini** ; les références, couleurs, quantités et réservations sont conservées. Aucun blocage « FOREIGN KEY constraint failed ». Recréer un meuble ne réattribue pas ces prélèvements à de nouveaux tiroirs.
+
+**Supprimer un projet** libère ses réservations et ses pièces prélevées. Les quantités possédées restent inchangées ; les pièces prises deviennent disponibles sans affectation comptée à un tiroir, sans supposer qu’elles ont été remises physiquement dans leur ancien tiroir. Cela fonctionne aussi après suppression du meuble. **Retourner tous les prélèvements** reste disponible pour remettre les quantités dans les tiroirs d’origine encore existants ; celles sans tiroir restent non affectées. La suppression d’un meuble, d’un tiroir ou d’un projet est annulable, avec restauration des prélèvements et de leurs emplacements.
+
+**Validation v0.1.69 :** 1 043 tests de la suite complète réussis sous Qt/Linux et 16 contrôles ciblés du suivi final sans tiroir. Huit vues examinées, dont la création à 640 × 480 et les prélèvements sans tiroir en français et anglais. [Rapport de contrôle](documentation/CONTROLE_v0.1.69.txt). Exécution native Windows à confirmer.
 
 ## Reconstruire un projet avec ou sans les couleurs du set — v0.1.68
 

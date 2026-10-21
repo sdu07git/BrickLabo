@@ -56,7 +56,7 @@ class ProjectColorTests(Fixture):
         self.assertEqual(sum(r['quantity'] for r in self.db.rows('SELECT * FROM project_physical_picks')),8)
         self.assertEqual(work.pick_list(self.db,pid),[])
         with self.assertRaises(ValueError):projects.release(self.db,pid)
-        with self.assertRaises(ValueError):projects.delete(self.db,pid)
+        projects.delete(self.db,pid);self.assertFalse(projects.list_projects(self.db));self.db.undo_last_action()
         with self.assertRaises(ValueError):stock_clear.clear(self.db,'stock')
         work.return_picks(self.db,pid);self.assertEqual(self.count(drawer,color='2'),5);self.assertEqual(self.count(drawer,color='0'),3)
         self.db.undo_last_action();self.assertEqual(self.count(drawer,color='2'),0)

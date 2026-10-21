@@ -27,6 +27,10 @@ def show_window(window,parent=None,on_finished=None,refresh_counts=True):
         if bridge.owner is None:bridge.owner=window;window._active_tasks+=1
     if not hasattr(owner,'_consultation_windows'):owner._consultation_windows=[]
     owner._consultation_windows.append(window)
+    def destroyed(*_):
+        window._closed_by_manager=True
+        if window in owner._consultation_windows:owner._consultation_windows.remove(window)
+    window.destroyed.connect(destroyed)
     def finished(result):
         window._closed_by_manager=True
         if window in owner._consultation_windows:owner._consultation_windows.remove(window)
