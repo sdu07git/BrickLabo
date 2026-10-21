@@ -1,8 +1,18 @@
-# BrickLabo — v0.1.66
+# BrickLabo — v0.1.67
 
-Windows desktop software for LEGO catalogues, stock, construction searches and labels. This version continues the published v0.1.65, based on the original v0.1.28.
+Windows desktop software for LEGO catalogues, stock, construction searches and labels. This version continues the published v0.1.66, based on the original v0.1.28.
 
-**Downloads v0.1.66 :** [complete Windows package](https://github.com/sdu07git/BrickLabo/releases/download/v0.1.66/BrickLabo_v0.1.66_Complet.zip) · [sources with resources](https://github.com/sdu07git/BrickLabo/releases/download/v0.1.66/BrickLabo_v0.1.66_Sources.zip) · [release notes](https://github.com/sdu07git/BrickLabo/releases/tag/v0.1.66).
+**Downloads v0.1.67 :** [complete Windows package](https://github.com/sdu07git/BrickLabo/releases/download/v0.1.67/BrickLabo_v0.1.67_Complet.zip) · [sources with resources](https://github.com/sdu07git/BrickLabo/releases/download/v0.1.67/BrickLabo_v0.1.67_Sources.zip) · [release notes](https://github.com/sdu07git/BrickLabo/releases/tag/v0.1.67).
+
+## Cabinets across multiple rows — v0.1.67
+
+In **My storage → Organise cabinet → Align cabinets…**, choose **In a grid** and **Cabinets per row**. Eight cabinets with 4 per row give four on top and four below. Twelve cabinets give three rows of four; the last row may be incomplete.
+
+The preview updates with the row count and gap. Cabinets follow their current reading order, left to right then top to bottom, starting at the first cabinet. Each column fits its widest cabinet and each row its tallest, avoiding overlap. Numbers stay visible and hovering shows the full name. **Apply** saves; **Cancel** closes without changes. A single **Undo last action** restores the previous positions. Horizontal and vertical alignment remain available.
+
+Drawer contents, counts and stock are preserved. If cabinets change while the dialog is open, reopen it before applying. All v0.1.66 features, including the Storage column, remain available. Photo recognition is not included in this stable release.
+
+**Validation v0.1.67:** 184 targeted tests passed under Qt/Linux, including 9 new grid checks. Eight/twelve-cabinet and mixed-size previews reviewed at 660 × 530 and 480 × 460. [Validation report](documentation/CONTROLE_v0.1.67.txt). Native Windows execution remains unconfirmed.
 
 ## Find parts already assigned to drawers — v0.1.66
 
