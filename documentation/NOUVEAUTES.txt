@@ -1,3 +1,39 @@
+FR — v0.1.69
+
+## Compter les pièces des sets possédés dans Mes projets — v0.1.69
+
+Dans **Nouveau projet de construction** et **Mes projets**, cocher **Compter aussi les pièces de mes sets possédés** pour additionner le vrac libre et les inventaires de tous les sets de **Mon stock set**. Décocher pour utiliser uniquement le vrac. Le choix est propre au projet ; les projets existants restent en vrac uniquement jusqu’à l’activation de la case. Le tableau et le pourcentage se recalculent immédiatement, avec ou sans les couleurs officielles.
+
+La colonne **Apport des sets** indique les pièces des sets qui complètent le besoin après le vrac et les réservations du projet. Le survol donne la quantité totale correspondante dans les sets. Les inventaires suivis utilisent leurs quantités réelles, déjà multipliées par le nombre d’exemplaires : les manquants enregistrés restent des manquants. Une même pièce n’est utilisée qu’une fois dans le calcul d’un projet, y compris entre plusieurs besoins de couleurs ignorées. Un ancien set sans inventaire suivi utilise son inventaire local complet si disponible, avec un avertissement ; un inventaire absent ou incomplet est signalé.
+
+Les sets restent dans leur catalogue et leurs pièces ne sont pas transférées au vrac. Leurs apports représentent une possibilité de construction évaluée séparément pour chaque projet ; ils ne sont pas réservés entre plusieurs projets. **Réserver le vrac disponible** et la liste de prélèvement concernent le vrac et les tiroirs comptés. Pour comparer plusieurs constructions simultanées avec des sets à démonter, utiliser **Comparer plusieurs reconstructions…**. La création depuis une recherche ou une comparaison reprend son choix d’inclure les sets ; chaque projet utilise ensuite tous les sets possédés, indépendamment du filtre de lignes de cette recherche.
+
+Le réglage survit au redémarrage, à Annuler/Rétablir et aux sauvegardes sélectives de projets. Les inventaires des sets sont conservés dans la famille de sauvegarde Sets et leurs pièces.
+
+## Liste de prélèvement : Déjà prélevées — v0.1.69
+
+**Déjà prélevées** correspond aux quantités confirmées avec **Prélever la ligne…** depuis **À prélever**. Une réservation seule ne constitue pas un prélèvement. L’onglet vide explique comment enregistrer les pièces réellement prises. Les lignes sans emplacement compté ne peuvent pas être prélevées ici.
+
+Les pièces entièrement prélevées restent dans cet onglet avec leur meuble, tiroir, référence, couleur réelle, quantité et aperçu. Les prélèvements d’une même référence et couleur dans un même tiroir sont regroupés. Une fenêtre ouverte s’actualise après les modifications du stock, les prélèvements, les retours et Annuler/Rétablir ; changer d’onglet relit les données. Le bouton de prélèvement concerne l’onglet À prélever. L’export CSV compte chaque quantité déjà prise une seule fois, même si plusieurs tiroirs restent à visiter.
+
+EN — v0.1.69
+
+## Count parts from owned sets in My projects — v0.1.69
+
+In **New construction project** and **My projects**, check **Also count parts from my owned sets** to add the inventories of all sets in **My set stock** to free loose stock. Uncheck it to use loose stock only. This is a per-project choice; existing projects stay loose-only until enabled. The table and available percentage update immediately, with exact or ignored colours.
+
+**From owned sets** shows the parts used to cover requirements after loose stock and the project’s own reservations. Hover for the corresponding total in owned sets. Tracked inventories use actual quantities, which already include owned copies, preserving recorded missing pieces. Each part is counted once within a project, including across several requested colours when colours are ignored. An older set without tracked components uses its complete local catalogue inventory when available, with a notice; missing or incomplete inventories are reported.
+
+Sets stay in their catalogue and their components are not transferred to loose stock. Their contribution is a build possibility assessed separately for each project, without reservations across projects. **Reserve available loose stock** and pick lists use loose stock and counted drawers. Use **Compare several rebuilds…** to evaluate simultaneous builds using sets for dismantling. Projects created from searches or comparisons inherit whether sets are included; each project then counts all owned sets, independently of the search’s row filter.
+
+The setting survives restart, undo/redo and selective project backups. Set inventories are preserved in the Sets and their parts backup family.
+
+## Pick list: Already picked — v0.1.69
+
+**Already picked** lists quantities confirmed using **Pick from selected row…** in **To pick**. A reservation alone is not a pick. An empty tab explains how to record parts actually taken. Rows without counted locations cannot be picked here.
+
+Fully picked parts remain visible with cabinet, drawer, reference, actual colour, quantity and preview. Picks of the same reference and colour from one drawer are grouped. Open windows refresh after stock changes, picks, returns and undo/redo; switching tabs reloads current data. The pick button applies to To pick. CSV exports count each already-picked quantity once, even when several drawers remain to visit.
+
 FR — v0.1.68
 
 ## Reconstruire un projet avec ou sans les couleurs du set — v0.1.68
