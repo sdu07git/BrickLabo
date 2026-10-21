@@ -1,3 +1,28 @@
+FR — v0.1.66
+
+## Repérer les pièces déjà rangées — v0.1.66
+
+La colonne **Rangement**, visible par défaut dans les catalogues de pièces et mini-figurines ainsi que dans le stock en vrac, indique **Aucun tiroir** ou **Déjà rangée**, avec les adresses des meubles et tiroirs. Le survol donne la liste complète, les codes couleur et les quantités renseignées. Une référence déjà associée dans une autre couleur est signalée dans le stock.
+
+Plusieurs références peuvent partager un tiroir et une étiquette : chacune est retrouvée si elle figure dans le contenu enregistré du tiroir. Du texte ajouté uniquement à une étiquette ne crée pas d’association de rangement. L’indicateur décrit un emplacement enregistré, y compris un tiroir à zéro, et ne confirme pas l’impression d’une étiquette. Les sources restent distinctes. La colonne peut être masquée dans **Colonnes** ; ce choix est conservé. Les adresses sont relues après les changements et à la réouverture du catalogue.
+
+Cette version stable conserve les fonctions de la v0.1.65 et **ne contient pas la reconnaissance par photo**.
+
+**Validation v0.1.66 :** 126 tests ciblés réussis sous Qt/Linux, dont six contrôles de l’indicateur ; affichage vérifié à 1240 × 660 et 800 × 540. [Rapport de contrôle](documentation/CONTROLE_v0.1.66.txt). Exécution native Windows à confirmer.
+
+EN — v0.1.66
+
+## Find parts already assigned to drawers — v0.1.66
+
+The **Storage** column is shown by default in part/minifigure catalogues and loose stock. It reports **No drawer** or **Already assigned**, with cabinet and drawer addresses. Hover for the full list, colour codes and recorded quantities. Loose stock reports when only another colour has an assigned drawer.
+
+Multiple references can share a drawer and label: each is found when it appears in that drawer’s saved contents. Text written only on a label does not create a storage link. The indicator describes recorded locations, including empty assigned drawers, and does not confirm that a label was printed. Catalogue sources remain distinct. Hide the column through **Columns**; that choice is retained. Addresses refresh after changes and when reopening the catalogue.
+
+This stable version retains v0.1.65 features and **does not include photo recognition**.
+
+**Validation v0.1.66:** 126 targeted tests passed under Qt/Linux, including six storage-indicator checks; layouts reviewed at 1240 × 660 and 800 × 540. [Validation report](documentation/CONTROLE_v0.1.66.txt). Native Windows execution remains unconfirmed.
+
+
 FR — v0.1.65
 
 Collection, inventaires et projets — v0.1.65

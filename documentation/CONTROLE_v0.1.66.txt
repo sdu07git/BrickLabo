@@ -1,0 +1,34 @@
+BrickLabo by SDU7 — contrôle v0.1.66
+
+Base : main v0.1.65 (67f1f57a7b5eec0ec70e663660ae8a7a309a3680).
+
+Périmètre
+- Colonne Rangement dans les catalogues de pièces et mini-figurines et le stock en vrac.
+- Aucun tiroir, Déjà rangée, adresse de chaque meuble/tiroir, codes couleur, quantités renseignées.
+- Signalement d’une association existant seulement dans une autre couleur du stock.
+- Plusieurs références dans le même tiroir ; plusieurs tiroirs pour une référence.
+- Rafraîchissement au retour vers un catalogue masqué et après les changements de rangement.
+- Masquage de la colonne conservé ; aucune modification des quantités ou des étiquettes.
+- Aucun code, menu, service ni dépendance de reconnaissance par photo.
+
+Validation du 21 octobre 2026
+- 126 tests ciblés réussis en 17,481 s sous Qt/Linux, Python 3.12 / PySide6 6.11.2.
+- Modules : test_storage_presence, test_ui_corrections, test_storage_and_inventory_batches,
+  test_catalogue_storage, test_catalogue_set_stock_choices, test_i18n, test_button_help,
+  test_software_updates.
+- Six contrôles spécifiques couvrent plusieurs emplacements, couleurs et sources distinctes,
+  deux références dans un tiroir, colonne masquée, réaffichage et couleur zéro.
+- Interfaces examinées à 1240 × 660 et 800 × 540 : états lisibles et défilement accessible.
+- Lanceur AMD64 recompilé avec icône intégrée et versions synchronisées.
+- Fabrication : comparaison des sources / paquet Windows, versions exactes des dépendances,
+  ressources et licences, contrôle CRC des deux ZIP. Aucun changement de dépendance.
+- Les archives excluent Donnees, caches de travail et détecteur photo expérimental.
+
+Limites
+- Les associations utilisent les identités exactes du catalogue : une autre source n’est pas
+  assimilée sans association explicite dans le rangement.
+- Une référence écrite uniquement sur une étiquette n’est pas un emplacement enregistré.
+- Une association, même à zéro ou sans comptage, ne prouve pas qu’une étiquette a été imprimée.
+- Tri de la colonne Rangement non proposé ; les autres tris du catalogue sont conservés.
+- La suite complète n’a pas été relancée pour ce changement de consultation localisé.
+- Exécution native Windows à confirmer. Aucun nouveau correctif de crash revendiqué.

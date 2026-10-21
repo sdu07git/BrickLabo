@@ -1,8 +1,18 @@
-# BrickLabo — v0.1.65
+# BrickLabo — v0.1.66
 
-Windows desktop software for LEGO catalogues, stock, construction searches and labels. This version continues the published v0.1.64, based on the original v0.1.28.
+Windows desktop software for LEGO catalogues, stock, construction searches and labels. This version continues the published v0.1.65, based on the original v0.1.28.
 
-**Downloads v0.1.65 :** [complete Windows package](https://github.com/sdu07git/BrickLabo/releases/download/v0.1.65/BrickLabo_v0.1.65_Complet.zip) · [sources with resources](https://github.com/sdu07git/BrickLabo/releases/download/v0.1.65/BrickLabo_v0.1.65_Sources.zip) · [release notes](https://github.com/sdu07git/BrickLabo/releases/tag/v0.1.65).
+**Downloads v0.1.66 :** [complete Windows package](https://github.com/sdu07git/BrickLabo/releases/download/v0.1.66/BrickLabo_v0.1.66_Complet.zip) · [sources with resources](https://github.com/sdu07git/BrickLabo/releases/download/v0.1.66/BrickLabo_v0.1.66_Sources.zip) · [release notes](https://github.com/sdu07git/BrickLabo/releases/tag/v0.1.66).
+
+## Find parts already assigned to drawers — v0.1.66
+
+The **Storage** column is shown by default in part/minifigure catalogues and loose stock. It reports **No drawer** or **Already assigned**, with cabinet and drawer addresses. Hover for the full list, colour codes and recorded quantities. Loose stock reports when only another colour has an assigned drawer.
+
+Multiple references can share a drawer and label: each is found when it appears in that drawer’s saved contents. Text written only on a label does not create a storage link. The indicator describes recorded locations, including empty assigned drawers, and does not confirm that a label was printed. Catalogue sources remain distinct. Hide the column through **Columns**; that choice is retained. Addresses refresh after changes and when reopening the catalogue.
+
+This stable version retains v0.1.65 features and **does not include photo recognition**.
+
+**Validation v0.1.66:** 126 targeted tests passed under Qt/Linux, including six storage-indicator checks; layouts reviewed at 1240 × 660 and 800 × 540. [Validation report](documentation/CONTROLE_v0.1.66.txt). Native Windows execution remains unconfirmed.
 
 ## Collection, inventories and projects — v0.1.65
 
