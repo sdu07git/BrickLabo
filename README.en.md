@@ -7,19 +7,21 @@ Windows desktop software for LEGO catalogues, stock, construction searches and l
 
 ## Count parts from owned sets in My projects — v0.1.69
 
-In **New construction project** and **My projects**, check **Also count parts from my owned sets** to add the inventories of all sets in **My set stock** to free loose stock. Uncheck it to use loose stock only. This is a per-project choice; existing projects stay loose-only until enabled. The table and available percentage update immediately, with exact or ignored colours.
+In **New construction project** and **My projects**, check **Also count parts from my owned sets** to add the inventories of all sets in **My set stock** to free loose stock. Uncheck it to use loose stock only. The choice is saved per project, in undo/redo and backups. Existing projects stay loose-only until enabled. Availability updates immediately, with exact or ignored colours.
 
-**From owned sets** shows the parts used to cover requirements after loose stock and the project’s own reservations. Hover for the corresponding total in owned sets. Tracked inventories use actual quantities, which already include owned copies, preserving recorded missing pieces. Each part is counted once within a project, including across several requested colours when colours are ignored. An older set without tracked components uses its complete local catalogue inventory when available, with a notice; missing or incomplete inventories are reported.
+**From owned sets** covers requirements after loose stock and this project’s reservations. Hover for the corresponding total in owned sets. The calculation uses actual recorded quantities, partial inventories and owned copy counts, without using a part twice across ignored-colour requirements. Older sets without tracked components use a complete local inventory with a notice; unavailable or incomplete inventories are reported. A check using the bundled Rebrickable inventory of **30363-1** reaches 100% when the complete set is owned and the option enabled, leaving loose stock unchanged.
 
-Sets stay in their catalogue and their components are not transferred to loose stock. Their contribution is a build possibility assessed separately for each project, without reservations across projects. **Reserve available loose stock** and pick lists use loose stock and counted drawers. Use **Compare several rebuilds…** to evaluate simultaneous builds using sets for dismantling. Projects created from searches or comparisons inherit whether sets are included; each project then counts all owned sets, independently of the search’s row filter.
+Sets remain in their catalogue without a transfer to loose stock. Their contribution is a build possibility assessed separately for each project, without reservations across projects. **Reserve available loose stock** and picking use loose stock. Use **Compare several rebuilds…** for simultaneous builds using sets for dismantling. Projects inherit whether sets were included in a search or comparison, then count all owned sets independently of the search’s row filter.
 
-The setting survives restart, undo/redo and selective project backups. Set inventories are preserved in the Sets and their parts backup family.
+The **Choose a set** window can be closed and reopened without “SetPicker already deleted”. Closing the project and late photo results are also guarded.
 
-## Pick list: Already picked — v0.1.69
+## Pick list and removing storage — v0.1.69
 
-**Already picked** lists quantities confirmed using **Pick from selected row…** in **To pick**. A reservation alone is not a pick. An empty tab explains how to record parts actually taken. Rows without counted locations cannot be picked here.
+**Already picked** shows quantities confirmed using **Pick from selected row…** in **To pick**, including fully picked references. Actual reference, colour, quantity and preview remain visible. Picks from the same drawer, reference and colour are grouped. Open windows refresh after changes, returns and undo/redo; switching tabs reloads current data. An empty tab explains how to record a pick. CSV exports count each picked quantity once.
 
-Fully picked parts remain visible with cabinet, drawer, reference, actual colour, quantity and preview. Picks of the same reference and colour from one drawer are grouped. Open windows refresh after stock changes, picks, returns and undo/redo; switching tabs reloads current data. The pick button applies to To pick. CSV exports count each already-picked quantity once, even when several drawers remain to visit.
+**Deleting a cabinet or drawer** keeps all parts in stock. Parts already picked for projects remain in **Already picked** with **No drawer assigned**, preserving reference, colour, quantity and reservations. “FOREIGN KEY constraint failed” no longer blocks this action. Creating new storage never reassigns those picks to new drawers.
+
+**Deleting a project** releases its reservations and picked parts. Owned quantities remain unchanged; picked parts become available without a counted drawer assignment, without assuming they were physically returned to their former drawer. This also works after deleting the cabinet. **Return all picks** remains available to restore quantities to original drawers that still exist; parts without a drawer remain unassigned. Cabinet, drawer and project deletion can be undone, restoring picks and their locations.
 
 ## Build a project with or without the set’s colours — v0.1.68
 

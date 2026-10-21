@@ -1,6 +1,6 @@
 BrickLabo v0.1.69
 
-Nouveau v0.1.69 : Mes projets → Compter aussi les pièces de mes sets possédés. Le calcul additionne le vrac libre et les inventaires réels des sets, sans les déplacer. Le choix se conserve par projet ; Apport des sets détaille le résultat. Les réservations et prélèvements restent sur le vrac. Dans la pick list, Déjà prélevées s’actualise après Annuler/Rétablir, conserve les lignes entièrement prises et explique un onglet vide. Voir documentation/NOUVEAUTES.txt.
+Nouveau v0.1.69 : Mes projets → Compter aussi les pièces de mes sets possédés. Le calcul additionne le vrac libre et les inventaires réels des sets, sans les déplacer. Le choix se conserve par projet ; Apport des sets détaille le résultat. Les réservations et prélèvements restent sur le vrac. Dans la pick list, Déjà prélevées s’actualise après Annuler/Rétablir, conserve les lignes entièrement prises et explique un onglet vide. Supprimer un meuble conserve les prélèvements avec Aucun tiroir défini ; supprimer un projet libère ces pièces dans le stock sans les remettre dans un tiroir. Correction de SetPicker already deleted. Voir documentation/NOUVEAUTES.txt.
 
 Nouveau : Nouveau projet de construction et Mes projets → Ignorer les couleurs. Choisir une reconstruction aux couleurs prévues ou avec toutes les couleurs des références disponibles. La recherche de sets réalisables transmet ce choix au projet. Les couleurs réellement réservées et prélevées restent suivies, sans changer le stock possédé.
 
