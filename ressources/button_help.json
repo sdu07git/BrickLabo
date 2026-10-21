@@ -1085,8 +1085,8 @@
       "en": "Reopens a saved proposal and offers recalculation if stock or cabinets changed."
     },
     "Aligner les meubles…": {
-      "fr": "Aligne tous les meubles horizontalement ou verticalement avec un écart réglable.",
-      "en": "Aligns all cabinets horizontally or vertically with an adjustable gap."
+      "fr": "Dispose tous les meubles en grille, sur une ligne ou en colonne, avec un aperçu et un écart réglable.",
+      "en": "Arranges all cabinets in a grid, a row or a column, with a preview and an adjustable gap."
     },
     "Enregistrer le comptage": {
       "fr": "Enregistre les quantités observées sans modifier les quantités possédées ni le contenu des tiroirs.",
