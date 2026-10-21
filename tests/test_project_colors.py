@@ -176,3 +176,29 @@ class ProjectColorUITests(Fixture):
         item=self.seed_set();result=work.compare_builds(self.db,[(item['id'],1)],ignore_colors=True,include_set_stock=False)
         ids=work.create_comparison_projects(self.db,result,ignore_colors=True)
         self.assertEqual(len(ids),1);self.assertTrue(projects.list_projects(self.db)[0]['ignore_colors']);self.assertEqual(projects.list_projects(self.db)[0]['missing'],0)
+
+
+class ProjectMigrationTests(Fixture):
+    def test_v67_database_with_reservations_and_picks_keeps_old_undo_history(self):
+        pid=projects.create(self.db,'Ancien projet',[dict(item_id=self.part,color='4',quantity=6)])
+        projects.reserve(self.db,pid,quantity=4);drawer=self.drawers[0]['id'];put_entry(self.db,drawer,self.part,'4',10)
+        work.pick(self.db,pid,self.part,'4',drawer,2)
+        # Recreate the previous schema and payloads; new tracking tables are empty.
+        with self.db.connect() as c:
+            for row in c.execute('SELECT id,payload FROM action_history').fetchall():
+                payload=json.loads(row['payload'])
+                for change in payload['changes']:
+                    if change['table']=='construction_projects':
+                        for state in ('before','after'):
+                            if change[state]:change[state].pop('ignore_colors',None)
+                c.execute('UPDATE action_history SET payload=? WHERE id=?',(json.dumps(payload),row['id']))
+            c.execute('DROP VIEW project_stock_reservations');c.execute('DROP VIEW project_physical_picks')
+            c.execute('DROP TABLE project_color_pick_rows');c.execute('DROP TABLE project_color_reservations')
+            c.execute('ALTER TABLE construction_projects DROP COLUMN ignore_colors')
+        self.db.close();self.db=Database(self.root/'atelier.sqlite')
+        self.assertFalse(projects.list_projects(self.db)[0]['ignore_colors']);self.assertEqual(projects.detail(self.db,pid)[0]['reserved'],4)
+        self.assertEqual(self.count(drawer),8)
+        for _ in range(4):self.assertTrue(self.db.undo_last_action())
+        self.assertEqual(projects.list_projects(self.db),[])
+        for _ in range(4):self.assertTrue(self.db.redo_last_action())
+        self.assertEqual(self.count(drawer),8);self.assertEqual(projects.detail(self.db,pid)[0]['reserved'],4)
