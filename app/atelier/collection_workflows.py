@@ -207,6 +207,16 @@ def pick_list(db,project_id):
     return rows
 
 
+def picked_list(db,project_id):
+    """Keep completed picks, grouped by their actual reference, colour and drawer."""
+    return db.rows('''SELECT w.name AS cabinet,d.col,d.row,p.drawer_id,p.item_id,
+      i.source,i.ref,p.color,SUM(p.quantity) AS quantity
+      FROM project_physical_picks p JOIN storage_drawers d ON d.id=p.drawer_id
+      JOIN storage_walls w ON w.id=d.wall_id JOIN items i ON i.id=p.item_id
+      WHERE p.project_id=? GROUP BY p.drawer_id,p.item_id,p.color
+      ORDER BY w.y,w.x,w.id,d.row,d.col,i.source,i.ref,p.color''',(project_id,))
+
+
 def pick(db,project_id,item_id,color,drawer_id,quantity,expected=None,need_color=None):
     from .action_history import change
     from .project_colors import enabled,reserve as reserve_colors
@@ -280,7 +290,7 @@ def compare_builds(db,candidates,ignore_colors=False,exclude_minifigs=False,incl
         used=Counter()
         for index in best:used.update(choices[index]['required'])
         return dict(choices=choices,selected=best,available=available,remaining=available-used,stock_revision=c.execute('SELECT version FROM stock_revision WHERE id=1').fetchone()[0],
-                    warnings=list(reader.warnings) if hasattr(reader,'warnings') else [],ignore_colors=bool(ignore_colors))
+                    warnings=list(reader.warnings) if hasattr(reader,'warnings') else [],ignore_colors=bool(ignore_colors),include_set_stock=bool(include_set_stock))
 
 
 def correct_lot_quantity(db,lot_id,scope,item_id,color,quantity):
@@ -320,6 +330,8 @@ def create_comparison_projects(db,result,exclude_minifigs=False,allow_alternativ
     from .projects import equivalent_parts
     if ignore_colors is None:ignore_colors=result.get('ignore_colors',False)
     if type(ignore_colors) is not bool:raise ValueError(tr('Réglage des couleurs du projet invalide.'))
+    include_set_stock=result.get('include_set_stock',False)
+    if type(include_set_stock) is not bool:raise ValueError(tr('Réglage du stock du projet invalide.'))
     prepared=[]
     for index in result['selected']:
         choice=result['choices'][index];item=db.get_item(choice['id'])
@@ -334,7 +346,7 @@ def create_comparison_projects(db,result,exclude_minifigs=False,allow_alternativ
         for item,copies,parts in prepared:
             current=c.execute('SELECT source,ref FROM items WHERE id=?',(item['id'],)).fetchone()
             if not current or (current['source'],current['ref'])!=(item['source'],item['ref']):raise ValueError(tr('Les références des sets ont changé. Relance la comparaison.'))
-            identity=c.execute('INSERT INTO construction_projects(name,set_id,copies,ignore_colors) VALUES(?,?,?,?)',(item['ref']+' · '+item['name'],item['id'],copies,int(ignore_colors))).lastrowid
+            identity=c.execute('INSERT INTO construction_projects(name,set_id,copies,ignore_colors,include_set_stock) VALUES(?,?,?,?,?)',(item['ref']+' · '+item['name'],item['id'],copies,int(ignore_colors),int(include_set_stock))).lastrowid
             totals=Counter()
             for part in parts:totals[(part['item_id'],part['color'])]+=number(part['quantity'],1)
             c.executemany('INSERT INTO project_parts(project_id,item_id,color,required) VALUES(?,?,?,?)',[(identity,k[0],k[1],number(v,1)) for k,v in totals.items()]);identities.append(identity)

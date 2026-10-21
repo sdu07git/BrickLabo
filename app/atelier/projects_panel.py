@@ -58,7 +58,7 @@ def color_options(db, item):
 
 
 class NewProjectDialog(QDialog):
-    def __init__(self, panel, item=None, copies=1, exclude_minifigs=False, context_note='', ignore_colors=False):
+    def __init__(self, panel, item=None, copies=1, exclude_minifigs=False, context_note='', ignore_colors=False, include_set_stock=False):
         super().__init__(panel); self.panel, self.db, self.item = panel, panel.db, item
         self.setWindowTitle(tr('Nouveau projet de construction')); self.resize(700,440);self.picker=None;self.closed=False
         outer=QVBoxLayout(self);scroll=QScrollArea();scroll.setWidgetResizable(True);body=QWidget();layout=QVBoxLayout(body);layout.setSizeConstraint(QVBoxLayout.SizeConstraint.SetMinimumSize);scroll.setWidget(body);outer.addWidget(scroll,1)
@@ -69,11 +69,13 @@ class NewProjectDialog(QDialog):
         self.copies = QSpinBox(); self.copies.setRange(1,10000);self.copies.setValue(copies)
         self.ignore_colors=QCheckBox(tr('Ignorer les couleurs'));self.ignore_colors.setObjectName('new_project_ignore_colors');self.ignore_colors.setChecked(ignore_colors)
         self.ignore_colors.setToolTip(tr('Utiliser toutes les couleurs de chaque référence, en conservant les couleurs prévues pour pouvoir revenir au mode officiel.'))
+        self.include_set_stock=QCheckBox(tr('Compter aussi les pièces de mes sets possédés'));self.include_set_stock.setObjectName('new_project_include_set_stock');self.include_set_stock.setChecked(include_set_stock)
+        self.include_set_stock.setToolTip(tr('Ajouter au calcul les inventaires de tous les sets de Mon stock set, sans les transférer dans le vrac. Les réservations et prélèvements utilisent le vrac.'))
         self.spares = QCheckBox(tr('Inclure les pièces supplémentaires'))
         self.exclude_minifigs = QCheckBox(tr('Exclure les minifigurines'));self.exclude_minifigs.setChecked(exclude_minifigs)
         self.alternatives=QCheckBox(tr('Autoriser les briques alternatives équivalentes'));self.alternatives.setChecked(self.db.setting('build_allow_alternatives',False));self.alternatives.setToolTip(tr('Utiliser les équivalences d’origine connue du vrac libre, en conservant les références et couleurs physiques dans le projet.'))
         form.addRow(tr('Type de projet'),self.kind); form.addRow(tr('Nom'),self.name); form.addRow(self.set_name,self.choose)
-        form.addRow(tr('Exemplaires'),self.copies); form.addRow(self.spares);form.addRow(self.exclude_minifigs);form.addRow(self.ignore_colors);form.addRow(self.alternatives)
+        form.addRow(tr('Exemplaires'),self.copies); form.addRow(self.spares);form.addRow(self.exclude_minifigs);form.addRow(self.ignore_colors);form.addRow(self.include_set_stock);form.addRow(self.alternatives)
         from .set_picker import SetImagePreview
         self.preview=SetImagePreview(panel.engine,self);layout.addWidget(self.preview,1)
         if context_note:
@@ -107,8 +109,8 @@ class NewProjectDialog(QDialog):
         try:
             if self.kind.currentData()=='set':
                 if self.item is None: raise ValueError(tr('Choisis un set.'))
-                identity = projects.from_set(self.db,self.item['id'],self.copies.value(),self.name.text(),self.spares.isChecked(),self.exclude_minifigs.isChecked(),self.alternatives.isChecked(),ignore_colors=self.ignore_colors.isChecked())
-            else: identity = projects.create(self.db,self.name.text(),ignore_colors=self.ignore_colors.isChecked())
+                identity = projects.from_set(self.db,self.item['id'],self.copies.value(),self.name.text(),self.spares.isChecked(),self.exclude_minifigs.isChecked(),self.alternatives.isChecked(),ignore_colors=self.ignore_colors.isChecked(),include_set_stock=self.include_set_stock.isChecked())
+            else: identity = projects.create(self.db,self.name.text(),ignore_colors=self.ignore_colors.isChecked(),include_set_stock=self.include_set_stock.isChecked())
         except (ValueError,sqlite3.Error) as error: QMessageBox.warning(self,tr('Projet'),str(error)); return
         self.panel.refresh(identity); self.panel.changed.emit(); self.accept()
 
@@ -145,12 +147,15 @@ class ProjectsPanel(QWidget):
         detail = QWidget();self.detail_body=detail;detail.installEventFilter(self);box = QVBoxLayout(detail);box.setContentsMargins(0,4,0,0)
         self.summary = QLabel(); self.summary.setWordWrap(True); box.addWidget(self.summary)
         self.ignore_colors=QCheckBox(tr('Ignorer les couleurs'));self.ignore_colors.setObjectName('project_ignore_colors');self.ignore_colors.setToolTip(tr('Ce choix est enregistré pour le projet sélectionné. Les réservations suivent les couleurs réelles du stock.'));self.ignore_colors.toggled.connect(self.change_colors);box.addWidget(self.ignore_colors)
-        self.detail = QTableWidget(0,10); self.detail.setHorizontalHeaderLabels([tr('Source'),tr('Référence'),tr('Pièce'),tr('Catégorie'),tr('Couleur'),tr('Nécessaire'),tr('Réservée'),tr('Libre en stock'),tr('Manquante'),tr('Aperçu')])
+        self.include_set_stock=QCheckBox(tr('Compter aussi les pièces de mes sets possédés'));self.include_set_stock.setObjectName('project_include_set_stock');self.include_set_stock.setToolTip(tr('Ajouter au calcul les inventaires de tous les sets de Mon stock set, sans les transférer dans le vrac. Les réservations et prélèvements utilisent le vrac.'));self.include_set_stock.toggled.connect(self.change_stock);box.addWidget(self.include_set_stock)
+        self.stock_warning=QLabel();self.stock_warning.setWordWrap(True);self.stock_warning.hide();box.addWidget(self.stock_warning)
+        self.detail = QTableWidget(0,11); self.detail.setHorizontalHeaderLabels([tr('Source'),tr('Référence'),tr('Pièce'),tr('Catégorie'),tr('Couleur'),tr('Nécessaire'),tr('Réservée'),tr('Libre en vrac'),tr('Manquante'),tr('Aperçu'),tr('Apport des sets')])
         self.detail.setSelectionBehavior(QAbstractItemView.SelectionBehavior.SelectRows); self.detail.setSelectionMode(QAbstractItemView.SelectionMode.ExtendedSelection)
         self.detail.setEditTriggers(QAbstractItemView.EditTrigger.NoEditTriggers); self.detail.horizontalHeader().setSectionResizeMode(QHeaderView.ResizeMode.Interactive)
-        for column,width in enumerate((60,90,230,150,85,100,100,115,100,130)): self.detail.setColumnWidth(column,width)
+        for column,width in enumerate((60,90,230,150,85,100,100,115,100,130,115)): self.detail.setColumnWidth(column,width)
+        self.detail.horizontalHeaderItem(10).setToolTip(tr('Pièces des sets possédés utilisées pour compléter le besoin après le vrac libre et les réservations de ce projet.'))
         header = self.detail.horizontalHeader()
-        for position,column in enumerate((0,1,4,5,6,7,8,2,3,9)):
+        for position,column in enumerate((0,1,4,5,6,7,10,8,2,3,9)):
             header.moveSection(header.visualIndex(column),position)
         self.detail.setMinimumHeight(120); box.addWidget(self.detail,1)
         self.thumbnails = PartThumbnails(self.detail,db,engine,self.visible_parts,9,self) if engine else None
@@ -159,12 +164,12 @@ class ProjectsPanel(QWidget):
         for label, callback in [(tr('Ajouter une pièce…'),self.add_part),(tr('Quantité nécessaire…'),self.edit_required),(tr('Retirer les pièces sélectionnées'),self.remove_parts),(tr('Réserver la sélection'),self.reserve_selected),(tr('Régler la réservation…'),self.edit_reserved)]:
             self.part_actions.append(self.part_menu.addAction(label,callback))
         self.part_button.setMenu(self.part_menu);self.part_menu.aboutToShow.connect(self.update_part_actions);controls.addWidget(self.part_button)
-        self.reserve_button = QPushButton(tr('Réserver le stock disponible'))
+        self.reserve_button = QPushButton(tr('Réserver le vrac disponible'))
         self.reserve_button.clicked.connect(self.reserve_all); controls.addWidget(self.reserve_button)
         self.release_button = QPushButton(tr('Libérer les réservations'))
         self.release_button.clicked.connect(self.release); controls.addWidget(self.release_button)
         box.addLayout(controls)
-        note = QLabel(tr('Les réservations utilisent le stock en vrac. Ignorer les couleurs autorise toutes les couleurs de la même référence ; les couleurs réellement réservées restent suivies. Un projet terminé garde ses réservations jusqu’à leur libération.')); note.setWordWrap(True); box.addWidget(note)
+        note = QLabel(tr('Le calcul utilise le vrac libre et, si la case est cochée, les pièces de tous les sets possédés. Les sets restent intacts ; leur apport est une possibilité de construction, sans réservation entre projets. Les réservations et prélèvements utilisent uniquement le vrac. Un projet terminé garde ses réservations jusqu’à leur libération.')); note.setWordWrap(True); box.addWidget(note)
         self.detail_scroll=QScrollArea();self.detail_scroll.setWidgetResizable(True);self.detail_scroll.setWidget(detail);self.detail_scroll.setMinimumHeight(150)
         split.addWidget(self.detail_scroll);split.setSizes([150,450]);split.setChildrenCollapsible(False)
         self.table.itemDoubleClicked.connect(self.open_project);self.table.itemSelectionChanged.connect(self.choose_project); self.detail.itemSelectionChanged.connect(self.select_part); self.detail.itemDoubleClicked.connect(self.open_part)
@@ -185,10 +190,14 @@ class ProjectsPanel(QWidget):
         index = row_index(self.table)
         self.project_id = self.rows[index]['id'] if 0<=index<len(self.rows) else None
         self.ignore_colors.blockSignals(True);self.ignore_colors.setEnabled(self.project_id is not None);self.ignore_colors.setChecked(bool(self.rows[index]['ignore_colors']) if self.project_id is not None else False);self.ignore_colors.blockSignals(False)
+        self.include_set_stock.blockSignals(True);self.include_set_stock.setEnabled(self.project_id is not None);self.include_set_stock.setChecked(bool(self.rows[index]['include_set_stock']) if self.project_id is not None else False);self.include_set_stock.blockSignals(False)
+        warnings=self.rows[index]['set_stock_warnings'] if self.project_id is not None else []
+        self.stock_warning.setText('\n'.join(warnings));self.stock_warning.setVisible(bool(warnings))
         self.parts = projects.detail(self.db,self.project_id) if self.project_id is not None else []
-        fill_table(self.detail,[(row['source'],row['ref'],row['name'],row['category'],tf('{} (ignorée)',row['chosen_color'] or tr('Non précisée')) if row.get('ignore_colors') else row['chosen_color'] or tr('Non précisée'),row['required'],row['reserved'],row['free_quantity'],row['missing'],tr('3D / photo à charger')) for row in self.parts])
+        fill_table(self.detail,[(row['source'],row['ref'],row['name'],row['category'],tf('{} (ignorée)',row['chosen_color'] or tr('Non précisée')) if row.get('ignore_colors') else row['chosen_color'] or tr('Non précisée'),row['required'],row['reserved'],row['free_quantity'],row['missing'],tr('3D / photo à charger'),row['set_quantity']) for row in self.parts])
         for position in range(self.detail.rowCount()):
             row=self.parts[row_index(self.detail,position)]
+            self.detail.item(position,10).setToolTip(tf('Quantité présente dans les sets possédés pour cette référence et ce choix de couleurs : {}',row['owned_set_quantity']))
             if row.get('ignore_colors'):
                 colors=', '.join((str(color) or tr('Non précisée'))+' × '+str(quantity) for color,quantity in sorted(row['reserved_colors'].items()))
                 self.detail.item(position,4).setToolTip(tf('Couleurs réellement réservées : {}',colors or tr('Aucune réservation')))
@@ -205,6 +214,9 @@ class ProjectsPanel(QWidget):
 
     def change_colors(self,value):
         if self.project_id is not None and not self.run(lambda:projects.set_ignore_colors(self.db,self.project_id,value)):self.choose_project()
+
+    def change_stock(self,value):
+        if self.project_id is not None and not self.run(lambda:projects.set_include_set_stock(self.db,self.project_id,value)):self.choose_project()
 
     def pick_list(self):
         if self.project_id is None:return
@@ -255,8 +267,8 @@ class ProjectsPanel(QWidget):
         self.refresh(); self.changed.emit(); return True
 
     def new_project(self,*_): return self.create_from_item()
-    def create_from_item(self,item=None,copies=1,exclude_minifigs=False,context_note='',ignore_colors=False):
-        window = NewProjectDialog(self,item,copies,exclude_minifigs,context_note,ignore_colors=ignore_colors); show_window(window,self); return window
+    def create_from_item(self,item=None,copies=1,exclude_minifigs=False,context_note='',ignore_colors=False,include_set_stock=False):
+        window = NewProjectDialog(self,item,copies,exclude_minifigs,context_note,ignore_colors=ignore_colors,include_set_stock=include_set_stock); show_window(window,self); return window
     def rename(self):
         if self.project_id is None: return
         project = next(row for row in self.rows if row['id']==self.project_id)

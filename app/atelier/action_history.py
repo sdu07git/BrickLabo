@@ -183,7 +183,9 @@ def restore(db, redo=False):
         for change in changes:
             if change['table']=='construction_projects':
                 for state in ('before','after'):
-                    if change[state] is not None:change[state].setdefault('ignore_colors',0)
+                    if change[state] is not None:
+                        change[state].setdefault('ignore_colors',0)
+                        change[state].setdefault('include_set_stock',0)
         source, target = ('before', 'after') if redo else ('after', 'before')
         if identities(c, changes) != payload['items']:
             raise ValueError(tr('Les références ont changé ; cette action ne peut pas être restaurée.'))

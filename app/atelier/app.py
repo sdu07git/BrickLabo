@@ -198,9 +198,9 @@ class MainWindow(QMainWindow):
         from .history_dialog import ActionHistoryDialog
         window=ActionHistoryDialog(self.db,self);show_window(window,self);return window
 
-    def create_project(self,item,copies=1,exclude_minifigs=False,context_note='',ignore_colors=False):
+    def create_project(self,item,copies=1,exclude_minifigs=False,context_note='',ignore_colors=False,include_set_stock=False):
         self.nav.setCurrentRow(next(index for index,entry in enumerate(NAV) if entry[3]=='projects'))
-        return self.projects.create_from_item(item,copies,exclude_minifigs,context_note,ignore_colors=ignore_colors)
+        return self.projects.create_from_item(item,copies,exclude_minifigs,context_note,ignore_colors=ignore_colors,include_set_stock=include_set_stock)
 
     def build_from_stock(self):
         from .build_stock import BuildStockDialog

@@ -1,4 +1,4 @@
-"""Construction requirements and reservations of loose stock, with undo/redo."""
+"""Construction availability and reservations of loose stock, with undo/redo."""
 from collections import Counter
 
 from .i18n import tr
@@ -20,6 +20,8 @@ def prepare(c):
         CREATE INDEX IF NOT EXISTS idx_project_parts_stock ON project_parts(item_id,color);''')
     from .project_colors import prepare as prepare_colors
     prepare_colors(c)
+    from .project_stock import prepare as prepare_stock
+    prepare_stock(c)
     for table in TABLES:
         for operation in ('INSERT', 'UPDATE', 'DELETE'):
             c.execute('CREATE TRIGGER IF NOT EXISTS revision_' + table + '_' + operation.lower() + ' AFTER ' + operation + ' ON ' + table + ' BEGIN UPDATE stock_revision SET version=version+1 WHERE id=1; END')
@@ -48,9 +50,10 @@ def free(c, item_id, color, own_project=None):
     return max(0, int(stock['quantity']) - int(reserved)) if stock else 0
 
 
-def create(db, name, parts=(), set_id=None, copies=1, ignore_colors=False):
+def create(db, name, parts=(), set_id=None, copies=1, ignore_colors=False, include_set_stock=False):
     from .action_history import change
     if type(ignore_colors) is not bool:raise ValueError(tr('Réglage des couleurs du projet invalide.'))
+    if type(include_set_stock) is not bool:raise ValueError(tr('Réglage du stock du projet invalide.'))
     name = name.strip()
     if not name:
         raise ValueError(tr('Nom du projet obligatoire.'))
@@ -61,7 +64,7 @@ def create(db, name, parts=(), set_id=None, copies=1, ignore_colors=False):
     with db.connect() as c, change(c, TABLES, tr('Création d’un projet')):
         if set_id is not None and not c.execute("SELECT 1 FROM items WHERE id=? AND kind='set'", (set_id,)).fetchone():
             raise ValueError(tr('Set introuvable.'))
-        identity = c.execute('INSERT INTO construction_projects(name,set_id,copies,ignore_colors) VALUES(?,?,?,?)', (name, set_id, copies, int(ignore_colors))).lastrowid
+        identity = c.execute('INSERT INTO construction_projects(name,set_id,copies,ignore_colors,include_set_stock) VALUES(?,?,?,?,?)', (name, set_id, copies, int(ignore_colors), int(include_set_stock))).lastrowid
         for (item_id, color), quantity in totals.items():
             amount(quantity, 1)
             if not c.execute("SELECT 1 FROM items WHERE id=? AND kind IN ('part','minifig')", (item_id,)).fetchone():
@@ -70,7 +73,7 @@ def create(db, name, parts=(), set_id=None, copies=1, ignore_colors=False):
     return identity
 
 
-def from_set(db, set_id, copies=1, name='', spares=False, exclude_minifigs=False, allow_alternatives=False, ignore_colors=False):
+def from_set(db, set_id, copies=1, name='', spares=False, exclude_minifigs=False, allow_alternatives=False, ignore_colors=False, include_set_stock=False):
     amount(copies, 1)
     item = db.get_item(set_id)
     if not item or item['kind'] != 'set':
@@ -82,7 +85,7 @@ def from_set(db, set_id, copies=1, name='', spares=False, exclude_minifigs=False
               'quantity': int(row.get('chosen_quantity', 1)) * copies}
              for row in components if spares or not row.get('is_spare')]
     if allow_alternatives:parts=equivalent_parts(db,parts,ignore_colors=ignore_colors)
-    return create(db, name or item['ref'] + ' · ' + item['name'], parts, set_id, copies, ignore_colors)
+    return create(db, name or item['ref'] + ' · ' + item['name'], parts, set_id, copies, ignore_colors, include_set_stock)
 
 
 def equivalent_parts(db, parts, ignore_colors=False):
@@ -202,18 +205,30 @@ def delete(db, project_id):
 def detail(db, project_id):
     with db.read() as c:
         c.execute('BEGIN')
-        rows=[dict(r) for r in c.execute('''SELECT i.*,p.project_id,p.color AS chosen_color,p.required,p.reserved,
+        return _detail(c, project_id)
+
+
+def _detail(c, project_id, set_stock=None):
+    rows=[dict(r) for r in c.execute('''SELECT i.*,p.project_id,p.color AS chosen_color,p.required,p.reserved,
         COALESCE(s.quantity,0) AS chosen_quantity,
         MAX(0,COALESCE(s.quantity,0)-(SELECT COALESCE(SUM(x.reserved),0) FROM project_stock_reservations x WHERE x.item_id=p.item_id AND x.color=p.color)) AS free_quantity,
         MAX(0,p.required-p.reserved-MAX(0,COALESCE(s.quantity,0)-(SELECT COALESCE(SUM(x.reserved),0) FROM project_stock_reservations x WHERE x.item_id=p.item_id AND x.color=p.color))) AS missing
         FROM project_parts p JOIN items i ON i.id=p.item_id
         LEFT JOIN stock s ON s.item_id=p.item_id AND s.color=p.color
         WHERE p.project_id=? ORDER BY i.source,i.ref,p.color''', (project_id,))]
-        from .project_colors import enabled,decorate_detail
-        if not rows:return rows
-        if enabled(c,project_id):return decorate_detail(c,project_id,rows)
+    from .project_colors import enabled,decorate_detail
+    if not rows:return rows
+    ignore_colors=enabled(c,project_id)
+    if ignore_colors:decorate_detail(c,project_id,rows)
+    else:
         for row in rows:row.update(ignore_colors=False,reserved_colors={row['chosen_color']:row['reserved']} if row['reserved'] else {})
-        return rows
+    for row in rows:
+        row.update(set_quantity=0,owned_set_quantity=0)
+        row.setdefault('reservable_quantity',min(row['required'],row['reserved']+row['free_quantity']))
+    if c.execute('SELECT include_set_stock FROM construction_projects WHERE id=?',(project_id,)).fetchone()[0]:
+        from .project_stock import owned_sets,decorate
+        decorate(rows,owned_sets(c)[0] if set_stock is None else set_stock,ignore_colors)
+    return rows
 
 
 def list_projects(db):
@@ -226,9 +241,23 @@ def list_projects(db):
         FROM project_parts x LEFT JOIN stock s ON s.item_id=x.item_id AND s.color=x.color WHERE x.project_id=p.id),0) AS missing
         FROM construction_projects p LEFT JOIN items i ON i.id=p.set_id ORDER BY p.id DESC''')]
         from .project_colors import missing
+        from .project_stock import owned_sets
+        set_stock,warnings=owned_sets(c) if any(row['include_set_stock'] for row in rows) else ({},[])
         for row in rows:
-            if row['ignore_colors']:row['missing']=missing(c,row['id'])
+            row['set_stock_warnings']=warnings if row['include_set_stock'] else []
+            if row['include_set_stock']:row['missing']=sum(part['missing'] for part in _detail(c,row['id'],set_stock))
+            elif row['ignore_colors']:row['missing']=missing(c,row['id'])
         return rows
+
+
+def set_include_set_stock(db,project_id,value):
+    from .action_history import change
+    if type(value) is not bool:raise ValueError(tr('Réglage du stock du projet invalide.'))
+    with db.connect() as c,change(c,('construction_projects',),tr('Réglage du stock d’un projet')):
+        row=c.execute('SELECT include_set_stock FROM construction_projects WHERE id=?',(project_id,)).fetchone()
+        if not row:raise ValueError(tr('Projet introuvable.'))
+        if bool(row['include_set_stock'])!=value:
+            c.execute('UPDATE construction_projects SET include_set_stock=? WHERE id=?',(int(value),project_id))
 
 
 def set_ignore_colors(db,project_id,value):

@@ -300,9 +300,9 @@ class BuildStockDialog(QDialog):
         if getattr(self,'last_alternatives',False):note+=' '+tr('Les alternatives équivalentes libres du vrac peuvent être utilisées. Pour réserver des pièces d’un set possédé, transfère d’abord son inventaire dans le vrac.')
         from .windows import application_owner
         owner=application_owner(self)
-        if owner is not self and hasattr(owner,'create_project'):return owner.create_project(item,self.last_copies,self.last_exclude_minifigs,note,ignore_colors=self.last_ignore)
+        if owner is not self and hasattr(owner,'create_project'):return owner.create_project(item,self.last_copies,self.last_exclude_minifigs,note,ignore_colors=self.last_ignore,include_set_stock=getattr(self,'last_include_sets',True))
         from .projects_panel import ProjectsPanel,NewProjectDialog
-        panel=ProjectsPanel(self.db,self.engine,self);panel.hide();window=NewProjectDialog(panel,item,self.last_copies,self.last_exclude_minifigs,note,ignore_colors=self.last_ignore)
+        panel=ProjectsPanel(self.db,self.engine,self);panel.hide();window=NewProjectDialog(panel,item,self.last_copies,self.last_exclude_minifigs,note,ignore_colors=self.last_ignore,include_set_stock=getattr(self,'last_include_sets',True))
         show_window(window,self,lambda *_:panel.deleteLater());return window
 
     def show_alternates(self,item):

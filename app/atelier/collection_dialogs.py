@@ -250,29 +250,45 @@ class PickListDialog(WorkflowDialog):
         super().__init__(parent);self.db=db;self.project_id=project_id;self.rows=[];self.palette=color_names(db);self.setWindowTitle(tr('Liste de prélèvement'));self.resize(1050,640)
         layout=QVBoxLayout(self);note=QLabel(tr('Prélève les quantités réellement prises dans les tiroirs. Elles restent possédées et sont réservées au projet. Retourne les prélèvements avant de supprimer le projet ou de libérer ces réservations.'));note.setWordWrap(True);layout.addWidget(note)
         self.table=table([tr('Meuble'),tr('Tiroir'),tr('Source'),tr('Référence'),tr('Couleur'),tr('À prendre'),tr('Déjà prélevée'),tr('Aperçu')]);layout.addWidget(self.table,1)
-        self.taken_table=table([tr('Meuble'),tr('Tiroir'),tr('Source'),tr('Référence'),tr('Couleur'),tr('Déjà prélevée')])
+        self.taken_table=table([tr('Meuble'),tr('Tiroir'),tr('Source'),tr('Référence'),tr('Couleur'),tr('Déjà prélevée'),tr('Aperçu')])
         from PySide6.QtWidgets import QTabWidget
-        tabs=QTabWidget();layout.removeWidget(self.table);tabs.addTab(self.table,tr('À prélever'));tabs.addTab(self.taken_table,tr('Déjà prélevées'));layout.addWidget(tabs,1)
+        self.tabs=QTabWidget();layout.removeWidget(self.table);self.tabs.addTab(self.table,tr('À prélever'));self.tabs.addTab(self.taken_table,tr('Déjà prélevées'));layout.addWidget(self.tabs,1)
+        self.empty_note=QLabel();self.empty_note.setWordWrap(True);layout.addWidget(self.empty_note)
         self.engine=engine
         from .thumbnails import PartThumbnails
         self.thumbs=PartThumbnails(self.table,db,engine,self.visible_parts,7,self) if engine else None
+        self.taken_thumbs=PartThumbnails(self.taken_table,db,engine,self.visible_taken_parts,6,self) if engine else None
         if self.thumbs:self.table.model().layoutChanged.connect(self.thumbs.reset)
+        if self.taken_thumbs:self.taken_table.model().layoutChanged.connect(self.taken_thumbs.reset)
         bar=FlowLayout()
-        for label,callback in [(tr('Prélever la ligne…'),self.take),(tr('Retourner tous les prélèvements'),self.return_all),(tr('Exporter la liste…'),self.export),(tr('Actualiser'),self.refresh)]:
-            button=QPushButton(label);button.clicked.connect(callback);bar.addWidget(button)
+        for name,label,callback in [('take_button',tr('Prélever la ligne…'),self.take),('return_button',tr('Retourner tous les prélèvements'),self.return_all),('export_button',tr('Exporter la liste…'),self.export),('refresh_button',tr('Actualiser'),self.refresh)]:
+            button=QPushButton(label);button.clicked.connect(callback);bar.addWidget(button);setattr(self,name,button)
         layout.addLayout(bar);self.status=QLabel();self.status.setWordWrap(True);layout.addWidget(self.status);self.refresh()
+        self.tabs.currentChanged.connect(lambda *_:self.refresh())
+        self.table.itemSelectionChanged.connect(self.update_controls)
     def visible_parts(self):return [preview_item(self.db,self.rows[row_index(self.table,n)]['item_id'],self.rows[row_index(self.table,n)]['color']) for n in range(self.table.rowCount())]
+    def visible_taken_parts(self):return [preview_item(self.db,self.taken_rows[row_index(self.taken_table,n)]['item_id'],self.taken_rows[row_index(self.taken_table,n)]['color']) for n in range(self.taken_table.rowCount())]
     def refresh(self):
         self.rows=work.pick_list(self.db,self.project_id)
         fill_table(self.table,[(r['cabinet'],str(r['col'])+'/'+str(r['row']) if r['drawer_id'] else '',r['source'],r['ref'],tr('Toutes les couleurs') if r.get('ignore_colors') and not r['drawer_id'] else color_label(dict(r,chosen_color=r['color']),self.palette),r['suggested'],r['taken'],tr('3D / photo à charger')) for r in self.rows])
-        self.taken_rows=self.db.rows('''SELECT w.name AS cabinet,d.col,d.row,i.source,i.ref,p.color,p.quantity
-          FROM project_physical_picks p JOIN storage_drawers d ON d.id=p.drawer_id JOIN storage_walls w ON w.id=d.wall_id
-          JOIN items i ON i.id=p.item_id WHERE p.project_id=? ORDER BY w.y,w.x,d.row,d.col,i.ref,p.color''',(self.project_id,))
-        fill_table(self.taken_table,[(r['cabinet'],str(r['col'])+'/'+str(r['row']),r['source'],r['ref'],color_label(dict(r,chosen_color=r['color']),self.palette),r['quantity']) for r in self.taken_rows])
-        total=self.db.rows('SELECT COALESCE(SUM(quantity),0) AS n FROM project_physical_picks WHERE project_id=?',(self.project_id,))[0]['n']
+        self.taken_rows=work.picked_list(self.db,self.project_id)
+        fill_table(self.taken_table,[(r['cabinet'],str(r['col'])+'/'+str(r['row']),r['source'],r['ref'],color_label(dict(r,chosen_color=r['color']),self.palette),r['quantity'],tr('3D / photo à charger')) for r in self.taken_rows])
+        total=sum(r['quantity'] for r in self.taken_rows)
         self.status.setText(tf('{0} pièce(s) prélevée(s) pour ce projet. Les lignes sans emplacement compté ne peuvent pas être prélevées ici.',total))
         if self.thumbs:self.thumbs.reset()
+        if self.taken_thumbs:self.taken_thumbs.reset()
+        self.update_controls()
+    def update_controls(self):
+        index=row_index(self.table);taking=self.tabs.currentIndex()==0
+        self.take_button.setEnabled(taking and 0<=index<len(self.rows) and bool(self.rows[index]['drawer_id']))
+        self.return_button.setEnabled(bool(self.taken_rows))
+        empty=not (self.rows if taking else self.taken_rows)
+        self.empty_note.setText(tr('Aucune pièce à prélever. Consulte Déjà prélevées pour les pièces déjà prises.') if taking else tr('Aucun prélèvement enregistré pour ce projet. Dans À prélever, sélectionne un tiroir puis Prélever la ligne… et confirme la quantité réellement prise.'))
+        self.empty_note.setVisible(empty)
+    def stock_changed(self):
+        if not self.closed:self.refresh()
     def take(self):
+        if self.tabs.currentIndex()!=0:return
         index=row_index(self.table)
         if not 0<=index<len(self.rows):return
         row=dict(self.rows[index])
@@ -287,11 +303,12 @@ class PickListDialog(WorkflowDialog):
         def run():work.return_picks(self.db,self.project_id);self.refresh();notify_changed(self)
         safe(self,run)
     def export(self):
-        rows=[(r['cabinet'],str(r['col'])+'/'+str(r['row']) if r['drawer_id'] else '',r['source'],r['ref'],'*' if r.get('ignore_colors') and not r['drawer_id'] else r['color'],r['suggested'],r['taken']) for r in self.rows]
+        rows=[(r['cabinet'],str(r['col'])+'/'+str(r['row']) if r['drawer_id'] else '',r['source'],r['ref'],'*' if r.get('ignore_colors') and not r['drawer_id'] else r['color'],r['suggested'],0) for r in self.rows]
         rows.extend((r['cabinet'],str(r['col'])+'/'+str(r['row']),r['source'],r['ref'],r['color'],0,r['quantity']) for r in self.taken_rows)
         export_rows(self,[tr('Meuble'),tr('Tiroir'),tr('Source'),tr('Référence'),tr('Couleur'),tr('À prendre'),tr('Déjà prélevée')],rows,'BrickLabo_prelevements.csv')
     def done(self,result):
         if self.thumbs:self.thumbs.stop()
+        if self.taken_thumbs:self.taken_thumbs.stop()
         super().done(result)
 
 
