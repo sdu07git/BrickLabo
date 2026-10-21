@@ -581,16 +581,13 @@ class StoragePanel(QWidget):
     def align_dialog(self):
         captured=self.db.rows('SELECT * FROM storage_walls ORDER BY y,x,id')
         if not captured:return
-        dialog=QDialog(self);dialog.setWindowTitle(tr('Aligner les meubles'));form=QFormLayout(dialog)
-        direction=QComboBox();direction.addItem(tr('Horizontalement'),'horizontal');direction.addItem(tr('Verticalement'),'vertical');form.addRow(tr('Direction'),direction)
-        gap=QDoubleSpinBox();gap.setRange(0,100);gap.setDecimals(1);gap.setSingleStep(.1);gap.setValue(.2);form.addRow(tr('Écart entre les meubles'),gap)
-        note=QLabel(tr('Aligne tous les meubles dans leur ordre actuel de lecture, depuis le premier. Les tiroirs et leurs contenus sont conservés.'));note.setWordWrap(True);form.addRow(note)
-        buttons=QDialogButtonBox(QDialogButtonBox.StandardButton.Apply|QDialogButtonBox.StandardButton.Cancel);form.addRow(buttons);buttons.rejected.connect(dialog.reject)
+        from .storage_alignment import StorageAlignmentDialog
+        dialog=StorageAlignmentDialog(captured,self)
         def apply():
-            try:store.align_walls(self.db,direction.currentData(),gap.value(),captured)
+            try:store.align_walls(self.db,dialog.direction.currentData(),dialog.gap.value(),captured,per_row=dialog.per_row.value())
             except (ValueError,sqlite3.Error) as error:QMessageBox.warning(dialog,tr('Aligner les meubles'),str(error));return
             self.all_walls.setChecked(True);self.reload_walls();self.fit();notify_changed(self);dialog.accept()
-        buttons.button(QDialogButtonBox.StandardButton.Apply).clicked.connect(apply);show_window(dialog,self);return dialog
+        dialog.buttons.button(QDialogButtonBox.StandardButton.Apply).clicked.connect(apply);show_window(dialog,self);return dialog
 
     def position_dialog(self):
         captured_wall=self.wall_id

@@ -278,20 +278,36 @@ def search(db,query,wall_id=None):
     return [r for r in rows if all(word in normalize(' '.join(str(r[k]) for k in ('ref','piece_name','category','dimensions','color','color_name','name','wall_name'))) for word in words)]
 
 
-def align_walls(db,direction='horizontal',gap=.2,expected=None):
-    """Align every cabinet in current reading order, atomically and undoably."""
-    from .action_history import change
-    if direction not in ('horizontal','vertical'):raise ValueError(tr('Alignement du meuble invalide.'))
+def alignment_positions(selected,direction='horizontal',gap=.2,per_row=4):
+    """Plan positions for a captured reading order without modifying storage."""
+    if direction not in ('horizontal','vertical','grid'):raise ValueError(tr('Alignement du meuble invalide.'))
     gap=coordinate(gap)
     if gap<0:raise ValueError(tr('Position relative du meuble invalide.'))
-    with db.connect() as c,change(c,('storage_walls',),tr('Alignement des meubles')):
-        selected=[dict(row) for row in c.execute('SELECT * FROM storage_walls ORDER BY y,x,id')]
-        if expected is not None and selected!=expected:raise ValueError(tr('Les meubles ont changé. Rouvre la fenêtre d’alignement.'))
-        if not selected:return
-        x,y=selected[0]['x'],selected[0]['y'];positions=[]
+    if direction=='grid' and (type(per_row) is not int or per_row<1):raise ValueError(tr('Le nombre de meubles par rangée doit être un entier positif.'))
+    if not selected:return []
+    x,y=selected[0]['x'],selected[0]['y'];positions=[]
+    if direction=='grid':
+        count=min(per_row,len(selected))
+        widths=[max(extent(wall)[0] for wall in selected[column::count]) for column in range(count)]
+        heights=[max(extent(wall)[1] for wall in selected[start:start+count]) for start in range(0,len(selected),count)]
+        xs=[x];ys=[y]
+        for width in widths[:-1]:xs.append(round(xs[-1]+width+gap,1))
+        for height in heights[:-1]:ys.append(round(ys[-1]+height+gap,1))
+        positions=[(coordinate(xs[index%count]),coordinate(ys[index//count]),wall['id']) for index,wall in enumerate(selected)]
+    else:
         for wall in selected:
             positions.append((coordinate(x),coordinate(y),wall['id']))
             width,height=extent(wall)
             if direction=='horizontal':x=round(x+width+gap,1)
             else:y=round(y+height+gap,1)
+    return positions
+
+
+def align_walls(db,direction='horizontal',gap=.2,expected=None,per_row=4):
+    """Align every cabinet atomically; drawer identities and contents stay intact."""
+    from .action_history import change
+    with db.connect() as c,change(c,('storage_walls',),tr('Alignement des meubles')):
+        selected=[dict(row) for row in c.execute('SELECT * FROM storage_walls ORDER BY y,x,id')]
+        if expected is not None and selected!=expected:raise ValueError(tr('Les meubles ont changé. Rouvre la fenêtre d’alignement.'))
+        positions=alignment_positions(selected,direction,gap,per_row)
         c.executemany('UPDATE storage_walls SET x=?,y=? WHERE id=?',positions)
