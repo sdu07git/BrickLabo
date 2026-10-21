@@ -1741,5 +1741,14 @@
   "Tiroir dans une autre couleur": "Drawer for another colour",
   "Couleur : {}": "Colour: {}",
   "Toutes couleurs / non précisée": "All colours / unspecified",
-  "{} pièce(s)": "{} piece(s)"
+  "{} pièce(s)": "{} piece(s)",
+  "En grille": "In a grid",
+  "Meubles par rangée": "Cabinets per row",
+  "Aperçu de la disposition des meubles": "Cabinet layout preview",
+  "Avec 8 meubles, choisir 4 crée deux rangées de 4 meubles.": "With 8 cabinets, choosing 4 creates two rows of 4 cabinets.",
+  "Le nombre de meubles par rangée doit être un entier positif.": "The number of cabinets per row must be a positive integer.",
+  "{0} meuble(s) · {1} rangée(s) · jusqu’à {2} meuble(s) par rangée": "{0} cabinet(s) · {1} row(s) · up to {2} cabinet(s) per row",
+  "Disposition": "Layout",
+  "L’ordre suit la disposition actuelle, de gauche à droite puis de haut en bas. En grille, les colonnes s’alignent sur le meuble le plus large et les rangées sur le plus haut. Appliquer enregistre la disposition.": "Order follows the current layout, left to right then top to bottom. In a grid, columns fit the widest cabinet and rows fit the tallest. Apply saves the layout.",
+  "Meuble {0} : {1}": "Cabinet {0}: {1}"
 }
