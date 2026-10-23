@@ -25,7 +25,7 @@ def snapshot(db):
         for source in ('RB','BL','ALT'):
             row=dict(c.execute("SELECT COUNT(*) AS sets,MAX(imported_at) AS last_import FROM items WHERE source=? AND kind='set' AND catalogue_hidden=0",(source,)).fetchone())
             if source=='RB':present=c.execute("SELECT COUNT(*) FROM items i WHERE source='RB' AND kind='set' AND catalogue_hidden=0 AND EXISTS(SELECT 1 FROM inventories v WHERE v.set_num=i.ref)").fetchone()[0]
-            elif source=='BL':present=c.execute("SELECT COUNT(*) FROM items i WHERE source='BL' AND kind='set' AND catalogue_hidden=0 AND (EXISTS(SELECT 1 FROM bl_manual_inventory b WHERE b.set_id=i.id) OR EXISTS(SELECT 1 FROM settings s WHERE s.key='bl_inventory_'+i.ref))").fetchone()[0]
+            elif source=='BL':present=c.execute("SELECT COUNT(*) FROM items i WHERE source='BL' AND kind='set' AND catalogue_hidden=0 AND (EXISTS(SELECT 1 FROM bl_manual_inventory b WHERE b.set_id=i.id) OR EXISTS(SELECT 1 FROM catalogue_inventory v WHERE v.source='BL' AND v.ref=i.ref) OR EXISTS(SELECT 1 FROM settings s WHERE s.key='bl_components_'||i.ref))").fetchone()[0]
             else:present=c.execute("SELECT COUNT(*) FROM items i WHERE source='ALT' AND kind='set' AND catalogue_hidden=0 AND EXISTS(SELECT 1 FROM settings s WHERE s.key='alt_components_'||i.id)").fetchone()[0]
             sources.append(dict(row,source=source,inventories_present=present,without_local_inventory=max(0,row['sets']-present)))
         imports=[dict(r) for r in c.execute('SELECT * FROM imports ORDER BY date DESC LIMIT 20')]
