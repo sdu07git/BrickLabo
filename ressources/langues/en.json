@@ -1968,5 +1968,11 @@
   "Dernière sauvegarde : ": "Last backup: ",
   "Dernière sauvegarde automatique : ": "Last automatic backup: ",
   "Sauvegarde automatique interrompue : ": "Automatic backup interrupted: ",
-  "{0} pièces en vrac · {1} références · {2} sets possédés\n{3} pièces réservées · {4} exemplaires affectés aux projets\n{5} pièces localisées · {6} pièces à ranger · {7} liens sans quantité\n{8} meubles · {9} tiroirs · {10} projets actifs": "{0} loose units · {1} references · {2} owned sets\n{3} reserved loose units · {4} set copies assigned to projects\n{5} located units · {6} units to store · {7} links without quantities\n{8} cabinets · {9} drawers · {10} active projects"
+  "{0} pièces en vrac · {1} références · {2} sets possédés\n{3} pièces réservées · {4} exemplaires affectés aux projets\n{5} pièces localisées · {6} pièces à ranger · {7} liens sans quantité\n{8} meubles · {9} tiroirs · {10} projets actifs": "{0} loose units · {1} references · {2} owned sets\n{3} reserved loose units · {4} set copies assigned to projects\n{5} located units · {6} units to store · {7} links without quantities\n{8} cabinets · {9} drawers · {10} active projects",
+  "Inventaires en arrière-plan…": "Background inventories…",
+  "Inventaires : {0}/{1}": "Inventories: {0}/{1}",
+  "Chargement en arrière-plan": "Loading in the background",
+  "Chargement en pause": "Loading paused",
+  "Chargement terminé": "Loading completed",
+  "Tu peux fermer cette fenêtre : le chargement continue tant que BrickLabo reste ouvert. La progression reste accessible dans la barre d’état.": "You can close this window: loading continues while BrickLabo remains open. Progress stays available in the status bar."
 }
