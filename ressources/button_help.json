@@ -1319,6 +1319,10 @@
     "Arrêter l’accès téléphone": {
       "fr": "Arrête le serveur local et invalide les connexions téléphoniques.",
       "en": "Stops the local server and invalidates phone sessions."
+    },
+    "Inventaires en arrière-plan…": {
+      "fr": "Retrouve le chargement des inventaires, sa progression et la commande Pause. Fermer la fenêtre laisse le chargement actif.",
+      "en": "Reopens inventory loading, its progress and Pause control. Closing that window leaves loading active."
     }
   },
   "contexts": {
