@@ -184,7 +184,7 @@ class LotsDialog(WorkflowDialog):
         form=QFormLayout();self.name=QLineEdit();self.provenance=QLineEdit();self.price=QDoubleSpinBox();self.price.setRange(0,10000000);self.price.setDecimals(2);self.price.setSuffix(' €');self.comment=QLineEdit()
         for title,widget in [(tr('Nom'),self.name),(tr('Provenance'),self.provenance),(tr('Prix'),self.price),(tr('Commentaire'),self.comment)]:form.addRow(title,widget)
         layout.addLayout(form);bar=FlowLayout()
-        for title,callback in [(tr('Nouveau lot'),self.new),(tr('Enregistrer le lot'),self.save),(tr('Ajouter au lot…'),self.add),(tr('Annuler les apports du lot…'),self.cancel),(tr('Actualiser'),self.refresh)]:
+        for title,callback in [(tr('Nouveau lot'),self.new),(tr('Enregistrer le lot'),self.save),(tr('Ajouter au lot…'),self.add),(tr('Analyser ce lot…'),self.analyze_lot),(tr('Annuler les apports du lot…'),self.cancel),(tr('Actualiser'),self.refresh)]:
             button=QPushButton(title);button.clicked.connect(callback);bar.addWidget(button)
         layout.addLayout(bar);correction=QPushButton(tr('Corriger la quantité du lot…'));correction.clicked.connect(self.correct);layout.addWidget(correction);self.detail=table([tr('Source'),tr('Référence'),tr('Couleur'),tr('Quantité'),tr('Destination')]);layout.addWidget(self.detail,1)
         note=QLabel(tr('Les nouveaux imports sont suivis automatiquement par lot. Les anciens ajouts ne sont pas reconstitués. L’annulation retire seulement les apports suivis ; elle est refusée si le stock restant ne couvre plus les tiroirs ou les réservations.'));note.setWordWrap(True);layout.addWidget(note)
@@ -211,6 +211,10 @@ class LotsDialog(WorkflowDialog):
                 self.db.run('UPDATE purchase_lots SET name=?,provenance=?,price_cents=?,comment=? WHERE id=?',(self.name.text().strip(),self.provenance.text().strip(),round(self.price.value()*100),self.comment.text().strip(),self.identity))
             self.refresh();return True
         return safe(self,write)
+    def analyze_lot(self):
+        if not self.identity:return
+        from .collection_extensions_ui import LotAnalysisDialog
+        return show_window(LotAnalysisDialog(self.db,self.engine,self,self.identity),self)
     def add(self):
         if not self.identity and not self.save():return
         captured=self.identity

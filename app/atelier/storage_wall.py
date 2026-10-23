@@ -87,6 +87,7 @@ def duplicate_wall(db,wall_id,name,expected_format=None):
         x=round(c.execute('SELECT COALESCE(MAX(x+columns+.5),0) FROM storage_walls').fetchone()[0],1)
         x,y=check_position(c,None,x,0,layout['columns'],layout['rows'])
         identity=c.execute('INSERT INTO storage_walls(name,columns,rows,x,y) VALUES(?,?,?,?,?)',(name,layout['columns'],layout['rows'],x,y)).lastrowid
+        c.execute('INSERT INTO storage_wall_formats(wall_id,format_id) SELECT ?,format_id FROM storage_wall_formats WHERE wall_id=?',(identity,wall_id))
         c.executemany('INSERT INTO storage_drawers(wall_id,col,row,width,height) VALUES(?,?,?,?,?)',[(identity,d['col'],d['row'],d['width'],d['height']) for d in layout['drawers']])
     return identity
 
@@ -137,7 +138,7 @@ def relative_position(db,wall_id,reference_id,direction,gap=.2):
 
 def delete_wall(db,wall_id):
     from .action_history import change
-    with db.connect() as c,change(c,('storage_walls','storage_drawers','storage_contents')+PICK_TABLES,tr('Suppression d’un meuble')):
+    with db.connect() as c,change(c,('storage_walls','storage_drawers','storage_contents','storage_wall_formats')+PICK_TABLES,tr('Suppression d’un meuble')):
         if not c.execute('SELECT 1 FROM storage_walls WHERE id=?',(wall_id,)).fetchone():raise ValueError(tr('Meuble introuvable.'))
         detach_drawers(c,[r['id'] for r in c.execute('SELECT id FROM storage_drawers WHERE wall_id=?',(wall_id,))])
         # FK cascades remove drawers and location links; stocks are independent.

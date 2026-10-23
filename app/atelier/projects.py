@@ -4,7 +4,7 @@ from collections import Counter
 from .i18n import tr
 
 STATES = {'planned': 'À préparer', 'active': 'En cours', 'completed': 'Terminé'}
-TABLES = ('construction_projects', 'project_parts', 'project_color_reservations')
+TABLES = ('construction_projects', 'project_parts', 'project_color_reservations','project_set_sources','project_set_allocations')
 
 
 def prepare(c):
@@ -22,6 +22,8 @@ def prepare(c):
     prepare_colors(c)
     from .project_stock import prepare as prepare_stock
     prepare_stock(c)
+    from .set_allocations import prepare as prepare_allocations
+    prepare_allocations(c)
     from .project_picks import prepare as prepare_picks
     prepare_picks(c)
     for table in TABLES:
@@ -36,6 +38,8 @@ def amount(value, minimum=0):
 
 
 def validate(c):
+    from .set_allocations import validate as validate_allocations
+    validate_allocations(c)
     from .project_colors import validate as validate_colors
     validate_colors(c)
     bad = c.execute('''SELECT p.item_id,p.color FROM project_stock_reservations p
@@ -199,7 +203,7 @@ def release(db, project_id):
 def delete(db, project_id):
     from .action_history import change
     from .project_picks import TABLES as PICK_TABLES
-    with db.connect() as c, change(c, TABLES+PICK_TABLES, tr('Suppression d’un projet')):
+    with db.connect() as c, change(c, TABLES+PICK_TABLES+('shopping_projects',), tr('Suppression d’un projet')):
         # Picked pieces remain owned, free and without a counted drawer. Do not
         # pretend they were physically put back into their original drawers.
         for table in PICK_TABLES:c.execute('DELETE FROM '+table+' WHERE project_id=?',(project_id,))
@@ -231,7 +235,8 @@ def _detail(c, project_id, set_stock=None):
         row.setdefault('reservable_quantity',min(row['required'],row['reserved']+row['free_quantity']))
     if c.execute('SELECT include_set_stock FROM construction_projects WHERE id=?',(project_id,)).fetchone()[0]:
         from .project_stock import owned_sets,decorate
-        decorate(rows,owned_sets(c)[0] if set_stock is None else set_stock,ignore_colors)
+        from .set_allocations import pool
+        decorate(rows,pool(c,project_id,set_stock),ignore_colors)
     return rows
 
 
@@ -257,9 +262,12 @@ def list_projects(db):
 def set_include_set_stock(db,project_id,value):
     from .action_history import change
     if type(value) is not bool:raise ValueError(tr('Réglage du stock du projet invalide.'))
-    with db.connect() as c,change(c,('construction_projects',),tr('Réglage du stock d’un projet')):
+    with db.connect() as c,change(c,('construction_projects','project_set_sources','project_set_allocations'),tr('Réglage du stock d’un projet')):
         row=c.execute('SELECT include_set_stock FROM construction_projects WHERE id=?',(project_id,)).fetchone()
         if not row:raise ValueError(tr('Projet introuvable.'))
+        if not value:
+            c.execute('DELETE FROM project_set_allocations WHERE project_id=?',(project_id,))
+            c.execute('DELETE FROM project_set_sources WHERE project_id=?',(project_id,))
         if bool(row['include_set_stock'])!=value:
             c.execute('UPDATE construction_projects SET include_set_stock=? WHERE id=?',(int(value),project_id))
 

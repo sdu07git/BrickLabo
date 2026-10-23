@@ -27,7 +27,7 @@ def _portable_key(db,key):
 
 def _view_key(key):return key.startswith(('camera_','architect_model_','architect_photo_choice_','photo_choices_','edge_')) or key=='default_color'
 def _label_key(key):return key in ('template','templates') or key.startswith('label_layout_')
-def _private_or_cache(key):return key.startswith(('api_','stock_mocs_','moc_search_','rb_','bl_','alt_components_','alternative_origins_v','export_rb_','stock_layout_','stock_migration_','action_history_v','downloads')) or key in ('build_excluded_entries','ldraw','ldraw_header_links','output')
+def _private_or_cache(key):return key.startswith(('automatic_backup','api_','stock_mocs_','moc_search_','rb_','bl_','alt_components_','alternative_origins_v','export_rb_','stock_layout_','stock_migration_','action_history_v','downloads')) or key in ('build_excluded_entries','ldraw','ldraw_header_links','output')
 
 def _settings(db,predicate,strip_colors=False):
     result=[]
@@ -48,10 +48,12 @@ def collect_family(db,family):
     if family not in FAMILIES:raise ValueError(tr('Famille de sauvegarde inconnue'))
     if family=='storage':
         from .storage_wall import walls,drawers,contents
-        return {'walls':[{'name':w['name'],'columns':w['columns'],'rows':w['rows'],'x':w['x'],'y':w['y'],'drawers':[dict({k:d[k] for k in ('col','row','width','height','name')},parts=[{'item':identity(p),'color':p['chosen_color'],'quantity':p['stored_quantity']} for p in contents(db,d['id'])]) for d in drawers(db,w['id'])]} for w in walls(db)]}
+        from .collection_extension_backups import storage_export
+        return storage_export(db,{'walls':[{'name':w['name'],'columns':w['columns'],'rows':w['rows'],'x':w['x'],'y':w['y'],'drawers':[dict({k:d[k] for k in ('col','row','width','height','name')},parts=[{'item':identity(p),'color':p['chosen_color'],'quantity':p['stored_quantity']} for p in contents(db,d['id'])]) for d in drawers(db,w['id'])]} for w in walls(db)]})
     if family=='projects':
         from .projects import list_projects,detail
-        return {'projects':[{'name':p['name'],'status':p['status'],'copies':p['copies'],'ignore_colors':bool(p['ignore_colors']),'include_set_stock':bool(p['include_set_stock']),'set':identity(db.get_item(p['set_id'])) if p['set_id'] is not None else None,
+        from .collection_extension_backups import project_export
+        return {'projects':[{'name':p['name'],'status':p['status'],'copies':p['copies'],'ignore_colors':bool(p['ignore_colors']),'include_set_stock':bool(p['include_set_stock']),'sets_selection':project_export(db,p['id']),'set':identity(db.get_item(p['set_id'])) if p['set_id'] is not None else None,
             'parts':[{'item':identity(part),'color':part['chosen_color'],'required':part['required'],'reserved':part['reserved'],'allocations':[{'color':color,'quantity':quantity} for color,quantity in part['reserved_colors'].items()] if p['ignore_colors'] else []} for part in detail(db,p['id'])]} for p in list_projects(db)]}
     if family in ('loose','sets','queue'):
         table={'loose':'stock','sets':'stock_sets','queue':'queue'}[family];entries=[]
@@ -136,12 +138,17 @@ def restore_families(db,paths):
     order={'loose':0,'sets':1,'queue':2,'labels':3,'colors':4,'views':5,'storage':6,'projects':7,'preferences':8,'api':9}
     with db.connect() as c:
         c.execute('BEGIN IMMEDIATE')
+        if any(p['family']=='sets' for p in payloads) and c.execute('SELECT 1 FROM project_set_allocations LIMIT 1').fetchone():
+            if not any(p['family']=='projects' for p in payloads):raise ValueError(tr('Restaure les projets avec les sets affectés, ou libère d’abord leurs affectations.'))
+            c.execute('DELETE FROM project_set_allocations');c.execute('DELETE FROM project_set_sources')
         for payload in sorted(payloads,key=lambda p:order[p['family']]):
             family=payload['family'];data=payload['data']
             previous_labels={}
             if family=='storage':
                 from .storage_wall import check_position
                 c.execute('DELETE FROM storage_walls')
+                from .collection_extension_backups import storage_restore,wall_format_restore
+                storage_restore(c,data)
                 for wall in data.get('walls',[]):
                     columns,rows=int(wall['columns']),int(wall['rows'])
                     if not wall['name'].strip() or not 1<=columns<=100 or not 1<=rows<=100:raise ValueError(tr('Meuble invalide'))
@@ -149,6 +156,7 @@ def restore_families(db,paths):
                     default_x=round(c.execute('SELECT COALESCE(MAX(x+columns+.5),0) FROM storage_walls').fetchone()[0],1)
                     x,y=check_position(c,None,wall.get('x',default_x),wall.get('y',0),columns,rows)
                     wid=c.execute('INSERT INTO storage_walls(name,columns,rows,x,y) VALUES(?,?,?,?,?)',(wall['name'],columns,rows,x,y)).lastrowid;rects=[]
+                    wall_format_restore(c,wid,wall.get('format'))
                     for drawer in wall['drawers']:
                         col,row,width,height=(int(drawer[k]) for k in ('col','row','width','height'))
                         if min(col,row,width,height)<1 or col+width-1>columns or row+height-1>rows or any(col<x+w and x<col+width and row<y+h and y<row+height for x,y,w,h in rects):raise ValueError(tr('Tiroir invalide'))
@@ -181,6 +189,8 @@ def restore_families(db,paths):
                         if not isinstance(allocations,list) or allocations and not ignore_colors:raise ValueError(tr('Pièce de projet invalide.'))
                         for allocation in allocations:
                             c.execute('INSERT INTO project_color_reservations VALUES(?,?,?,?,?)',(pid,iid,color,str(allocation['color']),amount(allocation['quantity'],1)))
+                    from .collection_extension_backups import project_restore
+                    project_restore(c,pid,project.get('sets_selection'))
             elif family in ('loose','sets','queue'):
                 table={'loose':'stock','sets':'stock_sets','queue':'queue'}[family]
                 layouts=_entry_layouts(c,table)

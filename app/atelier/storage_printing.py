@@ -12,7 +12,7 @@ from PySide6.QtCore import Qt, QRectF
 from PySide6.QtGui import QColor, QFont, QImage, QPainter, QPageLayout, QPageSize, QPen
 from PySide6.QtPrintSupport import QPrinter, QPrintDialog, QPrintPreviewWidget
 from PySide6.QtWidgets import (QDialog, QVBoxLayout, QHBoxLayout, QComboBox,
-    QLabel, QPushButton, QFileDialog, QMessageBox)
+    QLabel, QPushButton, QFileDialog, QMessageBox,QCheckBox,QLineEdit)
 
 from . import storage_wall as store
 from .fileio import atomic_output, error_message
@@ -85,6 +85,12 @@ class StoragePrintPreview(QDialog):
                 (tr('Tous les meubles — vue d’ensemble'), 'overview')]: self.scope.addItem(label, value)
         self.scope.setCurrentIndex(1); options.addWidget(self.scope, 1)
         self.orientation = QComboBox(); self.orientation.addItems([tr('Portrait'), tr('Paysage')]); options.addWidget(self.orientation)
+        phone=QHBoxLayout();layout.addLayout(phone);self.phone_footer=QCheckBox(tr('Ajouter l’adresse téléphone en bas des fiches A4'));phone.addWidget(self.phone_footer);self.phone_url=QLineEdit();phone.addWidget(self.phone_url,1)
+        owner=parent
+        while owner is not None and not hasattr(owner,'mobile_access'):owner=owner.parent()
+        urls=owner.mobile_access.urls if owner is not None else []
+        self.phone_url.setText(next((url for url in urls if '127.0.0.1' not in url),urls[0] if urls else ''));self.phone_url.setPlaceholderText(tr('Adresse locale affichée dans Consultation sur téléphone'))
+        self.phone_footer.toggled.connect(self.update_preview);self.phone_url.editingFinished.connect(self.update_preview)
         self.progress_label = QLabel(); self.progress_label.setWordWrap(True); layout.addWidget(self.progress_label)
         self.view = QPrintPreviewWidget(self.printer, self)
         self.view.paintRequested.connect(self.paint_pages); layout.addWidget(self.view, 1)
@@ -216,6 +222,7 @@ class StoragePrintPreview(QDialog):
                     painter.restore()
                 painter.restore()
                 text(painter, QRectF(left, page.height()-bottom-5, available_width, 5), tf('Page {} / {} · Colonne / Tiroir', index+1, len(pages)), 3)
+                if self.phone_footer.isChecked() and self.phone_url.text().strip():text(painter,QRectF(left,page.height()-bottom-10,available_width,5),tr('Consultation téléphone : ')+self.phone_url.text().strip(),3)
                 painter.restore()
             return True
         finally: painter.end()

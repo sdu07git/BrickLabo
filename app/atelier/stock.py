@@ -140,6 +140,10 @@ def _apply(c,action):
     else:raise ValueError(tr('Action inconnue'))
 
 def mutate(db,actions,description,connection=None):
+    actions=list(actions)
+    if connection is None:
+        from .automatic_backups import checkpoint
+        checkpoint(db,'before_stock',large=len(actions)>=200 or sum(max(0,int(a.get('quantity',0))) for a in actions)>=1000)
     with (db.connect() if connection is None else nullcontext(connection)) as c:
         if not c.in_transaction:c.execute('BEGIN IMMEDIATE')
         actions=list(actions)

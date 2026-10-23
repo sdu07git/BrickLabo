@@ -14,6 +14,7 @@ class BackupDialog(QDialog):
   text=QLabel(tr('La sauvegarde contient les données de Donnees : catalogues, inventaires manuels, stock, étiquettes, historique, réglages, clés API, images et notices.\n\nLes caches, logs et temporaires sont exclus. Les fichiers enregistrés en dehors de Donnees ne sont pas copiés.\n\nCette sauvegarde contient vos clés API : gardez-la privée. Choisissez un dossier de sauvegarde en dehors de Donnees.'));text.setWordWrap(True);layout.addWidget(text)
   for name,action in [(tr('Créer une sauvegarde…'),self.save),(tr('Restaurer une sauvegarde…'),self.restore),(tr('Annuler la restauration prévue'),self.cancel)]:
    button=QPushButton(name);button.clicked.connect(action);self.buttons.append(button);layout.addWidget(button)
+  automatic=QPushButton(tr('Configurer les sauvegardes automatiques…'));automatic.clicked.connect(self.automatic);self.buttons.append(automatic);layout.addWidget(automatic)
   from .preferences_backup import FAMILIES
   group=QGroupBox(tr('Sauvegardes séparées'));form=QFormLayout(group);self.families={}
   for key,name in FAMILIES.items():
@@ -24,6 +25,9 @@ class BackupDialog(QDialog):
   self.resize(760,790)
   self.status=QLabel();self.status.setWordWrap(True);layout.addWidget(self.status,1)
   button=QPushButton(tr('Fermer'));button.clicked.connect(self.reject);self.buttons.append(button);layout.addWidget(button);self.update_pending()
+ def automatic(self):
+  from .automatic_backups import settings_dialog
+  settings_dialog(self)
  def update_pending(self):
   pending=(self.db.path.parent/REQUEST).exists();self.buttons[2].setEnabled(pending and not self.busy)
   if pending:self.status.setText(tr('Une restauration est prévue au prochain démarrage. Fermez puis relancez BrickLabo pour l’appliquer.'))

@@ -125,13 +125,23 @@ class InventoryReader:
         if self.include_set_stock:
             for row in self.c.execute('SELECT i.source,i.kind,i.ref,s.id AS entry,s.quantity FROM stock_sets s JOIN items i ON i.id=s.item_id WHERE s.quantity>0'):
                 if -row['entry'] in self.excluded_entries:continue
-                tracked=self.c.execute('SELECT i.source,i.kind,i.ref,p.color,p.quantity FROM stock_set_components p JOIN items i ON i.id=p.item_id WHERE p.set_entry_id=?',(row['entry'],)).fetchall()
+                from .set_allocations import allocated_counts
+                claims=allocated_counts(self.c,entry_id=row['entry'])
+                tracked=self.c.execute('SELECT i.source,i.kind,i.ref,p.item_id,p.color,p.quantity FROM stock_set_components p JOIN items i ON i.id=p.item_id WHERE p.set_entry_id=?',(row['entry'],)).fetchall()
                 if tracked:
-                    for part in tracked:add(part,int(part['quantity']))
+                    for part in tracked:add(part,max(0,int(part['quantity'])-claims[(part['item_id'],str(part['color']))]))
                 else:
                     counts,ok=self.inventory(row['source'],'set',row['ref'],spares=True)
                     if ok:
-                        available.update({key:quantity*int(row['quantity']) for key,quantity in counts.items()})
+                        expanded=Counter({key:quantity*int(row['quantity']) for key,quantity in counts.items()})
+                        for (identity,color),quantity in claims.items():
+                            item=self.c.execute('SELECT source,kind,ref FROM items WHERE id=?',(identity,)).fetchone()
+                            if item['kind']=='part':used,_=self.part(item['source'],item['ref'],color,quantity)
+                            elif self.exclude_minifigs:continue
+                            else:
+                                used,_=self.inventory(item['source'],'minifig',item['ref'],spares=True);used=Counter({key:q*quantity for key,q in used.items()})
+                            expanded.subtract(used)
+                        available.update({key:max(0,quantity) for key,quantity in expanded.items()})
                         self.warnings.add(tr('Inventaire du catalogue utilisé pour un set sans suivi de pièces : ')+row['ref'])
                     else:self.warnings.add(tr('Inventaire de set indisponible ou incomplet : ')+row['ref'])
         if ignored:self.warnings.add(str(ignored)+tr(' pièces de couleur non renseignée ignorées en mode couleurs exactes.'))

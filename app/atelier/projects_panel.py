@@ -140,7 +140,7 @@ class ProjectsPanel(QWidget):
             button = QPushButton(label); button.clicked.connect(callback); actions.addWidget(button)
         self.view_set=QPushButton(tr('Voir le set'));self.view_set.clicked.connect(self.open_project);actions.addWidget(self.view_set)
         self.manage=QPushButton(tr('Gérer le projet'));menu=QMenu(self.manage)
-        menu.addAction(tr('Renommer le projet…'),self.rename);menu.addAction(tr('Supprimer le projet…'),self.delete);self.manage.setMenu(menu);actions.addWidget(self.manage)
+        menu.addAction(tr('Affecter des sets possédés…'),self.allocate_sets);menu.addAction(tr('Importer un inventaire MOC…'),self.import_moc);menu.addAction(tr('Liste d’achats des projets…'),self.shopping);menu.addAction(tr('Renommer le projet…'),self.rename);menu.addAction(tr('Supprimer le projet…'),self.delete);self.manage.setMenu(menu);actions.addWidget(self.manage)
         self.pick_button=QPushButton(tr('Liste de prélèvement…'));self.pick_button.clicked.connect(self.pick_list);actions.addWidget(self.pick_button)
         self.status = QComboBox()
         for key,label in projects.STATES.items(): self.status.addItem(tr(label),key)
@@ -177,12 +177,25 @@ class ProjectsPanel(QWidget):
         self.release_button = QPushButton(tr('Libérer les réservations'))
         self.release_button.clicked.connect(self.release); controls.addWidget(self.release_button)
         box.addLayout(controls)
-        note = QLabel(tr('Le calcul utilise le vrac libre et, si la case est cochée, les pièces de tous les sets possédés. Les sets restent intacts ; leur apport est une possibilité de construction, sans réservation entre projets. Les réservations et prélèvements utilisent uniquement le vrac. Un projet terminé garde ses réservations jusqu’à leur libération.')); note.setWordWrap(True); box.addWidget(note)
+        note = QLabel(tr('Le calcul utilise le vrac libre et, si la case est cochée, les pièces de tous les sets possédés. Affecter des sets possédés permet de choisir des exemplaires à démonter et de réserver leur inventaire pour ce projet. Les réservations et prélèvements utilisent uniquement le vrac. Un projet terminé garde ses réservations jusqu’à leur libération.')); note.setWordWrap(True); box.addWidget(note)
         self.detail_scroll=QScrollArea();self.detail_scroll.setWidgetResizable(True);self.detail_scroll.setWidget(detail);self.detail_scroll.setMinimumHeight(150)
         split.addWidget(self.detail_scroll);split.setSizes([150,450]);split.setChildrenCollapsible(False)
         self.table.itemDoubleClicked.connect(self.open_project);self.table.itemSelectionChanged.connect(self.choose_project); self.detail.itemSelectionChanged.connect(self.select_part); self.detail.itemDoubleClicked.connect(self.open_part)
         if self.thumbnails:self.detail.horizontalHeader().sortIndicatorChanged.connect(lambda *_:self.thumbnails.reset())
         self.refresh()
+
+    def allocate_sets(self):
+        if self.project_id is None:return
+        from .collection_extensions_ui import SetAllocationDialog
+        return show_window(SetAllocationDialog(self.db,self.project_id,self.engine,self),self,lambda *_:(self.refresh(),self.changed.emit()))
+
+    def import_moc(self):
+        from .collection_extensions_ui import MOCImportDialog
+        return show_window(MOCImportDialog(self.db,self,lambda identity:(self.refresh(identity),self.changed.emit())),self)
+
+    def shopping(self):
+        from .collection_extensions_ui import ShoppingDialog
+        return show_window(ShoppingDialog(self.db,self),self)
 
     def refresh(self, preferred=None):
         if type(preferred) is not int: preferred = self.project_id

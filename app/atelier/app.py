@@ -38,7 +38,7 @@ NAV=[(tr('Catalogue Rebrickable'),'RB','part','catalogue'),(tr('Catalogue BrickL
      ('BrickArchitect','BA','part','catalogue'),(tr('Catalogue Mini-Figs'),None,'minifig','catalogue'),(tr('Catalogue Briques Alternatives'),'ALT','part','catalogue'),
      (tr('Catalogue Set Rebrickable'),'RB','set','catalogue'),(tr('Catalogue Set BrickLink'),'BL','set','catalogue'),
      (tr('Catalogue Set Alternatif'),'ALT','set','catalogue'),(tr('Mon stock'),None,('part','minifig'),'stock'),(tr('Mon stock set'),None,'set','stock_sets'),
-     (tr('Impression Étiquettes'),None,None,'queue'),(tr('Historique'),None,None,'history'),(tr('Mon rangement'),None,None,'storage'),(tr('Mes projets'),None,None,'projects')]
+     (tr('Impression Étiquettes'),None,None,'queue'),(tr('Historique'),None,None,'history'),(tr('Mon rangement'),None,None,'storage'),(tr('Mes projets'),None,None,'projects'),(tr('Tableau de bord'),None,None,'dashboard')]
 
 TOP_MIN_HEIGHT=64
 
@@ -69,6 +69,10 @@ class MainWindow(QMainWindow):
         collection_menu.addAction(tr('Inventaire guidé…'),self.guided_inventory)
         collection_menu.addAction(tr('Comparer plusieurs reconstructions…'),self.compare_rebuilds)
         collection_menu.addAction(tr('Lots d’achat et d’import…'),self.purchase_lots)
+        collection_menu.addAction(tr('Analyser un lot de vrac…'),self.analyze_lot)
+        collection_menu.addAction(tr('Importer un inventaire MOC en projet…'),self.import_moc_project)
+        collection_menu.addAction(tr('Liste d’achats des projets…'),self.project_shopping)
+        collection_menu.addAction(tr('Consultation sur téléphone…'),self.mobile_settings)
         collection_menu.addAction(tr('Assistant de démarrage…'),self.start_assistant)
         collection.setMenu(collection_menu);trow.addWidget(collection)
         top.addWidget(tools,1,Qt.AlignmentFlag.AlignTop)
@@ -86,6 +90,9 @@ class MainWindow(QMainWindow):
         self.nav=QListWidget();self.nav.addItems([x[0] for x in NAV]);self.nav.setMinimumWidth(190);self.nav.setMaximumWidth(300);split.addWidget(self.nav)
         self.stack=QStackedWidget();split.addWidget(self.stack)
         for title,source,kind,scope in NAV:
+            if scope=='dashboard':
+                from .collection_dashboard import panel
+                self.dashboard=panel(db,self);self.stack.addWidget(self.dashboard);continue
             if scope=='projects':
                 from .projects_panel import ProjectsPanel
                 self.projects=ProjectsPanel(db,self.engine);self.projects.selected.connect(self.item_selected);self.projects.changed.connect(self.refresh_counts);self.stack.addWidget(self.projects);continue
@@ -117,7 +124,7 @@ class MainWindow(QMainWindow):
                 if scope=='queue':self.queue=cat
                 self.stack.addWidget(widget)
         self.right_scroll=QScrollArea();self.right_scroll.setWidgetResizable(True);self.preview=Preview(db,self.engine);self.preview.visual_changed.connect(self.visual_changed);self.right_scroll.setWidget(self.preview);self.right_scroll.setMinimumWidth(280);split.addWidget(self.right_scroll);split.setSizes([235,835,430]);split.setChildrenCollapsible(False)
-        self.nav.currentRowChanged.connect(self.stack.setCurrentIndex);self.nav.setCurrentRow(0)
+        self.nav.currentRowChanged.connect(self.stack.setCurrentIndex);self.nav.currentRowChanged.connect(lambda index:self.dashboard.refresh() if NAV[index][3]=='dashboard' else None);self.nav.setCurrentRow(0)
         self.statusBar().showMessage(tr('Prêt — importe les ressources pour remplir les catalogues.'))
         self.export_path=db.setting('output',str(db.path.parent/'Exports'))
         from .backup_dialog import show_report
@@ -125,6 +132,8 @@ class MainWindow(QMainWindow):
         self.import_window=None
         self.startup_timer=QTimer(self);self.startup_timer.setSingleShot(True);self.startup_timer.timeout.connect(self.first_import);self.startup_timer.start(100)
         self.cleanup_timer=QTimer(self);self.cleanup_timer.setSingleShot(True);self.cleanup_timer.timeout.connect(self.cleanup_old_installations)
+        from .automatic_backups import install as install_backups
+        self.automatic_backup_timer=install_backups(self)
         install_button_help() # Register the completed controls before the first hover.
 
     def showEvent(self,event):
@@ -163,6 +172,24 @@ class MainWindow(QMainWindow):
     def import_stock(self,scope='stock'):
         from .stock_import_dialog import StockImportDialog
         show_window(StockImportDialog(self.db,self,scope),self)
+
+    def analyze_lot(self):
+        from .collection_extensions_ui import LotAnalysisDialog
+        return show_window(LotAnalysisDialog(self.db,self.engine,self),self)
+
+    def import_moc_project(self):
+        from .collection_extensions_ui import MOCImportDialog
+        def created(identity):
+            self.nav.setCurrentRow(next(index for index,entry in enumerate(NAV) if entry[3]=='projects'));self.projects.refresh(identity)
+        return show_window(MOCImportDialog(self.db,self,created),self)
+
+    def project_shopping(self):
+        from .collection_extensions_ui import ShoppingDialog
+        return show_window(ShoppingDialog(self.db,self),self)
+
+    def mobile_settings(self):
+        from .mobile_access import dialog
+        return dialog(self)
 
     def stock_migration_report(self):
         QMessageBox.information(self,tr('Rapport de migration du stock'),'\n'.join(self.db.setting('stock_migration_report',[])))
@@ -230,6 +257,7 @@ class MainWindow(QMainWindow):
         for panel in self.owned_panels:panel.refresh()
         if hasattr(self,'projects'):self.projects.refresh()
         self.update_undo()
+        if hasattr(self,'dashboard') and self.dashboard.isVisible():self.dashboard.refresh()
         revision=self.db.stock_revision()
         if revision!=self._stock_revision:
             self._stock_revision=revision
@@ -436,7 +464,9 @@ class MainWindow(QMainWindow):
         from PySide6.QtCore import QThreadPool
         from .thumbnails import PartThumbnails
         if not self._closing:
-            self._closing=True;self._request_cancel.set();self.centralWidget().setEnabled(False)
+            self._closing=True;self._request_cancel.set();
+            if hasattr(self,'mobile_access'):self.mobile_access.stop()
+            self.centralWidget().setEnabled(False)
             for timer in self.findChildren(QTimer):timer.stop()
             for widget in self.findChildren(QWidget):
                 for name in ('cancel','cancelled','cancel_event'):

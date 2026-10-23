@@ -17,8 +17,10 @@ def statistics(db, scope):
 def clear(db, scope, expected_revision=None):
     if scope not in ('stock', 'stock_sets'):
         raise ValueError(tr('Destination inconnue'))
+    from .automatic_backups import checkpoint
+    checkpoint(db,'before_clear')
     from .action_history import change
-    tables = ('stock', 'stock_sets', 'stock_set_components', 'settings', 'project_parts', 'project_color_reservations', 'storage_contents')
+    tables = ('stock', 'stock_sets', 'stock_set_components', 'settings', 'project_parts', 'project_color_reservations', 'storage_contents','project_set_allocations','project_set_sources')
     description = tr('Vidage de Mon stock') if scope == 'stock' else tr('Vidage de Mon stock set')
     with db.connect() as c, change(c, tables, description):
         if expected_revision is not None and c.execute('SELECT version FROM stock_revision WHERE id=1').fetchone()[0] != expected_revision:
@@ -30,6 +32,8 @@ def clear(db, scope, expected_revision=None):
             c.execute('DELETE FROM project_color_reservations')
             c.execute('UPDATE storage_contents SET quantity=0 WHERE quantity>0')
         else:
+            c.execute('DELETE FROM project_set_allocations')
+            c.execute('DELETE FROM project_set_sources')
             c.execute('DELETE FROM stock_set_components')
             c.execute('DELETE FROM stock_sets')
         c.execute('DELETE FROM settings WHERE key GLOB ?', ('label_layout_' + scope + '_[0-9]*',))
