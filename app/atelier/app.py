@@ -134,6 +134,8 @@ class MainWindow(QMainWindow):
         self.cleanup_timer=QTimer(self);self.cleanup_timer.setSingleShot(True);self.cleanup_timer.timeout.connect(self.cleanup_old_installations)
         from .automatic_backups import install as install_backups
         self.automatic_backup_timer=install_backups(self)
+        from .inventory_background import install as install_inventory_background
+        self.inventory_background=install_inventory_background(self)
         install_button_help() # Register the completed controls before the first hover.
 
     def showEvent(self,event):
@@ -252,10 +254,10 @@ class MainWindow(QMainWindow):
     def refresh_counts(self):
         if self._closing:return
         for c in self.catalogues:
-            if c.scope in ('stock','stock_sets','queue','history') or c.source=='ALT':c.reload()
+            if c.scope in ('stock','stock_sets','queue','history') or c.source=='ALT':c.invalidate()
             elif c.isVisible():c.refresh_storage_locations()
-        for panel in self.owned_panels:panel.refresh()
-        if hasattr(self,'projects'):self.projects.refresh()
+        for panel in self.owned_panels:panel.invalidate()
+        if hasattr(self,'projects'):self.projects.invalidate()
         self.update_undo()
         if hasattr(self,'dashboard') and self.dashboard.isVisible():self.dashboard.refresh()
         revision=self.db.stock_revision()
@@ -266,10 +268,10 @@ class MainWindow(QMainWindow):
                 if hasattr(window,'stock_changed'):window.stock_changed()
     def refresh_all(self):
         self.engine.invalidate_renderer()
-        for c in self.catalogues:c.reload_categories();c.reload()
+        for c in self.catalogues:c.invalidate(categories=True)
         if self.current_item:self.preview.set_item(self.db.get_item(self.current_item['id']))
         if hasattr(self,'storage'):self.storage.reload_walls();self.storage.invalidate()
-        if hasattr(self,'projects'):self.projects.refresh()
+        if hasattr(self,'projects'):self.projects.invalidate()
     def first_import(self):
         resources=resources_directory()
         paths=[str(p) for p in resources.iterdir() if p.suffix.lower() in ('.zip','.txt','.csv','.gz') and p.name!='brickarchitect_ldraw.zip'] if resources.exists() else []
@@ -465,6 +467,7 @@ class MainWindow(QMainWindow):
         from .thumbnails import PartThumbnails
         if not self._closing:
             self._closing=True;self._request_cancel.set();
+            if hasattr(self,'inventory_background'):self.inventory_background.shutdown()
             if hasattr(self,'mobile_access'):self.mobile_access.stop()
             self.centralWidget().setEnabled(False)
             for timer in self.findChildren(QTimer):timer.stop()

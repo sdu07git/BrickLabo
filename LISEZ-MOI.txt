@@ -1,4 +1,6 @@
-BrickLabo v0.1.71
+BrickLabo v0.1.72
+
+Nouveau v0.1.72 : requêtes, filtres, stocks, projets et meubles accélérés ; chargement des inventaires en arrière-plan après fermeture de sa fenêtre. Cliquer sur Inventaires dans la barre d’état pour suivre ou mettre en pause. BrickLabo doit rester ouvert. Voir documentation/GUIDE_v0.1.72.md.
 
 Nouveau v0.1.71 : familles de formes (1 × N puis 2 × N), capacités, analyse de lots, sets affectés aux projets, achats et réceptions, import MOC en projet, tableau de bord, sauvegardes automatiques et téléphone en Wi-Fi sans QR code. Voir documentation/GUIDE_v0.1.71.md.
 

@@ -1,0 +1,103 @@
+BrickLabo v0.1.72 — Contrôle de livraison
+23 octobre 2026
+
+Base : v0.1.71 publiée (651bfe8a64ef562db4f854e33fbb40a983fcb0c6).
+Optimisation des lectures de catalogues, filtres, stock, projets, rangement
+et recherche de constructions. Chargement des inventaires détenu par
+l'application, indépendant des fenêtres qui montrent sa progression.
+
+Environnement de test : Linux, CPython 3.12.14, PySide6 6.11.2,
+numpy 2.5.3, Pillow 12.3.0, reportlab 4.5.1. Les tests Qt passent par
+le collecteur GUI et le gestionnaire de durée de vie des tâches réels.
+
+Validation automatisée :
+  python -X faulthandler tools/run_tests.py
+  1 111 tests exécutés en 743,199 secondes ; 1 107 réussis au premier
+  passage, trois erreurs et un échec corrigés avant livraison.
+
+Les quatre cas relevés concernaient une ancienne table items sans
+category_id, deux appels sur un lecteur d'inventaire temporaire, et la
+hauteur de la barre d'état avec son bouton encore masqué. L'index de thème
+est conditionné aux colonnes disponibles ; les appels conservent leur
+lecteur pendant leur exécution sans cycle de rétention ; l'indicateur
+compact est créé au premier travail, sans agrandir une barre d'état vide.
+
+Après ces corrections et l'ajout des appels temporaires au test mémoire :
+  python -X faulthandler tools/run_tests.py test_query_performance
+    test_inventory_background test_small_screen_controls test_i18n
+    test_button_help test_alternative_delete test_color_links
+    test_projects_quantities_history test_build_stock
+  114 tests ciblés réussis en 98,135 secondes.
+
+Autres validations ciblées : 77 tests de recherche et catalogue, 200 tests
+de stock/projets/inventaires, puis 76 contrôles d'interface et de recherche.
+Ces nombres correspondent à des passages qui se recouvrent, pas à des cas
+supplémentaires à additionner aux 1 111 tests de la suite complète.
+Syntaxe Python vérifiée sur 217 fichiers ; git diff --check sans erreur.
+
+Les 22 nouveaux cas couvrent :
+- Cache borné, copies indépendantes, invalidation après un autre lecteur,
+  import, annulation, fermeture/réouverture ; transactions imbriquées et
+  instantané explicite conservé malgré une écriture extérieure.
+- Recherche indexée identique au repli LIKE : négations, caractères courts,
+  %, _, guillemets, accents, caractères japonais et changements de noms.
+- Données dérivées reconstruites sans perte des références existantes.
+- Résumés de projets identiques aux détails, couleurs, réservations et
+  affectations exclusives des sets comprises.
+- Prélecture des versions d'inventaires et résolution groupée des pièces ;
+  quantité/couleur conservées, références absentes bloquantes.
+- Libération immédiate des lecteurs sans attendre le ramasse-miettes.
+- Fermeture/réouverture des fenêtres sans second travail, pause/reprise,
+  23 sets sur trois lots, arrêt après un seul lot, erreur API, annulation
+  et fermeture de la fenêtre principale pendant un travail actif.
+
+La suite comprend également les 120 tâches Qt concurrentes, dont le test
+de parsing BrickArchitect et les vérifications de destruction des signaux
+sur le thread GUI. Ils ont réussi ; cela ne reproduit pas le crash natif
+Windows signalé auparavant.
+
+Mesures reproductibles :
+- Même catalogue et collection de contrôle jetable pour v0.1.71/v0.1.72 :
+  253 628 items, 1 558 072 lignes inventory_parts, 10 000 lignes de stock,
+  100 projets / 5 000 besoins, 10 000 tiroirs / 5 000 contenus.
+- 18 scénarios, trois appels chacun ; premier appel, médiane des deux
+  répétitions, nombre d'instructions SQL et empreinte du résultat conservés.
+- Toutes les empreintes des résultats des deux versions sont identiques.
+- Le premier appel n'est pas une mesure de cache disque froid.
+- Le banc de rafraîchissement de l'interface désactive les téléchargements,
+  rendus et miniatures dans les deux versions pour mesurer les lectures et
+  la reconstruction des tableaux. Il ne mesure pas le chargement des images.
+- Détails : PERFORMANCES_v0.1.72.json, GUIDE_v0.1.72.md et les deux outils
+  tools/benchmark_queries.py et tools/benchmark_ui_refresh.py.
+
+Revue visuelle, collection temporaire sans clés API :
+- Fenêtre principale 1 200 x 800, statut 20/23 pendant que la fenêtre de
+  chargement est fermée ; clic de réouverture et progression conservée.
+- Chargement 1 080 x 800 en français et anglais, puis 800 x 700.
+- 23 inventaires réellement traités par run_batch avec une API simulée,
+  46 appels simulés, sans changement du stock ni second travail concurrent.
+- Sept références LDraw disponibles ; les contrôles restent accessibles.
+
+Fabrication : tools/build_distribution.py reprend le runtime Windows
+vérifié de la v0.1.71, recompile le lanceur AMD64 avec ses ressources d'icône,
+contrôle les versions exactes des dépendances, l'identité des modules et
+ressources entre les deux distributions, et vérifie les CRC ZIP. complete.zip
+est fourni dans les deux ZIP joints et reste hors des fichiers Git ordinaires.
+Aucune base personnelle, clé API ou sauvegarde privée n'est distribuée.
+
+Limites : exécution native Windows à confirmer sur un PC Windows. Les
+mesures Linux sont des comparaisons sur un même banc, pas des délais promis
+sur chaque PC. Les métadonnées très courtes restent en lecture directe ;
+les gains varient suivant le filtre. Le premier démarrage construit les
+nouveaux index et textes dérivés. Les appels API restent séquentiels et
+soumis aux droits et limites de leur source. BrickLabo doit rester ouvert
+pour continuer les lots ; quitter conserve les lignes en attente pour une
+reprise explicite. Aucune reconnaissance photo ni QR code ajouté.
+
+English
+The complete suite exercised 1,111 tests; four failures were corrected, then
+114 focused tests passed on the final code. All 18 benchmark results match
+v0.1.71 exactly. GUI review verified background loading after closing and
+reopening its window, 23 inventories across three batches, and unchanged
+ownership. Native Windows execution remains to be confirmed. API requests
+remain sequential and rate limited; BrickLabo must stay open to continue.

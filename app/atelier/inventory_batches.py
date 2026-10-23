@@ -22,21 +22,24 @@ def prepare(c):
 
 
 def cached_components(db,source,ref,exclude_minifigs=False):
-    found=db.rows('SELECT parts,parts_without_minifigs FROM catalogue_inventory WHERE source=? AND ref=?',(source,ref))
-    if not found:return None
-    payload=found[0]['parts']
-    if exclude_minifigs:
-        payload=found[0]['parts_without_minifigs']
-        if payload is None:
-            if source=='RB' and db.rows('SELECT 1 FROM inventories WHERE set_num=? LIMIT 1',(ref,)):return None
-            raise ValueError(tr('Actualise cet inventaire par lots pour exclure les minifigurines : ')+ref)
-    rows=[]
-    for part in json.loads(payload):
-        if exclude_minifigs and part.get('kind')=='minifig':continue
-        items=db.rows('SELECT * FROM items WHERE source=? AND kind=? AND ref=?',(part['source'],part.get('kind','part'),part['ref']))
-        if not items:raise ValueError(tr('Référence absente de l’inventaire : ')+part['ref'])
-        rows.append(dict(items[0],chosen_color=part['color'],chosen_quantity=part['quantity'],is_spare=part.get('is_spare',False),inventory_image=part.get('image','')))
-    return rows
+    from .query_bulk import items_by_reference
+    with db.read() as c:
+        if not c.in_transaction:c.execute('BEGIN')
+        found=c.execute('SELECT parts,parts_without_minifigs FROM catalogue_inventory WHERE source=? AND ref=?',(source,ref)).fetchone()
+        if not found:return None
+        payload=found['parts']
+        if exclude_minifigs:
+            payload=found['parts_without_minifigs']
+            if payload is None:
+                if source=='RB' and c.execute('SELECT 1 FROM inventories WHERE set_num=? LIMIT 1',(ref,)).fetchone():return None
+                raise ValueError(tr('Actualise cet inventaire par lots pour exclure les minifigurines : ')+ref)
+        parts=[p for p in json.loads(payload) if not exclude_minifigs or p.get('kind')!='minifig']
+        items=items_by_reference(c,[(p['source'],p.get('kind','part'),p['ref']) for p in parts]);rows=[]
+        for part in parts:
+            item=items.get((part['source'],part.get('kind','part'),part['ref']))
+            if item is None:raise ValueError(tr('Référence absente de l’inventaire : ')+part['ref'])
+            rows.append(dict(item,chosen_color=part['color'],chosen_quantity=part['quantity'],is_spare=part.get('is_spare',False),inventory_image=part.get('image','')))
+        return rows
 
 
 def available(c,source,ref):

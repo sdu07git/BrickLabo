@@ -29,19 +29,53 @@ def search_terms(search):
         yield (word[1:] if negative else word),negative
 
 
-def indexed_clause(search):
+def trigram_query(word):
+    """detail=none accepts 3-character tokens; LIKE still checks full adjacency."""
+    if len(word)<3 or '\x00' in word:return ''
+    positions=sorted({0,len(word)-3,(len(word)-3)//2})
+    return ' AND '.join('"'+word[p:p+3].replace('"','""')+'"' for p in positions)
+
+
+def indexed_clause(search,source=None,kind=None):
     from .data import normalize
     parts=[];args=[]
     for word,negative in search_terms(search):
         pattern='%'+word.replace('\\','\\\\').replace('%','\\%').replace('_','\\_')+'%'
         # ESCAPE disables FTS5's LIKE optimization. Plain words take the indexed
         # route; wildcard characters remain literal with a safe escaped fallback.
-        if any(ch in word for ch in ('\\','%','_')):
-            condition="text LIKE ? ESCAPE '\\'"
-        else:condition='text LIKE ?'
-        match="(i.id IN (SELECT rowid FROM items_search WHERE "+condition+") OR (i.source='RB' AND i.kind='set' AND i.category_id IN (WITH RECURSIVE matching(id) AS (SELECT id FROM themes WHERE norm(name) LIKE ? ESCAPE '\\' UNION SELECT t.id FROM themes t JOIN matching m ON t.parent_id=m.id) SELECT CAST(id AS TEXT) FROM matching)))"
+        query=trigram_query(word)
+        # Read only row IDs from FTS. Checking the complete literal in the
+        # derived SQL text avoids an FTS content lookup for every candidate.
+        ids='SELECT d.item_id FROM item_decorations d WHERE '
+        if query:ids+='d.item_id IN (SELECT rowid FROM items_search WHERE items_search MATCH ?) AND ';args.append(query)
+        ids+="d.catalogue_text LIKE ? ESCAPE '\\'"
+        sources=source if isinstance(source,(list,tuple)) else [source]
+        kinds=kind if isinstance(kind,(list,tuple)) else [kind]
+        themes=(not source or 'RB' in sources) and (not kind or 'set' in kinds)
+        args.append(pattern)
+        if themes:
+            ids+=" UNION SELECT s.id FROM items s WHERE s.source='RB' AND s.kind='set' AND s.category_id IN (WITH RECURSIVE matching(id) AS (SELECT id FROM themes WHERE norm(name) LIKE ? ESCAPE '\\' UNION SELECT t.id FROM themes t JOIN matching m ON t.parent_id=m.id) SELECT CAST(id AS TEXT) FROM matching)"
+            args.append(pattern)
+        match='i.id IN ('+ids+')'
         parts.append('NOT COALESCE('+match+',0)' if negative else match)
-        args.extend((pattern,pattern))
+    return parts,args
+
+
+def document_clause(search,document,indexed=True):
+    """Narrow using the substring index, retaining a legacy field-only predicate.
+
+    Drawer searches historically treat percent/underscore as LIKE wildcards and
+    a leading minus literally. Keep that contract rather than widening matches
+    to unrelated alternate references or interpreting new operators.
+    """
+    from .data import normalize
+    parts=[];args=[]
+    for word in normalize(search).split():
+        pattern='%'+word+'%'
+        query=trigram_query(word)
+        if indexed and query and not any(ch in word for ch in ('%','_','\\')):
+            parts.append('i.id IN (SELECT rowid FROM items_search WHERE items_search MATCH ?)');args.append(query)
+        parts.append(document+' LIKE ?');args.append(pattern)
     return parts,args
 
 def advanced_clause(filters,scope):

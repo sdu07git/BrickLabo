@@ -38,8 +38,8 @@ def part_has_print(ref,name):
     return int(reference or explicit or pattern)
 
 
-PRINT_EXPRESSION="(i.kind='part' AND (part_has_print(i.ref,i.name)=1 OR EXISTS (SELECT 1 FROM relationships r WHERE r.rel_type='P' AND ((i.source='RB' AND r.child_part_num=i.ref) OR (i.source='ALT' AND i.origin_source='RB' AND r.child_part_num=i.origin_ref)))))"
-STICKER_EXPRESSION="(i.kind='part' AND part_has_sticker(i.ref,i.name)=1)"
+PRINT_EXPRESSION="(i.kind='part' AND (COALESCE((SELECT printed FROM item_decorations d WHERE d.item_id=i.id),0)=1 OR EXISTS (SELECT 1 FROM relationships r WHERE r.rel_type='P' AND r.child_part_num=CASE WHEN i.source='RB' THEN i.ref WHEN i.source='ALT' AND i.origin_source='RB' THEN i.origin_ref END)))"
+STICKER_EXPRESSION="(i.kind='part' AND COALESCE((SELECT sticker FROM item_decorations d WHERE d.item_id=i.id),0)=1)"
 
 
 SCHEMA = '''
@@ -104,6 +104,9 @@ class Database:
     def __init__(self, path):
         self.path = Path(path)
         self._reader=None;self._read_lock=threading.RLock();self._reader_finalizer=None
+        self._read_depth=0
+        from .query_cache import ReadCache
+        self._query_cache=ReadCache()
         self.path.parent.mkdir(parents=True, exist_ok=True)
         with self.connect() as c:
             c.executescript(SCHEMA)
@@ -135,6 +138,8 @@ class Database:
             prepare_shapes(c)
             from .inventory_batches import prepare as prepare_inventories
             prepare_inventories(c)
+            from .query_indexes import prepare as prepare_queries
+            prepare_queries(c)
 
     @contextmanager
     def connect(self):
@@ -172,11 +177,39 @@ class Database:
                     c.create_function('part_has_sticker',2,part_has_sticker,deterministic=True)
                 except Exception:c.close();raise
                 self._reader=c;self._reader_finalizer=weakref.finalize(self,c.close)
+            self._read_depth+=1
             try:yield self._reader
-            finally:self._reader.rollback()
+            finally:
+                self._read_depth-=1
+                if not self._read_depth:self._reader.rollback()
+
+    def cached_read(self,identity,factory):
+        """Cache only fresh reads; an existing explicit snapshot always wins.
+
+        data_version belongs to this reader, so commits from another connection,
+        worker or process also invalidate results. In-flight readers never share
+        uncommitted state, and callers may freely decorate their returned rows.
+        """
+        from .query_cache import key
+        with self.read() as c:
+            if c.in_transaction:return factory(c)
+            version=c.execute('PRAGMA data_version').fetchone()[0]
+            cache=self._query_cache;cache.use_version(version);identity=key(identity)
+            found,result=cache.get(identity)
+            if found:return result
+            result=factory(c)
+            if c.execute('PRAGMA data_version').fetchone()[0]==version:cache.put(identity,result)
+            return result
 
     def close(self):
+        background=getattr(self,'_inventory_background',None)
+        if background is not None:
+            background.shutdown()
+            from shiboken6 import isValid
+            if isValid(background):background.deleteLater()
+            self._inventory_background=None
         with self._read_lock:
+            self._query_cache.clear()
             if self._reader is not None:
                 self._reader_finalizer();self._reader=None;self._reader_finalizer=None
 
@@ -188,14 +221,14 @@ class Database:
             return c.execute(sql, args).lastrowid
 
     def setting(self, key, default=None):
-        r = self.rows('SELECT value FROM settings WHERE key=?', (key,))
+        r=self.rows('SELECT value FROM settings WHERE key=?',(key,))
         return json.loads(r[0]['value']) if r else default
 
     def set_setting(self, key, value):
         self.run('INSERT INTO settings VALUES(?,?) ON CONFLICT(key) DO UPDATE SET value=excluded.value WHERE settings.value<>excluded.value', (key,json.dumps(value,ensure_ascii=False)))
 
     def get_item(self, item_id):
-        r = self.rows('SELECT * FROM items WHERE id=?',(item_id,))
+        r=self.rows('SELECT * FROM items WHERE id=?',(item_id,))
         return r[0] if r else None
     def stock_revision(self):return self.rows('SELECT version FROM stock_revision WHERE id=1')[0]['version']
 
@@ -214,12 +247,12 @@ class Database:
     def categories(self,source=None,kind=None):
         clause,args = self.filter_clause(source,kind)
         if source=='ALT':clause+=(' AND ' if clause else 'WHERE ')+'i.catalogue_hidden=0'
-        return [r['category'] for r in self.rows('SELECT DISTINCT category FROM items i '+clause+' ORDER BY category COLLATE NOCASE',args)]
+        return self.cached_read(('categories',source,kind),lambda c:[r['category'] for r in c.execute('SELECT DISTINCT category FROM items i '+clause+' ORDER BY category COLLATE NOCASE',args)])
 
     def years(self,source=None,kind='set'):
         clause,args=self.filter_clause(source,kind)
         if source=='ALT':clause+=(' AND ' if clause else 'WHERE ')+'i.catalogue_hidden=0'
-        return [r['year'] for r in self.rows("SELECT DISTINCT TRIM(COALESCE(i.year,'')) AS year FROM items i "+clause+' ORDER BY year DESC',args)]
+        return self.cached_read(('years',source,kind),lambda c:[r['year'] for r in c.execute("SELECT DISTINCT TRIM(COALESCE(i.year,'')) AS year FROM items i "+clause+' ORDER BY year DESC',args)])
 
     @staticmethod
     def filter_clause(source=None,kind=None,search='',category=''):
@@ -238,11 +271,15 @@ class Database:
         return ('WHERE '+' AND '.join(parts) if parts else ''),args
 
     def query(self,source=None,kind=None,search='',category='',scope='catalogue',page=1,size=100,sort='ref',descending=False,hide_decorated=False,year='',advanced=None,reference=None):
+        values=(source,kind,search,category,scope,page,size,sort,descending,hide_decorated,year,advanced,reference)
+        return self.cached_read(('catalogue',self.search_index_available,values),lambda c:self._query(*values))
+
+    def _query(self,source=None,kind=None,search='',category='',scope='catalogue',page=1,size=100,sort='ref',descending=False,hide_decorated=False,year='',advanced=None,reference=None):
         clause,args = self.filter_clause(source,kind,search if not self.search_index_available else '',category)
         if reference is not None:
             clause+=(' AND ' if clause else 'WHERE ')+'i.ref=?';args.append(reference)
         from .search_index import indexed_clause, advanced_clause
-        extra_parts,extra_args=indexed_clause(search) if self.search_index_available else ([],[])
+        extra_parts,extra_args=indexed_clause(search,source,kind) if self.search_index_available else ([],[])
         ap,aa=advanced_clause(advanced or {},scope);extra_parts+=ap;extra_args+=aa
         if extra_parts:clause+=(' AND ' if clause else 'WHERE ')+' AND '.join(extra_parts);args.extend(extra_args)
         if scope=='catalogue':clause+=(' AND ' if clause else 'WHERE ')+'i.catalogue_hidden=0'
@@ -250,7 +287,8 @@ class Database:
             clause+=(' AND ' if clause else 'WHERE ')+"TRIM(COALESCE(i.year,''))=?"
             args.append('' if year=='__unknown__' else str(year))
         if hide_decorated:clause+=(' AND ' if clause else 'WHERE ')+f'NOT ({PRINT_EXPRESSION} OR {STICKER_EXPRESSION})'
-        join=" LEFT JOIN brickarchitect ba ON (i.source='BA' AND ba.ref=i.ref) OR (i.source='ALT' AND i.origin_source='BA' AND ba.ref=i.origin_ref) "; extra=',ba.rank AS architect_rank,ba.models AS ldraw_model'; prefix='i.'
+        architect_join=" LEFT JOIN brickarchitect ba ON ba.ref=CASE WHEN i.source='BA' THEN i.ref WHEN i.source='ALT' AND i.origin_source='BA' THEN i.origin_ref END "
+        join='';extra=',ba.rank AS architect_rank,ba.models AS ldraw_model';prefix='i.'
         if scope in ('stock','stock_sets','stock_available','queue','history'):
             join+=f' JOIN {scope} s ON s.item_id=i.id '
             if scope!='history':clause+=(' AND ' if clause else 'WHERE ')+'s.quantity>0'
@@ -267,10 +305,10 @@ class Database:
         if sort in {'date','chosen_quantity','chosen_color','method','has_print','has_sticker','architect_rank','ldraw_model','stock_entered_at'}: prefix=''
         if sort in {'reserved_quantity','available_quantity','allocated_quantity','remaining_quantity'}:prefix=''
         with self.read() as c:
-            c.execute('BEGIN')
+            if not c.in_transaction:c.execute('BEGIN')
             total=c.execute('SELECT COUNT(*) FROM items i '+join+clause,args).fetchone()[0]
             pages=max(1,(total+size-1)//size);page=min(max(1,page),pages)
-            sql='SELECT i.*,'+PRINT_EXPRESSION+' AS has_print,'+STICKER_EXPRESSION+' AS has_sticker'+extra+' FROM items i '+join+clause+f' ORDER BY {prefix}{sort} COLLATE NOCASE '+('DESC' if descending else 'ASC')+',i.id LIMIT ? OFFSET ?'
+            sql='SELECT i.*,'+PRINT_EXPRESSION+' AS has_print,'+STICKER_EXPRESSION+' AS has_sticker'+extra+' FROM items i '+join+architect_join+clause+f' ORDER BY {prefix}{sort} COLLATE NOCASE '+('DESC' if descending else 'ASC')+',i.id LIMIT ? OFFSET ?'
             rows=[dict(r) for r in c.execute(sql,args+[size,(page-1)*size])]
         return rows,total,pages,page
 

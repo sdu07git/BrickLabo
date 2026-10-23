@@ -4,21 +4,71 @@ from collections import Counter
 from functools import lru_cache
 import json
 import threading
+import weakref
 from .i18n import tr
 from .result_tables import row_index,fill_table
 from .color_links import resolve, candidates, bl_palette, rb_palette
+from collections import OrderedDict
+
+_MISSING=object()
+
+
+def cached_method(instance,name,limit):
+    # Caching a bound method creates self -> cache -> self. During continuous
+    # worker activity GUI-only cyclic GC is deliberately deferred; those cycles
+    # could retain thousands of complete inventory readers. Keep the owner weak.
+    owner=weakref.ref(instance);method=getattr(type(instance),name)
+    @lru_cache(maxsize=limit)
+    def call(*args):return method(owner(),*args)
+    return call
 
 class InventoryReader:
     def __init__(self,c,ignore_colors=False,excluded_entries=None,exclude_minifigs=False,include_set_stock=True,allow_alternatives=False):
         self.allow_alternatives=allow_alternatives;self.c=c;self.ignore_colors=ignore_colors;self.exclude_minifigs=exclude_minifigs;self.include_set_stock=include_set_stock;self.warnings=set();self.excluded_entries=set(excluded_entries or [])
-        self.canonical=lru_cache(maxsize=20000)(self.canonical);self.children=lru_cache(maxsize=2500)(self.children)
+        self._settings=OrderedDict();self._prefetched={};self._raw_rb={};self._catalogue_cache={}
+        self._canonical_cache=cached_method(self,'_canonical',20000);self._children_cache=cached_method(self,'_children',2500)
         self.partmap=self.setting('export_rb_bl_parts',{});self.colormap=self.setting('export_rb_bl_colors',{})
         self.blcolors=bl_palette(self.setting)
         self.colors=rb_palette();self.colors.update({str(r['id']):dict(r) for r in c.execute('SELECT * FROM colors')})
     def setting(self,key,default=None):
-        row=self.c.execute('SELECT value FROM settings WHERE key=?',(key,)).fetchone()
-        return json.loads(row['value']) if row else default
+        if key.startswith(('bl_components_','bl_minifig_components_','rb_minifig_components_','alt_components_')):
+            row=self.c.execute('SELECT value FROM settings WHERE key=?',(key,)).fetchone()
+            return json.loads(row['value']) if row else default
+        if key not in self._settings:
+            row=self.c.execute('SELECT value FROM settings WHERE key=?',(key,)).fetchone()
+            self._settings[key]=json.loads(row['value']) if row else _MISSING
+            while len(self._settings)>128:self._settings.popitem(last=False)
+        self._settings.move_to_end(key)
+        value=self._settings[key]
+        return default if value is _MISSING else value
+
+    def prefetch(self,items):
+        """Resolve one small batch; never retain a whole catalogue in memory."""
+        from .query_bulk import items_by_reference
+        identities=[(r['source'],r.get('kind','set'),r['ref']) for r in items]
+        self._prefetched=items_by_reference(self.c,identities);self._catalogue_cache={};self._raw_rb={}
+        if not identities:return
+        placeholders=','.join('(?,?)' for _ in identities);args=[v for src,kind,ref in identities for v in (src,ref)]
+        for r in self.c.execute('WITH wanted(source,ref) AS (VALUES '+placeholders+') SELECT v.* FROM wanted w JOIN catalogue_inventory v ON v.source=w.source AND v.ref=w.ref',args):
+            self._catalogue_cache[(r['source'],r['ref'])]=r
+        refs=[ref for src,kind,ref in identities if src=='RB']
+        if not refs:return
+        latest={}
+        for r in self.c.execute('SELECT set_num,id FROM inventories WHERE set_num IN ('+','.join('?' for _ in refs)+') ORDER BY set_num,version DESC,id DESC',refs):latest.setdefault(r['set_num'],r['id'])
+        raw={iid:[] for iid in latest.values()}
+        if not raw:return
+        slots=','.join('?' for _ in raw);params=list(raw)
+        for p in self.c.execute('SELECT inventory_id,part_num,color_id,quantity,is_spare FROM inventory_parts WHERE inventory_id IN ('+slots+')',params):
+            raw[p['inventory_id']].append(('RB','part',p['part_num'],str(p['color_id']),int(p['quantity']),bool(p['is_spare'])))
+        for table,column,kind in [('inventory_minifigs','fig_num','minifig'),('inventory_sets','set_num','set')]:
+            for p in self.c.execute('SELECT inventory_id,'+column+',quantity FROM '+table+' WHERE inventory_id IN ('+slots+')',params):
+                raw[p['inventory_id']].append(('RB',kind,p[column],'',int(p['quantity']),False))
+        self._raw_rb={ref:tuple(raw[iid]) for ref,iid in latest.items()}
     def canonical(self,source,ref,color):
+        # This bound call keeps a temporary InventoryReader alive while the
+        # per-reader cache itself holds only a weak reference back to its owner.
+        return self._canonical_cache(source,ref,color)
+    def _canonical(self,source,ref,color):
         native_source=source;native_ref=ref;color_source=source;color_ref=ref
         if source=='ALT':
             origin=self.c.execute("SELECT origin_source,origin_ref FROM items WHERE source='ALT' AND kind='part' AND ref=?",(ref,)).fetchone()
@@ -43,8 +93,11 @@ class InventoryReader:
         key=self.canonical(source,ref,str(color));unknown=not key[2]
         return Counter({key:int(qty)}) if int(qty)>0 else Counter(),unknown
     def children(self,source,kind,ref):
+        return self._children_cache(source,kind,ref)
+    def _children(self,source,kind,ref):
         """Return raw rows, never silently lose references absent from items."""
-        item=self.c.execute('SELECT id,origin_source,origin_ref FROM items WHERE source=? AND kind=? AND ref=?',(source,kind,ref)).fetchone()
+        identity=(source,kind,ref)
+        item=self._prefetched.get(identity) if identity in self._prefetched else self.c.execute('SELECT id,origin_source,origin_ref FROM items WHERE source=? AND kind=? AND ref=?',identity).fetchone()
         rows=[];found=False
         if source=='ALT' and item:
             values=self.setting('alt_components_'+str(item['id']),[]);found=bool(values)
@@ -54,7 +107,7 @@ class InventoryReader:
                 if not p:return (),False
                 rows.append((p['source'],p['kind'],p['ref'],str(value['color']),int(value['quantity']),bool(value.get('is_spare',0))))
             return tuple(rows),found
-        cache=self.c.execute('SELECT parts,parts_without_minifigs FROM catalogue_inventory WHERE source=? AND ref=?',(source,ref)).fetchone()
+        cache=self._catalogue_cache.get((source,ref)) if identity in self._prefetched else self.c.execute('SELECT parts,parts_without_minifigs FROM catalogue_inventory WHERE source=? AND ref=?',(source,ref)).fetchone()
         if cache and not (source=='BL' and item and kind=='set' and self.setting('bl_manual_inventory_'+str(item['id']))):
             payload=cache['parts_without_minifigs'] if self.exclude_minifigs and kind=='set' else cache['parts']
             if payload is not None:
@@ -78,6 +131,7 @@ class InventoryReader:
                 if match:return self.children('RB','set',match['ref'])
             return (),False
         if source!='RB':return (),False
+        if ref in self._raw_rb:return self._raw_rb[ref],bool(self._raw_rb[ref])
         inv=self.c.execute('SELECT id FROM inventories WHERE set_num=? ORDER BY version DESC,id DESC LIMIT 1',(ref,)).fetchone()
         if not inv and kind=='minifig':
             cached=self.setting('rb_minifig_components_'+ref,[])
@@ -95,7 +149,9 @@ class InventoryReader:
         rows,complete=self.children(*identity);counts=Counter()
         for src,typ,num,color,qty,extra in rows:
             if qty<=0 or (extra and not spares) or self.exclude_minifigs and typ=='minifig':continue
-            if typ=='part':part,unknown=self.part(src,num,color,qty);counts.update(part);complete=complete and not unknown
+            if typ=='part':
+                key=self.canonical(src,num,str(color));counts[key]+=qty
+                if not key[2]:complete=False
             elif typ in ('minifig','set'):
                 children,ok=self.inventory(src,typ,num,trail+(identity,),spares);complete=complete and ok
                 counts.update({key:amount*qty for key,amount in children.items()})
@@ -109,8 +165,9 @@ class InventoryReader:
             nonlocal ignored
             if quantity<=0:return
             if row['kind']=='part':
-                counts,unknown=self.part(row['source'],row['ref'],row['color'],quantity)
-                if unknown:ignored+=quantity;return
+                key=self.canonical(row['source'],row['ref'],str(row['color']))
+                if not key[2]:ignored+=quantity;return
+                available[key]+=int(quantity);return
             elif row['kind']=='minifig':
                 if self.exclude_minifigs:return
                 counts,ok=self.inventory(row['source'],'minifig',row['ref'],spares=True)
@@ -161,13 +218,14 @@ def find_builds(db,source='RB',text='',ignore_colors=False,copies=1,minimum=100,
         from .search_index import indexed_clause
         from .data import Database
         if db.search_index_available:
-            conditions,args=indexed_clause(text);clause="i.kind='set' AND i.catalogue_hidden=0"+(' AND '+' AND '.join(conditions) if conditions else '')
+            conditions,args=indexed_clause(text,source,'set');clause="i.kind='set' AND i.catalogue_hidden=0"+(' AND '+' AND '.join(conditions) if conditions else '')
         else:
             clause,args=Database.filter_clause(kind='set',search=text);clause=clause.removeprefix('WHERE ')+' AND i.catalogue_hidden=0'
         if source:clause+=' AND i.source=?';args.append(source)
         sets=c.execute('SELECT i.* FROM items i WHERE '+clause+' ORDER BY i.source,i.ref',args).fetchall()
         for index,item in enumerate(sets):
             if cancel.is_set():break
+            if index%64==0:reader.prefetch([dict(r) for r in sets[index:index+64]])
             if index%50==0:progress(str(index)+' / '+str(len(sets))+tr(' sets analysés…'))
             required,complete=reader.inventory(item['source'],'set',item['ref'])
             if not complete:excluded+=1;continue

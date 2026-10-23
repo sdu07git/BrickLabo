@@ -26,6 +26,7 @@ class Catalogue(QWidget):
     def __init__(self,db,source=None,kind=None,scope='catalogue',parent=None,selection_only=False):
         super().__init__(parent);self.db=db;self.source=source;self.kind=kind;self.scope=scope;self.selection_only=selection_only
         self.page=1;self.sort='ref';self.desc=False;self.rows=[];self.ids=set();self.loading=False;self.total=0
+        self._dirty=False;self._categories_dirty=False
         self.engine=None;self.thumbnail_token=0;self.visual_versions={};self.advanced={};self.reference_filter=None
         self.key=f'columns_{source}_{kind}_{scope}'+('_picker' if selection_only else '')
         default_columns=['ref','name','chosen_quantity','image'] if scope=='stock_sets' else ['ref','name','category']+(['has_print','has_sticker'] if kind!='set' else [])+['image']+(['chosen_color','chosen_quantity'] if scope in ('queue','stock') else [])+(['date','method'] if scope=='history' else ['date'] if scope=='queue' else [])
@@ -202,6 +203,7 @@ class Catalogue(QWidget):
         self.table.selectRow(row);self.table.scrollToItem(self.table.item(row,0));return True
 
     def reload(self):
+        self._dirty=False
         self.loading=True
         if self.selection_only:self.ids.clear()
         self.rows,self.total,n_pages,self.page=self.db.query(self.source,self.kind,self.search.text(),self.category.currentData() or '',self.scope,self.page,int(self.page_size.currentText()),self.sort,self.desc,self.hide_decorated,year=(self.year.currentData() or '') if self.year is not None else '',advanced=self.advanced,reference=self.reference_filter)
@@ -273,7 +275,16 @@ class Catalogue(QWidget):
                 text=describe(row,entries.get(row['id'],[]),self.scope);cell.setText(text);cell.setToolTip(text)
 
     def showEvent(self,event):
-        super().showEvent(event);self.refresh_storage_locations();self.load_thumbnails()
+        super().showEvent(event)
+        if self._categories_dirty:self._categories_dirty=False;self.reload_categories()
+        if self._dirty:self.reload()
+        else:self.refresh_storage_locations();self.load_thumbnails()
+
+    def invalidate(self,categories=False):
+        self._dirty=True;self._categories_dirty|=categories
+        if self.isVisible():
+            if self._categories_dirty:self._categories_dirty=False;self.reload_categories()
+            self.reload()
 
     def hideEvent(self,event):
         self.thumbnail_token+=1
