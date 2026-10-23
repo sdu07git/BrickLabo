@@ -7,7 +7,6 @@ def prepare(c):
         CREATE INDEX IF NOT EXISTS idx_catalogue_ref ON items(source,kind,catalogue_hidden,ref COLLATE NOCASE,id);
         CREATE INDEX IF NOT EXISTS idx_catalogue_name ON items(source,kind,catalogue_hidden,name COLLATE NOCASE,id);
         CREATE INDEX IF NOT EXISTS idx_catalogue_category ON items(source,kind,catalogue_hidden,category COLLATE NOCASE,id);
-        CREATE INDEX IF NOT EXISTS idx_catalogue_theme ON items(source,kind,category_id);
         CREATE INDEX IF NOT EXISTS idx_themes_parent ON themes(parent_id,id);
         CREATE INDEX IF NOT EXISTS idx_project_allocated_entry ON project_set_allocations(set_entry_id,project_id);
         CREATE INDEX IF NOT EXISTS idx_project_pick_stock ON project_pick_rows(item_id,color);
@@ -18,6 +17,8 @@ def prepare(c):
             printed INTEGER NOT NULL,sticker INTEGER NOT NULL,
             catalogue_text TEXT,storage_text TEXT);
     ''')
+    if 'category_id' in {r[1] for r in c.execute('PRAGMA table_info(items)')}:
+        c.execute('CREATE INDEX IF NOT EXISTS idx_catalogue_theme ON items(source,kind,category_id)')
     fields={r[1] for r in c.execute('PRAGMA table_info(item_decorations)')}
     for column in ('catalogue_text','storage_text'):
         if column not in fields:c.execute('ALTER TABLE item_decorations ADD COLUMN '+column+' TEXT')

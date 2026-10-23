@@ -26,7 +26,7 @@ class InventoryReader:
     def __init__(self,c,ignore_colors=False,excluded_entries=None,exclude_minifigs=False,include_set_stock=True,allow_alternatives=False):
         self.allow_alternatives=allow_alternatives;self.c=c;self.ignore_colors=ignore_colors;self.exclude_minifigs=exclude_minifigs;self.include_set_stock=include_set_stock;self.warnings=set();self.excluded_entries=set(excluded_entries or [])
         self._settings=OrderedDict();self._prefetched={};self._raw_rb={};self._catalogue_cache={}
-        self.canonical=cached_method(self,'canonical',20000);self.children=cached_method(self,'children',2500)
+        self._canonical_cache=cached_method(self,'_canonical',20000);self._children_cache=cached_method(self,'_children',2500)
         self.partmap=self.setting('export_rb_bl_parts',{});self.colormap=self.setting('export_rb_bl_colors',{})
         self.blcolors=bl_palette(self.setting)
         self.colors=rb_palette();self.colors.update({str(r['id']):dict(r) for r in c.execute('SELECT * FROM colors')})
@@ -65,6 +65,10 @@ class InventoryReader:
                 raw[p['inventory_id']].append(('RB',kind,p[column],'',int(p['quantity']),False))
         self._raw_rb={ref:tuple(raw[iid]) for ref,iid in latest.items()}
     def canonical(self,source,ref,color):
+        # This bound call keeps a temporary InventoryReader alive while the
+        # per-reader cache itself holds only a weak reference back to its owner.
+        return self._canonical_cache(source,ref,color)
+    def _canonical(self,source,ref,color):
         native_source=source;native_ref=ref;color_source=source;color_ref=ref
         if source=='ALT':
             origin=self.c.execute("SELECT origin_source,origin_ref FROM items WHERE source='ALT' AND kind='part' AND ref=?",(ref,)).fetchone()
@@ -89,6 +93,8 @@ class InventoryReader:
         key=self.canonical(source,ref,str(color));unknown=not key[2]
         return Counter({key:int(qty)}) if int(qty)>0 else Counter(),unknown
     def children(self,source,kind,ref):
+        return self._children_cache(source,kind,ref)
+    def _children(self,source,kind,ref):
         """Return raw rows, never silently lose references absent from items."""
         identity=(source,kind,ref)
         item=self._prefetched.get(identity) if identity in self._prefetched else self.c.execute('SELECT id,origin_source,origin_ref FROM items WHERE source=? AND kind=? AND ref=?',identity).fetchone()
