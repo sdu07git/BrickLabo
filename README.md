@@ -28,6 +28,8 @@ Logiciel de bureau Windows pour les catalogues LEGO, les stocks, les recherches 
 Ces fonctions utilisent les inventaires locaux sans clé API. Récupérer les données manquantes conserve les exigences de chaque source. La reconnaissance de référence par photo n’est pas incluse. Les tests sont réalisés sous Qt/Linux ; l’exécution native Windows reste à confirmer.
 
 
+**Validation v0.1.71 :** 1 088 tests de la suite complète réussis sous Qt/Linux, puis 96 tests ciblés après le dernier ajustement des colonnes. Revue visuelle en français et en anglais, dont une petite fenêtre. [Rapport de contrôle](documentation/CONTROLE_v0.1.71.txt). Exécution native Windows à confirmer.
+
 ## Inventaires de tous les sets et grands meubles — v0.1.70
 
 Dans **Mise à jour des données → Charger les inventaires de sets par lots**, choisir **Rebrickable** ou **BrickLink**. Laisser la recherche vide puis cliquer **Préparer tous les sets trouvés** pour enregistrer tout le catalogue choisi, sans plafond de 9 999 ou 10 000 sets. Avec un filtre, le bouton prépare tous les résultats correspondants, sur toutes les pages, même sans les avoir affichés. **Préparer la sélection** reste réservé aux lignes sélectionnées ou aux références saisies.

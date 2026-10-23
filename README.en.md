@@ -28,6 +28,8 @@ Windows desktop software for LEGO catalogues, stock, construction searches and l
 These workflows use local inventories without API credentials. Obtaining missing data retains each source’s requirements. Photo recognition is not included. Tests run under Qt/Linux; native Windows execution remains to be confirmed.
 
 
+**Validation v0.1.71:** 1,088 full-suite tests passed under Qt/Linux, followed by 96 focused tests after the final column adjustment. French/English visual review included a small window. [Validation report](documentation/CONTROLE_v0.1.71.txt). Native Windows execution remains to be confirmed.
+
 ## All-set inventory queues and large cabinets — v0.1.70
 
 In **Update data → Load set inventories in batches**, choose **Rebrickable** or **BrickLink**. Leave the search empty and click **Prepare all matching sets** to queue the entire chosen catalogue, with no 9,999 or 10,000-set cap. With a filter, the button queues every matching result across all pages, even before listing them. **Queue selected sets** still uses selected rows or typed references.
