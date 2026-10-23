@@ -34,7 +34,7 @@ class Update37UiTests(unittest.TestCase):
             window=self.keep(MainWindow(self.db));window.startup_timer.stop();return window
 
     def test_navigation_and_undo_controls_follow_stock_journal(self):
-        window=self.main_window();self.assertEqual(window.nav.count(),14);self.assertEqual(NAV[8][3],'stock');self.assertEqual(NAV[9][3],'stock_sets');self.assertEqual(NAV[-1][3],'projects');self.assertFalse(window.undo_button.isEnabled());self.assertFalse(window.redo_button.isEnabled())
+        window=self.main_window();self.assertEqual(window.nav.count(),15);self.assertEqual(NAV[8][3],'stock');self.assertEqual(NAV[9][3],'stock_sets');self.assertEqual(NAV[13][3],'projects');self.assertEqual(NAV[-1][3],'dashboard');self.assertFalse(window.undo_button.isEnabled());self.assertFalse(window.redo_button.isEnabled())
         self.db.add('stock',self.set,quantity=2)
         with patch('atelier.catalogue.Catalogue.load_thumbnails'):window.refresh_counts()
         self.assertTrue(window.undo_button.isEnabled());self.assertTrue(window.undo_shortcut.isEnabled());self.assertEqual(window.undo_shortcut.shortcut().toString(),'Ctrl+Z');self.assertEqual(self.db.query(scope='stock')[1],0)
