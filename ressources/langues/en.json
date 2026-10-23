@@ -1780,5 +1780,9 @@
   "Prélève les quantités réellement prises dans les tiroirs. Elles restent possédées et réservées au projet. Un tiroir supprimé devient Aucun tiroir défini. Supprimer le projet libère les pièces prélevées dans le stock sans les remettre dans un tiroir.": "Record parts actually taken from drawers. They remain owned and reserved to the project. Deleted drawers become No drawer assigned. Deleting the project releases picked parts in stock without returning them to a drawer.",
   "Confirme le retour des pièces aux tiroirs encore existants. Les pièces dont le tiroir a été supprimé restent dans le stock sans tiroir défini.": "Confirm the return of parts to drawers that still exist. Parts from deleted drawers remain in stock with no drawer assigned.",
   "Suppression d’un meuble": "Delete a cabinet",
-  "Suppression d’un tiroir": "Delete a drawer"
+  "Suppression d’un tiroir": "Delete a drawer",
+  "Sets par page": "Sets per page",
+  "Préparer tous les sets trouvés": "Prepare all matching sets",
+  "Sans filtre, « Préparer tous les sets trouvés » inclut tout le catalogue choisi, sans limite de nombre. La taille des pages et des lots ne limite pas la file enregistrée.": "With no filter, “Prepare all matching sets” includes the entire chosen catalogue, with no set-count limit. Page and batch sizes do not limit the saved queue.",
+  "{0}–{1} sur {2} sets": "{0}–{1} of {2} sets"
 }
