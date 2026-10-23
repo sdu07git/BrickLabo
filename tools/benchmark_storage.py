@@ -49,6 +49,10 @@ def main():
                     _,elapsed=timed(lambda:(panel.refresh(),app.processEvents()));refresh.append(elapsed)
                     _,elapsed=timed(panel.grab);paint.append(elapsed)
                 result['refresh_median_seconds']=median(refresh);result['paint_median_seconds']=median(paint)
+                def add_cabinet():
+                    identity=create_wall(db,'Second cabinet',args.columns,args.rows)
+                    panel.reload_walls(identity);app.processEvents()
+                _,result['adding_second_cabinet_seconds']=timed(add_cabinet)
                 panel.close();app.processEvents();collector.collect_if_idle(force=True)
             finally:db.close()
     finally:collector.stop()
