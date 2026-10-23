@@ -1,9 +1,34 @@
-# BrickLabo — v0.1.71
+# BrickLabo — v0.1.72
 
-Windows desktop software for LEGO catalogues, stock, construction searches and labels. This version continues the published v0.1.70, based on the original v0.1.28.
+Windows desktop software for LEGO catalogues, stock, construction searches and labels. This version continues the published v0.1.71, based on the original v0.1.28.
 
-**Downloads v0.1.71 :** [complete Windows package](https://github.com/sdu07git/BrickLabo/releases/download/v0.1.71/BrickLabo_v0.1.71_Complet.zip) · [sources with resources](https://github.com/sdu07git/BrickLabo/releases/download/v0.1.71/BrickLabo_v0.1.71_Sources.zip) · [release notes](https://github.com/sdu07git/BrickLabo/releases/tag/v0.1.71).
+**Downloads v0.1.72 :** [complete Windows package](https://github.com/sdu07git/BrickLabo/releases/download/v0.1.72/BrickLabo_v0.1.72_Complet.zip) · [sources with resources](https://github.com/sdu07git/BrickLabo/releases/download/v0.1.72/BrickLabo_v0.1.72_Sources.zip) · [release notes](https://github.com/sdu07git/BrickLabo/releases/tag/v0.1.72).
 
+
+## Faster queries and background inventory loading — v0.1.72
+
+Catalogue, filter, stock, project and cabinet reads reuse valid results and avoid repeated per-part lookups. Hidden tabs refresh when opened. Counts still respect reservations and assigned owned sets; imports and Undo/Redo invalidate affected results. The first launch builds the new query accelerators once.
+
+Same disposable benchmark: **253,628 catalogue items, 1,558,072 inventory rows, 10,000 stock rows, 100 projects and 10,000 drawers**. These are first calls per scenario on Linux, not guaranteed Windows timings.
+
+| Operation | v0.1.71 | v0.1.72 |
+|---|---:|---:|
+| First catalogue page | 60 ms | 6 ms |
+| Catalogue page 50 | 132 ms | 6 ms |
+| Hide decorated parts | 2,033 ms | 54 ms |
+| Find catalogue parts to store | 1,830 ms | 66 ms |
+| Search loose stock to store | 79 ms | 12 ms |
+| Read cabinet contents | 100 ms | 40 ms |
+| Search the entire Rebrickable set catalogue | 7.41 s | 4.93 s |
+
+Repeated cached catalogue requests take about 1 ms on this benchmark. General refresh with My stock visible improves from a median of 165 to 9 ms; image downloads and rendering are disabled for this UI measurement. All **18 scenarios** return identical results to v0.1.71. [Full measurements and conditions](documentation/PERFORMANCES_v0.1.72.json).
+
+**Data updates → Load set inventories in batches** now continues after closing its window and the data update window, while BrickLabo stays open. The status bar shows **Inventories: processed/total**; click it to reopen progress and **Pause**. Multiple windows share one worker. **Load next batch** stops after one batch; **Continue through batches** processes the queue. Quitting BrickLabo cancels requests safely and retains pending rows for resumption. API credentials and request limits still apply; requests remain sequential. Loading catalogue inventories adds no owned stock.
+
+[Bilingual guide](documentation/GUIDE_v0.1.72.md).
+
+
+**v0.1.72 validation:** 1,111 full-suite scenarios exercised, followed by 114 focused tests passing after the final fixes. All 18 benchmark scenarios match v0.1.71. [Validation report](documentation/CONTROLE_v0.1.72.txt). Native Windows execution remains to be confirmed.
 
 ## Projects, shopping, loose lots and shape-based storage — v0.1.71
 

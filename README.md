@@ -1,9 +1,34 @@
-# BrickLabo — v0.1.71
+# BrickLabo — v0.1.72
 
-Logiciel de bureau Windows pour les catalogues LEGO, les stocks, les recherches de constructions et les étiquettes. Cette version reprend la v0.1.70 publiée, issue de la v0.1.28 d’origine.
+Logiciel de bureau Windows pour les catalogues LEGO, les stocks, les recherches de constructions et les étiquettes. Cette version reprend la v0.1.71 publiée, issue de la v0.1.28 d’origine.
 
-**Téléchargements v0.1.71 :** [version complète Windows](https://github.com/sdu07git/BrickLabo/releases/download/v0.1.71/BrickLabo_v0.1.71_Complet.zip) · [sources avec ressources](https://github.com/sdu07git/BrickLabo/releases/download/v0.1.71/BrickLabo_v0.1.71_Sources.zip) · [notes de release](https://github.com/sdu07git/BrickLabo/releases/tag/v0.1.71).
+**Téléchargements v0.1.72 :** [version complète Windows](https://github.com/sdu07git/BrickLabo/releases/download/v0.1.72/BrickLabo_v0.1.72_Complet.zip) · [sources avec ressources](https://github.com/sdu07git/BrickLabo/releases/download/v0.1.72/BrickLabo_v0.1.72_Sources.zip) · [notes de release](https://github.com/sdu07git/BrickLabo/releases/tag/v0.1.72).
 
+
+## Fluidité et inventaires en arrière-plan — v0.1.72
+
+Les requêtes des catalogues, filtres, stocks, projets et meubles réutilisent les résultats encore valides et évitent des recherches répétées par pièce. Les onglets masqués sont actualisés lorsqu’on les ouvre. Les comptages tiennent toujours compte des réservations et des sets affectés ; Annuler/Rétablir et les imports invalident les résultats concernés. Le premier démarrage construit une fois les nouveaux index et données de recherche.
+
+Mesures sur la même collection de contrôle : **253 628 entrées de catalogue, 1 558 072 lignes d’inventaire, 10 000 lignes de stock, 100 projets et 10 000 tiroirs**. Premier appel de chaque scénario, sous Linux, avec le même environnement Python ; ce ne sont pas des mesures promises pour tous les PC Windows.
+
+| Opération | v0.1.71 | v0.1.72 |
+|---|---:|---:|
+| Catalogue : première page | 60 ms | 6 ms |
+| Catalogue : page 50 | 132 ms | 6 ms |
+| Masquer les pièces décorées | 2 033 ms | 54 ms |
+| Rechercher une pièce du catalogue à ranger | 1 830 ms | 66 ms |
+| Rechercher dans le vrac à ranger | 79 ms | 12 ms |
+| Lire le contenu des meubles | 100 ms | 40 ms |
+| Rechercher des sets sur tout le catalogue Rebrickable | 7,41 s | 4,93 s |
+
+Une requête identique de catalogue déjà en cache prend environ 1 ms sur ce banc. Le rafraîchissement général avec Mon stock visible passe d’une médiane de 165 à 9 ms, sans téléchargement ni rendu d’images dans cette mesure d’interface. Les **18 scénarios** renvoient exactement les mêmes résultats que la v0.1.71. [Mesures détaillées et conditions](documentation/PERFORMANCES_v0.1.72.json).
+
+**Mise à jour des données → Charger les inventaires de sets par lots** continue maintenant après la fermeture de cette fenêtre et de la fenêtre de mise à jour. BrickLabo doit rester ouvert. La barre d’état affiche **Inventaires : traités/total** ; cliquer dessus retrouve le travail en cours et **Pause**. Une seule tâche charge la file, même avec plusieurs fenêtres. **Charger le prochain lot** s’arrête après un lot ; **Enchaîner les lots** poursuit la file. Quitter BrickLabo arrête proprement les requêtes ; les lignes restantes restent enregistrées pour une reprise. Les droits API et leurs limites de requêtes restent applicables, sans paralléliser les appels. Aucun ajout au stock par ce chargement.
+
+[Guide français/anglais](documentation/GUIDE_v0.1.72.md).
+
+
+**Validation v0.1.72 :** 1 111 scénarios de la suite complète exécutés, puis 114 tests ciblés réussis après les dernières corrections. Les 18 scénarios de mesure donnent les mêmes résultats que la v0.1.71. [Rapport de contrôle](documentation/CONTROLE_v0.1.72.txt). Exécution native Windows à confirmer.
 
 ## Projets, achats, vrac et rangement par forme — v0.1.71
 
