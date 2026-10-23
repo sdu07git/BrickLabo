@@ -198,6 +198,7 @@ class ProjectsPanel(QWidget):
         return show_window(ShoppingDialog(self.db,self),self)
 
     def refresh(self, preferred=None):
+        self._dirty=False
         if type(preferred) is not int: preferred = self.project_id
         self.rows = projects.list_projects(self.db)
         self.table.blockSignals(True)
@@ -206,6 +207,14 @@ class ProjectsPanel(QWidget):
         index = next((n for n,row in enumerate(self.rows) if row['id']==preferred),0)
         if self.rows:self.table.selectRow(next(row for row in range(self.table.rowCount()) if row_index(self.table,row)==index))
         self.table.blockSignals(False); self.choose_project()
+
+    def invalidate(self):
+        self._dirty=True
+        if self.isVisible():self.refresh()
+
+    def showEvent(self,event):
+        super().showEvent(event)
+        if getattr(self,'_dirty',False):self.refresh()
 
     def choose_project(self):
         index = row_index(self.table)

@@ -15,8 +15,8 @@ def stock_rows(db,query='',category='',unlocated=False,limit=None,remaining_only
     if unlocated:conditions.append('NOT EXISTS (SELECT 1 FROM storage_contents p WHERE p.item_id=i.id AND p.color=s.color)')
     allocated='COALESCE((SELECT SUM(p.quantity) FROM storage_contents p WHERE p.item_id=i.id AND p.color=s.color),0)'
     if remaining_only:conditions.append('s.quantity>'+allocated)
-    for word in normalize(query).split():
-        conditions.append("norm(i.ref||' '||i.name||' '||i.category) LIKE ?");args.append('%'+word+'%')
+    from .search_index import document_clause
+    terms,values=document_clause(query,"(SELECT storage_text FROM item_decorations d WHERE d.item_id=i.id)",False);conditions+=terms;args+=values
     sql='SELECT i.*,s.color AS chosen_color,s.quantity AS chosen_quantity,'+allocated+' AS allocated_quantity,MAX(0,s.quantity-'+allocated+') AS remaining_quantity FROM stock s JOIN items i ON i.id=s.item_id WHERE '+' AND '.join(conditions)+' ORDER BY i.category,i.source,i.ref,s.color'
     if limit is not None:sql+=' LIMIT ?';args.append(limit)
     return db.rows(sql,args)
@@ -28,8 +28,8 @@ def catalogue_rows(db,query='',category='',unlocated=False,source=None,kind=None
     if kind:conditions.append('i.kind=?');args.append(kind)
     if category:conditions.append('i.category=?');args.append(category)
     if unlocated:conditions.append('NOT EXISTS (SELECT 1 FROM storage_contents p WHERE p.item_id=i.id)')
-    for word in normalize(query).split():
-        conditions.append("norm(i.ref||' '||i.name||' '||i.category) LIKE ?");args.append('%'+word+'%')
+    from .search_index import document_clause
+    terms,values=document_clause(query,"(SELECT storage_text FROM item_decorations d WHERE d.item_id=i.id)",db.search_index_available);conditions+=terms;args+=values
     sql="SELECT i.*,'' AS chosen_color FROM items i WHERE "+' AND '.join(conditions)+' ORDER BY i.source,i.ref,i.id'
     if limit is not None:sql+=' LIMIT ?';args.append(limit)
     return db.rows(sql,args)

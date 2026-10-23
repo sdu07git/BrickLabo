@@ -1,18 +1,18 @@
 """Catalogue-only inventory queues; load a batch or continue until paused."""
-import threading
-from PySide6.QtCore import QTimer
 from PySide6.QtWidgets import (QDialog,QVBoxLayout,QHBoxLayout,QLabel,QPushButton,QComboBox,QLineEdit,QSpinBox,
     QCheckBox,QTableWidget,QHeaderView,QAbstractItemView,QMessageBox)
 from .i18n import tr,tf
-from .ui_common import async_task,FlowLayout
-from .windows import notify_changed,show_window
+from .ui_common import FlowLayout
+from .windows import show_window
 from .result_tables import fill_table,row_index
 from . import inventory_batches as batches
 
 
 class InventoryBatchDialog(QDialog):
     def __init__(self,db,parent=None):
-        super().__init__(parent);self.db=db;self.rows=[];self.job=None;self.busy=False;self.continuous=False;self.closed=False;self.cancel=threading.Event()
+        super().__init__(parent);self.db=db;self.rows=[];self.job=None;self.busy=False;self.continuous=False;self.closed=False
+        from .inventory_background import service_for
+        self.background=service_for(db,parent);self.cancel=self.background.cancel
         self.page=0;self.total=0;self.log_page=0;self.log_page_size=500
         self.setWindowTitle(tr('Inventaires des sets par lots'));self.resize(1080,740)
         layout=QVBoxLayout(self);note=QLabel(tr('Charge les inventaires dans les catalogues pour les recherches de constructions. Ce chargement n’ajoute aucun set ni aucune pièce au stock. Pour une base complète Rebrickable, les fichiers CSV de Mise à jour des données restent disponibles.'));note.setWordWrap(True);layout.addWidget(note)
@@ -38,11 +38,13 @@ class InventoryBatchDialog(QDialog):
         self.log_next=QPushButton(tr('Page suivante'));self.log_next.clicked.connect(lambda:self.change_log_page(1));bar.addWidget(self.log_next);layout.addLayout(bar)
         bar=FlowLayout();self.run=QPushButton(tr('Charger le prochain lot'));self.run.clicked.connect(lambda:self.start(False));bar.addWidget(self.run)
         self.all=QPushButton(tr('Enchaîner les lots'));self.all.clicked.connect(lambda:self.start(True));bar.addWidget(self.all)
-        self.pause=QPushButton(tr('Pause'));self.pause.clicked.connect(self.cancel.set);bar.addWidget(self.pause)
+        self.pause=QPushButton(tr('Pause'));self.pause.clicked.connect(self.background.pause);bar.addWidget(self.pause)
         self.retry=QPushButton(tr('Réessayer les erreurs'));self.retry.clicked.connect(self.retry_errors);bar.addWidget(self.retry)
         builds=QPushButton(tr('Chercher des constructions'));builds.clicked.connect(self.open_builds);bar.addWidget(builds)
         close=QPushButton(tr('Fermer'));close.clicked.connect(self.reject);bar.addWidget(close);layout.addLayout(bar)
-        self.refresh_history();self.controls(False)
+        note=QLabel(tr('Tu peux fermer cette fenêtre : le chargement continue tant que BrickLabo reste ouvert. La progression reste accessible dans la barre d’état.'));note.setWordWrap(True);layout.addWidget(note)
+        self.background.changed.connect(self.background_changed);self.background.progress.connect(self.background_progress)
+        self.refresh_history(self.background.job);self.background_changed()
     def controls(self,busy):
         self.busy=busy
         for w in (self.source,self.filter,self.limit,self.list_button,self.create,self.create_all,self.size,self.force,self.history,self.references,self.retry):w.setEnabled(not busy)
@@ -86,7 +88,7 @@ class InventoryBatchDialog(QDialog):
         self.job=self.history.currentData();self.log_page=0
         if self.job is not None:
             row=self.db.rows('SELECT * FROM inventory_jobs WHERE id=?',(self.job,))[0];self.size.setValue(row['batch_size'])
-        self.refresh_progress();self.controls(False)
+        self.refresh_progress();self.controls(self.background.busy)
     def refresh_progress(self):
         if self.job is None:
             self.log_previous.setEnabled(False);self.log_next.setEnabled(False);return
@@ -102,20 +104,24 @@ class InventoryBatchDialog(QDialog):
         self.log_page=max(0,self.log_page+step);self.refresh_progress()
     def start(self,continuous=False):
         if self.busy or self.job is None:return
-        self.cancel.clear();self.continuous=continuous;self._next_batch()
-    def _next_batch(self):
-        if self.closed or self.cancel.is_set():return
-        self.db.run('UPDATE inventory_jobs SET batch_size=? WHERE id=?',(self.size.value(),self.job));job=self.job;self.controls(True)
-        def done(summary):
-            self.controls(False);self.refresh_progress();notify_changed(self)
-            if self.continuous and not self.cancel.is_set() and summary['pending']:QTimer.singleShot(0,self._next_batch)
-        def fail(error):
-            self.controls(False);self.refresh_progress();self.status.setText(str(error)+tr(' — le chargement reste enregistré pour une reprise.'))
-        async_task(self,lambda progress:batches.run_batch(self.db,job,self.cancel,progress),done,fail,lambda text:self.status.setText(tr('Chargement : ')+str(text)))
+        self.continuous=continuous;self.background.start(self.job,self.size.value(),continuous)
+    def background_progress(self,text):
+        if not self.closed and self.job==self.background.job:self.status.setText(tr('Chargement : ')+str(text))
+    def background_changed(self):
+        if self.closed:return
+        if self.background.busy and self.job!=self.background.job:self.refresh_history(self.background.job)
+        self.controls(self.background.busy);self.refresh_progress()
+        if self.job==self.background.job:
+            if self.background.error:self.status.setText(self.background.error+tr(' — le chargement reste enregistré pour une reprise.'))
+            elif self.background.busy and self.background.message:self.background_progress(self.background.message)
     def retry_errors(self):
         if self.job is not None:batches.retry_errors(self.db,self.job);self.refresh_progress()
     def open_builds(self):
         from .build_stock import BuildStockDialog
         from .windows import application_owner
         owner=application_owner(self);show_window(BuildStockDialog(self.db,getattr(owner,'engine',None),self),self)
-    def done(self,result):self.closed=True;self.cancel.set();super().done(result)
+    def done(self,result):
+        if self.closed:return super().done(result)
+        self.closed=True
+        self.background.changed.disconnect(self.background_changed);self.background.progress.disconnect(self.background_progress)
+        super().done(result)

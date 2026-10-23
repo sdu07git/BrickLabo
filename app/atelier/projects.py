@@ -217,13 +217,17 @@ def detail(db, project_id):
 
 
 def _detail(c, project_id, set_stock=None):
-    rows=[dict(r) for r in c.execute('''SELECT i.*,p.project_id,p.color AS chosen_color,p.required,p.reserved,
+    rows=[dict(r) for r in c.execute('''WITH reservations AS (
+        SELECT item_id,color,SUM(reserved) AS reserved FROM project_stock_reservations
+        WHERE item_id IN (SELECT item_id FROM project_parts WHERE project_id=?) GROUP BY item_id,color)
+        SELECT i.*,p.project_id,p.color AS chosen_color,p.required,p.reserved,
         COALESCE(s.quantity,0) AS chosen_quantity,
-        MAX(0,COALESCE(s.quantity,0)-(SELECT COALESCE(SUM(x.reserved),0) FROM project_stock_reservations x WHERE x.item_id=p.item_id AND x.color=p.color)) AS free_quantity,
-        MAX(0,p.required-p.reserved-MAX(0,COALESCE(s.quantity,0)-(SELECT COALESCE(SUM(x.reserved),0) FROM project_stock_reservations x WHERE x.item_id=p.item_id AND x.color=p.color))) AS missing
+        MAX(0,COALESCE(s.quantity,0)-COALESCE(r.reserved,0)) AS free_quantity,
+        MAX(0,p.required-p.reserved-MAX(0,COALESCE(s.quantity,0)-COALESCE(r.reserved,0))) AS missing
         FROM project_parts p JOIN items i ON i.id=p.item_id
         LEFT JOIN stock s ON s.item_id=p.item_id AND s.color=p.color
-        WHERE p.project_id=? ORDER BY i.source,i.ref,p.color''', (project_id,))]
+        LEFT JOIN reservations r ON r.item_id=p.item_id AND r.color=p.color
+        WHERE p.project_id=? ORDER BY i.source,i.ref,p.color''', (project_id,project_id))]
     from .project_colors import enabled,decorate_detail
     if not rows:return rows
     ignore_colors=enabled(c,project_id)
@@ -241,22 +245,15 @@ def _detail(c, project_id, set_stock=None):
 
 
 def list_projects(db):
-    with db.read() as c:
-        c.execute('BEGIN')
-        rows=[dict(r) for r in c.execute('''SELECT p.*,COALESCE(i.ref,'') AS set_ref,
-        COALESCE((SELECT SUM(required) FROM project_parts x WHERE x.project_id=p.id),0) AS required,
-        COALESCE((SELECT SUM(reserved) FROM project_parts x WHERE x.project_id=p.id),0) AS reserved,
-        COALESCE((SELECT SUM(MAX(0,x.required-x.reserved-MAX(0,COALESCE(s.quantity,0)-(SELECT COALESCE(SUM(z.reserved),0) FROM project_stock_reservations z WHERE z.item_id=x.item_id AND z.color=x.color))))
-        FROM project_parts x LEFT JOIN stock s ON s.item_id=x.item_id AND s.color=x.color WHERE x.project_id=p.id),0) AS missing
-        FROM construction_projects p LEFT JOIN items i ON i.id=p.set_id ORDER BY p.id DESC''')]
-        from .project_colors import missing
-        from .project_stock import owned_sets
-        set_stock,warnings=owned_sets(c) if any(row['include_set_stock'] for row in rows) else ({},[])
-        for row in rows:
-            row['set_stock_warnings']=warnings if row['include_set_stock'] else []
-            if row['include_set_stock']:row['missing']=sum(part['missing'] for part in _detail(c,row['id'],set_stock))
-            elif row['ignore_colors']:row['missing']=missing(c,row['id'])
-        return rows
+    from .i18n import language
+    return db.cached_read(('project-summary',language()),lambda c:_list_projects(c))
+
+
+def _list_projects(c):
+    from .project_summary import summarize
+    if not c.in_transaction:c.execute('BEGIN')
+    rows=[dict(r) for r in c.execute("SELECT p.*,COALESCE(i.ref,'') AS set_ref FROM construction_projects p LEFT JOIN items i ON i.id=p.set_id ORDER BY p.id DESC")]
+    return summarize(c,rows)
 
 
 def set_include_set_stock(db,project_id,value):

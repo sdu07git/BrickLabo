@@ -7,7 +7,7 @@ from .i18n import tr
 
 class OwnedSetsPanel(QWidget):
     def __init__(self,db,engine,parent=None):
-        super().__init__(parent);self.db=db;self.engine=engine;self.entry=None;self.parts=[]
+        super().__init__(parent);self.db=db;self.engine=engine;self.entry=None;self.parts=[];self._dirty=False
         layout=QVBoxLayout(self);layout.setContentsMargins(0,0,0,0);split=QSplitter(Qt.Orientation.Vertical);layout.addWidget(split)
         self.catalogue=Catalogue(db,kind='set',scope='stock_sets');split.addWidget(self.catalogue)
         lower=QWidget();body=QVBoxLayout(lower);body.addWidget(QLabel(tr('Pièces du set sélectionné — quantités totales possédées')))
@@ -20,6 +20,7 @@ class OwnedSetsPanel(QWidget):
     def select(self,item):
         self.entry=item.get('entry_id') if item else None;self.refresh()
     def refresh(self):
+        self._dirty=False
         if not self.entry or not self.db.rows('SELECT 1 FROM stock_sets WHERE id=?',(self.entry,)):self.entry=None;self.parts=[]
         else:self.parts=self.db.owned_components(self.entry)
         self.thumbnails.suspend();self.table.setSortingEnabled(False);self.table.setRowCount(len(self.parts))
@@ -29,6 +30,12 @@ class OwnedSetsPanel(QWidget):
                 if col==0:cell.setData(Qt.ItemDataRole.UserRole,row)
                 self.table.setItem(row,col,cell)
         self.table.setSortingEnabled(True);self.thumbnails.reset()
+    def invalidate(self):
+        self._dirty=True
+        if self.isVisible():self.refresh()
+    def showEvent(self,event):
+        super().showEvent(event)
+        if self._dirty:self.refresh()
     def open_part(self,row,column):
         from .dialogs import RelationsDialog
         items=self.ordered_parts()
