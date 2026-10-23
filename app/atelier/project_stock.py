@@ -1,7 +1,7 @@
-"""Read-only availability of owned sets for an individual construction project.
+"""Owned-set availability, excluding other projects' exclusive set assignments.
 
-Set components remain in their own ledger. Only loose stock can be reserved or
-picked from drawers; this module never transfers or reserves set components.
+Components remain in their ownership ledger. Drawer picking uses loose stock;
+set_allocations handles the separate, exclusive claims on owned set copies.
 """
 from collections import Counter
 
@@ -14,7 +14,7 @@ def prepare(c):
         c.execute('ALTER TABLE construction_projects ADD COLUMN include_set_stock INTEGER NOT NULL DEFAULT 0 CHECK(include_set_stock IN (0,1))')
 
 
-def owned_sets(c):
+def owned_sets(c, include_allocated=False):
     """Use actual tracked quantities, including zeroes, before catalogue fallback.
 
     Tracked components already include the number of owned copies. Re-expanding
@@ -69,6 +69,9 @@ def owned_sets(c):
                 warnings.append(tr('Inventaire du catalogue utilisé pour un set sans suivi de pièces : ') + row['ref'])
             else:
                 warnings.append(tr('Inventaire de set indisponible ou incomplet : ') + row['ref'])
+    if not include_allocated:
+        from .set_allocations import allocated_counts
+        for key,quantity in allocated_counts(c).items():counts[key]=max(0,counts[key]-quantity)
     return counts, sorted(set(warnings))
 
 

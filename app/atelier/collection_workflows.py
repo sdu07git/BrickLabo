@@ -344,6 +344,7 @@ def create_comparison_projects(db,result,exclude_minifigs=False,allow_alternativ
         prepared.append((item,choice['copies'],parts))
     identities=[]
     with db.connect() as c,change(c,('construction_projects','project_parts'),tr('Création des projets comparés')):
+        if result.get('stock_revision') is not None and c.execute('SELECT version FROM stock_revision WHERE id=1').fetchone()[0]!=result['stock_revision']:raise ValueError(tr('Le stock a changé. Relance la comparaison avant de créer les projets.'))
         for item,copies,parts in prepared:
             current=c.execute('SELECT source,ref FROM items WHERE id=?',(item['id'],)).fetchone()
             if not current or (current['source'],current['ref'])!=(item['source'],item['ref']):raise ValueError(tr('Les références des sets ont changé. Relance la comparaison.'))

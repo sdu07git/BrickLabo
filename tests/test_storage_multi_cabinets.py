@@ -95,7 +95,7 @@ class MultiCabinetTests(StorageFixture):
             self.assertTrue(all(len({identity for identity,color in g['entries']})==1 for g in plan['groups']));self.assertEqual(plan['unknown'],[])
             self.assertIn((special,'4'),{entry for g in plan['groups'] for entry in g['entries']})
     def test_all_checkboxes_can_be_combined_and_empty_selection_blocks_apply(self):
-        window=self.dialog();window.criteria['reference'].setChecked(True);self.assertEqual(window.plan['criteria'],['category','reference','size'])
+        window=self.dialog();window.criteria['reference'].setChecked(True);self.assertEqual(window.plan['criteria'],['category','reference','shape','size'])
         for checkbox in window.criteria.values():checkbox.setChecked(False)
         self.assertIsNone(window.plan);self.assertFalse(window.apply_button.isEnabled());self.assertIn('Coche au moins',window.summary.text())
         window.criteria['category'].setChecked(True);self.assertEqual(window.plan['criteria'],['category'])

@@ -127,6 +127,12 @@ class Database:
             prepare_projects(c)
             from .action_undo import prepare as prepare_actions
             prepare_actions(c)
+            from .project_shopping import prepare as prepare_shopping
+            prepare_shopping(c)
+            from .storage_capacity import prepare as prepare_capacities
+            prepare_capacities(c)
+            from .storage_shapes import prepare as prepare_shapes
+            prepare_shapes(c)
             from .inventory_batches import prepare as prepare_inventories
             prepare_inventories(c)
 
@@ -456,6 +462,8 @@ class Database:
         return ''
 
     def import_file(self,path,progress=lambda *_:None):
+        from .automatic_backups import checkpoint
+        checkpoint(self,'before_catalogue_import',large=bool(self.rows('SELECT id FROM items LIMIT 1')))
         path=Path(path)
         if path.suffix.lower()=='.txt' and re.fullmatch(r'S-(.+)\.txt',path.name,re.I):
             ref=re.fullmatch(r'S-(.+)\.txt',path.name,re.I).group(1)

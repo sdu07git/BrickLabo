@@ -31,7 +31,7 @@ def capture(dialog):
     return {'version':1,'config':dict(entries=dialog.entries,from_catalogue=dialog.from_catalogue,
         destination=dialog.destination.currentData(),category=dialog.category.currentData(),grouping=dialog.grouping.currentData(),
         criteria=[key for key,widget in dialog.criteria.items() if widget.isChecked()],
-        colors=dialog.colors.isChecked(),shared=dialog.shared.isChecked(),quantities=dialog.quantities.isChecked(),reorganize=dialog.reorganize.isChecked(),
+        capacities=dialog.capacities.isChecked(),colors=dialog.colors.isChecked(),shared=dialog.shared.isChecked(),quantities=dialog.quantities.isChecked(),reorganize=dialog.reorganize.isChecked(),
         drawer_counts=dialog.drawer_counts,category_order=dialog.category_order),
         'plan':pack(dialog.plan),'targets':[target.currentData() for target in dialog.targets]}
 
@@ -55,10 +55,10 @@ def restore(dialog,body,allow_changed=False):
         if current is None or any(current[key]!=item[key] for key in ('source','kind','ref')):
             raise ValueError(tr('Une référence du brouillon a changé. Prépare une nouvelle proposition.'))
     if dialog.destination.findData(config['destination'])<0:raise ValueError(tr('Un meuble du brouillon n’existe plus.'))
-    widgets=[dialog.destination,dialog.category,dialog.grouping,dialog.colors,dialog.shared,dialog.quantities,dialog.reorganize,*dialog.criteria.values()]
+    widgets=[dialog.destination,dialog.category,dialog.grouping,dialog.colors,dialog.shared,dialog.quantities,dialog.reorganize,dialog.capacities,*dialog.criteria.values()]
     blockers=[QSignalBlocker(widget) for widget in widgets]
     old_indices={key:getattr(dialog,key).currentIndex() for key in ('destination','category','grouping')}
-    old_checked={key:getattr(dialog,key).isChecked() for key in ('colors','shared','quantities','reorganize')}
+    old_checked={key:getattr(dialog,key).isChecked() for key in ('colors','shared','quantities','reorganize','capacities')}
     old_criteria={key:widget.isChecked() for key,widget in dialog.criteria.items()}
     old_attributes={key:getattr(dialog,key) for key in ('entries','from_catalogue','drawer_counts','category_order')}
     old_enabled=[widget.isEnabled() for widget in widgets]
@@ -70,7 +70,7 @@ def restore(dialog,body,allow_changed=False):
             if index<0 and key=='category':widget.addItem(config[key],config[key]);index=widget.count()-1
             if index<0:raise ValueError(tr('Format de brouillon incompatible.'))
             widget.setCurrentIndex(index)
-        for key in ('colors','shared','quantities','reorganize'):getattr(dialog,key).setChecked(config[key])
+        for key in ('colors','shared','quantities','reorganize','capacities'):getattr(dialog,key).setChecked(config.get(key,False))
         for key,widget in dialog.criteria.items():widget.setChecked(key in config['criteria'])
         manual=config['grouping']=='manual';dialog.shared.setEnabled(not manual);dialog.quantities.setEnabled(not dialog.from_catalogue)
         for widget in dialog.criteria.values():widget.setEnabled(not manual)

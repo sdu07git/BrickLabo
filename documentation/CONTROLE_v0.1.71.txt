@@ -1,0 +1,66 @@
+BrickLabo v0.1.71 — Contrôle de livraison
+23 octobre 2026
+
+Base : v0.1.70 publiée, puis ajouts de la v0.1.71 sur la branche
+codex/collection-projects-mobile-v71. Aucun module de reconnaissance photo.
+
+Tests exécutés sous Linux, CPython 3.12.14 et PySide6 6.11.2, avec le
+collecteur GUI et le gestionnaire de durée de vie des tâches réels :
+
+  python -X faulthandler tools/run_tests.py
+  1 088 tests réussis en 1 317,291 secondes.
+
+Le comptage des inventaires BrickLink enregistrés a ensuite été revérifié
+dans 32 tests des nouveaux flux : tous réussis en 6,069 secondes.
+Après l'ajustement final des largeurs de colonnes :
+
+  python -X faulthandler tools/run_tests.py test_collection_v71
+    test_collection_workflows test_i18n test_button_help
+  96 tests réussis en 23,090 secondes.
+
+Les 32 nouveaux cas couvrent notamment :
+- Familles 1 x N puis 2 x N, critère facultatif, correction et annulation,
+  conservation de la catégorie officielle et invalidation des propositions.
+- Exclusivité des exemplaires de sets entre projets, inventaires divisibles,
+  inventaires anciens, libération et restauration des affectations.
+- Besoins cumulés sans réutilisation des pièces, commandes, réceptions
+  idempotentes et annulables, couleurs ignorées, XML avec identifiants vérifiés.
+- Imports MOC en besoins sans ajout au stock et rejet des lignes invalides.
+- Combinaisons de lots sans double dépense et refus d'un résultat périmé.
+- Capacités, quantité totale conservée, destinations trop petites, formats
+  dupliqués et sauvegardes sélectives avec remappage des identifiants.
+- Authentification de la consultation locale et refus des routes d'écriture.
+- Rétention limitée aux sauvegardes de la collection et point de retour
+  contenant les quantités antérieures au vidage du stock.
+- Tableau de bord : localisation distincte de la possession, couverture BL.
+
+La suite complète comprend aussi le test de 120 tâches Qt concurrentes :
+callbacks et destruction des signaux sur le thread GUI, sans objets résiduels.
+Ce test ne constitue pas une reproduction du crash natif Windows signalé.
+
+Revue visuelle sur une collection temporaire sans clés API :
+- Rangement à 1 360 x 850 en français et en anglais, puis 800 x 620.
+- Sept miniatures LDraw chargées, familles et ordre 3005, 3004, 3622, 3010,
+  3003, 3002, 3001 présents dans le tableau et la proposition.
+- Achats à 1 120 x 720, import MOC à 1 100 x 700, tableau de bord à
+  1 100 x 650 ; titres de colonnes lisibles après le dernier ajustement.
+
+Fabrication : tools/build_distribution.py réutilise le runtime Windows
+vérifié de la v0.1.70, recompile le lanceur AMD64 et contrôle les ressources
+de l'icône, les versions exactes des dépendances, l'identité des modules
+entre les deux distributions et les CRC ZIP. complete.zip reste fourni
+dans les deux ZIP joints à la release, hors des fichiers Git ordinaires.
+
+Limites : l'exécution native sous Windows doit être confirmée sur un PC
+Windows. La recherche de provenance d'un lot est bornée et dépend des
+inventaires locaux ; ce n'est ni une preuve d'origine ni un optimum garanti.
+L'accès téléphone est facultatif et en lecture seule, pour un réseau local
+de confiance. Aucun QR code, aucune réimpression d'étiquettes imposée.
+
+English
+1,088 full-suite tests passed under Qt/Linux, followed by 32 workflow tests
+and 96 focused tests after the final header-width adjustment. Visual review
+covered French/English shape sorting, seven LDraw thumbnails, a small window,
+shopping, MOC imports and the dashboard. Native Windows execution remains to
+be confirmed. Lot analysis is bounded; local phone access is optional and
+read-only. No QR codes or photo recognition are included.

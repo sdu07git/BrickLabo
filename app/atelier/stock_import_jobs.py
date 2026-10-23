@@ -61,6 +61,8 @@ def update_destination(db,job,destination,target_entry=None,name=''):
 
 
 def import_ready(db,job):
+    from .automatic_backups import checkpoint
+    checkpoint(db,'before_import',large=True)
     with db.connect() as c:
         c.execute('BEGIN IMMEDIATE')
         details=c.execute('SELECT * FROM stock_import_jobs WHERE id=?',(job,)).fetchone()

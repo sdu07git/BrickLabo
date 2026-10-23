@@ -1195,6 +1195,130 @@
     "Préparer tous les sets trouvés": {
       "fr": "Enregistre tous les sets du catalogue choisi correspondant au filtre, sur toutes les pages et sans limite de nombre.",
       "en": "Queues all sets matching the filter in the chosen catalogue, across every page, with no set-count limit."
+    },
+    "Activer les sauvegardes automatiques": {
+      "fr": "Active une sauvegarde périodique privée dans le dossier choisi.",
+      "en": "Enables periodic private backups in the chosen folder."
+    },
+    "Actualiser le tableau de bord": {
+      "fr": "Recalcule les totaux, les projets et la couverture des données locales.",
+      "en": "Refreshes totals, projects and local data coverage."
+    },
+    "Ajouter l’adresse téléphone en bas des fiches A4": {
+      "fr": "Imprime l’adresse saisie au bas des fiches de meubles, sans QR code.",
+      "en": "Prints the entered address on cabinet sheets, without a QR code."
+    },
+    "Forme / famille": {
+      "fr": "Regroupe les formes avant les tailles, par exemple 1 × N puis 2 × N.",
+      "en": "Groups shapes before sizes, for example 1 × N then 2 × N."
+    },
+    "Respecter les capacités des tiroirs": {
+      "fr": "Calcule les tiroirs nécessaires à partir des quantités et capacités renseignées.",
+      "en": "Calculates needed drawers from entered quantities and capacities."
+    },
+    "Familles de rangement…": {
+      "fr": "Corrige les familles de formes sans changer les catégories officielles.",
+      "en": "Overrides shape families without changing official categories."
+    },
+    "Appliquer la famille à la sélection": {
+      "fr": "Attribue la famille saisie à toutes les références sélectionnées.",
+      "en": "Assigns the entered family to every selected reference."
+    },
+    "Rétablir la famille automatique": {
+      "fr": "Efface la famille personnalisée et reprend la détection à partir du nom.",
+      "en": "Removes the override and restores inference from the part name."
+    },
+    "Formats et capacités…": {
+      "fr": "Associe un format au meuble et définit les capacités par référence.",
+      "en": "Assigns a cabinet format and defines per-reference capacities."
+    },
+    "Enregistrer les capacités": {
+      "fr": "Enregistre les capacités du format et de la taille de tiroir affichés.",
+      "en": "Saves capacities for the displayed format and drawer size."
+    },
+    "Utiliser tous les sets encore libres, sans les réserver": {
+      "fr": "Calcule avec les sets non affectés ; décocher permet de réserver des exemplaires.",
+      "en": "Uses unassigned owned sets; clear to reserve selected copies."
+    },
+    "Ouvrir un inventaire MOC…": {
+      "fr": "Ouvre un CSV ou XML pour préparer les besoins d’un projet, sans ajout au stock.",
+      "en": "Opens CSV or XML project requirements without adding owned stock."
+    },
+    "Créer le projet depuis le fichier": {
+      "fr": "Crée le projet avec les lignes validées sans ajouter de pièces au stock.",
+      "en": "Creates a project from validated rows without adding stock."
+    },
+    "Analyser ce lot": {
+      "fr": "Cherche des sets et une combinaison sans réutiliser les pièces du lot.",
+      "en": "Finds sets and a combination without reusing lot units."
+    },
+    "Analyser ce lot…": {
+      "fr": "Ouvre l’analyse locale des pièces apportées par ce lot.",
+      "en": "Opens local analysis of this lot’s parts."
+    },
+    "Limiter au vrac actuellement libre": {
+      "fr": "Limite les apports du lot aux quantités encore possédées et non réservées.",
+      "en": "Caps lot contributions at quantities still owned and unreserved."
+    },
+    "Créer les projets de la combinaison": {
+      "fr": "Crée les projets proposés sans changer la possession ni réserver de pièces.",
+      "en": "Creates suggested projects without changing ownership or reservations."
+    },
+    "Créer le projet du set sélectionné": {
+      "fr": "Crée un projet pour la piste sélectionnée sans modifier le stock.",
+      "en": "Creates a project for the selected lead without changing stock."
+    },
+    "Nouvelle liste d’achats…": {
+      "fr": "Choisit les projets et leur priorité pour cumuler leurs pièces manquantes.",
+      "en": "Chooses projects and priorities to combine shortages."
+    },
+    "Recalculer les manquants": {
+      "fr": "Recalcule les besoins avec le stock actuel et conserve les commandes et réceptions.",
+      "en": "Refreshes needs against current stock while retaining orders and receipts."
+    },
+    "Régler la quantité commandée…": {
+      "fr": "Enregistre une commande sans la compter dans le stock possédé.",
+      "en": "Records ordered quantities without counting them as owned stock."
+    },
+    "Réceptionner la sélection…": {
+      "fr": "Ajoute les pièces reçues au vrac et les enregistre dans un lot d’achat.",
+      "en": "Adds received units to loose stock and records a purchase lot."
+    },
+    "Correspondance BrickLink…": {
+      "fr": "Renseigne une référence et une couleur BrickLink vérifiées pour l’export XML.",
+      "en": "Sets verified BrickLink reference and colour mappings for XML export."
+    },
+    "Exporter la liste en CSV…": {
+      "fr": "Exporte les besoins, commandes et réceptions dans un fichier CSV.",
+      "en": "Exports needs, orders and receipts as CSV."
+    },
+    "Exporter Wanted List XML…": {
+      "fr": "Exporte les quantités restant à commander après validation des correspondances.",
+      "en": "Exports quantities still to order after mapping validation."
+    },
+    "Configurer les sauvegardes automatiques…": {
+      "fr": "Règle le dossier, la fréquence, la conservation et les sauvegardes avant import.",
+      "en": "Sets folder, frequency, retention and pre-import checkpoints."
+    },
+    "Sauvegarder avant les imports importants et le vidage du stock": {
+      "fr": "Crée un point de retour vérifié avant les gros imports et le vidage du stock.",
+      "en": "Creates a verified recovery point before large imports and clearing stock."
+    },
+    "Choisir le dossier de sauvegarde…": {
+      "fr": "Choisit un dossier de sauvegarde en dehors de Donnees.",
+      "en": "Chooses a backup folder outside Donnees."
+    },
+    "Sauvegarder maintenant": {
+      "fr": "Crée et vérifie immédiatement une sauvegarde complète privée.",
+      "en": "Immediately creates and verifies a complete private backup."
+    },
+    "Démarrer l’accès téléphone": {
+      "fr": "Démarre la consultation Wi-Fi locale et affiche l’adresse et le code.",
+      "en": "Starts local Wi-Fi consultation and shows the address and access code."
+    },
+    "Arrêter l’accès téléphone": {
+      "fr": "Arrête le serveur local et invalide les connexions téléphoniques.",
+      "en": "Stops the local server and invalidates phone sessions."
     }
   },
   "contexts": {

@@ -72,7 +72,7 @@ class TaskLifetimeTests(unittest.TestCase):
             task.signals.destroyed.connect(lambda *_: destroyed.append(threading.get_ident()), Qt.ConnectionType.DirectConnection)
             tasks.append(weakref.ref(task)); signals.append(weakref.ref(task.signals))
         del task
-        pump_until(lambda: len(done)==120 and not lifetime().tasks)
+        pump_until(lambda: len(done)==120 and not lifetime().tasks, timeout=20)
         QCoreApplication.sendPostedEvents(None, QEvent.Type.DeferredDelete); gc.collect()
         self.assertEqual(callbacks, [self.gui_id]*120)
         self.assertEqual(destroyed, [self.gui_id]*120)
