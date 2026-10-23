@@ -109,6 +109,8 @@ class ProjectAndInventoryReadsTests(Fixture):
         from atelier.build_stock import InventoryReader
         with self.db.read() as c:
             reader=InventoryReader(c);reader.canonical('RB','3005','4');reader.children('RB','set','absent')
+            self.assertEqual(InventoryReader(c).canonical('RB','3005','4'),reader.canonical('RB','3005','4'))
+            self.assertEqual(InventoryReader(c).children('RB','set','absent'),((),False))
             reference=weakref.ref(reader);del reader
             self.assertIsNone(reference())
     def test_batch_summary_matches_details_across_colours_claims_and_reservations(self):
