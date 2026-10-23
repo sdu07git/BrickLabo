@@ -51,6 +51,8 @@ def table(headers):
     widget.setEditTriggers(QAbstractItemView.EditTrigger.NoEditTriggers)
     widget.horizontalHeader().setSectionResizeMode(QHeaderView.ResizeMode.Interactive)
     widget.setSortingEnabled(True);widget.verticalHeader().setDefaultSectionSize(36)
+    widget.ensurePolished();metrics=widget.horizontalHeader().fontMetrics()
+    for column,text in enumerate(headers):widget.setColumnWidth(column,max(100,metrics.horizontalAdvance(text)+36))
     return widget
 
 
