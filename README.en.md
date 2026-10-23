@@ -1,8 +1,31 @@
-# BrickLabo — v0.1.70
+# BrickLabo — v0.1.71
 
-Windows desktop software for LEGO catalogues, stock, construction searches and labels. This version continues the published v0.1.69, based on the original v0.1.28.
+Windows desktop software for LEGO catalogues, stock, construction searches and labels. This version continues the published v0.1.70, based on the original v0.1.28.
 
-**Downloads v0.1.70 :** [complete Windows package](https://github.com/sdu07git/BrickLabo/releases/download/v0.1.70/BrickLabo_v0.1.70_Complet.zip) · [sources with resources](https://github.com/sdu07git/BrickLabo/releases/download/v0.1.70/BrickLabo_v0.1.70_Sources.zip) · [release notes](https://github.com/sdu07git/BrickLabo/releases/tag/v0.1.70).
+**Downloads v0.1.71 :** [complete Windows package](https://github.com/sdu07git/BrickLabo/releases/download/v0.1.71/BrickLabo_v0.1.71_Complet.zip) · [sources with resources](https://github.com/sdu07git/BrickLabo/releases/download/v0.1.71/BrickLabo_v0.1.71_Sources.zip) · [release notes](https://github.com/sdu07git/BrickLabo/releases/tag/v0.1.71).
+
+
+## Projects, shopping, loose lots and shape-based storage — v0.1.71
+
+**My storage → Sort by category and stud size** adds **Shape / family**. Order is category → shape → size → reference: 3005 (1 × 1), 3004 (1 × 2), 3622 (1 × 3) and 3010 (1 × 4) stay together; 3003 (2 × 2), 3002 (2 × 3) and 3001 (2 × 4) form the next, wider family. Official catalogue categories stay unchanged. The table shows families beside references and the proposal follows this order. **Storage families…** applies an override to selected parts or restores automatic inference. Clear Shape to retain surface-area sorting.
+
+1. **Collection tools → Analyse a loose-parts lot…**, also inside purchase lots. Choose a tracked lot, colour/minifigure options, minimum coverage and maximum set count. Historical contributions can be capped at currently free loose stock. Leads show coverage, shortages and characteristic references. A bounded search proposes a combination spending each lot unit once, with its remainder. This is neither proof of origin nor a guaranteed global optimum. Create projects for a combination or selected lead without changing ownership or reservations. Stock changes require a new analysis.
+
+2. **My projects → Manage project → Assign owned sets…**. Clear **Use all remaining free sets without reserving them**, then choose owned copies to dismantle. Their tracked components become exclusive to this project without transfer to loose stock. Other projects, searches and comparisons exclude them. If a shared inventory does not divide evenly between copies, assign the whole group rather than inventing individual inventories. Disabling owned-set availability, deleting the project or returning to free-set mode releases the claim. Undo/Redo retains it. Drawer picking continues to use loose stock.
+
+3. **Collection tools → Project shopping list…**, also under Manage project. Choose projects and priorities to combine shortages while spending each free unit once, respecting ignored colours and set claims. Ordered parts are not owned. Receiving adds actual units to loose stock and records a purchase lot in one undoable action. Recalculation retains orders and receipts. Export CSV or BrickLink Wanted List XML for quantities still to order. Resolve uncertain BrickLink mappings before export; any-colour needs stay unrestricted. Exporting never places an order.
+
+4. **Import a MOC inventory as a project…**, under Collection tools or Manage project. Open Rebrickable CSV/TSV or BrickLink XML, correct Source, Type, Reference, Colour and Quantity cells, name the project and optionally ignore colours. Invalid rows block creation. Importing records requirements, never owned stock.
+
+5. **Formats and capacities…** assigns a named cabinet format and measured capacities per reference and drawer size. Duplicates retain their format. **Respect drawer capacities** enables loose-stock quantities and reference grouping, proposes enough drawers with a preference for neighbouring slots, and conserves totals. Missing/insufficient capacities are reported; undersized manual destinations block applying the plan. Capacity 0 removes a rule. No volume is inferred from images.
+
+6. **Dashboard** at the end of navigation shows loose units, references, owned sets, reservations, assigned copies, located/remaining units, uncounted links, cabinets, drawers and projects. Tabs show data coverage, projects and recent imports. Inventory presence is not a completeness guarantee. Locations never add ownership.
+
+7. **Backups → Configure automatic backups…**. Enable scheduling, choose a folder outside Donnees, a 1–720 hour interval and retention of 1–100 archives. Optional checkpoints precede imports, large changes and clearing stock. **Back up now** works with scheduling disabled. Archives are private and verified. Retention deletes only this collection’s own automatic archives. Scheduling runs while BrickLabo is open; a failed checkpoint stops its pending operation with an error. Full backups include all new data; selective cabinet and project exports transport families, capacities and claims using portable reference identities.
+
+8. **Collection tools → Phone consultation…**. Put the PC and phone on the same trusted Wi-Fi, choose a port (8765 by default), start access, open the displayed address on the phone and enter the code. Read-only search includes quantities, locations, cabinets and drawer inventories. Existing images can be reused; requests do not trigger 3D rendering. Keep the PC and BrickLabo open. Stopping invalidates sessions. No cloud service or router forwarding. A4 cabinet print preview optionally adds a plain local address in the footer, without an access code, QR codes or changes to existing labels. IP addresses can change; retaining the same port helps reuse sheets.
+
+These workflows use local inventories without API credentials. Obtaining missing data retains each source’s requirements. Photo recognition is not included. Tests run under Qt/Linux; native Windows execution remains to be confirmed.
 
 
 ## All-set inventory queues and large cabinets — v0.1.70

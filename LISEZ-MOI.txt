@@ -1,4 +1,6 @@
-BrickLabo v0.1.70
+BrickLabo v0.1.71
+
+Nouveau v0.1.71 : familles de formes (1 × N puis 2 × N), capacités, analyse de lots, sets affectés aux projets, achats et réceptions, import MOC en projet, tableau de bord, sauvegardes automatiques et téléphone en Wi-Fi sans QR code. Voir documentation/GUIDE_v0.1.71.md.
 
 Nouveau v0.1.70 : charger tous les inventaires du catalogue Rebrickable ou BrickLink sans plafond de 9 999 / 10 000 sets. Laisser la recherche vide puis Préparer tous les sets trouvés → Enchaîner les lots. Les pages et lots ne limitent pas la file, qui reste enregistrée avec pause et reprise. Affichage des grands meubles accéléré par réutilisation des tiroirs et dessin simplifié des petites cases ; le zoom conserve les détails. Voir documentation/NOUVEAUTES.txt.
 
