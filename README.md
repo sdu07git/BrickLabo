@@ -1,9 +1,20 @@
-# BrickLabo — v0.1.69
+# BrickLabo — v0.1.70
 
-Logiciel de bureau Windows pour les catalogues LEGO, les stocks, les recherches de constructions et les étiquettes. Cette version reprend la v0.1.68 publiée, issue de la v0.1.28 d’origine.
+Logiciel de bureau Windows pour les catalogues LEGO, les stocks, les recherches de constructions et les étiquettes. Cette version reprend la v0.1.69 publiée, issue de la v0.1.28 d’origine.
 
-**Téléchargements v0.1.69 :** [version complète Windows](https://github.com/sdu07git/BrickLabo/releases/download/v0.1.69/BrickLabo_v0.1.69_Complet.zip) · [sources avec ressources](https://github.com/sdu07git/BrickLabo/releases/download/v0.1.69/BrickLabo_v0.1.69_Sources.zip) · [notes de release](https://github.com/sdu07git/BrickLabo/releases/tag/v0.1.69).
+**Téléchargements v0.1.70 :** [version complète Windows](https://github.com/sdu07git/BrickLabo/releases/download/v0.1.70/BrickLabo_v0.1.70_Complet.zip) · [sources avec ressources](https://github.com/sdu07git/BrickLabo/releases/download/v0.1.70/BrickLabo_v0.1.70_Sources.zip) · [notes de release](https://github.com/sdu07git/BrickLabo/releases/tag/v0.1.70).
 
+
+## Inventaires de tous les sets et grands meubles — v0.1.70
+
+Dans **Mise à jour des données → Charger les inventaires de sets par lots**, choisir **Rebrickable** ou **BrickLink**. Laisser la recherche vide puis cliquer **Préparer tous les sets trouvés** pour enregistrer tout le catalogue choisi, sans plafond de 9 999 ou 10 000 sets. Avec un filtre, le bouton prépare tous les résultats correspondants, sur toutes les pages, même sans les avoir affichés. **Préparer la sélection** reste réservé aux lignes sélectionnées ou aux références saisies.
+
+**Sets par page** règle seulement l’affichage. Les flèches permettent de parcourir l’intégralité du catalogue et du journal, y compris au-delà du 10 000e set. **Sets par lot** règle le travail effectué avant le prochain point de reprise, de 10 à 1 000 sets ; il ne limite pas la file. Cliquer **Enchaîner les lots** pour continuer jusqu’à la fin, ou **Pause** pour reprendre plus tard. Les clés API de la source et ses limites de requêtes restent applicables. Les inventaires complets sont conservés par défaut ; cocher l’actualisation avant de préparer pour les recharger. Les inventaires sont enregistrés dans les catalogues, sans ajout au stock.
+
+Dans **Mon rangement**, les meubles et tiroirs dont la disposition n’a pas changé sont réutilisés au lieu d’être recréés à chaque affichage ou actualisation. La création d’un meuble dans la vue d’ensemble conserve les objets des autres meubles. Les quantités, références et bulles d’inventaire continuent de s’actualiser. À petite échelle, le dessin des tiroirs est simplifié ; zoomer restitue les textes, poignées et aperçus. La sélection, le double-clic, le clic droit et le glisser-déposer restent disponibles.
+
+
+**Validation v0.1.70 :** 1 057 tests réussis dans la suite complète Qt/Linux, dont 13 nouveaux cas ; 94 contrôles ciblés réussis. Préparation vérifiée sur les 28 389 sets Rebrickable et 21 865 sets BrickLink embarqués. Sur le banc de mesure Linux avec 10 000 tiroirs, l’ajout d’un second meuble passe de 2,88 à 0,84 s, et l’actualisation médiane de 1,41 à 0,17 s. [Rapport et protocole](documentation/CONTROLE_v0.1.70.txt). Exécution native Windows à confirmer.
 
 ## Compter les pièces des sets possédés dans Mes projets — v0.1.69
 

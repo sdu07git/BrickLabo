@@ -1,12 +1,13 @@
 """Native drawer-wall view. Scene transforms do not render or write files."""
 from collections import OrderedDict
+from functools import lru_cache
 import math
 import sqlite3
 from PySide6.QtCore import Qt,Signal,QRectF,QPointF,QTimer,QEvent
 from PySide6.QtGui import QColor,QPainter,QPen,QPolygonF,QTransform,QFont
 from PySide6.QtWidgets import (QWidget,QDialog,QVBoxLayout,QHBoxLayout,QFormLayout,QLabel,QPushButton,QComboBox,
     QLineEdit,QSpinBox,QDoubleSpinBox,QCheckBox,QTableWidget,QHeaderView,QAbstractItemView,QSplitter,QSlider,
-    QGraphicsObject,QGraphicsScene,QGraphicsView,QMessageBox,QDialogButtonBox,QMenu,QScrollArea,QTabWidget)
+    QGraphicsObject,QGraphicsScene,QGraphicsView,QMessageBox,QDialogButtonBox,QMenu,QScrollArea,QTabWidget,QStyleOptionGraphicsItem)
 from .i18n import tr,tf
 from . import storage_wall as store
 from .ui_common import async_task,pixmap,FlowLayout
@@ -17,10 +18,23 @@ from .storage_tools import StorageDragTable,StockToDrawers,StoragePlanDialog,rea
 from .storage_assignment import place_entries
 
 
+@lru_cache(maxsize=64)
 def face_transforms(yaw,pitch):
     a,b=math.radians(yaw),math.radians(pitch)
     return (QTransform(math.cos(a),math.sin(a)*math.sin(b),0,math.cos(b),0,0),
             QTransform(math.cos(a),math.sin(a)*math.sin(b),0,math.cos(b),28*math.sin(a),-28*math.cos(a)*math.sin(b)))
+
+
+@lru_cache(maxsize=256)
+def drawer_geometry(width,height,yaw,pitch):
+    """Shared read-only face geometry; a grid usually has one drawer format."""
+    w,h=width*112-6,height*70-6;back,face=face_transforms(yaw,pitch)
+    corners=[QPointF(0,0),QPointF(w,0),QPointF(w,h),QPointF(0,h)]
+    front=QPolygonF([face.map(p) for p in corners]);rear=[back.map(p) for p in corners]
+    top=QPolygonF([rear[0],rear[1],front[1],front[0]])
+    side=QPolygonF([rear[1],rear[2],front[2],front[1]])
+    bounds=front.boundingRect().united(top.boundingRect()).united(side.boundingRect()).adjusted(-3,-3,3,3)
+    return front,top,side,bounds
 
 
 class CabinetItem(QGraphicsObject):
@@ -75,13 +89,10 @@ class DrawerItem(QGraphicsObject):
         self.drawer=drawer;self.parts=parts;self.icons=icons;self.selected=False;self.match=False;self.drop_active=False;self.thumbnail_size=thumbnail_size
         self.w=drawer['width']*112-6;self.h=drawer['height']*70-6
         self.back,self.transform_face=face_transforms(yaw,pitch)
+        self.flat=yaw==0 and pitch==0
         x=(drawer['col']-1)*112+(12 if parent else 0);y=(drawer['row']-1)*70+(26 if parent else 0)
         self.setPos(self.back.map(QPointF(x,y)))
-        corners=[QPointF(0,0),QPointF(self.w,0),QPointF(self.w,self.h),QPointF(0,self.h)]
-        self.front=QPolygonF([self.transform_face.map(p) for p in corners]);rear=[self.back.map(p) for p in corners]
-        self.top=QPolygonF([rear[0],rear[1],self.front[1],self.front[0]])
-        self.side=QPolygonF([rear[1],rear[2],self.front[2],self.front[1]])
-        self.bounds=self.front.boundingRect().united(self.top.boundingRect()).united(self.side.boundingRect()).adjusted(-3,-3,3,3)
+        self.front,self.top,self.side,self.bounds=drawer_geometry(drawer['width'],drawer['height'],yaw,pitch)
         from .drawer_inventory import drawer_tooltip
         self.setToolTip(drawer_tooltip(drawer,parts))
         self.setAcceptHoverEvents(True)
@@ -90,10 +101,21 @@ class DrawerItem(QGraphicsObject):
         self.setCursor(Qt.CursorShape.OpenHandCursor if dragging else Qt.CursorShape.ArrowCursor)
     def boundingRect(self):return self.bounds
     def paint(self,painter,option,widget=None):
+        # At overview scale, text and handles are sub-pixel noise. Keep every
+        # drawer clickable, but draw only its face and interaction colours.
+        small=self.w*QStyleOptionGraphicsItem.levelOfDetailFromTransform(painter.worldTransform())<45
+        if small:
+            painter.setPen(QPen(QColor('#7deac0' if self.drop_active else '#7dc8ff' if self.match or self.selected else '#54677e'),0))
+            painter.setBrush(QColor('#28705b' if self.drop_active else '#284e73' if self.match else '#344359'))
+            if self.flat:painter.drawRect(QRectF(0,0,self.w,self.h))
+            else:painter.drawPolygon(self.front)
+            return
         painter.setRenderHint(QPainter.RenderHint.Antialiasing)
-        painter.setPen(QPen(QColor('#172231'),1));painter.setBrush(QColor('#34475c'));painter.drawPolygon(self.top)
-        painter.setBrush(QColor('#223449'));painter.drawPolygon(self.side)
-        painter.save();painter.setTransform(self.transform_face,True)
+        if not self.flat:
+            painter.setPen(QPen(QColor('#172231'),1));painter.setBrush(QColor('#34475c'));painter.drawPolygon(self.top)
+            painter.setBrush(QColor('#223449'));painter.drawPolygon(self.side)
+        painter.save()
+        if not self.flat:painter.setTransform(self.transform_face,True)
         painter.setBrush(QColor('#28705b' if self.drop_active else '#284e73' if self.match else '#344359'))
         painter.setPen(QPen(QColor('#7deac0' if self.drop_active else '#7dc8ff' if self.match or self.selected else '#54677e'),2 if self.match or self.selected or self.drop_active else 1))
         painter.drawRoundedRect(QRectF(0,0,self.w,self.h),3,3)
@@ -332,7 +354,7 @@ class StoragePanel(QWidget):
         self.placement_hint.setText(tr('Glisse un tiroir vers une case du même meuble ou d’un autre meuble visible. Deux tiroirs de même taille échangent leurs positions. Les références suivent le tiroir. Décoche « Déplacer les tiroirs » pour terminer.'))
         self.placement_hint.setVisible(enabled);self.redraw();self.search()
     def redraw(self,*_):
-        self.icon_token+=1;self.scene.clear();self.items={};self.cabinets={};self.wall_drawers={};self.drawers=[]
+        self.icon_token+=1
         self.arrange.setEnabled(self.wall_id is not None)
         self.drag_drawers.setEnabled(self.wall_id is not None);self.print_action.setEnabled(self.wall_id is not None)
         self.plan_action.setEnabled(self.wall_id is not None);self.plan_button.setEnabled(self.wall_id is not None)
@@ -340,17 +362,38 @@ class StoragePanel(QWidget):
             self.arrange.blockSignals(True);self.arrange.setChecked(False);self.arrange.blockSignals(False)
             self.arrange.setText(tr('Disposer les meubles'));self.placement_hint.hide()
             self.drag_drawers.blockSignals(True);self.drag_drawers.setChecked(False);self.drag_drawers.blockSignals(False)
+            self.scene.clear();self.items={};self.cabinets={};self.wall_drawers={};self.drawers=[];self._scene_layouts={}
             self.scene.setSceneRect(QRectF());return
         overview=self.all_walls.isChecked();arranging=self.arrange.isChecked()
         visible_walls=[w for w in store.walls(self.db) if overview or w['id']==self.wall_id];parts={}
         for p in store.wall_contents(self.db,None if overview else self.wall_id):parts.setdefault(p['drawer_id'],[]).append(p)
+        self.wall_drawers={}
         for drawer in store.layout_drawers(self.db,None if overview else self.wall_id):self.wall_drawers.setdefault(drawer['wall_id'],[]).append(drawer)
         self.drawers=self.wall_drawers.get(self.wall_id,[])
         yaw=0;pitch=0
+        previous_items=self.items;previous_cabinets=self.cabinets;previous_layouts=getattr(self,'_scene_layouts',{})
+        self.items={};self.cabinets={};self._scene_layouts={}
         for wall in visible_walls:
-            cabinet=CabinetItem(wall,yaw,pitch,overview,arranging);cabinet.chosen.connect(self.choose_wall);cabinet.moved.connect(self.move_wall);self.scene.addItem(cabinet);self.cabinets[wall['id']]=cabinet
-            for drawer in self.wall_drawers.get(wall['id'],[]):
-                item=DrawerItem(drawer,parts.get(drawer['id'],[]),self.icons,yaw,pitch,cabinet,arranging,self.drag_drawers.isChecked(),self.thumbnail_size.value());item.opened.connect(self.open_drawer_inventory);item.chosen.connect(self.choose_drawer);item.moved.connect(self.move_drawer);self.items[drawer['id']]=item
+            drawers=self.wall_drawers.get(wall['id'],[])
+            layout=(dict(wall),drawers,overview,arranging,self.drag_drawers.isChecked())
+            reuse=previous_layouts.get(wall['id'])==layout
+            if reuse:cabinet=previous_cabinets.pop(wall['id'])
+            else:
+                cabinet=CabinetItem(wall,yaw,pitch,overview,arranging);cabinet.chosen.connect(self.choose_wall);cabinet.moved.connect(self.move_wall)
+            for drawer in drawers:
+                entries=parts.get(drawer['id'],[])
+                if reuse:
+                    item=previous_items[drawer['id']]
+                    if item.parts!=entries:
+                        from .drawer_inventory import drawer_tooltip
+                        item.parts=entries;item.setToolTip(drawer_tooltip(drawer,entries));item.update()
+                else:
+                    item=DrawerItem(drawer,entries,self.icons,yaw,pitch,cabinet,arranging,self.drag_drawers.isChecked(),self.thumbnail_size.value());item.opened.connect(self.open_drawer_inventory);item.chosen.connect(self.choose_drawer);item.moved.connect(self.move_drawer)
+                self.items[drawer['id']]=item
+            if not reuse:self.scene.addItem(cabinet)
+            self.cabinets[wall['id']]=cabinet;self._scene_layouts[wall['id']]=layout
+        for cabinet in previous_cabinets.values():
+            self.scene.removeItem(cabinet);cabinet.deleteLater()
         if self.drawer_id not in self.items:self.drawer_id=None
         self.scene.setSceneRect(self.scene.itemsBoundingRect().adjusted(-20,-20,20,20));self.highlight();self.schedule_icons()
     def fit(self):
@@ -493,8 +536,12 @@ class StoragePanel(QWidget):
     def highlight(self):
         hits={r['id'] for r in self.matches};searching=bool(self.query.text().strip())
         for identity,item in self.items.items():
-            item.selected=identity==self.drawer_id;item.match=identity in hits;item.setOpacity(.45 if searching and not item.match else 1);item.update()
-        for identity,cabinet in self.cabinets.items():cabinet.active=identity==self.wall_id;cabinet.update()
+            selected=identity==self.drawer_id;match=identity in hits;opacity=.45 if searching and not match else 1
+            if (item.selected,item.match,item.opacity())!=(selected,match,opacity):
+                item.selected=selected;item.match=match;item.setOpacity(opacity);item.update()
+        for identity,cabinet in self.cabinets.items():
+            active=identity==self.wall_id
+            if cabinet.active!=active:cabinet.active=active;cabinet.update()
     def search(self,*_):
         self.matches=store.search(self.db,self.query.text(),None if self.all_walls.isChecked() else self.wall_id)
         self.results.blockSignals(True);fill_table(self.results,[(r['wall_name'],store.address(r),r['ref'],r['piece_name'],r['color_name'] or r['color']) for r in self.matches]);self.results.blockSignals(False)

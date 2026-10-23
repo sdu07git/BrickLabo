@@ -1,9 +1,20 @@
-# BrickLabo — v0.1.69
+# BrickLabo — v0.1.70
 
-Windows desktop software for LEGO catalogues, stock, construction searches and labels. This version continues the published v0.1.68, based on the original v0.1.28.
+Windows desktop software for LEGO catalogues, stock, construction searches and labels. This version continues the published v0.1.69, based on the original v0.1.28.
 
-**Downloads v0.1.69 :** [complete Windows package](https://github.com/sdu07git/BrickLabo/releases/download/v0.1.69/BrickLabo_v0.1.69_Complet.zip) · [sources with resources](https://github.com/sdu07git/BrickLabo/releases/download/v0.1.69/BrickLabo_v0.1.69_Sources.zip) · [release notes](https://github.com/sdu07git/BrickLabo/releases/tag/v0.1.69).
+**Downloads v0.1.70 :** [complete Windows package](https://github.com/sdu07git/BrickLabo/releases/download/v0.1.70/BrickLabo_v0.1.70_Complet.zip) · [sources with resources](https://github.com/sdu07git/BrickLabo/releases/download/v0.1.70/BrickLabo_v0.1.70_Sources.zip) · [release notes](https://github.com/sdu07git/BrickLabo/releases/tag/v0.1.70).
 
+
+## All-set inventory queues and large cabinets — v0.1.70
+
+In **Update data → Load set inventories in batches**, choose **Rebrickable** or **BrickLink**. Leave the search empty and click **Prepare all matching sets** to queue the entire chosen catalogue, with no 9,999 or 10,000-set cap. With a filter, the button queues every matching result across all pages, even before listing them. **Queue selected sets** still uses selected rows or typed references.
+
+**Sets per page** controls display only. Page buttons browse the entire catalogue and saved log, including entries beyond the 10,000th set. **Sets per batch** controls work before the next resume point, from 10 to 1,000 sets; it never limits the queue. **Continue through batches** runs until completion; **Pause** allows resuming later. Source API credentials and request limits still apply. Complete inventories are retained by default; enable refresh before preparing to reload them. Inventories are stored in catalogues without adding owned stock.
+
+In **My storage**, cabinets and drawers with unchanged layouts are reused rather than rebuilt on every display or refresh. Adding a cabinet in the overview retains the other cabinets’ objects. Quantities, references and inventory tooltips still update. Tiny drawers use a simpler drawing; zooming restores text, handles and previews. Selection, double-click, context menus and drag-and-drop remain available.
+
+
+**Validation v0.1.70:** 1,057 full-suite Qt/Linux tests passed, including 13 new cases; 94 targeted checks passed. Queuing verified with the bundled 28,389 Rebrickable and 21,865 BrickLink sets. In the Linux benchmark with 10,000 drawers, adding a second cabinet improves from 2.88 to 0.84 s, and median refresh from 1.41 to 0.17 s. [Report and protocol](documentation/CONTROLE_v0.1.70.txt). Native Windows execution remains to be confirmed.
 
 ## Count parts from owned sets in My projects — v0.1.69
 

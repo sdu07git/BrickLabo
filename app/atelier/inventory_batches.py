@@ -44,8 +44,42 @@ def available(c,source,ref):
     return InventoryReader(c).inventory(source,'set',ref)[1]
 
 
+def _check_batch_size(batch_size):
+    if type(batch_size) is not int or not 10<=batch_size<=1000:raise ValueError(tr('Choisir un lot de 10 à 1000 sets.'))
+
+
+def catalogue_query(source,search=''):
+    """One filter shared by the paged browser and the unlimited queue."""
+    from .data import Database
+    if source not in ('RB','BL'):raise ValueError(tr('Références de sets Rebrickable ou BrickLink requises.'))
+    clause,args=Database.filter_clause(source=source,kind='set',search=search)
+    return 'FROM items i '+clause+' AND i.catalogue_hidden=0',args
+
+
+def catalogue_page(db,source,search='',page=0,page_size=500):
+    if type(page) is not int or page<0 or type(page_size) is not int or not 10<=page_size<=1000:raise ValueError('Invalid catalogue page')
+    sql,args=catalogue_query(source,search)
+    with db.read() as c:
+        c.execute('BEGIN')
+        total=c.execute('SELECT COUNT(*) '+sql,args).fetchone()[0]
+        rows=[dict(r) for r in c.execute('SELECT i.source,i.ref,i.name '+sql+' ORDER BY i.ref LIMIT ? OFFSET ?',args+[page_size,page*page_size])]
+    return rows,total
+
+
+def create_catalogue_job(db,source,search='',batch_size=10,force=False):
+    """Snapshot every matching catalogue set, irrespective of browser pages."""
+    _check_batch_size(batch_size);sql,args=catalogue_query(source,search)
+    with db.connect() as c:
+        c.execute('BEGIN IMMEDIATE')
+        total=c.execute('SELECT COUNT(*) '+sql,args).fetchone()[0]
+        if not total:raise ValueError(tr('Sélectionne les sets à charger.'))
+        job=c.execute('INSERT INTO inventory_jobs(name,batch_size,force) VALUES(?,?,?)',(str(total)+tr(' sets'),batch_size,int(force))).lastrowid
+        c.execute('INSERT INTO inventory_job_items(job_id,ordinal,source,ref) SELECT ?,ROW_NUMBER() OVER(ORDER BY i.ref)-1,i.source,i.ref '+sql,[job]+args)
+    return job
+
+
 def create_job(db,items,batch_size=10,force=False):
-    if not 10<=batch_size<=1000:raise ValueError(tr('Choisir un lot de 10 à 1000 sets.'))
+    _check_batch_size(batch_size)
     values=list(dict.fromkeys((i['source'],str(i['ref'])) for i in items))
     if not values:raise ValueError(tr('Sélectionne les sets à charger.'))
     if any(s not in ('RB','BL') or not r or len(r)>100 for s,r in values):raise ValueError(tr('Références de sets Rebrickable ou BrickLink requises.'))

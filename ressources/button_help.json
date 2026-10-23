@@ -1191,6 +1191,10 @@
     "Réserver le vrac disponible": {
       "fr": "Réserve le vrac libre pour ce projet, dans la limite de ses besoins.",
       "en": "Reserves free loose stock for this project up to its requirements."
+    },
+    "Préparer tous les sets trouvés": {
+      "fr": "Enregistre tous les sets du catalogue choisi correspondant au filtre, sur toutes les pages et sans limite de nombre.",
+      "en": "Queues all sets matching the filter in the chosen catalogue, across every page, with no set-count limit."
     }
   },
   "contexts": {
