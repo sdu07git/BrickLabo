@@ -47,7 +47,10 @@ def archive_bytes(contents=None, additional=()):
         for name, content in (contents or payload()).items():
             archive.writestr('BrickLabo/' + name, content)
         for name, content in additional:
-            archive.writestr(name, content)
+            # Preserve raw malicious names: ZipInfo otherwise rewrites Windows
+            # separators before the archive reader gets a chance to reject them.
+            info=zipfile.ZipInfo('fixture');info.filename=name;info.orig_filename=name
+            archive.writestr(info, content)
     return stream.getvalue()
 
 

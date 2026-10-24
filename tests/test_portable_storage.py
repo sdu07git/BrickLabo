@@ -41,6 +41,7 @@ class PortableStorageTests(unittest.TestCase):
         with patch.dict(os.environ,{'LOCALAPPDATA':str(self.profile)}),patch('atelier.storage.application_directory',return_value=self.app),patch.object(tempfile,'tempdir',tempfile.tempdir):
             root=prepare_portable_storage();self.assertEqual(root,self.target);self.assertEqual(Path(os.environ['TEMP']).parent,root/'temp');self.assertEqual(Path(tempfile.gettempdir()).parent,root/'temp')
             db=Database(root/'atelier.sqlite');configure_portable_database(db)
+        db.close();__import__('atelier.temp_area',fromlist=['close']).close()
         moved=self.folder/'Moved';shutil.move(self.app,moved)
         with patch.dict(os.environ,{'LOCALAPPDATA':str(self.profile)}),patch('atelier.storage.application_directory',return_value=moved),patch.object(tempfile,'tempdir',tempfile.tempdir):
             root=prepare_portable_storage();db=Database(root/'atelier.sqlite');configure_portable_database(db)

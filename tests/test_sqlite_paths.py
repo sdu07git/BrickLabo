@@ -1,6 +1,7 @@
 from contextlib import closing
 from pathlib import Path,PureWindowsPath
 import sqlite3
+import sys
 import tempfile
 import unittest
 from unittest.mock import patch
@@ -12,7 +13,8 @@ from atelier.backups import create_backup,validate_archive
 class SqlitePathTests(unittest.TestCase):
     def test_unicode_and_uri_characters_keep_read_only_database_identity(self):
         with tempfile.TemporaryDirectory() as folder:
-            path=Path(folder)/'étiquette #1 ? stock.sqlite'
+            filename='étiquette #1 % stock.sqlite' if sys.platform=='win32' else 'étiquette #1 ? stock.sqlite'
+            path=Path(folder)/filename
             with closing(sqlite_file.connect(path)) as c:c.execute('CREATE TABLE stock(value)');c.execute('INSERT INTO stock VALUES(7)');c.commit()
             with closing(sqlite_file.connect(path,read_only=True)) as c:
                 self.assertEqual(c.execute('SELECT value FROM stock').fetchone()[0],7)
@@ -39,4 +41,4 @@ class SqlitePathTests(unittest.TestCase):
         with tempfile.TemporaryDirectory() as folder:
             path=Path(folder)/'absent'/'stock.sqlite'
             with self.assertRaisesRegex(sqlite3.OperationalError,'chemin plus court') as failure:sqlite_file.connect(path)
-            self.assertEqual(failure.exception.sqlite_errorcode,sqlite3.SQLITE_CANTOPEN);self.assertIn(str(path),str(failure.exception));self.assertFalse(path.parent.exists())
+            self.assertEqual(failure.exception.sqlite_errorcode,sqlite3.SQLITE_CANTOPEN);self.assertIn(str(path.resolve()),str(failure.exception));self.assertFalse(path.parent.exists())
