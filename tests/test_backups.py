@@ -34,7 +34,7 @@ class BackupTests(unittest.TestCase):
   self.assertFalse((self.home/'escape').exists())
  def test_relocation(self):
   self.db.set_setting('output',str(self.root/'Exports'));self.save();new=Database(self.home/'New'/'Donnees'/'atelier.sqlite');queue_restore(new,self.zip);new.close();apply_pending(new.path.parent)
-  self.assertEqual(Database(new.path).setting('output'),str(new.path.parent/'Exports'))
+  self.assertEqual(Path(Database(new.path).setting('output')).resolve(),(new.path.parent/'Exports').resolve())
  def test_swap_failure_rolls_back(self):
   self.save();stage=queue_restore(self.db,self.zip);original=Path.rename
   def rename(path,target):
