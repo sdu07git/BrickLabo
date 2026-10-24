@@ -1,8 +1,15 @@
-# BrickLabo — v0.1.72
+# BrickLabo — v0.1.73
 
-Logiciel de bureau Windows pour les catalogues LEGO, les stocks, les recherches de constructions et les étiquettes. Cette version reprend la v0.1.71 publiée, issue de la v0.1.28 d’origine.
+Logiciel de bureau Windows pour les catalogues LEGO, les stocks, les recherches de constructions et les étiquettes. Cette version reprend la v0.1.72 publiée, issue de la v0.1.28 d’origine.
 
-**Téléchargements v0.1.72 :** [version complète Windows](https://github.com/sdu07git/BrickLabo/releases/download/v0.1.72/BrickLabo_v0.1.72_Complet.zip) · [sources avec ressources](https://github.com/sdu07git/BrickLabo/releases/download/v0.1.72/BrickLabo_v0.1.72_Sources.zip) · [notes de release](https://github.com/sdu07git/BrickLabo/releases/tag/v0.1.72).
+**Téléchargements v0.1.73 :** [version complète Windows](https://github.com/sdu07git/BrickLabo/releases/download/v0.1.73/BrickLabo_v0.1.73_Complet.zip) · [sources avec ressources](https://github.com/sdu07git/BrickLabo/releases/download/v0.1.73/BrickLabo_v0.1.73_Sources.zip) · [notes de release](https://github.com/sdu07git/BrickLabo/releases/tag/v0.1.73).
+
+
+## Préparation de la version finale — v0.1.73
+
+Le [journal unique](documentation/NOUVEAUTES.txt) rassemble toutes les nouveautés et les 25 rapports de contrôle historiques, sans perte de contenu. Les futures mises à jour alimentent ce même fichier ; la fabrication et la validation refusent les TXT de nouveautés séparés. Le [guide de démarrage illustré](documentation/GUIDE_DEMARRAGE.html) explique les stocks, tiroirs, projets, sauvegardes, étiquettes 65 × 23 mm, meubles A4 et consultation Wi-Fi.
+
+La validation Linux/Windows produit des preuves JSON et JUnit, avec les vrais inventaires 10696-1, 10698-1 et 30363-1. Le code original est sous [licence MIT](LICENSE) ; les ressources tierces conservent leurs propres conditions. La [qualification 1.0](documentation/PASSAGE_1_0.md) distingue les contrôles automatisés des essais sur PC, impressions physiques et permissions restant à confirmer. Cette version reste une 0.1.x.
 
 
 ## Fluidité et inventaires en arrière-plan — v0.1.72
@@ -28,7 +35,7 @@ Une requête identique de catalogue déjà en cache prend environ 1 ms sur ce ba
 [Guide français/anglais](documentation/GUIDE_v0.1.72.md).
 
 
-**Validation v0.1.72 :** 1 111 scénarios de la suite complète exécutés, puis 114 tests ciblés réussis après les dernières corrections. Les 18 scénarios de mesure donnent les mêmes résultats que la v0.1.71. [Rapport de contrôle](documentation/CONTROLE_v0.1.72.txt). Exécution native Windows à confirmer.
+**Validation v0.1.72 :** 1 111 scénarios de la suite complète exécutés, puis 114 tests ciblés réussis après les dernières corrections. Les 18 scénarios de mesure donnent les mêmes résultats que la v0.1.71. [Rapport de contrôle](documentation/NOUVEAUTES.txt). Exécution native Windows à confirmer.
 
 ## Projets, achats, vrac et rangement par forme — v0.1.71
 
@@ -53,7 +60,7 @@ Une requête identique de catalogue déjà en cache prend environ 1 ms sur ce ba
 Ces fonctions utilisent les inventaires locaux sans clé API. Récupérer les données manquantes conserve les exigences de chaque source. La reconnaissance de référence par photo n’est pas incluse. Les tests sont réalisés sous Qt/Linux ; l’exécution native Windows reste à confirmer.
 
 
-**Validation v0.1.71 :** 1 088 tests de la suite complète réussis sous Qt/Linux, puis 96 tests ciblés après le dernier ajustement des colonnes. Revue visuelle en français et en anglais, dont une petite fenêtre. [Rapport de contrôle](documentation/CONTROLE_v0.1.71.txt). Exécution native Windows à confirmer.
+**Validation v0.1.71 :** 1 088 tests de la suite complète réussis sous Qt/Linux, puis 96 tests ciblés après le dernier ajustement des colonnes. Revue visuelle en français et en anglais, dont une petite fenêtre. [Rapport de contrôle](documentation/NOUVEAUTES.txt). Exécution native Windows à confirmer.
 
 ## Inventaires de tous les sets et grands meubles — v0.1.70
 
@@ -64,7 +71,7 @@ Dans **Mise à jour des données → Charger les inventaires de sets par lots**,
 Dans **Mon rangement**, les meubles et tiroirs dont la disposition n’a pas changé sont réutilisés au lieu d’être recréés à chaque affichage ou actualisation. La création d’un meuble dans la vue d’ensemble conserve les objets des autres meubles. Les quantités, références et bulles d’inventaire continuent de s’actualiser. À petite échelle, le dessin des tiroirs est simplifié ; zoomer restitue les textes, poignées et aperçus. La sélection, le double-clic, le clic droit et le glisser-déposer restent disponibles.
 
 
-**Validation v0.1.70 :** 1 057 tests réussis dans la suite complète Qt/Linux, dont 13 nouveaux cas ; 94 contrôles ciblés réussis. Préparation vérifiée sur les 28 389 sets Rebrickable et 21 865 sets BrickLink embarqués. Sur le banc de mesure Linux avec 10 000 tiroirs, l’ajout d’un second meuble passe de 2,88 à 0,84 s, et l’actualisation médiane de 1,41 à 0,17 s. [Rapport et protocole](documentation/CONTROLE_v0.1.70.txt). Exécution native Windows à confirmer.
+**Validation v0.1.70 :** 1 057 tests réussis dans la suite complète Qt/Linux, dont 13 nouveaux cas ; 94 contrôles ciblés réussis. Préparation vérifiée sur les 28 389 sets Rebrickable et 21 865 sets BrickLink embarqués. Sur le banc de mesure Linux avec 10 000 tiroirs, l’ajout d’un second meuble passe de 2,88 à 0,84 s, et l’actualisation médiane de 1,41 à 0,17 s. [Rapport et protocole](documentation/NOUVEAUTES.txt). Exécution native Windows à confirmer.
 
 ## Compter les pièces des sets possédés dans Mes projets — v0.1.69
 
@@ -84,7 +91,7 @@ La fenêtre **Choisir un set** peut être fermée puis rouverte sans l’erreur 
 
 **Supprimer un projet** libère ses réservations et ses pièces prélevées. Les quantités possédées restent inchangées ; les pièces prises deviennent disponibles sans affectation comptée à un tiroir, sans supposer qu’elles ont été remises physiquement dans leur ancien tiroir. Cela fonctionne aussi après suppression du meuble. **Retourner tous les prélèvements** reste disponible pour remettre les quantités dans les tiroirs d’origine encore existants ; celles sans tiroir restent non affectées. La suppression d’un meuble, d’un tiroir ou d’un projet est annulable, avec restauration des prélèvements et de leurs emplacements.
 
-**Validation v0.1.69 :** 1 043 tests de la suite complète réussis sous Qt/Linux et 16 contrôles ciblés du suivi final sans tiroir. Huit vues examinées, dont la création à 640 × 480 et les prélèvements sans tiroir en français et anglais. [Rapport de contrôle](documentation/CONTROLE_v0.1.69.txt). Exécution native Windows à confirmer.
+**Validation v0.1.69 :** 1 043 tests de la suite complète réussis sous Qt/Linux et 16 contrôles ciblés du suivi final sans tiroir. Huit vues examinées, dont la création à 640 × 480 et les prélèvements sans tiroir en français et anglais. [Rapport de contrôle](documentation/NOUVEAUTES.txt). Exécution native Windows à confirmer.
 
 ## Reconstruire un projet avec ou sans les couleurs du set — v0.1.68
 
@@ -96,7 +103,7 @@ Les réservations suivent les références et couleurs réellement utilisées, s
 
 Le réglage et les réservations sont conservés au redémarrage, dans les sauvegardes et par Annuler/Rétablir. La création reste sans réservation automatique. Les projets utilisent le stock en vrac ; pour réserver les composants d’un set possédé, transférer son inventaire au vrac. Les autres fonctions de la v0.1.67 restent disponibles, dont les meubles en grille et la colonne Rangement.
 
-**Validation v0.1.68 :** 996 tests de la suite complète réussis sous Qt/Linux, puis 25 contrôles ciblés incluant la migration d’une base v0.1.67 avec réservations, prélèvements et historique d’annulation. Cinq vues examinées, dont une fenêtre de création à 640 × 480. [Rapport de contrôle](documentation/CONTROLE_v0.1.68.txt). Exécution native Windows à confirmer.
+**Validation v0.1.68 :** 996 tests de la suite complète réussis sous Qt/Linux, puis 25 contrôles ciblés incluant la migration d’une base v0.1.67 avec réservations, prélèvements et historique d’annulation. Cinq vues examinées, dont une fenêtre de création à 640 × 480. [Rapport de contrôle](documentation/NOUVEAUTES.txt). Exécution native Windows à confirmer.
 
 ## Meubles sur plusieurs rangées — v0.1.67
 
@@ -106,7 +113,7 @@ L’aperçu s’actualise quand le nombre ou l’écart change. Les meubles gard
 
 Les contenus des tiroirs, leurs quantités et les stocks sont conservés. Si un meuble change pendant l’ouverture de la fenêtre, rouvrir l’alignement avant de l’appliquer. Les fonctions de la v0.1.66 et la colonne Rangement sont conservées. La reconnaissance par photo reste absente de cette version stable.
 
-**Validation v0.1.67 :** 184 tests ciblés réussis sous Qt/Linux, dont 9 nouveaux contrôles de grille. Aperçus 8 et 12 meubles et dimensions mixtes examinés à 660 × 530 et 480 × 460. [Rapport de contrôle](documentation/CONTROLE_v0.1.67.txt). Exécution native Windows à confirmer.
+**Validation v0.1.67 :** 184 tests ciblés réussis sous Qt/Linux, dont 9 nouveaux contrôles de grille. Aperçus 8 et 12 meubles et dimensions mixtes examinés à 660 × 530 et 480 × 460. [Rapport de contrôle](documentation/NOUVEAUTES.txt). Exécution native Windows à confirmer.
 
 ## Repérer les pièces déjà rangées — v0.1.66
 
@@ -116,7 +123,7 @@ Plusieurs références peuvent partager un tiroir et une étiquette : chacune es
 
 Cette version stable conserve les fonctions de la v0.1.65 et **ne contient pas la reconnaissance par photo**.
 
-**Validation v0.1.66 :** 126 tests ciblés réussis sous Qt/Linux, dont six contrôles de l’indicateur ; affichage vérifié à 1240 × 660 et 800 × 540. [Rapport de contrôle](documentation/CONTROLE_v0.1.66.txt). Exécution native Windows à confirmer.
+**Validation v0.1.66 :** 126 tests ciblés réussis sous Qt/Linux, dont six contrôles de l’indicateur ; affichage vérifié à 1240 × 660 et 800 × 540. [Rapport de contrôle](documentation/NOUVEAUTES.txt). Exécution native Windows à confirmer.
 
 ## Collection, inventaires et projets — v0.1.65
 
@@ -134,7 +141,7 @@ Dans **Mon rangement → Organiser le meuble → Aligner les meubles…**, align
 [Mode d’emploi détaillé des six fonctions](documentation/FONCTIONS_v0.1.65.md). Les nouvelles données entrent dans les sauvegardes complètes. Les prélèvements, retours, corrections de quantités et alignements utilisent l’annulation persistante. La reconnaissance de référence par photo n’est pas incluse. Exécution native Windows à confirmer.
 
 
-**Validation v0.1.65 :** 946 tests de la suite complète réussis sous Qt/Linux, puis 223 contrôles ciblés après les derniers ajustements, dont 30 nouveaux cas. Cinq vues contrôlées à 800 × 540 ; lanceur AMD64, icône, dépendances et archives vérifiés. [Rapport détaillé](documentation/CONTROLE_v0.1.65.txt). Exécution native Windows à confirmer.
+**Validation v0.1.65 :** 946 tests de la suite complète réussis sous Qt/Linux, puis 223 contrôles ciblés après les derniers ajustements, dont 30 nouveaux cas. Cinq vues contrôlées à 800 × 540 ; lanceur AMD64, icône, dépendances et archives vérifiés. [Rapport détaillé](documentation/NOUVEAUTES.txt). Exécution native Windows à confirmer.
 
 ## Glisser-déposer et clic droit dans la proposition — v0.1.64
 
@@ -146,7 +153,7 @@ Dans **Mon rangement → Organiser le meuble → Aligner les meubles…**, align
 
 **Valider la proposition** : Ces gestes dans l’aperçu modifient uniquement le brouillon. Les tiroirs occupés ou réservés hors de la proposition restent protégés. Échap annule le glissement en cours ; un dépôt hors des tiroirs n’applique aucun changement. Seul Appliquer le rangement proposé enregistre les placements ; le stock global reste inchangé et une seule action Annuler restaure le rangement. Le double-clic ouvre toujours le détail du tiroir.
 
-**Validation v0.1.64 :** 927 tests réussis dans la suite complète Qt/Linux, puis 92 contrôles ciblés après les derniers ajustements de présentation, dont 34 nouveaux cas. Six vues Qt examinées, avec aperçus LDraw officiels et fenêtre 800 × 540. [Rapport détaillé](documentation/CONTROLE_v0.1.64.txt). Exécution native Windows à confirmer.
+**Validation v0.1.64 :** 927 tests réussis dans la suite complète Qt/Linux, puis 92 contrôles ciblés après les derniers ajustements de présentation, dont 34 nouveaux cas. Six vues Qt examinées, avec aperçus LDraw officiels et fenêtre 800 × 540. [Rapport détaillé](documentation/NOUVEAUTES.txt). Exécution native Windows à confirmer.
 
 ## Réglages des tiroirs dans la proposition — v0.1.63
 
@@ -157,7 +164,7 @@ Dans **Mon rangement → Organiser le meuble → Aligner les meubles…**, align
 **Tri par colonne** : Cliquer sur les en-têtes du tableau de proposition ou de Nombre de tiroirs par référence… pour trier dans les deux sens. Quantités et nombres de tiroirs suivent un tri numérique. Les aperçus, champs, sélections et destinations suivent toujours leur référence, y compris après un recalcul. La fenêtre de réglage séparée conserve également les destinations choisies à la main quand elle est validée.
 
 
-**Validation v0.1.63 :** 893 tests de la suite complète réussis sous Qt/Linux, dont 23 nouveaux contrôles du réglage direct, des destinations conservées, du voisinage et du tri. Interfaces normales et compactes examinées ; archives et lanceur contrôlés par les outils de livraison. [Rapport détaillé](documentation/CONTROLE_v0.1.63.txt). Exécution native Windows à confirmer.
+**Validation v0.1.63 :** 893 tests de la suite complète réussis sous Qt/Linux, dont 23 nouveaux contrôles du réglage direct, des destinations conservées, du voisinage et du tri. Interfaces normales et compactes examinées ; archives et lanceur contrôlés par les outils de livraison. [Rapport détaillé](documentation/NOUVEAUTES.txt). Exécution native Windows à confirmer.
 
 ## Formats de meubles et ordre des catégories — v0.1.62
 
@@ -170,7 +177,7 @@ Dans **Mon rangement → Organiser le meuble → Aligner les meubles…**, align
 **Retenir un ordre de catégories** : Retenir cet ordre pour les prochains rangements est coché au départ. Valider la fenêtre mémorise l’ordre comme préférence, même si la proposition est ensuite fermée. Décocher cette case utilise l’ordre pour cette proposition seulement ; Annuler conserve les réglages précédents. Les catégories non présentes dans la sélection restent mémorisées après celles qui viennent d’être ordonnées. Les nouvelles catégories sont ajoutées à la suite, par ordre alphabétique. L’ordre est inclus dans Sauvegardes → Autres préférences. Le regroupement libre de références conserve ses affectations manuelles.
 
 
-**Validation v0.1.62 :** 870 tests de la suite complète réussis sous Qt/Linux, dont 25 nouveaux ; scénario de 30 briques puis 23 plates vérifié sur deux meubles. Interfaces contrôlées en formats normal et compact ; archives et lanceur contrôlés par les outils de livraison. [Rapport détaillé](documentation/CONTROLE_v0.1.62.txt). Exécution native Windows à confirmer.
+**Validation v0.1.62 :** 870 tests de la suite complète réussis sous Qt/Linux, dont 25 nouveaux ; scénario de 30 briques puis 23 plates vérifié sur deux meubles. Interfaces contrôlées en formats normal et compact ; archives et lanceur contrôlés par les outils de livraison. [Rapport détaillé](documentation/NOUVEAUTES.txt). Exécution native Windows à confirmer.
 
 ## Stocks, alternatives et recherche par pièces — v0.1.61
 
@@ -195,7 +202,7 @@ Dans **Mon rangement → Organiser le meuble → Aligner les meubles…**, align
 **Date et heure du dernier ajout** : Dans les deux catalogues de stock, Dernier ajout au stock apparaît après Référence, avec date et heure locales et tri par colonne. Cette date est distincte de la date d’import du catalogue général. Un ajout à une référence/couleur existante fusionne les quantités et actualise sa date ; Annuler restaure la quantité et la date précédentes. Supprimer une ligne retire sa quantité totale, et non uniquement le dernier ajout.
 
 
-**Validation v0.1.61 :** 844 tests de la suite complète réussis sous Qt/Linux, puis 29 contrôles de rangement après le dernier ajustement. Interfaces contrôlées en formats normal et compact ; archives et lanceur Windows vérifiés par les outils de livraison. [Rapport détaillé](documentation/CONTROLE_v0.1.61.txt). Exécution native Windows à confirmer.
+**Validation v0.1.61 :** 844 tests de la suite complète réussis sous Qt/Linux, puis 29 contrôles de rangement après le dernier ajustement. Interfaces contrôlées en formats normal et compact ; archives et lanceur Windows vérifiés par les outils de livraison. [Rapport détaillé](documentation/NOUVEAUTES.txt). Exécution native Windows à confirmer.
 
 ## Vrac direct et inventaires complets — v0.1.60
 
@@ -207,7 +214,7 @@ Dans **Mon rangement → Organiser le meuble → Aligner les meubles…**, align
 
 **Ajout d’un inventaire complet** : depuis la fiche d’un set, Ajouter toutes les pièces vérifie désormais que chaque référence existe dans le catalogue. Une erreur nomme les références absentes avant tout ajout. Si l’inventaire a changé depuis l’ouverture, rouvrir la fenêtre du set. L’ajout volontaire des seules pièces sélectionnées reste disponible.
 
-**Validation v0.1.60 :** suite complète de 773 tests réussie sous Qt/Linux, puis 12 tests ciblés après le dernier ajustement ; quatre captures contrôlées en formats normal et compact. [Rapport détaillé](documentation/CONTROLE_v0.1.60.txt). Exécution native Windows à confirmer.
+**Validation v0.1.60 :** suite complète de 773 tests réussie sous Qt/Linux, puis 12 tests ciblés après le dernier ajustement ; quatre captures contrôlées en formats normal et compact. [Rapport détaillé](documentation/NOUVEAUTES.txt). Exécution native Windows à confirmer.
 
 ## Vrac uniquement transferts partiels et exclusions — v0.1.59
 
@@ -221,7 +228,7 @@ Dans **Mon rangement → Organiser le meuble → Aligner les meubles…**, align
 
 **Exclure un mot de la recherche** : Dans la recherche normale et les filtres avancés, -modulex retire les références contenant modulex dans le nom, la référence ou la catégorie. brick -modulex -duplo combine un mot recherché et plusieurs exclusions. Les thèmes des sets suivent également ce filtre. Les recherches indexées et compatibles sont cohérentes ; les tirets internes des références, comme 75192-1, restent littéraux.
 
-**Validation v0.1.59 :** 762 tests réussis sous Qt/Linux, dont 22 nouveaux ; dialogues et meuble contrôlés en formats normal et compact. [Rapport détaillé](documentation/CONTROLE_v0.1.59.txt). Exécution native Windows à confirmer.
+**Validation v0.1.59 :** 762 tests réussis sous Qt/Linux, dont 22 nouveaux ; dialogues et meuble contrôlés en formats normal et compact. [Rapport détaillé](documentation/NOUVEAUTES.txt). Exécution native Windows à confirmer.
 
 ## Projets, inventaire des tiroirs et corrections — v0.1.58
 
@@ -512,7 +519,7 @@ L’aide complète se trouve dans [documentation/AIDE.html](documentation/AIDE.h
 | 0.1.58 | Projets et aperçus, inventaires des tiroirs, CSV versionnés, modèles Mini-figs et protection mémoire. |
 | 0.1.57 | Quantités par tiroir et transferts partiels, historique Annuler/Rétablir persistant, projets avec besoins, réservations et manquants. |
 
-Un seul [NOUVEAUTES.txt](documentation/NOUVEAUTES.txt) réunit les notes françaises et anglaises. Les notes de cette branche ne documentent pas de livraison 0.1.29. Les variantes 0.1.28b et Range n’ont pas servi de base. Le [rapport de contrôle v0.1.64](documentation/CONTROLE_v0.1.64.txt) décrit les vérifications de cette livraison.
+Un seul [NOUVEAUTES.txt](documentation/NOUVEAUTES.txt) réunit les notes françaises et anglaises. Les notes de cette branche ne documentent pas de livraison 0.1.29. Les variantes 0.1.28b et Range n’ont pas servi de base. Le [rapport de contrôle v0.1.64](documentation/NOUVEAUTES.txt) décrit les vérifications de cette livraison.
 
 ## Développement et diagnostic
 
@@ -528,7 +535,7 @@ Pour publier une future mise à jour compatible : créer une release publique st
 
 Pour développer depuis ce dépôt, reprendre `ressources/complete.zip` depuis le ZIP Sources joint à la release : cette archive LDraw dépasse la limite de taille des fichiers GitHub. Les archives automatiques « Source code » ne contiennent ni cette ressource ni le runtime Windows. Les deux ZIP joints sont ceux de la version livrée et testée ; les README du dépôt sont adaptés à la publication.
 
-Le [rapport de contrôle v0.1.64](documentation/CONTROLE_v0.1.64.txt) décrit les vérifications de cette livraison. Exécution native Windows à confirmer.
+Le [rapport de contrôle v0.1.64](documentation/NOUVEAUTES.txt) décrit les vérifications de cette livraison. Exécution native Windows à confirmer.
 
 
 
@@ -543,4 +550,4 @@ Le [rapport de contrôle v0.1.64](documentation/CONTROLE_v0.1.64.txt) décrit le
 
 **Validation v0.1.57 :** 695 tests réussis sous Qt/Linux (Python 3.12, PySide6 6.11.2), dont 36 nouveaux tests des comptages, transferts, projets, sauvegardes et historique persistant. Essai supplémentaire de 183 références dans 183 tiroirs avec réservation, redémarrage et Annuler/Rétablir. Contrôle visuel à 1360 × 790 et 800 × 540. La fabrication vérifie le lanceur Windows et les deux archives ; exécution native Windows à confirmer.
 
-**Validation v0.1.58 :** 740 tests de la suite complète réussis sous Qt/Linux, dont 45 nouveaux tests. Contrôle des imports versionnés, projets, inventaires et modèles Mini-figs ; 120 rendus 3D et 120 parcours de fenêtres sans erreur. [Rapport détaillé](documentation/CONTROLE_v0.1.58.txt). Le plantage exact reste à confirmer sur Windows.
+**Validation v0.1.58 :** 740 tests de la suite complète réussis sous Qt/Linux, dont 45 nouveaux tests. Contrôle des imports versionnés, projets, inventaires et modèles Mini-figs ; 120 rendus 3D et 120 parcours de fenêtres sans erreur. [Rapport détaillé](documentation/NOUVEAUTES.txt). Le plantage exact reste à confirmer sur Windows.

@@ -1,8 +1,15 @@
-# BrickLabo — v0.1.72
+# BrickLabo — v0.1.73
 
-Windows desktop software for LEGO catalogues, stock, construction searches and labels. This version continues the published v0.1.71, based on the original v0.1.28.
+Windows desktop software for LEGO catalogues, stock, construction searches and labels. This version continues the published v0.1.72, based on the original v0.1.28.
 
-**Downloads v0.1.72 :** [complete Windows package](https://github.com/sdu07git/BrickLabo/releases/download/v0.1.72/BrickLabo_v0.1.72_Complet.zip) · [sources with resources](https://github.com/sdu07git/BrickLabo/releases/download/v0.1.72/BrickLabo_v0.1.72_Sources.zip) · [release notes](https://github.com/sdu07git/BrickLabo/releases/tag/v0.1.72).
+**Downloads v0.1.73 :** [complete Windows package](https://github.com/sdu07git/BrickLabo/releases/download/v0.1.73/BrickLabo_v0.1.73_Complet.zip) · [sources with resources](https://github.com/sdu07git/BrickLabo/releases/download/v0.1.73/BrickLabo_v0.1.73_Sources.zip) · [release notes](https://github.com/sdu07git/BrickLabo/releases/tag/v0.1.73).
+
+
+## Release preparation — v0.1.73
+
+The [single journal](documentation/NOUVEAUTES.txt) preserves all release notes and the 25 previous validation reports. Future updates extend this file; builds and CI reject separate release-note TXT files. The [illustrated quick start](documentation/GUIDE_DEMARRAGE.en.html) covers ownership, drawers, projects, backups, 65 × 23 mm labels, A4 cabinet maps and Wi-Fi viewing.
+
+Linux/Windows validation produces JSON and JUnit evidence and checks real inventories 10696-1, 10698-1 and 30363-1. Original code uses the [MIT License](LICENSE); external resources keep their own terms. [1.0 qualification](documentation/PASSAGE_1_0.md) separates automated checks from manual PC sessions, physical printing and unresolved permissions. This remains a 0.1.x release.
 
 
 ## Faster queries and background inventory loading — v0.1.72
@@ -28,7 +35,7 @@ Repeated cached catalogue requests take about 1 ms on this benchmark. General re
 [Bilingual guide](documentation/GUIDE_v0.1.72.md).
 
 
-**v0.1.72 validation:** 1,111 full-suite scenarios exercised, followed by 114 focused tests passing after the final fixes. All 18 benchmark scenarios match v0.1.71. [Validation report](documentation/CONTROLE_v0.1.72.txt). Native Windows execution remains to be confirmed.
+**v0.1.72 validation:** 1,111 full-suite scenarios exercised, followed by 114 focused tests passing after the final fixes. All 18 benchmark scenarios match v0.1.71. [Validation report](documentation/NOUVEAUTES.txt). Native Windows execution remains to be confirmed.
 
 ## Projects, shopping, loose lots and shape-based storage — v0.1.71
 
@@ -53,7 +60,7 @@ Repeated cached catalogue requests take about 1 ms on this benchmark. General re
 These workflows use local inventories without API credentials. Obtaining missing data retains each source’s requirements. Photo recognition is not included. Tests run under Qt/Linux; native Windows execution remains to be confirmed.
 
 
-**Validation v0.1.71:** 1,088 full-suite tests passed under Qt/Linux, followed by 96 focused tests after the final column adjustment. French/English visual review included a small window. [Validation report](documentation/CONTROLE_v0.1.71.txt). Native Windows execution remains to be confirmed.
+**Validation v0.1.71:** 1,088 full-suite tests passed under Qt/Linux, followed by 96 focused tests after the final column adjustment. French/English visual review included a small window. [Validation report](documentation/NOUVEAUTES.txt). Native Windows execution remains to be confirmed.
 
 ## All-set inventory queues and large cabinets — v0.1.70
 
@@ -64,7 +71,7 @@ In **Update data → Load set inventories in batches**, choose **Rebrickable** o
 In **My storage**, cabinets and drawers with unchanged layouts are reused rather than rebuilt on every display or refresh. Adding a cabinet in the overview retains the other cabinets’ objects. Quantities, references and inventory tooltips still update. Tiny drawers use a simpler drawing; zooming restores text, handles and previews. Selection, double-click, context menus and drag-and-drop remain available.
 
 
-**Validation v0.1.70:** 1,057 full-suite Qt/Linux tests passed, including 13 new cases; 94 targeted checks passed. Queuing verified with the bundled 28,389 Rebrickable and 21,865 BrickLink sets. In the Linux benchmark with 10,000 drawers, adding a second cabinet improves from 2.88 to 0.84 s, and median refresh from 1.41 to 0.17 s. [Report and protocol](documentation/CONTROLE_v0.1.70.txt). Native Windows execution remains to be confirmed.
+**Validation v0.1.70:** 1,057 full-suite Qt/Linux tests passed, including 13 new cases; 94 targeted checks passed. Queuing verified with the bundled 28,389 Rebrickable and 21,865 BrickLink sets. In the Linux benchmark with 10,000 drawers, adding a second cabinet improves from 2.88 to 0.84 s, and median refresh from 1.41 to 0.17 s. [Report and protocol](documentation/NOUVEAUTES.txt). Native Windows execution remains to be confirmed.
 
 ## Count parts from owned sets in My projects — v0.1.69
 
@@ -84,7 +91,7 @@ The **Choose a set** window can be closed and reopened without “SetPicker alre
 
 **Deleting a project** releases its reservations and picked parts. Owned quantities remain unchanged; picked parts become available without a counted drawer assignment, without assuming they were physically returned to their former drawer. This also works after deleting the cabinet. **Return all picks** remains available to restore quantities to original drawers that still exist; parts without a drawer remain unassigned. Cabinet, drawer and project deletion can be undone, restoring picks and their locations.
 
-**Validation v0.1.69:** 1,043 full-suite tests passed under Qt/Linux and 16 targeted checks of the final unlocated-pick workflow. Eight views reviewed, including creation at 640 × 480 and unlocated picks in French and English. [Validation report](documentation/CONTROLE_v0.1.69.txt). Native Windows execution remains to be confirmed.
+**Validation v0.1.69:** 1,043 full-suite tests passed under Qt/Linux and 16 targeted checks of the final unlocated-pick workflow. Eight views reviewed, including creation at 640 × 480 and unlocated picks in French and English. [Validation report](documentation/NOUVEAUTES.txt). Native Windows execution remains to be confirmed.
 
 ## Build a project with or without the set’s colours — v0.1.68
 
@@ -96,7 +103,7 @@ Reservations track actual physical references and colours without changing owner
 
 The choice and reservations survive restart, backups and undo/redo. Creating a project does not reserve automatically. Projects use loose stock; transfer an owned set’s inventory to loose stock before reserving its components. All v0.1.67 features, including cabinet grids and the Storage column, remain available.
 
-**Validation v0.1.68:** all 996 tests passed under Qt/Linux, followed by 25 targeted checks including migration from a v0.1.67 database with reservations, picks and undo history. Five views reviewed, including project creation at 640 × 480. [Validation report](documentation/CONTROLE_v0.1.68.txt). Native Windows execution remains unconfirmed.
+**Validation v0.1.68:** all 996 tests passed under Qt/Linux, followed by 25 targeted checks including migration from a v0.1.67 database with reservations, picks and undo history. Five views reviewed, including project creation at 640 × 480. [Validation report](documentation/NOUVEAUTES.txt). Native Windows execution remains unconfirmed.
 
 ## Cabinets across multiple rows — v0.1.67
 
@@ -106,7 +113,7 @@ The preview updates with the row count and gap. Cabinets follow their current re
 
 Drawer contents, counts and stock are preserved. If cabinets change while the dialog is open, reopen it before applying. All v0.1.66 features, including the Storage column, remain available. Photo recognition is not included in this stable release.
 
-**Validation v0.1.67:** 184 targeted tests passed under Qt/Linux, including 9 new grid checks. Eight/twelve-cabinet and mixed-size previews reviewed at 660 × 530 and 480 × 460. [Validation report](documentation/CONTROLE_v0.1.67.txt). Native Windows execution remains unconfirmed.
+**Validation v0.1.67:** 184 targeted tests passed under Qt/Linux, including 9 new grid checks. Eight/twelve-cabinet and mixed-size previews reviewed at 660 × 530 and 480 × 460. [Validation report](documentation/NOUVEAUTES.txt). Native Windows execution remains unconfirmed.
 
 ## Find parts already assigned to drawers — v0.1.66
 
@@ -116,7 +123,7 @@ Multiple references can share a drawer and label: each is found when it appears 
 
 This stable version retains v0.1.65 features and **does not include photo recognition**.
 
-**Validation v0.1.66:** 126 targeted tests passed under Qt/Linux, including six storage-indicator checks; layouts reviewed at 1240 × 660 and 800 × 540. [Validation report](documentation/CONTROLE_v0.1.66.txt). Native Windows execution remains unconfirmed.
+**Validation v0.1.66:** 126 targeted tests passed under Qt/Linux, including six storage-indicator checks; layouts reviewed at 1240 × 660 and 800 × 540. [Validation report](documentation/NOUVEAUTES.txt). Native Windows execution remains unconfirmed.
 
 ## Collection, inventories and projects — v0.1.65
 
@@ -134,7 +141,7 @@ The new **Data and settings → Collection tools** menu provides:
 [Detailed instructions](documentation/FEATURES_v0.1.65.md). Full backups include the new records. Picks, returns, quantity corrections and alignment support persistent undo. Photo-based reference recognition is not included. Native Windows execution remains unconfirmed.
 
 
-**Validation v0.1.65:** 946 full-suite tests passed under Qt/Linux, followed by 223 targeted checks after final adjustments, including 30 new cases. Five views reviewed at 800 × 540; AMD64 launcher, icon, dependencies and archives checked. [Detailed report](documentation/CONTROLE_v0.1.65.txt). Native Windows execution remains unconfirmed.
+**Validation v0.1.65:** 946 full-suite tests passed under Qt/Linux, followed by 223 targeted checks after final adjustments, including 30 new cases. Five views reviewed at 800 × 540; AMD64 launcher, icon, dependencies and archives checked. [Detailed report](documentation/NOUVEAUTES.txt). Native Windows execution remains unconfirmed.
 
 ## Drag and right-click in the proposal — v0.1.64
 
@@ -146,7 +153,7 @@ The new **Data and settings → Collection tools** menu provides:
 
 **Apply the proposal** : Preview gestures edit only the draft. Occupied or reserved drawers outside the proposal remain protected. Escape cancels the current drag; dropping outside a drawer changes nothing. Only Apply proposed storage saves the placements; global stock stays unchanged and one Undo restores storage. Double-click still opens drawer details.
 
-**Validation v0.1.64:** 927 full-suite tests passed on Qt/Linux, followed by 92 targeted checks after final presentation adjustments, including 34 new cases. Six Qt views reviewed with official LDraw previews and an 800 × 540 window. [Detailed report](documentation/CONTROLE_v0.1.64.txt). Native Windows execution remains unconfirmed.
+**Validation v0.1.64:** 927 full-suite tests passed on Qt/Linux, followed by 92 targeted checks after final presentation adjustments, including 34 new cases. Six Qt views reviewed with official LDraw previews and an 800 × 540 window. [Detailed report](documentation/NOUVEAUTES.txt). Native Windows execution remains unconfirmed.
 
 ## Drawer settings directly in the proposal — v0.1.63
 
@@ -157,7 +164,7 @@ The new **Data and settings → Collection tools** menu provides:
 **Column sorting**: Click proposal-table headers or Drawer count per reference… headers to sort both ways. Quantities and drawer counts sort numerically. Previews, fields, selection and destinations stay with their reference, including after recalculation. Accepting the separate count window also retains manually chosen destinations.
 
 
-**Validation v0.1.63:** 893 full-suite tests passed on Qt/Linux, including 23 new checks for inline editing, retained destinations, neighbouring drawers and sorting. Normal and compact interfaces reviewed; delivery tools validate archives and launcher. [Detailed report](documentation/CONTROLE_v0.1.63.txt). Native Windows execution remains unconfirmed.
+**Validation v0.1.63:** 893 full-suite tests passed on Qt/Linux, including 23 new checks for inline editing, retained destinations, neighbouring drawers and sorting. Normal and compact interfaces reviewed; delivery tools validate archives and launcher. [Detailed report](documentation/NOUVEAUTES.txt). Native Windows execution remains unconfirmed.
 
 ## Cabinet formats and category order — v0.1.62
 
@@ -170,7 +177,7 @@ The new **Data and settings → Collection tools** menu provides:
 **Remember a category sequence** : Remember this order for future storage plans is initially checked. Accepting saves the sequence as a preference, including if the proposal is later closed. Uncheck it to use the order for this proposal only; Cancel retains prior preferences. Categories absent from the selection stay remembered after the newly ordered categories. New categories append alphabetically. The sequence is included in Backups → Other preferences. Free reference grouping retains manual assignments.
 
 
-**Validation v0.1.62:** 870 full-suite tests passed on Qt/Linux, including 25 new checks; the 30-brick then 23-plate scenario passed across two cabinets. Normal and compact interfaces reviewed; delivery tools validate archives and launcher. [Detailed report](documentation/CONTROLE_v0.1.62.txt). Native Windows execution remains to be confirmed.
+**Validation v0.1.62:** 870 full-suite tests passed on Qt/Linux, including 25 new checks; the 30-brick then 23-plate scenario passed across two cabinets. Normal and compact interfaces reviewed; delivery tools validate archives and launcher. [Detailed report](documentation/NOUVEAUTES.txt). Native Windows execution remains to be confirmed.
 
 ## Stock, alternatives and part searches — v0.1.61
 
@@ -195,7 +202,7 @@ The new **Data and settings → Collection tools** menu provides:
 **Last addition date and time** : Both stock catalogues show sortable Last stock addition immediately after Reference, in local date and time. It differs from the general catalogue import date. Adding an existing reference/colour merges quantities and updates its timestamp; Undo restores the previous quantity and date. Deleting a row removes its entire quantity rather than just the last addition.
 
 
-**Validation v0.1.61:** 844 full-suite tests passed on Qt/Linux, followed by 29 storage checks after the last adjustment. Normal and compact interfaces reviewed; delivery tools validate the archives and Windows launcher. [Detailed report](documentation/CONTROLE_v0.1.61.txt). Native Windows execution remains to be confirmed.
+**Validation v0.1.61:** 844 full-suite tests passed on Qt/Linux, followed by 29 storage checks after the last adjustment. Normal and compact interfaces reviewed; delivery tools validate the archives and Windows launcher. [Detailed report](documentation/NOUVEAUTES.txt). Native Windows execution remains to be confirmed.
 
 ## Direct loose stock and complete inventories — v0.1.60
 
@@ -207,7 +214,7 @@ The new **Data and settings → Collection tools** menu provides:
 
 **Adding a complete inventory** : Add all parts in a set window now verifies that each reference exists in the catalogue. An error names missing references before any stock addition. If the inventory changed after the window opened, reopen the set window. Explicitly adding only selected parts is still available.
 
-**Validation v0.1.60:** all 773 tests in the complete suite passed on Qt/Linux, followed by 12 targeted tests after the final adjustment; four screenshots checked at normal and compact sizes. [Detailed report](documentation/CONTROLE_v0.1.60.txt). Native Windows execution remains to be confirmed.
+**Validation v0.1.60:** all 773 tests in the complete suite passed on Qt/Linux, followed by 12 targeted tests after the final adjustment; four screenshots checked at normal and compact sizes. [Detailed report](documentation/NOUVEAUTES.txt). Native Windows execution remains to be confirmed.
 
 ## Loose stock partial transfers and excluded words — v0.1.59
 
@@ -221,7 +228,7 @@ The new **Data and settings → Collection tools** menu provides:
 
 **Exclude search words** : Normal and advanced search accept -modulex to exclude items containing modulex in name, reference or category. brick -modulex -duplo combines required and excluded words. Set themes follow the same rule. Indexed and compatible searches agree; hyphens inside references such as 75192-1 remain literal.
 
-**Validation v0.1.59:** all 762 tests passed on Qt/Linux, including 22 new tests; dialogs and cabinet checked at normal and compact sizes. [Detailed report](documentation/CONTROLE_v0.1.59.txt). Native Windows execution remains to be confirmed.
+**Validation v0.1.59:** all 762 tests passed on Qt/Linux, including 22 new tests; dialogs and cabinet checked at normal and compact sizes. [Detailed report](documentation/NOUVEAUTES.txt). Native Windows execution remains to be confirmed.
 
 ## Projects, drawer inventories and fixes — v0.1.58
 
@@ -506,7 +513,7 @@ Read [English help](documentation/AIDE.en.html) and [component licences](documen
 | 0.1.58 | Projects and previews, drawer inventories, versioned CSV imports, figure layouts and memory protection. |
 | 0.1.57 | Drawer counts and partial transfers, persistent undo/redo history, projects with requirements, reservations and missing parts. |
 
-One bilingual [NOUVEAUTES.txt](documentation/NOUVEAUTES.txt) holds cumulative notes. This branch does not document a released 0.1.29. The 0.1.28b / Range variants were not used as the baseline. The [v0.1.63 validation report](documentation/CONTROLE_v0.1.63.txt) describes the checks for this delivery.
+One bilingual [NOUVEAUTES.txt](documentation/NOUVEAUTES.txt) holds cumulative notes. This branch does not document a released 0.1.29. The 0.1.28b / Range variants were not used as the baseline. The [v0.1.63 validation report](documentation/NOUVEAUTES.txt) describes the checks for this delivery.
 
 ## Development and diagnostics
 
@@ -520,7 +527,7 @@ For a compatible future update, publish a public stable release with tag `vX.Y.Z
 
 To develop from this repository, take `ressources/complete.zip` from the source ZIP attached to the release: this LDraw archive exceeds GitHub's regular file size limit. GitHub's automatic source archives contain neither this resource nor the Windows runtime. Both attached ZIPs are the delivered and tested version; the repository READMEs are adapted for publication.
 
-The [v0.1.63 validation report](documentation/CONTROLE_v0.1.63.txt) describes the checks for this delivery. Native Windows execution remains to be confirmed.
+The [v0.1.63 validation report](documentation/NOUVEAUTES.txt) describes the checks for this delivery. Native Windows execution remains to be confirmed.
 
 
 
@@ -535,4 +542,4 @@ The [v0.1.63 validation report](documentation/CONTROLE_v0.1.63.txt) describes th
 
 **Validation v0.1.57:** 695 tests passed on Qt/Linux (Python 3.12, PySide6 6.11.2), including 36 new checks of counts, transfers, projects, backups and persistent history. Additional scenario with 183 references in 183 drawers, reservations, restart and Undo/Redo. Visual checks at 1360 × 790 and 800 × 540. Packaging validates the Windows launcher and both archives; native Windows execution remains to be confirmed.
 
-**Validation v0.1.58:** all 740 tests passed on Qt/Linux, including 45 new tests. Versioned imports, projects, drawers and figure layouts checked; 120 real 3D tasks and 120 window workflows without errors. [Detailed report](documentation/CONTROLE_v0.1.58.txt). Native Windows confirmation remains required.
+**Validation v0.1.58:** all 740 tests passed on Qt/Linux, including 45 new tests. Versioned imports, projects, drawers and figure layouts checked; 120 real 3D tasks and 120 window workflows without errors. [Detailed report](documentation/NOUVEAUTES.txt). Native Windows confirmation remains required.

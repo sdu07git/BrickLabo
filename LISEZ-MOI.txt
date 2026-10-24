@@ -1,234 +1,35 @@
-BrickLabo v0.1.72
+BrickLabo by SDU7 — v0.1.73
 
-Nouveau v0.1.72 : requêtes, filtres, stocks, projets et meubles accélérés ; chargement des inventaires en arrière-plan après fermeture de sa fenêtre. Cliquer sur Inventaires dans la barre d’état pour suivre ou mettre en pause. BrickLabo doit rester ouvert. Voir documentation/GUIDE_v0.1.72.md.
+INSTALLATION WINDOWS
+Extraire entièrement le ZIP Complet dans un dossier accessible en écriture.
+Lancer BrickLabo.exe. Le dossier Donnees est créé au démarrage.
+Pour une mise à jour manuelle : fermer l’ancienne version, sauvegarder, extraire
+la nouvelle dans un autre dossier et y recopier Donnees. Conserver l’ancienne
+installation jusqu’à vérification. Ne pas superposer les installations.
 
-Nouveau v0.1.71 : familles de formes (1 × N puis 2 × N), capacités, analyse de lots, sets affectés aux projets, achats et réceptions, import MOC en projet, tableau de bord, sauvegardes automatiques et téléphone en Wi-Fi sans QR code. Voir documentation/GUIDE_v0.1.71.md.
+GUIDES
+Guide illustré : documentation/GUIDE_DEMARRAGE.html
+English quick start: documentation/GUIDE_DEMARRAGE.en.html
+Aide complète : documentation/AIDE.html et AIDE.en.html
 
-Nouveau v0.1.70 : charger tous les inventaires du catalogue Rebrickable ou BrickLink sans plafond de 9 999 / 10 000 sets. Laisser la recherche vide puis Préparer tous les sets trouvés → Enchaîner les lots. Les pages et lots ne limitent pas la file, qui reste enregistrée avec pause et reprise. Affichage des grands meubles accéléré par réutilisation des tiroirs et dessin simplifié des petites cases ; le zoom conserve les détails. Voir documentation/NOUVEAUTES.txt.
+NOUVEAUTÉS ET CONTRÔLES
+Un seul fichier, y compris pour les futures mises à jour :
+documentation/NOUVEAUTES.txt
+Toutes les anciennes notes et rapports de contrôle y sont conservés.
 
-Nouveau v0.1.69 : Mes projets → Compter aussi les pièces de mes sets possédés. Le calcul additionne le vrac libre et les inventaires réels des sets, sans les déplacer. Le choix se conserve par projet ; Apport des sets détaille le résultat. Les réservations et prélèvements restent sur le vrac. Dans la pick list, Déjà prélevées s’actualise après Annuler/Rétablir, conserve les lignes entièrement prises et explique un onglet vide. Supprimer un meuble conserve les prélèvements avec Aucun tiroir défini ; supprimer un projet libère ces pièces dans le stock sans les remettre dans un tiroir. Correction de SetPicker already deleted. Voir documentation/NOUVEAUTES.txt.
+DONNÉES ET SAUVEGARDES
+Donnees contient la collection personnelle et peut contenir des clés API.
+Ne pas publier ce dossier ni ses sauvegardes privées.
+Choisir un dossier de sauvegarde extérieur à Donnees.
 
-Nouveau : Nouveau projet de construction et Mes projets → Ignorer les couleurs. Choisir une reconstruction aux couleurs prévues ou avec toutes les couleurs des références disponibles. La recherche de sets réalisables transmet ce choix au projet. Les couleurs réellement réservées et prélevées restent suivies, sans changer le stock possédé.
+SOURCES ET LICENCES
+Code original MIT : licences/BrickLabo/LICENSE.
+Les ressources tierces gardent leurs propres conditions :
+documentation/SOURCES_ET_LICENCES.html et licences/RESOURCE_RIGHTS.json.
+Qualification finale et vérifications restantes : documentation/PASSAGE_1_0.md.
 
-Nouveau : Mon rangement → Organiser le meuble → Aligner les meubles… → En grille. Choisir 4 meubles par rangée pour disposer 8 meubles en deux rangées de 4. L’aperçu suit les réglages ; Appliquer enregistre la disposition. Les contenus sont conservés et les positions s’annulent en une action.
-
-Nouveau : la colonne Rangement des catalogues de pièces et du stock indique Aucun tiroir, Déjà rangée et les adresses associées. Le survol donne les couleurs et quantités renseignées. Plusieurs références d’un même tiroir sont reconnues séparément si elles figurent dans son contenu. Cette version ne contient pas de reconnaissance par photo.
-
-Nouveautés : brouillons de rangement enregistrés, inventaire guidé, comparaison de reconstructions, lots d’achat/import, prélèvements de projets et assistant de démarrage. Ouvrir Données et réglages → Outils de collection. Les meubles s’alignent horizontalement ou verticalement et restent en vue de face. Mode d’emploi : documentation/FONCTIONS_v0.1.65.md. Une sauvegarde complète conserve les nouveaux suivis. Les comptages sont des observations ; les prélèvements conservent la possession totale.
-
-Échanger ou déplacer dans l’aperçu
-Dans Mon rangement → Ranger par catégorie et taille en tenons, maintenir le bouton gauche sur un tiroir proposé, le glisser sur un autre tiroir puis relâcher. Si la destination contient une proposition, les deux contenus complets sont échangés. Sur un tiroir libre admissible, le contenu est déplacé. Une bordure bleue indique la destination. Références, couleurs et quantités restent ensemble ; le tableau et la sélection suivent. Avec Tous les meubles, le déplacement peut traverser les meubles retenus.
-
-Ajouter une référence par clic droit
-Dans l’aperçu, clic droit sur un tiroir → Ajouter une autre référence… ouvre un choix avec recherche, tri et aperçus. Choisir une référence puis Ajouter au tiroir : elle quitte son ancien tiroir proposé pour rejoindre la destination. Les autres références du tiroir source restent en place. Les placements déjà choisis sont conservés, même si une ligne regroupait plusieurs références. Référence et Plusieurs références par tiroir sont activés si nécessaire. Annuler le choix conserve le brouillon. Dans la vue habituelle de Mon rangement, la même commande ouvre les références du stock et les ajoute au tiroir cliqué sans remplacer son contenu.
-
-Partager un tiroir et conserver les comptages
-La case Plusieurs références par tiroir autorise le mélange de références dans une proposition automatique, tout en conservant Nombre de tiroirs. Les différents tiroirs comptés d’une même référence et couleur restent distincts ; les réunir bloque l’application et affiche un conflit. Un déplacement ultérieur échange tout le contenu proposé du tiroir partagé. Les choix sont conservés lors d’un changement du nombre de tiroirs. Une fenêtre de choix devenue ancienne demande de rouvrir le choix.
-
-Valider la proposition
-Ces gestes dans l’aperçu modifient uniquement le brouillon. Les tiroirs occupés ou réservés hors de la proposition restent protégés. Échap annule le glissement en cours ; un dépôt hors des tiroirs n’applique aucun changement. Seul Appliquer le rangement proposé enregistre les placements ; le stock global reste inchangé et une seule action Annuler restaure le rangement. Le double-clic ouvre toujours le détail du tiroir.
-
-Nombre de tiroirs dans le tableau
-Dans Mon rangement → Ranger par catégorie et taille en tenons, régler Nombre de tiroirs directement à côté de Références. Les flèches actualisent la proposition et l’aperçu ; après une saisie, appuyer sur Entrée ou quitter le champ. Le critère Référence est activé automatiquement. Si une ligne réunit plusieurs références de même format, cocher Référence pour disposer d’un réglage par pièce. Les lignes (1/2), (2/2)… partagent le même nombre total ; si les couleurs sont séparées, le nombre s’applique à chaque couleur.
-
-Conserver les choix et rapprocher les tiroirs
-Changer ce nombre conserve les destinations choisies manuellement, les critères, les couleurs, l’ordre des catégories et le cadrage de l’aperçu. Les placements automatiques peuvent se décaler pour libérer les places voisines. Le logiciel cherche des tiroirs voisins dans le même meuble, de préférence sur la même rangée, en respectant les tiroirs personnalisés, occupés et réservés. Si les destinations restent espacées, un message le signale dans la proposition ; les listes Tiroir proposé restent réglables. Avec Répartir les quantités restantes, 40 pièces dans deux tiroirs donnent 20 + 20. Seul Appliquer le rangement proposé enregistre les emplacements ; le stock global est conservé et le rangement reste annulable en une action.
-
-Tri par colonne
-Cliquer sur les en-têtes du tableau de proposition ou de Nombre de tiroirs par référence… pour trier dans les deux sens. Quantités et nombres de tiroirs suivent un tri numérique. Les aperçus, champs, sélections et destinations suivent toujours leur référence, y compris après un recalcul. La fenêtre de réglage séparée conserve également les destinations choisies à la main quand elle est validée.
-
-Dupliquer un format de meuble
-Dans Mon rangement → Organiser le meuble → Dupliquer le format du meuble…, donner un nom à la copie. Le nouveau meuble reprend le nombre de colonnes et de rangées, les positions et les dimensions personnalisées des tiroirs, ainsi que les emplacements laissés sans tiroir. Les tiroirs créés ont un nom et un contenu vides, prêts pour un nouveau rangement. La copie est placée à droite des meubles existants et reste indépendante du modèle. Les stocks et les comptages du meuble original sont conservés. Si le format change pendant la saisie, rouvrir la duplication pour revoir ce format avant de créer la copie.
-
-Ordre personnalisable des catégories
-Dans Ranger par catégorie et taille en tenons, Ordre des catégories… affiche les catégories des pièces à ranger avec leur position, leur nombre de références distinctes et le nombre de tiroirs nécessaires. Saisir une position puis quitter le champ, ou sélectionner une ligne et utiliser Monter / Descendre. Les autres positions se décalent automatiquement. Ordre alphabétique rétablit cet ordre dans le brouillon. Valider active Catégorie et Taille en tenons ; chaque catégorie est alors traitée dans l’ordre choisi, puis ses formats sont triés par longueur × largeur croissante en tenons. Référence garde le choix d’un tiroir par référence et Séparer les couleurs reste indépendant. Les formats de même surface gardent un ordre déterministe par dimensions. Les dimensions absentes restent signalées ou sont incluses avec Référence, sans taille inventée.
-
-Enchaîner les catégories dans les meubles
-Avec Tous les meubles, le remplissage continue dans le meuble suivant selon la disposition du rangement. Exemple : 30 références Briques en position 1, puis 23 références Plates en position 2, avec Référence coché. Dans un format de 33 tiroirs, les 30 briques occupent les premiers tiroirs ; les 3 premières plates occupent la suite et les 20 restantes continuent dans le meuble suivant. Si Référence est décoché, plusieurs références de même format peuvent partager un tiroir et le nombre de tiroirs nécessaires est recalculé. Vérifier l’aperçu et les destinations avant Appliquer. Les tiroirs réservés et déjà occupés restent protégés selon les règles de la proposition. L’application du rangement reste annulable en une seule action.
-
-Retenir un ordre de catégories
-Retenir cet ordre pour les prochains rangements est coché au départ. Valider la fenêtre mémorise l’ordre comme préférence, même si la proposition est ensuite fermée. Décocher cette case utilise l’ordre pour cette proposition seulement ; Annuler conserve les réglages précédents. Les catégories non présentes dans la sélection restent mémorisées après celles qui viennent d’être ordonnées. Les nouvelles catégories sont ajoutées à la suite, par ordre alphabétique. L’ordre est inclus dans Sauvegardes → Autres préférences. Le regroupement libre de références conserve ses affectations manuelles.
-
-Rangement dans tous les meubles
-Dans Mon rangement → Pièces à ranger, Meuble de destination propose Tous les meubles pour le glisser-déposer. Dans Ranger par catégorie et taille en tenons, Meubles à utiliser permet aussi de choisir tous les meubles en une opération. L’ordre suit leur position du haut vers le bas, de gauche à droite, puis les tiroirs du haut vers le bas dans chaque meuble. Le tableau indique le nom du meuble et l’adresse du tiroir ; l’aperçu montre tous les meubles retenus. Les tiroirs vides nommés restent protégés. La réorganisation exige une catégorie et conserve les tiroirs mixtes. Une seule action Annuler rétablit l’ensemble.
-
-Critères de rangement à cocher
-Les cases Catégorie, Taille en tenons et Référence se combinent librement. Catégorie + Taille est le réglage initial ; Catégorie seule réunit la famille, Taille seule peut réunir plusieurs familles de même format, et Référence sépare chaque identité de pièce. Une taille absente du nom n’est jamais devinée : la pièce reste à ranger si seule la taille est demandée, mais reste incluse avec Référence. Séparer les couleurs reste indépendant. Le regroupement libre conserve le choix de plusieurs références dans un tiroir.
-
-Aperçus et plusieurs tiroirs par référence
-Le tableau de proposition affiche un aperçu 3D ou photo, une quantité proposée et le tiroir de destination. Pour un groupe de plusieurs références, l’image représente la première pièce ; sélectionner la ligne et ouvrir Contenu du tiroir pour voir toutes les références et leurs aperçus. Nombre de tiroirs par référence… permet de choisir 1, 2, 3 tiroirs ou davantage pour chaque référence et coche Référence. Avec Répartir les quantités restantes, les quantités sont réparties aussi également que possible entre ces tiroirs, couleur par couleur, sans modifier le stock global. Par exemple, 40 pièces dans 3 tiroirs donnent 14, 13 et 13. Sans comptage, les associations restent À renseigner. Depuis un catalogue, aucune possession n’est créée. Si Séparer les couleurs est coché, le nombre de tiroirs s’applique à chaque couleur. Tous les tiroirs demandés pour une référence doivent être choisis, ou tous laissés sans emplacement ; une répartition partielle bloque l’application. Pour modifier ensuite les nombres, utiliser l’inventaire du tiroir ou Transférer une quantité…. Décocher Référence ou changer de mode remet les nombres de tiroirs à leur valeur initiale.
-
-Sets contenant plusieurs pièces : Dans la fenêtre Sets contenant une pièce, la pièce ouverte est déjà présente avec Toutes les couleurs. Ajouter une pièce… ouvre un catalogue avec recherche, filtres et miniatures ; Ctrl/Maj permet plusieurs choix sur la page. Choisir séparément une couleur ou Toutes les couleurs pour chaque ligne, puis Rechercher. Seuls les sets contenant toutes les pièces et couleurs demandées sont affichés. Une même référence peut être ajoutée deux fois pour demander deux couleurs. Retirer la sélection et Revenir à cette pièce modifient uniquement les critères, puis Rechercher actualise les résultats.
-
-Pièces des mini-figurines et sous-sets : La recherche remonte maintenant de la pièce à la mini-figurine, puis au set, et traverse les sous-sets et coffrets. Elle utilise aussi les inventaires chargés par lots via API, respecte les versions et conserve les sources et références exactes. Pour 41850, les exports Rebrickable contrôlés passent de 1 résultat direct à 23 sets, coffrets inclus. Le nombre peut évoluer avec les données. Les inventaires doivent être présents localement ; télécharger/importer les exports complets pour une couverture complète, sans clé API.
-
-Choisir le stock utilisable : Le vrac coché et les inventaires des sets cochés constituent deux sources indépendantes. Sets cochés uniquement décoche le vrac et conserve les choix individuels des sets. Un set sélectionné fournit ses composants même lorsque toutes les lignes de vrac sont décochées, sans démontage enregistré ni ajout au vrac. Les comptages personnalisés sont respectés ; les sets sans suivi utilisent leur inventaire local complet avec un avertissement. Les réservations des projets réduisent seulement le vrac. Le tableau affiche les photos des sets et les aperçus des pièces.
-
-Catalogue alternatif et commentaires : Le clic droit sur un set propose Copier le set vers le catalogue alternatif… et Copier les pièces du set vers le catalogue alternatif…. La seconde commande copie aussi les références constituant son inventaire, leurs couleurs, quantités, supplémentaires et compositions locales des mini-figurines. Le commentaire facultatif, par exemple marque Lepin, reste modifiable dans Modifier la référence et apparaît dans la colonne Commentaire. Photos, métadonnées, rendus 3D et réglages personnels sont conservés, avec une origine explicite utilisable après renommage. Les anciennes copies identifiables sont réparées sans remplacer leurs visuels personnalisés. Une copie de catalogue ne déclare aucune possession.
-
-Alternatives dans les recherches et projets : Autoriser les briques alternatives équivalentes est facultatif, désactivé au départ. Il permet de comparer les copies dont l’origine est connue aux besoins natifs dans les sets réalisables et les pistes de MOC. Dans Nouveau projet, la même option utilise les alternatives libres du vrac en conservant les références et couleurs physiques. Les pièces déjà réservées ne sont pas réutilisées. La création ne réserve rien ; les réservations restent explicites. Pour réserver les pièces d’un set possédé, transférer d’abord son inventaire dans le vrac.
-
-Vider le stock en une opération : Vider Mon stock… et Vider Mon stock set… agissent sur toutes les pages et tous les filtres, après une confirmation affichant les quantités. Le vidage du vrac libère ses réservations et met les comptages connus des tiroirs à zéro ; les meubles, associations et quantités inconnues restent conservés. Le vidage des sets ne transfère aucune pièce dans le vrac. Une seule action Annuler/Rétablir restaure le tout, même après redémarrage. Une modification du stock pendant la confirmation bloque le vidage.
-
-Date et heure du dernier ajout : Dans les deux catalogues de stock, Dernier ajout au stock apparaît après Référence, avec date et heure locales et tri par colonne. Cette date est distincte de la date d’import du catalogue général. Un ajout à une référence/couleur existante fusionne les quantités et actualise sa date ; Annuler restaure la quantité et la date précédentes. Supprimer une ligne retire sa quantité totale, et non uniquement le dernier ajout.
-
-
-Sets realisables > Vrac uniquement : reinclut tout le vrac et relance la recherche sans les composants des sets possedes. Les inventaires deja transferes dans le vrac sont inclus, hors reservations des projets.
-Choisir le stock utilisable > Utiliser uniquement le stock en vrac : meme selection, a valider avec OK. Annuler conserve les choix precedents.
-Dans la fiche d un set, l ajout de toutes les pieces refuse un inventaire incomplet et indique les references absentes du catalogue.
-
-Survoler un bouton pendant deux secondes affiche une breve aide, dans les differentes fenetres.
-Les cles API servent uniquement aux acces API ; catalogues locaux, etiquettes et rangement restent disponibles sans cles.
-Details des fonctions API dans Aide et README.
-
-Modeles d etiquette : menu avec apercu au survol et Enregistrer un modele pour les dispositions personnalisees.
-Appliquer a > Categorie pour une famille de pieces ; les dispositions individuelles restent prioritaires.
-Selectionner plusieurs lignes > Disposition de la selection pour un reglage commun a la volee.
-Mise a jour des donnees > Mettre a jour LDraw (complete.zip) pour telecharger la bibliotheque officielle.
-Archive verifiee avant activation. Ancienne copie geree inutilisee supprimee ; fichiers externes et ressource fournie conserves.
-LDraw officiel 2026-09 fourni, incluant le raccourci modele + sticker 87552d02.
-
-Editeur d etiquettes > Modeles d etiquette : Vue principale centree ou Vue principale et vue de dessous.
-Choisir le modele, ajuster les calques si besoin, puis Appliquer. Le format et les couleurs sont conserves.
-La vue de dessous est calculee depuis LDraw ; une photo seule ne fournit pas cette vue.
-Ces modeles sont egalement disponibles pour une etiquette individuelle.
-
-Extraire le ZIP entier dans un nouveau dossier accessible en ecriture.
-Fermer l ancienne version, conserver une sauvegarde et copier Donnees a cote du nouvel exe.
-Lancer BrickLabo.exe ; conserver app, ressources, documentation et licences ensemble.
-Mises a jour suivantes : Mise a jour des donnees > Rechercher une mise a jour du logiciel.
-Le ZIP complet et son SHA-256 sont verifies ; Donnees est conserve.
-Mon rangement : Disposer les meubles ou Organiser le meuble > Positionner / Supprimer le meuble.
-Filtres avances : Selectionner toutes les categories, puis decocher les categories a retirer.
-Mon rangement > Organiser le meuble : Deplacer les tiroirs ou Imprimer les meubles sur A4 (PDF possible).
-Mon rangement : molette et boutons + / - pour zoomer ; Zoom sur le meuble ; Vue complete pour tous les meubles.
-Taille des apercus sur les tiroirs : reglage conserve. Renommer le meuble dans Organiser le meuble.
-Retirer les references : selection ou, sans selection, vider les liens du tiroir apres confirmation ; stock conserve.
-Sets contenant : clic droit pour les alternatives ou pour afficher le set exact dans son catalogue.
-Apres mise a jour integree et demarrage reussi, anciennes copies du logiciel supprimees ; Donnees conserve.
-Photo du set Rebrickable 030-2 : recours BrickLink verifie, sans cle API ; reference conservee.
-Aretes 3D : apercus acceleres ; Valeurs par defaut = noir 86,3 %, epaisseur 1 px ; Appliquer pour enregistrer.
-Fermeture visible jusqu a la fin des taches ; temporaires nettoyes, erreurs eventuelles dans les logs.
-Photos de secours : correspondances de pieces verifiees BrickArchitect reutilisees, liens officiels des sets/minifigurines.
-Imports : Ajouter les lignes pretes ; corriger les autres puis Enregistrer la correction.
-Reprise : Importer une collection > Imports en attente > Reprendre cet import ; fichier source inutile.
-Petites fenetres : boutons repartis et defilement pour atteindre toutes les commandes.
-Aide : documentation/AIDE.html. Historique : documentation/NOUVEAUTES.txt.
-Diagnostic : BrickLabo.exe --self-test, puis Donnees/diagnostic.json.
-En cas d erreur de chemin, deplacer tout le logiciel vers un chemin plus court.
-
-Extract the complete ZIP into a new writable folder. Close the old version and keep a backup.
-Copy Donnees beside the new executable and retain all subfolders.
-English guide: documentation/AIDE.en.html.
-Label editor > Preset layouts: Centred main view or Main and bottom views. Apply saves the choice.
-Bottom view requires LDraw. Current label format, colours, transparency and edge settings are retained.
-
-Future updates: Data updates > Check for a software update.
-The complete ZIP and GitHub SHA-256 are verified; Donnees is preserved.
-
-Storage: wheel / +/- zoom, Zoom to cabinet, Full view, saved Drawer preview size and Rename cabinet.
-Sets containing: right-click for alternate builds or the exact set catalogue.
-After a successful integrated update startup, old application copies are removed; Donnees is preserved.
-
-Rebrickable set 030-2: verified BrickLink photo fallback without an API key; reference preserved.
-
-3D edges: faster previews; Default values = 86.3% black, 1 px width; Apply saves.
-Shutdown stays visible until workers finish; temporary cleanup failures are logged.
-Photo fallbacks reuse verified BrickArchitect part links and official set/minifigure links.
-
-Nouveautes v0.1.49 :
-Dossier PNG / PDF : choisir librement un dossier sur le PC.
-Mon rangement > Pieces a ranger : glisser une selection sur un tiroir.
-Mon rangement > Ranger par categorie et taille : preparer et ajuster une proposition, puis appliquer.
-Les miniatures gardent des aretes fines ; les reglages des aretes concernent les grands apercus et etiquettes.
-
-Nouveautes v0.1.50 :
-Catalogue > selection > Associer a un tiroir : choisir meuble et tiroir, sans ajout au stock ni quantite.
-Mon rangement > Pieces a ranger : choisir Stock en vrac ou un catalogue, puis glisser les references vers un tiroir.
-Les references et leurs variantes restent distinctes.
-
-Nouveautes v0.1.54 :
-Recherche et filtres des catalogues sur une ligne compacte, avec defilement horizontal si necessaire.
-Glisser la bordure sous les boutons superieurs pour regler la hauteur du volet ; ce choix est memorise.
-Tous les boutons restent accessibles par defilement quand le volet est reduit.
-
-CORRECTION v0.1.55
-Durée de vie des tâches et signaux Qt sécurisée pour éviter leur destruction dans les threads de travail. Les données personnelles sont conservées.
-
-Couleur 3D → Valeurs par défaut : remettre le jaune d’origine puis Appliquer ; Annuler conserve le réglage précédent.
-Les roues et pneus utilisent leur face arrière pour la vue du dessous, y compris les anciennes références tournées.
-
-NOUVEAUTES v0.1.56
-Rangement : aperçu du meuble proposé avant application, clic sur un tiroir et détails du contenu.
-Modes : par catégorie/taille, une référence par tiroir, ou regroupement libre.
-Mode libre : sélectionner avec Ctrl/Maj puis Regrouper la sélection pour choisir un tiroir commun.
-Contenu du tiroir : colonne Catégorie.
-Annuler la dernière action / Ctrl+Z : couleurs 3D générales ou individuelles, placements, déplacements et retraits de références des tiroirs.
-Une seule dernière action, conservée après redémarrage ; stock et quantités préservés lors de l’annulation d’un rangement.
-
-NEW v0.1.56
-Storage proposal cabinet preview before applying, drawer selection and content details.
-Modes: category/size, one reference per drawer, or free reference grouping.
-Free mode: Ctrl/Shift multi-selection, then Group selection to choose one shared drawer.
-Drawer contents: Category column. Undo last action / Ctrl+Z also restores 3D colours and drawer assignments, moves and removals.
-One latest action survives restarts; storage undo preserves stock quantities.
-
-NOUVEAUTES v0.1.57
-Contenu du tiroir : Quantité dans ce tiroir, distincte du stock global. Saisir un comptage ou transférer une partie dans un autre tiroir.
-Pièces à ranger : restant à ranger ; depuis le stock, le glissement affecte ce reste. Les catalogues créent toujours des associations sans comptage.
-Rangement automatique : Répartir les quantités restantes, aperçu et validation avant application.
-Migration v0.1.56 : anciennes associations conservées, quantités À renseigner, aucun comptage inventé.
-Annuler / Rétablir / Historique des actions : Ctrl+Z / Ctrl+Y, 100 actions par défaut et limite 1 à 500, conservées après redémarrage.
-Mes projets : Nouveau projet depuis un inventaire local complet de set ou une construction personnelle.
-États : À préparer, En cours, Terminé. Besoins, réservations, stock libre et manquants par référence et couleur.
-Les réservations conservent le stock possédé et le rangement. Un projet terminé garde ses réservations jusqu'à Libérer les réservations.
-Sauvegardes : nouvelle famille Projets et réservations ; quantités incluses dans Meubles et emplacements.
-Restaurer le stock nécessaire avec les comptages et réservations. Les restaurations incohérentes sont refusées entièrement.
-
-NEW v0.1.57
-Drawer contents: Quantity in this drawer, separate from global stock. Set counts or transfer part to another drawer.
-Parts to store: remaining quantities; stock dragging places that remainder. Catalogue assignments still have unknown counts.
-Automatic storage: Allocate remaining quantities, then review and apply the proposal.
-v0.1.56 migration: assignments retained, quantities To be entered, no invented counts.
-Undo / Redo / Action history: Ctrl+Z / Ctrl+Y, 100 actions by default, configurable 1 to 500 and persistent across restarts.
-My projects: New project from a complete local set inventory or a custom build.
-States: Planned, In progress, Completed. Requirements, reservations, free stock and missing parts by reference and colour.
-Reservations preserve owned stock and locations. Completed projects retain reservations until Release reservations.
-Backups: new Projects and reservations family; counts included in Cabinets and locations.
-Restore sufficient loose stock along with counts and reservations. Inconsistent restores roll back entirely.
-
-Projets, inventaire des tiroirs et corrections — v0.1.58
-
-- Sets réalisables : bouton et clic droit Créer un projet avec ce set…. Le nombre d’exemplaires et l’option Exclure les minifigurines sont transmis au nouveau projet.
-- Mes projets : la sélection affiche le set dans le volet droit ; un double-clic ou Voir le set ouvre sa fiche et son inventaire.
-- Choisir un set : catalogue paginé avec miniatures, aperçu photo, recherche, filtres par thème, année et source, filtres avancés et filtres enregistrés. Le formulaire du projet montre aussi le set choisi.
-- Exclure les minifigurines : calcul, pourcentages, détails et exports portent sur le modèle. Les figurines intactes en stock ne sont pas démontées pour ce calcul. Les anciens inventaires API sans distinction modèle/figurines demandent un rechargement par lots ; les CSV complets Rebrickable peuvent être utilisés directement.
-- Tiroirs : le survol donne les références, les couleurs et les quantités de ce tiroir. Un double-clic ouvre Inventaire du tiroir pour ajouter, modifier ou retirer une référence, une couleur ou un comptage. Quantité inconnue et zéro restent distincts. Les limites du stock, les conflits de modification et Annuler/Rétablir sont pris en compte.
-- Import CSV Rebrickable : prise en charge de Set Number, Quantity, Inventory Ver. La quantité d’exemplaires et la version d’inventaire sont respectées. Une version absente reste à vérifier ; aucune substitution silencieuse par la dernière version. Les corrections, la reprise et l’annulation restent disponibles.
-- Étiquettes : Appliquer à → Tout le catalogue Mini-figs règle les mini-figurines de toutes les sources, leurs dispositions personnalisées existantes et les futures références. Les couleurs, les angles et les arêtes propres aux étiquettes sont conservés.
-- Stabilité : les bulles d’aide observent uniquement les boutons construits, puis le nettoyage cyclique Python/Qt est exécuté dans le thread d’interface, uniquement après la fin des tâches natives. Les fenêtres sont détruites explicitement sur ce thread à la fermeture. Cette protection répond aux journaux de corruption de mémoire reçus en v0.1.57 ; sa confirmation sur Windows reste nécessaire.
-
-
-Projects, drawer inventories and fixes — v0.1.58
-
-- Buildable sets can create a project with the search copy count and Exclude minifigures option.
-- My projects show the set in the right preview; double-click or View set opens its photo and inventory.
-- Choose a set provides a paginated catalogue with thumbnails, photo preview, search, theme/year/source filters, advanced filters and saved filters. The new-project form also previews the chosen set.
-- Exclude minifigures applies to requirements, percentages, details, exports and project creation. Intact stock figures are preserved. Legacy flattened API caches require a batch refresh; full Rebrickable CSV inventories can be used directly.
-- Drawers show references, colours and physical counts on hover. Double-click opens an editable inventory. Unknown counts remain distinct from zero; stock bounds, edit conflicts and Undo/Redo are enforced.
-- Rebrickable CSV import accepts Set Number, Quantity, Inventory Ver, preserving copy counts and requested inventory versions. Missing versions remain pending for correction; the latest version is never silently substituted.
-- Labels → Apply to → Entire Minifigures catalogue applies a layout to every source, existing individual layouts and future references, preserving label colours, angles and 3D edges.
-- Stability defers cyclic Python/Qt collection to the idle GUI thread after native tasks finish, and explicitly destroys windows there during shutdown. This addresses the v0.1.57 heap-corruption reports; native Windows confirmation is still required.
-
-
-Vrac transferts et filtres — v0.1.59
-
-Vrac uniquement : Dans Sets réalisables → Choisir le stock utilisable, décocher Utiliser les pièces de Mon stock set exclut tous les composants des sets possédés, y compris ceux ajoutés plus tard. La recherche utilise seulement les pièces et mini-figurines en vrac, après les réservations des projets. Les détails, exports et suggestions MOC reprennent ce choix. Les exclusions individuelles des sets sont conservées pour une réactivation ultérieure.
-
-Transfert partiel par glisser-déposer : Glisser une référence depuis le contenu d’un tiroir vers un autre ouvre Quantités à déplacer pour les comptages connus. Choisir par exemple 20 pièces sur 40 : 20 restent à l’origine et 20 sont déposées à destination. Une sélection de plusieurs références peut être réglée ligne par ligne ; la validation est atomique et annulable. Annuler le dialogue ne change aucun tiroir. Les références sans comptage sont déplacées entièrement, sans inventer de quantité.
-
-Ajouts au stock et meubles : Après un ajout au vrac, une référence et une couleur entièrement comptées dans un seul tiroir suivent le nouveau total. Par exemple 40 pièces puis un ajout de 10 donnent 50 dans ce tiroir. Si plusieurs tiroirs partagent la référence, ou si le comptage est partiel ou inconnu, les comptages sont conservés et les nouvelles pièces restent à ranger. Les composants de sets possédés restent distincts du vrac. L’ajout et l’actualisation du tiroir s’annulent et se rétablissent ensemble. Le rangement et les inventaires ouverts s’actualisent ; un rangement masqué est relu à son ouverture.
-
-Quantité visible sur le meuble : La façade affiche le nombre de pièces lorsque tous les comptages du tiroir sont connus. Le survol conserve le détail par référence et couleur ; zéro et quantité inconnue restent distincts.
-
-Exclure un mot de la recherche : Dans la recherche normale et les filtres avancés, -modulex retire les références contenant modulex dans le nom, la référence ou la catégorie. brick -modulex -duplo combine un mot recherché et plusieurs exclusions. Les thèmes des sets suivent également ce filtre. Les recherches indexées et compatibles sont cohérentes ; les tirets internes des références, comme 75192-1, restent littéraux.
+DÉPÔT ET DISTRIBUTIONS
+https://github.com/sdu07git/BrickLabo/releases
+Le ZIP Complet inclut le runtime Windows. Le ZIP Sources demande Python 3.12
+et les dépendances de app/requirements.txt. Les archives Source code automatiques
+GitHub ne sont pas des distributions installables.
