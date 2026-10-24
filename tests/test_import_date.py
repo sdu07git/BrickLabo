@@ -1,3 +1,4 @@
+from contextlib import closing
 import os
 os.environ.setdefault('QT_QPA_PLATFORM','offscreen')
 import tempfile,unittest,sqlite3
@@ -11,7 +12,7 @@ class ImportDateTests(unittest.TestCase):
  def tearDown(self):self.tmp.cleanup()
  def test_existing_database_keeps_unknown_dates_and_new_rows_are_stamped(self):
   path=self.root/'db.sqlite'
-  with sqlite3.connect(path) as c:
+  with closing(sqlite3.connect(path)) as c, c:
    c.executescript(SCHEMA.replace(", imported_at TEXT NOT NULL DEFAULT ''",''));c.execute("INSERT INTO items(source,kind,ref,name,search) VALUES('RB','part','old','Old','old')")
   db=Database(path);self.assertEqual(db.rows("SELECT imported_at FROM items WHERE ref='old'")[0]['imported_at'],'')
   db.run("INSERT INTO items(source,kind,ref,name,search) VALUES('BL','part','new','New','new')");self.assertRegex(db.rows("SELECT imported_at FROM items WHERE ref='new'")[0]['imported_at'],r'^\d{4}-\d{2}-\d{2} \d{2}:\d{2}:\d{2}$')

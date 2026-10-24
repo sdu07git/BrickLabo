@@ -1,3 +1,4 @@
+from contextlib import closing
 """Real SQLite/UI checks for resumable work and conservation of physical stock."""
 import json,tempfile
 from pathlib import Path
@@ -303,6 +304,6 @@ class CollectionTests(Fixture):
         with zipfile.ZipFile(destination) as archive:
             name=next(name for name in archive.namelist() if name.endswith('/atelier.sqlite'))
             path=Path(self.temp.name)/'restored.sqlite';path.write_bytes(archive.read(name))
-        with sqlite3.connect(path) as c:
+        with closing(sqlite3.connect(path)) as c, c:
             self.assertEqual(c.execute('SELECT id FROM collection_sessions').fetchone()[0],identity)
             self.assertEqual(c.execute('SELECT id FROM purchase_lots').fetchone()[0],lot)

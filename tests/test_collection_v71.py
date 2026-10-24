@@ -1,3 +1,4 @@
+from contextlib import closing
 """Cross-workflow conservation, exclusive set claims and recoverable user data."""
 from pathlib import Path
 import http.cookiejar,json,tempfile,urllib.request,urllib.error
@@ -189,7 +190,7 @@ class MobileAndBackupTests(CollectionFixture):
         with tempfile.TemporaryDirectory() as folder:
             automatic_backups.configure(self.db,dict(enabled=True,hours=24,retention=2,before_changes=True,destination=folder));clear(self.db,'stock');path=Path(self.db.setting('automatic_backup_status')['path'])
             with zipfile.ZipFile(path) as z:z.extract('Donnees/atelier.sqlite',folder)
-            with sqlite3.connect(Path(folder)/'Donnees/atelier.sqlite') as c:self.assertEqual(c.execute('SELECT SUM(quantity) FROM stock').fetchone()[0],52)
+            with closing(sqlite3.connect(Path(folder)/'Donnees/atelier.sqlite')) as c, c:self.assertEqual(c.execute('SELECT SUM(quantity) FROM stock').fetchone()[0],52)
     def test_dashboard_does_not_add_location_counts_to_ownership(self):
         from atelier.collection_dashboard import snapshot
         wall=walls.create_wall(self.db,'A',2,1);walls.assign(self.db,walls.drawers(self.db,wall)[0]['id'],[(self.part,'4')]);result=snapshot(self.db)['metrics']

@@ -1,3 +1,4 @@
+from contextlib import closing
 """Cabinet deletion, persistent layouts and actual Qt arrangement interactions."""
 import json
 import sqlite3
@@ -41,7 +42,7 @@ class LayoutTests(Fixture):
         a,b=self.pair();drawer=walls.drawers(self.db,a)[0];walls.assign(self.db,drawer['id'],[(self.part,'4')])
         before=self.stock_state();drawers=self.db.rows('SELECT * FROM storage_drawers ORDER BY id');links=self.db.rows('SELECT * FROM storage_contents')
         path=self.db.path;self.db.close()
-        with sqlite3.connect(path) as connection:
+        with closing(sqlite3.connect(path)) as connection, connection:
             connection.execute('ALTER TABLE storage_walls DROP COLUMN x');connection.execute('ALTER TABLE storage_walls DROP COLUMN y')
         self.db=Database(path)
         self.assertEqual([(w['id'],w['x'],w['y']) for w in walls.walls(self.db)],[(a,0.,0.),(b,2.5,0.)])

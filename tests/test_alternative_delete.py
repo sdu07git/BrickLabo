@@ -1,3 +1,4 @@
+from contextlib import closing
 import os
 os.environ.setdefault('QT_QPA_PLATFORM','offscreen')
 import sqlite3,tempfile,unittest
@@ -44,7 +45,7 @@ class AlternativeDeleteTests(unittest.TestCase):
         self.assertEqual(self.db.query('ALT','set')[0][0]['id'],alternative['id'])
     def test_existing_database_migration_preserves_items(self):
         path=Path(self.temp.name)/'old.sqlite'
-        with sqlite3.connect(path) as c:
+        with closing(sqlite3.connect(path)) as c, c:
             c.execute('CREATE TABLE items(id INTEGER PRIMARY KEY,source TEXT,kind TEXT,ref TEXT,name TEXT,category TEXT,search TEXT,UNIQUE(source,kind,ref))')
             c.execute("INSERT INTO items VALUES(1,'ALT','set','old','Old','','old')")
         migrated=Database(path);self.assertEqual(migrated.get_item(1)['catalogue_hidden'],0)

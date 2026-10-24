@@ -1,3 +1,4 @@
+from contextlib import closing
 import os
 os.environ.setdefault('QT_QPA_PLATFORM','offscreen')
 import tempfile,unittest
@@ -36,7 +37,7 @@ class ColorLinksTests(unittest.TestCase):
   save_choice(self.db,'3001','72','313')
   self.assertEqual(stock_rows(self.db)[0][0]['rb_color'],'313')
   import sqlite3
-  with sqlite3.connect(self.db.path) as c:
+  with closing(sqlite3.connect(self.db.path)) as c, c:
    c.row_factory=sqlite3.Row
    self.assertEqual(InventoryReader(c).canonical('BL','3001','72'),('RB','3001','RB:313'))
    self.assertEqual(InventoryReader(c).canonical('BL','3002','72')[2],'BL:72')
