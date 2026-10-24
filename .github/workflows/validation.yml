@@ -6,6 +6,9 @@ on:
   workflow_dispatch:
 permissions:
   contents: read
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
 jobs:
   validation:
     strategy:
@@ -34,7 +37,7 @@ jobs:
       - name: Check release journal and metadata
         run: python tools/check_release.py
       - name: Run complete suite
-        run: python -X faulthandler tools/run_tests.py --report validation-results/tests.json --junit validation-results/tests.xml
+        run: python -X faulthandler tools/run_tests.py --failfast --report validation-results/tests.json --junit validation-results/tests.xml
       - name: Qualify real inventories, restore, rendering and interface
         run: python -X faulthandler tools/qualify_release.py --output validation-results/qualification --duration 120
       - uses: actions/upload-artifact@v4
