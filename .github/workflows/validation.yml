@@ -1,0 +1,85 @@
+name: Validation Linux et Windows
+on:
+  push:
+    branches: [main, codex/release-readiness-v73]
+  pull_request:
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  validation:
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [ubuntu-latest, windows-latest]
+    runs-on: ${{ matrix.os }}
+    timeout-minutes: 45
+    env:
+      QT_QPA_PLATFORM: offscreen
+      PYTHONUTF8: '1'
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+          cache: pip
+          cache-dependency-path: app/requirements.txt
+      - name: Install pinned dependencies
+        run: python -m pip install -r app/requirements.txt
+      - name: Prepare verified LDraw resource
+        run: python tools/prepare_validation.py --output "${{ runner.temp }}/bricklabo-baseline"
+      - name: Check release journal and metadata
+        run: python tools/check_release.py
+      - name: Run complete suite
+        run: python -X faulthandler tools/run_tests.py --report validation-results/tests.json --junit validation-results/tests.xml
+      - name: Qualify real inventories, restore, rendering and interface
+        run: python -X faulthandler tools/qualify_release.py --output validation-results/qualification --duration 120
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: validation-${{ matrix.os }}
+          path: validation-results
+          retention-days: 14
+  package:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: Prepare verified previous runtime
+        run: python tools/prepare_validation.py --output "${{ runner.temp }}/bricklabo-baseline"
+      - name: Install Windows cross compiler
+        run: sudo apt-get update && sudo apt-get install -y --no-install-recommends gcc-mingw-w64-x86-64 binutils-mingw-w64-x86-64
+      - name: Build complete and source distributions
+        run: python tools/build_distribution.py "${{ runner.temp }}/bricklabo-baseline/BrickLabo_v0.1.72_Complet.zip" "${{ runner.temp }}/bricklabo-distributions"
+      - uses: actions/upload-artifact@v4
+        with:
+          name: distributions
+          path: ${{ runner.temp }}/bricklabo-distributions/*.zip
+          retention-days: 14
+          compression-level: 0
+  portable-windows:
+    needs: package
+    runs-on: windows-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - uses: actions/download-artifact@v4
+        with:
+          name: distributions
+          path: ${{ runner.temp }}/bricklabo-distributions
+      - name: Prepare verified previous runtime
+        run: python tools/prepare_validation.py --output "${{ runner.temp }}/bricklabo-baseline"
+      - name: Execute actual Windows launcher and update disposable installation
+        run: python tools/verify_portable.py "${{ runner.temp }}/bricklabo-baseline/BrickLabo_v0.1.72_Complet.zip" "${{ runner.temp }}/bricklabo-distributions" --output validation-results
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: portable-windows
+          path: validation-results
+          retention-days: 14
