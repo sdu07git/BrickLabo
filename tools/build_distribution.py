@@ -76,8 +76,8 @@ def package(root,path):
         if any(excluded(PurePosixPath(name)) for name in archive.namelist()):raise RuntimeError('Excluded file packaged')
     print(path.name,path.stat().st_size,'bytes',flush=True)
 
-def build(original,output):
-    check_release()
+def build(original,output,evidence=None):
+    check_release(evidence=evidence)
     original=Path(original).resolve();output=Path(output).resolve()
     if output.is_relative_to(SOURCE):raise ValueError('Output must be outside the source tree')
     if (SOURCE/'app'/'lib').exists():raise ValueError('Source tree must not contain embedded runtime libraries')
@@ -92,7 +92,7 @@ def build(original,output):
         for name in EXTRA_SOURCE:
             shutil.copyfile(SOURCE/name,source/name)
             if name.startswith('README'):
-                (full/'documentation'/name).write_text((SOURCE/name).read_text(encoding='utf-8').replace('(documentation/','('),encoding='utf-8')
+                (full/'documentation'/name).write_text((SOURCE/name).read_text(encoding='utf-8').replace('(documentation/','(').replace('(LICENSE)','(../licences/BrickLabo/LICENSE)'),encoding='utf-8')
         extract_runtime(original,full);launcher(full,work)
         print(json.dumps(check(full),ensure_ascii=False),flush=True)
         if sorted(p.name for p in full.iterdir() if p.is_file())!=sorted(('BrickLabo.exe',)+ROOT_FILES):raise RuntimeError('Unexpected root file')
@@ -105,4 +105,5 @@ def build(original,output):
 if __name__=='__main__':
     parser=argparse.ArgumentParser(description=__doc__)
     parser.add_argument('previous_complete_zip',type=Path);parser.add_argument('output_directory',type=Path)
-    args=parser.parse_args();build(args.previous_complete_zip,args.output_directory)
+    parser.add_argument('--evidence',type=Path,help='Version-specific qualification evidence required for 1.0+')
+    args=parser.parse_args();build(args.previous_complete_zip,args.output_directory,args.evidence)

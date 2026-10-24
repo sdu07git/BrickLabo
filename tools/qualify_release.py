@@ -172,7 +172,10 @@ def qualify(output, duration):
                 from atelier.storage_quantities import put_entry
                 put_entry(demo, drawer['id'], identity, '4', 40)
             item = demo.rows("SELECT * FROM items WHERE source='RB' AND kind='part' AND ref='3005'")[0]
-            label = render_label(item, demo, {'main': images['3005']}, default_template())
+            visual = {'main': images['3005']}
+            for view in ('top','side','bottom'):
+                visual[view], visual['bounds'] = renderer.render('3005.dat', size=(256,190), color='#C91A09', view=view)
+            label = render_label(item, demo, visual, default_template())
             label.save(output / 'etiquette-65x23.png')
             export_pdf([label], output / 'etiquettes-a4.pdf', 65, 23)
             from atelier.storage_printing import StoragePrintPreview
