@@ -15,6 +15,7 @@ jobs:
       fail-fast: false
       matrix:
         os: [ubuntu-latest, windows-latest]
+        shard: [0, 1, 2, 3]
     runs-on: ${{ matrix.os }}
     timeout-minutes: 45
     env:
@@ -37,15 +38,37 @@ jobs:
       - name: Check release journal and metadata
         run: python tools/check_release.py
       - name: Run complete suite
-        run: python -X faulthandler tools/run_tests.py --failfast --report validation-results/tests.json --junit validation-results/tests.xml
+        run: python -X faulthandler tools/run_tests.py --failfast --shard ${{ matrix.shard }}/4 --report validation-results/tests.json --junit validation-results/tests.xml
       - name: Qualify real inventories, restore, rendering and interface
-        if: success() || failure()
+        if: (success() || failure()) && matrix.shard == 0
         run: python -X faulthandler tools/qualify_release.py --output validation-results/qualification --duration 120
       - uses: actions/upload-artifact@v4
         if: always()
         with:
-          name: validation-${{ matrix.os }}
+          name: validation-${{ matrix.os }}-${{ matrix.shard }}
           path: validation-results
+          retention-days: 14
+  coverage:
+    needs: validation
+    if: always()
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - uses: actions/download-artifact@v4
+        with:
+          pattern: validation-*
+          path: validation-reports
+      - name: Verify the complete test census on both platforms
+        run: python tools/combine_test_reports.py validation-reports --output validation-summary.json
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: validation-summary
+          path: validation-summary.json
           retention-days: 14
   package:
     runs-on: ubuntu-latest
