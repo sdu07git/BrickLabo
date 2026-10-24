@@ -1,0 +1,191 @@
+{
+  "review_date": "2026-10-24",
+  "application_license": "MIT, original BrickLabo code only",
+  "meaning": "permission_unverified is an unresolved review item, not a claim of infringement or permission; an API key is not evidence of redistribution rights",
+  "resources": [
+    {
+      "id": "rebrickable",
+      "description": "Rebrickable CSV catalogues",
+      "origin": "https://rebrickable.com/downloads/",
+      "redistributed": true,
+      "status": "permission_unverified",
+      "permission_evidence": null,
+      "files": [
+        {
+          "path": "ressources/inventory_sets.csv.zip",
+          "sha256": "815e6154e48bad162facee38dcbb3d68f3ce301fe58f66b5ac817d638ee7258f",
+          "bytes": 19110
+        },
+        {
+          "path": "ressources/elements.csv.zip",
+          "sha256": "4fa47a7b6fff821b347831b0775c4c3ea4d3881213e1919226282d7915b983a0",
+          "bytes": 1141536
+        },
+        {
+          "path": "ressources/part_relationships.csv.zip",
+          "sha256": "246de868f673ae49d58d319bd242e061f336b774503a608ea9b34a3d1735bbe1",
+          "bytes": 201054
+        },
+        {
+          "path": "ressources/sets.csv.zip",
+          "sha256": "0f009f4aaf1ff34c4eddb8606f3ea315c1435f162c8fd8685e7be552c3fbde5f",
+          "bytes": 527024
+        },
+        {
+          "path": "ressources/inventories.csv.zip",
+          "sha256": "3947f24ee8b7644c55990755dcc68543c68315c79d2d72ce4ce409e277c002b8",
+          "bytes": 267468
+        },
+        {
+          "path": "ressources/minifigs.csv.zip",
+          "sha256": "f834d1122ef1339fa4174b70161617ee4851296a66181e4d743824fca34e12a8",
+          "bytes": 305591
+        },
+        {
+          "path": "ressources/themes.csv.zip",
+          "sha256": "64d5351cb19a6160d9637fa1946843bf89835965aff154593060f7fecadf168a",
+          "bytes": 4599
+        },
+        {
+          "path": "ressources/parts.csv.zip",
+          "sha256": "1b2ca5f8af40e4156b376ec699f658921c0d1bdf82657f592a7ad5184dcd2d3e",
+          "bytes": 1092673
+        },
+        {
+          "path": "ressources/inventory_minifigs.csv.zip",
+          "sha256": "575b11fe183e751db432e916f7ef184c677271bd22a4a491781650e33cd7ac1d",
+          "bytes": 100301
+        },
+        {
+          "path": "ressources/colors.csv.zip",
+          "sha256": "4a94222603bbf2e47b4b66f87e26d7bd7260c55a330ca3c61d9637caf90fdc93",
+          "bytes": 5004
+        },
+        {
+          "path": "ressources/inventory_parts.csv.zip",
+          "sha256": "c3c36afad86207436be73d7cb791e3230b44ed9ea5dc8287b9e33e118cda71f8",
+          "bytes": 14536411
+        },
+        {
+          "path": "ressources/part_categories.csv.zip",
+          "sha256": "b3af9b75c86ea904a8891e290928d1dcc419fc01491240e7d541b8f7482498fe",
+          "bytes": 954
+        }
+      ]
+    },
+    {
+      "id": "bricklink",
+      "description": "BrickLink TXT catalogues",
+      "origin": "https://www.bricklink.com/catalogDownload.asp",
+      "redistributed": true,
+      "status": "permission_unverified",
+      "permission_evidence": null,
+      "files": [
+        {
+          "path": "ressources/Catalogs.txt",
+          "sha256": "5ec3a8713fc5d894319a57bb7fc2e1e2fc27fa9f39bdf01ce8aaf28a2995187c",
+          "bytes": 383462
+        },
+        {
+          "path": "ressources/Original Boxes.txt",
+          "sha256": "3d7ef9ca6516d256b12b805a83239b7dbdb89e7498a25c5c39290c2433bcd638",
+          "bytes": 2072419
+        },
+        {
+          "path": "ressources/colors.txt",
+          "sha256": "1c91673b1d24868443e504138179e4e16a975463a651bd93720f5e096efab9d7",
+          "bytes": 12160
+        },
+        {
+          "path": "ressources/Minifigures.txt",
+          "sha256": "21ce4207153449de69b4c60d13dda099d82cff69eb58c34725f047930e84e8fb",
+          "bytes": 2004403
+        },
+        {
+          "path": "ressources/Instructions.txt",
+          "sha256": "512c92332e389457db23943e54bb6d33e7bb4e9fc5004028597a927bbb440e6b",
+          "bytes": 1214140
+        },
+        {
+          "path": "ressources/categories.txt",
+          "sha256": "e38c3c2eb8451cdf679e99c49e78417dff3e2a7179453db0f634cb504603a4b1",
+          "bytes": 24369
+        },
+        {
+          "path": "ressources/Gear.txt",
+          "sha256": "04592fbd555a8aafdf359fd0cd0dd7cb879bb60c04ac79113be4f9471355a1e3",
+          "bytes": 3138635
+        },
+        {
+          "path": "ressources/Sets.txt",
+          "sha256": "f67910526c3b43aaf5396689284a5069d2cf401ae6cf6fee77c80b6010c6c98a",
+          "bytes": 2088463
+        },
+        {
+          "path": "ressources/itemtypes.txt",
+          "sha256": "f50b6601be21b87020f02c6d478d6f246d21ac5a315b72a380c0e4bfa4bb001d",
+          "bytes": 134
+        },
+        {
+          "path": "ressources/Parts.txt",
+          "sha256": "580fe1803688865a5ba41cf0462282d6103a396ed921500880daf073ce383485",
+          "bytes": 13746944
+        },
+        {
+          "path": "ressources/Books.txt",
+          "sha256": "2aba506bd4b385ccab75810b2d75cd37c3d4876736f7d49c1529f9660e4ee62b",
+          "bytes": 916469
+        },
+        {
+          "path": "ressources/codes.txt",
+          "sha256": "de210e3ac6e2f07260980acfc71e2258261a2dc9d1611a642d3c4e056d5beb20",
+          "bytes": 2977836
+        }
+      ]
+    },
+    {
+      "id": "brickarchitect",
+      "description": "Brick Architect derived catalogue",
+      "origin": "https://brickarchitect.com/parts/most-common-allyears",
+      "redistributed": true,
+      "status": "permission_unverified",
+      "permission_evidence": null,
+      "files": [
+        {
+          "path": "ressources/brickarchitect.json",
+          "sha256": "15e08d8b777223ce7937bc148128ac9c9b29d7e48d4d87a99c16b61a66395274",
+          "bytes": 2389467
+        }
+      ]
+    },
+    {
+      "id": "ldraw",
+      "description": "LDraw libraries",
+      "origin": "https://library.ldraw.org/",
+      "redistributed": true,
+      "status": "licensed",
+      "permission_evidence": "licences/LDraw/CAreadme.txt; licences/LDraw/CAlicense.txt; licences/LDraw/CAlicense4.txt; attribution manifests and per-file headers",
+      "files": [
+        {
+          "path": "ressources/complete.zip",
+          "sha256": "f3e496d0ede69ca7942fa4aa198e661ee2d22723906101e2e339d8917a4dd5f2",
+          "bytes": 146075744
+        },
+        {
+          "path": "ressources/brickarchitect_ldraw.zip",
+          "sha256": "0917f6d44b9c603fc7ede0b654223e87a4b15c87210a1bda2ab18a6aed6c487c",
+          "bytes": 4649673
+        }
+      ]
+    },
+    {
+      "id": "runtime",
+      "description": "Python, PySide6/Qt, NumPy, Pillow, ReportLab and dependencies in the portable runtime",
+      "origin": "app/requirements.txt and pinned previous distribution",
+      "redistributed": true,
+      "status": "compliance_review_pending",
+      "permission_evidence": "PSF and component license texts are included; audit distribution obligations and source/relinking notices before 1.0",
+      "files": []
+    }
+  ]
+}
