@@ -1,3 +1,34 @@
+BrickLabo — Journal unique des nouveautés et contrôles / Single release journal
+
+Les futures mises à jour complètent ce fichier, de la plus récente à la plus ancienne.
+Les notes et rapports antérieurs sont conservés intégralement dans les archives.
+
+## Version 0.1.73
+
+### Français
+
+Préparation de la version finale : journal unique conservant toutes les nouveautés et les 25 rapports de contrôle antérieurs. Les futures versions alimentent ce même fichier ; la fabrication et la validation refusent les journaux TXT séparés.
+
+Qualification reproductible sous Linux et Windows, rapports JSON/JUnit, contrôle des inventaires réels 10696-1, 10698-1 et 30363-1, réservations, sauvegarde/restauration et rendus 3D. Guide de démarrage illustré français/anglais, petits écrans, étiquettes 65 × 23 mm, meubles A4 et consultation Wi-Fi.
+
+Licence MIT du code original, inventaire distinct des ressources tierces et conditions encore à confirmer. La qualification finale exige des preuves ; les impressions physiques et les essais prolongés sur le PC concerné ne sont pas présumés réussis.
+
+### English
+
+Release preparation: one journal preserves all release notes and the 25 previous validation reports. Future updates extend this same file; builds and CI reject separate release-note TXT files.
+
+Repeatable Linux/Windows qualification with JSON/JUnit reports, real inventories 10696-1, 10698-1 and 30363-1, reservations, backup/restore and 3D rendering. Illustrated French/English quick start covers small screens, 65 × 23 mm labels, A4 cabinets and Wi-Fi viewing.
+
+MIT applies to original code; third-party resources have a separate rights inventory. Final qualification requires evidence, including physical printing and long sessions on the affected PC.
+
+### Validation
+
+En cours ; les résultats vérifiés seront inscrits ici avant publication.
+
+## Archives antérieures à 0.1.73
+
+### Journal historique intégral
+
 BrickLabo v0.1.72 — Fluidité et inventaires en arrière-plan
 
 ## Fluidité et inventaires en arrière-plan — v0.1.72
@@ -588,3 +619,1603 @@ EN : French and English interface and help.
 v0.1.27
 FR : Inventaires BrickLink TXT ; sauvegarde et restauration complète.
 EN : BrickLink TXT inventories; full backups and restores.
+
+
+### Rapports de contrôle historiques intégraux
+
+
+#### CONTROLE_v0.1.72.txt
+
+BrickLabo v0.1.72 — Contrôle de livraison
+23 octobre 2026
+
+Base : v0.1.71 publiée (651bfe8a64ef562db4f854e33fbb40a983fcb0c6).
+Optimisation des lectures de catalogues, filtres, stock, projets, rangement
+et recherche de constructions. Chargement des inventaires détenu par
+l'application, indépendant des fenêtres qui montrent sa progression.
+
+Environnement de test : Linux, CPython 3.12.14, PySide6 6.11.2,
+numpy 2.5.3, Pillow 12.3.0, reportlab 4.5.1. Les tests Qt passent par
+le collecteur GUI et le gestionnaire de durée de vie des tâches réels.
+
+Validation automatisée :
+  python -X faulthandler tools/run_tests.py
+  1 111 tests exécutés en 743,199 secondes ; 1 107 réussis au premier
+  passage, trois erreurs et un échec corrigés avant livraison.
+
+Les quatre cas relevés concernaient une ancienne table items sans
+category_id, deux appels sur un lecteur d'inventaire temporaire, et la
+hauteur de la barre d'état avec son bouton encore masqué. L'index de thème
+est conditionné aux colonnes disponibles ; les appels conservent leur
+lecteur pendant leur exécution sans cycle de rétention ; l'indicateur
+compact est créé au premier travail, sans agrandir une barre d'état vide.
+
+Après ces corrections et l'ajout des appels temporaires au test mémoire :
+  python -X faulthandler tools/run_tests.py test_query_performance
+    test_inventory_background test_small_screen_controls test_i18n
+    test_button_help test_alternative_delete test_color_links
+    test_projects_quantities_history test_build_stock
+  114 tests ciblés réussis en 98,135 secondes.
+
+Autres validations ciblées : 77 tests de recherche et catalogue, 200 tests
+de stock/projets/inventaires, puis 76 contrôles d'interface et de recherche.
+Ces nombres correspondent à des passages qui se recouvrent, pas à des cas
+supplémentaires à additionner aux 1 111 tests de la suite complète.
+Syntaxe Python vérifiée sur 217 fichiers ; git diff --check sans erreur.
+
+Les 22 nouveaux cas couvrent :
+- Cache borné, copies indépendantes, invalidation après un autre lecteur,
+  import, annulation, fermeture/réouverture ; transactions imbriquées et
+  instantané explicite conservé malgré une écriture extérieure.
+- Recherche indexée identique au repli LIKE : négations, caractères courts,
+  %, _, guillemets, accents, caractères japonais et changements de noms.
+- Données dérivées reconstruites sans perte des références existantes.
+- Résumés de projets identiques aux détails, couleurs, réservations et
+  affectations exclusives des sets comprises.
+- Prélecture des versions d'inventaires et résolution groupée des pièces ;
+  quantité/couleur conservées, références absentes bloquantes.
+- Libération immédiate des lecteurs sans attendre le ramasse-miettes.
+- Fermeture/réouverture des fenêtres sans second travail, pause/reprise,
+  23 sets sur trois lots, arrêt après un seul lot, erreur API, annulation
+  et fermeture de la fenêtre principale pendant un travail actif.
+
+La suite comprend également les 120 tâches Qt concurrentes, dont le test
+de parsing BrickArchitect et les vérifications de destruction des signaux
+sur le thread GUI. Ils ont réussi ; cela ne reproduit pas le crash natif
+Windows signalé auparavant.
+
+Mesures reproductibles :
+- Même catalogue et collection de contrôle jetable pour v0.1.71/v0.1.72 :
+  253 628 items, 1 558 072 lignes inventory_parts, 10 000 lignes de stock,
+  100 projets / 5 000 besoins, 10 000 tiroirs / 5 000 contenus.
+- 18 scénarios, trois appels chacun ; premier appel, médiane des deux
+  répétitions, nombre d'instructions SQL et empreinte du résultat conservés.
+- Toutes les empreintes des résultats des deux versions sont identiques.
+- Le premier appel n'est pas une mesure de cache disque froid.
+- Le banc de rafraîchissement de l'interface désactive les téléchargements,
+  rendus et miniatures dans les deux versions pour mesurer les lectures et
+  la reconstruction des tableaux. Il ne mesure pas le chargement des images.
+- Détails : PERFORMANCES_v0.1.72.json, GUIDE_v0.1.72.md et les deux outils
+  tools/benchmark_queries.py et tools/benchmark_ui_refresh.py.
+
+Revue visuelle, collection temporaire sans clés API :
+- Fenêtre principale 1 200 x 800, statut 20/23 pendant que la fenêtre de
+  chargement est fermée ; clic de réouverture et progression conservée.
+- Chargement 1 080 x 800 en français et anglais, puis 800 x 700.
+- 23 inventaires réellement traités par run_batch avec une API simulée,
+  46 appels simulés, sans changement du stock ni second travail concurrent.
+- Sept références LDraw disponibles ; les contrôles restent accessibles.
+
+Fabrication : tools/build_distribution.py reprend le runtime Windows
+vérifié de la v0.1.71, recompile le lanceur AMD64 avec ses ressources d'icône,
+contrôle les versions exactes des dépendances, l'identité des modules et
+ressources entre les deux distributions, et vérifie les CRC ZIP. complete.zip
+est fourni dans les deux ZIP joints et reste hors des fichiers Git ordinaires.
+Aucune base personnelle, clé API ou sauvegarde privée n'est distribuée.
+
+Limites : exécution native Windows à confirmer sur un PC Windows. Les
+mesures Linux sont des comparaisons sur un même banc, pas des délais promis
+sur chaque PC. Les métadonnées très courtes restent en lecture directe ;
+les gains varient suivant le filtre. Le premier démarrage construit les
+nouveaux index et textes dérivés. Les appels API restent séquentiels et
+soumis aux droits et limites de leur source. BrickLabo doit rester ouvert
+pour continuer les lots ; quitter conserve les lignes en attente pour une
+reprise explicite. Aucune reconnaissance photo ni QR code ajouté.
+
+English
+The complete suite exercised 1,111 tests; four failures were corrected, then
+114 focused tests passed on the final code. All 18 benchmark results match
+v0.1.71 exactly. GUI review verified background loading after closing and
+reopening its window, 23 inventories across three batches, and unchanged
+ownership. Native Windows execution remains to be confirmed. API requests
+remain sequential and rate limited; BrickLabo must stay open to continue.
+
+
+#### CONTROLE_v0.1.71.txt
+
+BrickLabo v0.1.71 — Contrôle de livraison
+23 octobre 2026
+
+Base : v0.1.70 publiée, puis ajouts de la v0.1.71 sur la branche
+codex/collection-projects-mobile-v71. Aucun module de reconnaissance photo.
+
+Tests exécutés sous Linux, CPython 3.12.14 et PySide6 6.11.2, avec le
+collecteur GUI et le gestionnaire de durée de vie des tâches réels :
+
+  python -X faulthandler tools/run_tests.py
+  1 088 tests réussis en 1 317,291 secondes.
+
+Le comptage des inventaires BrickLink enregistrés a ensuite été revérifié
+dans 32 tests des nouveaux flux : tous réussis en 6,069 secondes.
+Après l'ajustement final des largeurs de colonnes :
+
+  python -X faulthandler tools/run_tests.py test_collection_v71
+    test_collection_workflows test_i18n test_button_help
+  96 tests réussis en 23,090 secondes.
+
+Les 32 nouveaux cas couvrent notamment :
+- Familles 1 x N puis 2 x N, critère facultatif, correction et annulation,
+  conservation de la catégorie officielle et invalidation des propositions.
+- Exclusivité des exemplaires de sets entre projets, inventaires divisibles,
+  inventaires anciens, libération et restauration des affectations.
+- Besoins cumulés sans réutilisation des pièces, commandes, réceptions
+  idempotentes et annulables, couleurs ignorées, XML avec identifiants vérifiés.
+- Imports MOC en besoins sans ajout au stock et rejet des lignes invalides.
+- Combinaisons de lots sans double dépense et refus d'un résultat périmé.
+- Capacités, quantité totale conservée, destinations trop petites, formats
+  dupliqués et sauvegardes sélectives avec remappage des identifiants.
+- Authentification de la consultation locale et refus des routes d'écriture.
+- Rétention limitée aux sauvegardes de la collection et point de retour
+  contenant les quantités antérieures au vidage du stock.
+- Tableau de bord : localisation distincte de la possession, couverture BL.
+
+La suite complète comprend aussi le test de 120 tâches Qt concurrentes :
+callbacks et destruction des signaux sur le thread GUI, sans objets résiduels.
+Ce test ne constitue pas une reproduction du crash natif Windows signalé.
+
+Revue visuelle sur une collection temporaire sans clés API :
+- Rangement à 1 360 x 850 en français et en anglais, puis 800 x 620.
+- Sept miniatures LDraw chargées, familles et ordre 3005, 3004, 3622, 3010,
+  3003, 3002, 3001 présents dans le tableau et la proposition.
+- Achats à 1 120 x 720, import MOC à 1 100 x 700, tableau de bord à
+  1 100 x 650 ; titres de colonnes lisibles après le dernier ajustement.
+
+Fabrication : tools/build_distribution.py réutilise le runtime Windows
+vérifié de la v0.1.70, recompile le lanceur AMD64 et contrôle les ressources
+de l'icône, les versions exactes des dépendances, l'identité des modules
+entre les deux distributions et les CRC ZIP. complete.zip reste fourni
+dans les deux ZIP joints à la release, hors des fichiers Git ordinaires.
+
+Limites : l'exécution native sous Windows doit être confirmée sur un PC
+Windows. La recherche de provenance d'un lot est bornée et dépend des
+inventaires locaux ; ce n'est ni une preuve d'origine ni un optimum garanti.
+L'accès téléphone est facultatif et en lecture seule, pour un réseau local
+de confiance. Aucun QR code, aucune réimpression d'étiquettes imposée.
+
+English
+1,088 full-suite tests passed under Qt/Linux, followed by 32 workflow tests
+and 96 focused tests after the final header-width adjustment. Visual review
+covered French/English shape sorting, seven LDraw thumbnails, a small window,
+shopping, MOC imports and the dashboard. Native Windows execution remains to
+be confirmed. Lot analysis is bounded; local phone access is optional and
+read-only. No QR codes or photo recognition are included.
+
+
+#### CONTROLE_v0.1.70.txt
+
+BrickLabo v0.1.70 — contrôle avant publication
+Base : main 14d19df4a13c02c5a38e4432aec8e49e54c3edba (v0.1.69).
+
+Inventaires des sets sans plafond
+- Préparer tous les sets trouvés enregistre directement en transaction l’ensemble
+  des sets du catalogue choisi correspondant au filtre, sans LIMIT de nombre.
+  Aucun affichage préalable ni sélection page par page n’est requis.
+- Même filtre de source, référence, nom et thème pour les pages et la file ;
+  les entrées masquées sont exclues. Recherche vide : tout le catalogue choisi.
+- Pages de catalogue et de journal bornées en mémoire, sans tronquer la file.
+  Accès au dernier set même au-delà de l’ordinal 10 000 ; compteurs globaux exacts.
+- Lots de 10 à 1 000 sets, pause, reprise après redémarrage, erreurs et
+  authentification inchangés. Aucune limite totale, aucun ajout au stock.
+- Catalogues embarqués réellement importés puis mis entièrement en file :
+  28 389 sets Rebrickable et 21 865 sets BrickLink. Fin du journal accessible.
+  Cette vérification de préparation ne télécharge pas leurs inventaires en ligne.
+- Tests au-delà de 10 000 sets pour chaque source, chargement des dernières
+  références avec API simulées, reprise SQLite, filtres négatifs et thèmes,
+  sélection triée, source native forcée et conservation des quantités possédées.
+
+Meubles nombreux et grands formats
+- Réutilisation des scènes dont la géométrie et les modes sont inchangés.
+  Les autres meubles restent en place lors d’un ajout dans la vue d’ensemble.
+- Références, comptages et bulles d’inventaire sont actualisés sans reconstruire
+  les tiroirs. Un changement de géométrie reconstruit seulement le meuble touché.
+- Géométrie des faces partagée en mémoire bornée ; dessin simplifié sous 45 pixels
+  de largeur, sans retirer les objets, adresses ou interactions des tiroirs.
+- Tests d’un meuble de 100 × 100 = 10 000 tiroirs, ouverture/réouverture,
+  actualisation, 2 meubles, dernier tiroir, quantités, sélection et zoom.
+- Tests existants de glissement, clic droit, propositions, sauvegardes,
+  prélèvements sans tiroir et Annuler/Rétablir réussis.
+
+Validation
+- Suite complète : 1 057 tests réussis en 712,938 s sous Qt/Linux.
+- 94 contrôles ciblés réussis en 19,979 s, dont 13 nouveaux cas.
+- Interfaces française 1080 × 900 et anglaise 800 × 700 contrôlées avec les
+  catalogues embarqués ; vue globale et zoom sur le dernier des 10 000 tiroirs.
+- Tous les libellés tr/tf des trois modules modifiés ont une traduction anglaise.
+  Aide brève du nouveau bouton disponible dans les deux langues.
+
+Mesure reproductible (secondes ; même machine Linux, Python 3.12.14, Qt 6.11.2)
+Commande : python tools/benchmark_storage.py --source-root CHEMIN_DU_DEPOT
+Meuble vide de 10 000 tiroirs ; fenêtre 1100 × 850 ; 5 répétitions pour les médianes.
+- Enregistrement SQLite : v0.1.69 0.012 → v0.1.70 0.012.
+- Initialisation du panneau : v0.1.69 0.804 → v0.1.70 0.451.
+- Premier affichage et événements : v0.1.69 1.629 → v0.1.70 0.261.
+- Actualisation, médiane : v0.1.69 1.413 → v0.1.70 0.174.
+- Capture/rendu, médiane : v0.1.69 0.593 → v0.1.70 0.134.
+- Ajout d’un second meuble de 10 000 tiroirs : v0.1.69 2.880 → v0.1.70 0.840.
+Le dernier essai comprend création SQLite, actualisation et affichage de
+20 000 tiroirs en vue d’ensemble. Ces mesures ne sont pas des garanties Windows.
+
+Distribution
+- Version stable sans détecteur de références par photo ; base v0.1.69 conservée.
+- L’outil de fabrication contrôle lanceur AMD64 recompilé, icône multi-tailles,
+  dépendances fixées, exclusions, CRC et concordance des sources entre les ZIP.
+- Exécution native Windows à confirmer sur le PC concerné.
+
+
+#### CONTROLE_v0.1.69.txt
+
+BrickLabo v0.1.69 — contrôle avant publication
+Base : main ea6fb6672fab5b136214622860f9eb35d62bfdd2 (v0.1.68).
+
+Fonctions et conservation des données
+- Compter aussi les pièces de mes sets possédés : choix indépendant par projet,
+  conservé au redémarrage, dans Annuler/Rétablir et les sauvegardes de projets.
+- Vrac libre, quantités réellement suivies dans les sets, inventaires partiels,
+  exemplaires, couleurs exactes ou ignorées. Aucune unité comptée deux fois.
+  La colonne Apport des sets détaille ce qui complète le vrac disponible.
+- Les anciens projets restent sur le vrac seul par défaut ; la création depuis
+  une recherche ou comparaison transmet le choix d’inclure les sets. Le projet
+  compte tous les sets possédés indépendamment du filtre de cette recherche.
+- Les apports des sets sont évalués séparément pour chaque projet, sans transfert
+  ou réservation implicite de leurs composants. Les réservations utilisent le vrac.
+- Cas réel 30363-1 : inventaire Rebrickable embarqué, version 1. Sans vrac,
+  passage de 0 % à 100 % en activant les sets possédés ; vrac inchangé à zéro.
+  Les tests unitaires utilisent aussi un petit inventaire représentatif fictif.
+- Already picked / Déjà prélevées conserve les prélèvements complets, regroupe
+  leurs couleurs réelles par tiroir et référence et affiche l’aperçu partagé.
+  Fenêtres ouvertes actualisées après changement, retour et Annuler/Rétablir.
+  L’onglet vide explique l’enregistrement ; le CSV compte chaque unité une fois.
+- Supprimer un meuble ou un tiroir conserve les pièces et détache les prélèvements
+  dans un suivi persistant Aucun tiroir défini, avec référence, couleur, quantité
+  et réservation. Les nouveaux meubles ne récupèrent pas ces prélèvements même
+  si SQLite réutilise les anciens identifiants de tiroirs.
+- Supprimer un projet libère ses réservations et prélèvements sans changer le
+  stock possédé ni réaffecter les pièces prises aux anciens tiroirs. Les pièces
+  redeviennent disponibles sans affectation comptée. Aucun retour physique fictif.
+- Retourner les prélèvements rétablit les quantités des tiroirs encore existants ;
+  les pièces déjà sans tiroir restent non affectées. Les suppressions de meuble,
+  de tiroir et de projet sont annulables ; emplacements et prélèvements reviennent.
+- Sélecteur de sets : références nettoyées à la destruction native, fermeture
+  idempotente, pas de réutilisation d’un SetPicker détruit, ancien sélecteur
+  incapable d’effacer son remplaçant, photo tardive ignorée après destruction.
+
+Contrôles ciblés et visuels
+- Suite complète : 1043 tests réussis en 697,170 s sous Qt/Linux.
+- 16 contrôles ciblés du fonctionnement final sans tiroir réussis en 2,759 s,
+  dont l’actualisation d’une pick list ouverte après suppression du meuble
+  et la restauration de son emplacement par Annuler.
+- 47 nouveaux cas : 20 sources de projets, 6 prélèvements, 5 sélecteur et photos,
+  16 suppressions, conservation du stock, quantités, couleurs, migration v0.1.68,
+  redémarrage, réutilisation des identifiants, Annuler/Rétablir et fenêtres ouvertes.
+- Huit vues Qt examinées : vrac seul et sets inclus à 1120 × 700, projet à
+  800 × 540, création à 640 × 480, Already picked vide puis complet à 900 × 600,
+  prélèvements sans tiroir en français et en anglais à 900 × 600.
+- Aperçu LDraw réel contrôlé pour une 3005 rouge entièrement prélevée, puis sans
+  tiroir après suppression du meuble. Référence, couleur et quantité sont conservées.
+- Aucun détecteur de référence par photo introduit dans cette version stable.
+
+Distribution
+La fabrication reprend le runtime Windows du ZIP complet v0.1.68 dont le SHA-256
+et le CRC ont été vérifiés, puis recompile le lanceur versionné avec MinGW-w64.
+Elle contrôle l’exécutable AMD64, l’icône d’origine en sept tailles bitmap,
+les versions des dépendances et la concordance des sources dans les deux ZIP.
+Le contrôle de l’archive d’installation vérifie aussi la version v0.1.69.
+Les archives excluent Donnees, journaux, caches et fichiers temporaires.
+
+Limites
+Tests sous Python 3.12 / Qt 6.11.2 Linux. Lancement et interaction natifs Windows
+à confirmer sur un PC Windows.
+
+
+#### CONTROLE_v0.1.68.txt
+
+BrickLabo by SDU7 — contrôle v0.1.68
+
+Base : main v0.1.67 (34509261fab839a9894b6550ca8374b48f7a71d4).
+
+Périmètre
+- Choix « Ignorer les couleurs » à la création et dans chaque projet existant.
+- Reprise du choix depuis Sets réalisables et la comparaison de constructions.
+- Conservation des couleurs demandées et calcul des disponibilités par référence.
+- Répartition des quantités entre les besoins, sans réutilisation d'une unité de stock.
+- Réservations, prélèvements et retours selon les couleurs réelles du stock.
+- Prise en compte des réservations par les autres projets, les recherches et le rangement.
+- Persistance, sauvegardes, migration et annulation/rétablissement.
+- Fonctions v0.1.67 conservées, dont grille des meubles et indicateur Rangement.
+- Aucun détecteur photo ajouté ; aucun changement de dépendance.
+
+Validation du 21 octobre 2026
+- Suite complète : 996 tests réussis en 662,394 s, sous Python 3.12 / Qt/Linux.
+- Contrôle final : 25 tests de test_project_colors réussis en 2,524 s.
+  La suite complète inclut 24 de ces cas ; le dernier contrôle ajoute explicitement
+  la migration d'une base reproduisant le schéma v0.1.67 et ses anciens historiques.
+- Migration : besoins, réservations, prélèvements et quantités des tiroirs préservés ;
+  quatre annulations puis quatre rétablissements de l'ancien historique vérifiés.
+- Cas couverts : couleurs multiples, plusieurs besoins d'une référence, deux projets,
+  zéro, sources distinctes, alternatives explicites, conservation du stock, réservation
+  partielle, prélèvements et retours, suppression, sauvegardes et redémarrage.
+- Exemple Qt vérifié : 30 pièces bleues + 10 rouges demandées, 20 rouges + 20 vertes
+  possédées ; disponibilité de 25 % avec couleurs et 100 % sans couleurs.
+  Les couleurs prévues restent enregistrées et les couleurs réelles figurent au prélèvement.
+- Cinq vues Qt examinées : projet avec couleurs, sans couleurs, fenêtre compacte,
+  création d'un projet et liste de prélèvement ; formats 1120 × 700, 800 × 540,
+  640 × 480 et 900 × 600. Le formulaire de création défile et ses boutons restent visibles.
+- Lanceur Windows AMD64 recompilé ; icône, versions et dépendances exactes contrôlées.
+- Concordance sources/paquet Windows, licences et CRC des deux ZIP vérifiés.
+- Runtime Windows et ressource LDraw repris du paquet v0.1.67 dont le SHA-256 vérifié est
+  c7ac27020a06449ac268ef4f40fec456355fb7bfcc196283f4e134d59f99f058.
+
+Limites et règles d'utilisation
+- Les projets réservent le stock en vrac. La sélection de sets à démonter pour une recherche
+  n'ajoute pas leurs composants au vrac et ne les réserve pas silencieusement.
+- Pour rétablir les couleurs officielles, libérer les réservations d'autres couleurs ;
+  retourner d'abord les pièces déjà prélevées. Une action refusée conserve le réglage précédent.
+- Les références ne sont pas fusionnées sur leur seule ressemblance ; les alternatives
+  doivent être explicitement activées et connues.
+- Exécution native Windows à confirmer sur un PC Windows.
+
+
+#### CONTROLE_v0.1.67.txt
+
+BrickLabo by SDU7 — contrôle v0.1.67
+
+Base : main v0.1.66 (1c8fcc3e3ba3427fc6ceb58640d5d991854d90be).
+
+Périmètre
+- Disposition en grille des meubles, avec nombre de meubles par rangée et écart réglables.
+- Proposition visuelle immédiate, numérotation et noms complets au survol.
+- Colonnes dimensionnées selon leur meuble le plus large, rangées selon le plus haut.
+- Ordre actuel de lecture et ancrage du premier meuble conservés.
+- Enregistrement explicite, contrôle des modifications simultanées, annulation et rétablissement.
+- Aucune modification des tiroirs, contenus, quantités, stocks et étiquettes.
+- Alignements horizontal et vertical conservés. Aucun détecteur photo ajouté.
+
+Validation du 21 octobre 2026
+- 184 tests ciblés réussis en 20,408 s sous Qt/Linux : Python 3.12, PySide6 6.11.2.
+- Modules : test_storage_grid, test_collection_workflows, test_storage_presence,
+  test_storage_and_inventory_batches, test_storage_multi_cabinets, test_storage_layout,
+  test_i18n, test_button_help, test_software_updates.
+- 9 nouveaux tests : huit meubles en 4 × 2 ; tailles mixtes et dernière rangée incomplète ;
+  ordre et ancrage ; valeurs invalides ; conflit de modification ; dépassement de coordonnées
+  sans changement partiel ; zéro ou un meuble ; aperçu identique à l’application ;
+  annulation de la fenêtre et conservation des modes existants.
+- Annuler/Rétablir restaure le groupe en une seule action, sans modifier le contenu des tiroirs.
+- Six vues Qt examinées : 8 meubles Parkside 3 × 11, 12 meubles en 4 × 3, tailles mixtes,
+  à 660 × 530 et 480 × 460. Numéros lisibles et boutons accessibles.
+- Lanceur Windows AMD64 recompilé ; icône, versions et dépendances exactes contrôlées.
+- Concordance des sources avec le paquet Windows, licences et CRC des deux ZIP vérifiés.
+- La ressource LDraw et le runtime proviennent de la distribution v0.1.66 dont le SHA-256
+  est vérifié. Aucun changement de dépendance.
+
+Limites
+- Les meubles sont proposés dans leur ordre actuel de lecture ; les déplacer avant de relancer
+  l’alignement permet de changer cet ordre. La grille peut réserver des espaces autour des
+  meubles plus petits pour conserver des colonnes et rangées alignées.
+- La grille est un placement de meubles ; elle ne déplace pas les pièces entre leurs tiroirs.
+- Suite complète non relancée pour ce changement localisé ; contrôles ciblés ci-dessus.
+- Exécution native Windows à confirmer sur un PC Windows.
+
+
+#### CONTROLE_v0.1.66.txt
+
+BrickLabo by SDU7 — contrôle v0.1.66
+
+Base : main v0.1.65 (67f1f57a7b5eec0ec70e663660ae8a7a309a3680).
+
+Périmètre
+- Colonne Rangement dans les catalogues de pièces et mini-figurines et le stock en vrac.
+- Aucun tiroir, Déjà rangée, adresse de chaque meuble/tiroir, codes couleur, quantités renseignées.
+- Signalement d’une association existant seulement dans une autre couleur du stock.
+- Plusieurs références dans le même tiroir ; plusieurs tiroirs pour une référence.
+- Rafraîchissement au retour vers un catalogue masqué et après les changements de rangement.
+- Masquage de la colonne conservé ; aucune modification des quantités ou des étiquettes.
+- Aucun code, menu, service ni dépendance de reconnaissance par photo.
+
+Validation du 21 octobre 2026
+- 126 tests ciblés réussis en 17,481 s sous Qt/Linux, Python 3.12 / PySide6 6.11.2.
+- Modules : test_storage_presence, test_ui_corrections, test_storage_and_inventory_batches,
+  test_catalogue_storage, test_catalogue_set_stock_choices, test_i18n, test_button_help,
+  test_software_updates.
+- Six contrôles spécifiques couvrent plusieurs emplacements, couleurs et sources distinctes,
+  deux références dans un tiroir, colonne masquée, réaffichage et couleur zéro.
+- Interfaces examinées à 1240 × 660 et 800 × 540 : états lisibles et défilement accessible.
+- Lanceur AMD64 recompilé avec icône intégrée et versions synchronisées.
+- Fabrication : comparaison des sources / paquet Windows, versions exactes des dépendances,
+  ressources et licences, contrôle CRC des deux ZIP. Aucun changement de dépendance.
+- Les archives excluent Donnees, caches de travail et détecteur photo expérimental.
+
+Limites
+- Les associations utilisent les identités exactes du catalogue : une autre source n’est pas
+  assimilée sans association explicite dans le rangement.
+- Une référence écrite uniquement sur une étiquette n’est pas un emplacement enregistré.
+- Une association, même à zéro ou sans comptage, ne prouve pas qu’une étiquette a été imprimée.
+- Tri de la colonne Rangement non proposé ; les autres tris du catalogue sont conservés.
+- La suite complète n’a pas été relancée pour ce changement de consultation localisé.
+- Exécution native Windows à confirmer. Aucun nouveau correctif de crash revendiqué.
+
+
+#### CONTROLE_v0.1.65.txt
+
+BrickLabo by SDU7 — contrôle v0.1.65
+
+Base : main v0.1.64 (a0a4d6084e323485a2031728aa94d0b6471e7598).
+
+Périmètre
+- Brouillons persistants des propositions de rangement, avec restauration des destinations et contrôle des changements.
+- Inventaires guidés de sets et de meubles, observations séparées du stock, reprise et CSV.
+- Comparaison exacte d’une sélection de 16 références maximum, sans double utilisation des pièces ; prise en compte des exemplaires, du stock sélectionné et des réservations.
+- Lots nommés avec provenance, prix, commentaire, suivi des nouveaux imports, corrections et annulations atomiques.
+- Prélèvements physiques des projets, réservations, liste des pièces prises, retours aux tiroirs d’origine et conservation de la possession.
+- Assistant de démarrage avec reprise d’étape.
+- Alignements horizontal et vertical des meubles, écart réglable, annulation et façade de face permanente.
+- Traductions, aide des boutons après deux secondes et documentation FR/EN.
+
+Validation
+- Suite complète : 946 tests réussis en 653,037 s sous Qt/Linux.
+- Après les derniers ajustements et l’ajout des contrôles complémentaires : 223 tests ciblés réussis en 79,128 s, dont les 30 nouveaux tests de collection.
+- Contrôle séparé de version, traductions et bulles : 58 tests réussis.
+- Compilation Python et git diff --check réussis.
+- Cinq vues Qt contrôlées à 800 × 540 : comptage, lots, prélèvements, comparaison et meubles. Les champs Compté et les actions principales restent accessibles.
+- Conservation du stock, refus des doubles allocations, protections des réservations, reprises après redémarrage, conflits de session, données des lots, lots d’import idempotents, sauvegarde complète et Annuler/Rétablir vérifiés.
+- La première tentative du test de sauvegarde utilisait un dossier de sortie interne au dossier de données : le refus était conforme à la règle existante. Le test utilise désormais un dossier externe ; le contrôle passe.
+
+Fabrication
+- Lanceur Windows AMD64 recompilé depuis tools/launcher.c et launcher.rc avec MinGW-w64 officiel Ubuntu, paquets vérifiés depuis l’index signé de l’archive Ubuntu.
+- Runtime Windows de la v0.1.64 vérifiée réutilisé, sans changement de dépendances.
+- Icône intégrée comparée au fichier ICO : sept tailles, 16 à 256 pixels, bitmap Windows 32 bits.
+- Python 3.12.10 embarqué ; PySide6 6.11.2, numpy 2.5.3, Pillow 12.3.0, reportlab 4.5.1, charset-normalizer 3.5.2, shiboken6 6.11.2.
+- complete.zip repris de l’archive complète v0.1.64 dont le SHA-256 est 2a033208e48f8875e5cf7d46a06b9f920dfcb2a986956091c3d7bd5e6946f8a2.
+- Concordance des sources et ressources des ZIP, versions, présence du runtime, dépendances et icône contrôlées par l’outil de fabrication.
+- Les archives ne contiennent pas de base personnelle, de clé API, de sauvegarde privée ni de dossier Donnees.
+
+Limites
+- Exécution native Windows à confirmer sur le PC de l’utilisateur. Ces tests Linux et contrôles PE ne reproduisent pas le crash Windows 0xc0000374 signalé auparavant ; sa résolution n’est pas annoncée.
+- Pas de reconnaissance de référence par photo.
+- Les comptages sont des observations ; aucune correction automatique des quantités possédées.
+- Les exports sélectifs gardent leur périmètre historique. Utiliser la sauvegarde complète pour transférer tous les nouveaux suivis.
+
+
+#### CONTROLE_v0.1.64.txt
+
+BRICKLABO v0.1.64 — CONTRÔLE DE LIVRAISON
+20 octobre 2026
+Base publiée v0.1.63 : 4729a697de584c170cd554fd4f625530e00afaf7.
+
+Environnement : Python 3.12.14, Qt/Linux offscreen,
+PySide6/shiboken6 6.11.2, NumPy 2.5.3, Pillow 12.3.0.
+Suite complète : 927 tests réussis en 581.251 secondes.
+Après les derniers ajustements de présentation et de textes :
+92 contrôles ciblés réussis en 18.271 secondes, dont les 34 nouveaux cas.
+Compilation Python, différences Git et traductions vérifiées.
+
+Glissement dans la proposition
+- Gestes réels de souris Qt sur la façade et les miniatures : échanger deux
+  contenus proposés complets ou déplacer le contenu sur un tiroir libre admissible.
+- Couleurs, comptages connus ou inconnus, lignes réparties et groupes partagés
+  restent associés aux bonnes références. Les listes et sélections du tableau
+  suivent les changements, même après un tri. Le cadrage horizontal est conservé.
+- Bordure bleue pendant le survol de la destination ; curseur de refus pour
+  un emplacement interdit. Un clic simple conserve la sélection ; le double-clic
+  ouvre les détails. Échap, fermeture et recalcul interrompent le geste.
+- Les tiroirs occupés ou nommés hors de la proposition et les meubles exclus
+  restent protégés. Tous les meubles permet de déplacer entre meubles retenus.
+- Les destinations choisies sont retenues lors du changement de Nombre de tiroirs.
+  Les gestes ne lancent aucune boucle QDrag native et ne détruisent pas la scène
+  avant le retour du traitement de relâchement du graphics-item.
+
+Clic droit et choix d’une référence
+- Ajouter une autre référence… est accessible dans l’aperçu sur un tiroir
+  admissible, avec une fenêtre indépendante de recherche, tri et miniatures.
+- Une référence quitte son ancien tiroir proposé pour rejoindre la destination.
+  Les autres références du tiroir source restent en place. Une ancienne ligne
+  de plusieurs références est séparée sans perdre ses destinations examinées.
+- Référence et Plusieurs références par tiroir sont activés selon le besoin.
+  Le choix Annuler ne change pas le brouillon. Un choix devenu ancien après
+  changement de proposition est refusé ; un stock déjà modifié demande un recalcul.
+- Le clic droit de la vue habituelle Mon rangement ouvre les références du stock.
+  Le tiroir cliqué est capturé : changer la sélection ne détourne pas l’ajout.
+  L’ajout conserve les autres contenus, sans changer les quantités du stock global.
+- Les propositions issues des catalogues peuvent partager des références sans
+  créer de possession ni de quantité fictive.
+
+Comptages et enregistrement
+- Plusieurs références peuvent partager un tiroir dans une proposition automatique
+  tout en conservant le réglage du nombre de tiroirs par référence.
+- Les deux portions comptées d’une même référence et couleur ne peuvent pas être
+  réunies dans le même tiroir. La fenêtre de choix les exclut ; une affectation
+  manuelle incompatible affiche un conflit et est également refusée en backend.
+- Un tiroir partagé se déplace ou s’échange comme un contenu complet.
+- Les brouillons ne modifient pas SQLite. Appliquer enregistre exactement le
+  contenu examiné ; une seule action Annuler restaure le rangement et les noms.
+  Le stock global reste conservé. Un stock modifié après examen bloque l’application.
+
+Interface
+Six captures Qt réelles examinées : proposition normale, destination survolée,
+échange effectué, choix filtré avec miniature, tiroir partagé et format 800 × 540.
+La ressource LDraw officielle fournit les visuels de 3005, 3001, 3023 et 3024.
+La dernière interface compacte conserve les boutons accessibles et le tableau
+avec aperçus. La recherche réaffiche la bonne miniature après changement de lignes.
+Aide, notes de version, présentation et textes nouveaux disponibles en français
+et en anglais ; couverture des bulles d’aide vérifiée.
+
+Fabrication
+Runtime Windows et LDraw repris de l’archive complète v0.1.63 vérifiée :
+323667356 octets ; SHA-256
+d9dc7e4dbc6ce3363ba6b456b8a67fb109dc84788bdb1e1f2493fcf7dd52e1bf.
+MinGW-w64 provient de six paquets officiels Ubuntu dont tailles et SHA-256
+sont contrôlés à partir de l’index signé et validé par la clé Ubuntu.
+L’outil de livraison contrôle le lanceur AMD64 v0.1.64, les sept tailles
+d’icône, le manifeste et les dépendances Windows épinglées, la structure,
+les CRC ZIP et la concordance des sources entre archives.
+Aucune base personnelle, cache, journal ou préparation temporaire n’est livré.
+Les notes publiques de la release donnent les tailles et SHA-256 finaux.
+
+Limite : exécution native Windows et confirmation du plantage 0xc0000374
+sur le PC concerné à vérifier. Cette livraison ne prétend pas les valider.
+
+
+#### CONTROLE_v0.1.63.txt
+
+BRICKLABO v0.1.63 — CONTRÔLE DE LIVRAISON
+20 octobre 2026
+Base publiée v0.1.62 : da57c12314cf0a44a042b278af7e1dc74ff80d29.
+
+Environnement de contrôle : Python 3.12.14, Qt/Linux offscreen,
+PySide6/shiboken6 6.11.2, NumPy 2.5.3, Pillow 12.3.0.
+Suite complète : 893 tests réussis en 512.479 secondes.
+23 nouveaux contrôles réussis séparément en 4,224 secondes.
+110 contrôles de rangement réussis avant les 7 derniers cas ajoutés.
+Compilation Python, traductions des nouveaux textes et différences Git vérifiées.
+
+Réglage dans la proposition
+- Nombre de tiroirs se règle dans le tableau principal ; le critère Référence
+  est activé et l’aperçu se recalcule sans fenêtre supplémentaire ni écriture.
+  Une ligne contenant plusieurs identités demande de cocher Référence.
+- Les champs des lignes issues d’une même référence restent synchronisés.
+  Le nombre s’applique séparément à chaque couleur si leur séparation est cochée.
+- Plusieurs clics rapides retiennent le dernier nombre. Une saisie suivie
+  directement d’un clic sur Appliquer est prise en compte. Fermer abandonne
+  les réglages encore en attente. Le stock n’est modifié par aucun brouillon.
+- 40 pièces dans deux tiroirs donnent 20 + 20 dans l’aperçu et après application.
+  Le rangement reste atomique, annulable en une action, et le stock est conservé.
+  Une modification du stock après l’aperçu bloque toujours l’application.
+
+Destinations et voisinage
+- Les destinations choisies manuellement sont conservées lors du changement
+  du nombre, y compris par validation de l’ancienne fenêtre de réglage.
+  Les placements automatiques peuvent être déplacés pour faire de la place.
+- Recherche de tiroirs voisins dans le même meuble, avec préférence pour
+  une même rangée. La fin d’une rangée et le début éloigné de la suivante
+  ne sont pas considérés comme des voisins.
+- Les tiroirs larges sont traités suivant leurs bords réels. Les tiroirs
+  occupés, vides mais nommés et hors du périmètre restent protégés.
+- Le périmètre Tous les meubles permet une paire dans un autre meuble
+  disposant de places voisines. Les contraintes manuelles restent prioritaires.
+- Quand les destinations restent espacées, un message explicite le signale
+  dans la proposition. Les listes de destination restent réglables ; aucun
+  placement voisin n’est promis sans place disponible. Les références et
+  les couleurs physiques restent distinctes, y compris entre RB et BL.
+
+Tri des tableaux
+- Tri des en-têtes dans les deux sens, tri numérique des quantités et nombres.
+- Chaque champ, destination, sélection et aperçu reste associé à l’identité
+  de pièce après le tri. Un clic sur un tiroir sélectionne les bonnes lignes.
+- Les résultats de miniatures asynchrones devenus anciens sont écartés après
+  changement d’ordre. Contrôle avec modèles LDraw de test et rendus effectifs.
+- Le regroupement libre reste disponible, avec compteurs directs désactivés.
+  Sa sélection triée continue d’associer les bonnes références au tiroir commun.
+
+Interface
+Trois captures Qt réelles examinées : proposition à 1360 × 820 et 800 × 540,
+fenêtre de comptes triée à 900 × 540. La ressource officielle complète sert
+aux aperçus des références 3005, 3001, 3023 et 3024. Le cas de démonstration
+conserve une destination manuelle et affiche les deux tiroirs voisins de
+3005, chacun à 20 pièces. Les commandes restent accessibles en format compact.
+Aide, présentation et textes d’interface disponibles en français et anglais.
+
+Fabrication
+Runtime Windows et bibliothèque LDraw repris de l’archive complète v0.1.62
+vérifiée (323658034 octets) :
+77cf2ee87e7000fc9af38717c7eb9d9eb0720cc47b75a240f60963c5a27617df.
+MinGW-w64 provient de six paquets Ubuntu officiels, dont les SHA-256 sont
+vérifiés depuis l’index signé GPG Ubuntu. Le lanceur 64 bits porte la v0.1.63.
+L’outil de fabrication vérifie icônes, versions, dépendances, structure,
+CRC ZIP et concordance des sources entre archives. Aucune base personnelle,
+cache, journal ou fichier temporaire n’entre dans les distributions.
+Les notes de release donnent tailles et SHA-256 finaux.
+
+Limite : exécution native Windows et confirmation du plantage 0xc0000374
+sur le PC concerné à vérifier. Cette livraison ne prétend pas le valider.
+
+
+#### CONTROLE_v0.1.62.txt
+
+BRICKLABO v0.1.62 — CONTRÔLE DE LIVRAISON
+19 octobre 2026
+
+Base : v0.1.61 publiée, commit 52beae3786a8892b29a57895cf17971557b7c530.
+Environnement : Python 3.12.14, PySide6 / shiboken6 6.11.2,
+NumPy 2.5.3, Pillow 12.3.0, Qt/Linux offscreen.
+
+Suite complète : 870 tests réussis en 530.914 secondes, dont
+25 nouveaux contrôles de duplication et d’ordre des catégories.
+Ces 25 nouveaux contrôles ont aussi réussi séparément en 2,615 secondes.
+Compilation, différences Git et traductions des nouvelles commandes vérifiées.
+
+Duplication des formats
+- Géométrie identique : colonnes, rangées, positions, largeur et hauteur
+  des tiroirs personnalisés ; les trous laissés par des tiroirs supprimés
+  sont conservés. Les noms et contenus des nouveaux tiroirs sont vides.
+- Les pièces, les comptages, les stocks et les historiques existants ne
+  sont pas copiés ni modifiés. Les copies sont indépendantes du modèle
+  et sont placées à droite des meubles existants.
+- Le formulaire conserve le meuble source choisi à l’ouverture même si
+  la sélection de l’écran principal change. Annuler ne crée rien.
+- Un format modifié pendant la saisie est refusé avant toute écriture.
+  Un échec d’insertion de tiroir annule aussi la création du meuble.
+  La création et les modifications de copie survivent au redémarrage.
+
+Ordre des catégories et taille
+- Position numérique, Monter / Descendre et retour alphabétique dans un
+  brouillon. Les positions restent uniques et sont renumérotées ensemble.
+  Un nombre tapé juste avant OK est pris en compte.
+- Le rang de la catégorie précède le tri numérique des formats par
+  longueur × largeur en tenons ; les critères Référence et couleurs
+  gardent leur sens. Un tri Taille seul ou Référence seul est inchangé.
+- Références distinctes et tiroirs nécessaires : les couleurs et les
+  tiroirs multiples ne multiplient pas artificiellement les références.
+  Les dimensions absentes restent visibles dans le bilan et ne sont
+  pas inventées. Les règles existantes d’occupation restent en place.
+- Scénario demandé : 30 références Bricks et 23 références Plates, tri
+  croissant dans chaque catégorie, Référence coché, 2 meubles de 33 tiroirs
+  dont un créé par duplication. Le premier reçoit 30 briques et 3 plates ;
+  le suivant reçoit les 20 plates restantes. Les quantités du stock sont
+  identiques ; une seule annulation restaure le rangement antérieur.
+- Mémorisation facultative, réouverture, catégories nouvellement ajoutées
+  à la suite et conservation des catégories absentes de la sélection.
+  L’ordre est inclus dans les sauvegardes Autres préférences et se
+  restaure sur une autre base sans dépendre des identifiants de pièces.
+- Annuler n’enregistre pas l’ordre ; sans mémorisation il reste propre à
+  la proposition. Une erreur de sauvegarde laisse le formulaire ouvert.
+  La fermeture de la proposition rejette sa fenêtre d’ordre encore ouverte.
+  Les changements d’ordre n’écrivent aucun stock ni contenu de tiroir.
+
+Interface
+Quatre captures réelles Qt examinées : duplication à 560 × 300, ordre des
+catégories à 760 × 560, proposition à 1360 × 820 et 800 × 540. Les aperçus
+proviennent des modèles LDraw de vraies références de pièces. Les catégories,
+boutons, positions, validation et aperçu restent accessibles. Un contrôle
+supplémentaire vérifie les commandes de l’ordre à 700 × 480.
+Les nouveaux textes disposent d’une traduction anglaise et des bulles
+d’aide habituelles après deux secondes pour les nouveaux boutons.
+
+Fabrication
+Lanceur Windows 64 bits v0.1.62 recompilé avec MinGW-w64. Six paquets de
+la distribution officielle Ubuntu sont vérifiés par leurs SHA-256 issus
+de l’index dont la signature GPG Ubuntu a été validée.
+Runtime Windows et ressource LDraw repris du paquet complet v0.1.61 :
+eef0cdff8d5f5993c6a60f9932dcf79a4b645c79cd38fcd118831612314f3701.
+L’outil de livraison contrôle les versions, icônes, dépendances, structure,
+CRC des archives et concordance des sources. Les bases personnelles,
+caches, journaux et fichiers temporaires restent exclus des distributions.
+Les SHA-256 finaux sont indiqués dans les notes de release.
+
+Limite : l’exécution native Windows et la confirmation du plantage
+0xc0000374 sur le PC concerné restent à vérifier.
+
+
+#### CONTROLE_v0.1.61.txt
+
+BRICKLABO v0.1.61 — CONTRÔLE DE LIVRAISON
+19 octobre 2026
+
+Base : v0.1.60 publiée, commit 81678e03e2a72ef56d99571d575101d826b6cb4b.
+Environnement : Python 3.12.14, PySide6 / shiboken6 6.11.2,
+NumPy 2.5.3, Pillow 12.3.0, Qt/Linux offscreen.
+
+Suite complète : 844 tests réussis en 476.339 secondes.
+Après le dernier ajustement du choix explicite d’un tiroir par référence,
+29 tests de rangement ont réussi en 2.757 secondes, dont ce
+contrôle supplémentaire. Le code final comprend 845 tests.
+Les 75 contrôles du rangement avaient également réussi en 10,186 secondes.
+La suite s’exécute avec le collecteur Python/Qt sur le thread d’interface,
+uniquement au repos ; aucun test n’est désactivé ou ignoré par ce mécanisme.
+Différences Git, syntaxe et textes FR / EN des commandes contrôlés.
+
+Scénarios stocks et alternatives
+- Les sets sélectionnés fournissent leurs composants indépendamment du
+  vrac coché, sans transfert au vrac. Comptages personnalisés, sets sans
+  suivi, zéros suivis et exclusions sont pris en compte. Les réservations
+  ne sont soustraites que du vrac. Le sélecteur propose des aperçus.
+- Vider Mon stock / Mon stock set : toutes les pages, filtres, confirmation
+  avec refus par défaut, détection d’un changement concurrent et annulation
+  persistante unique. Les réservations du vrac sont libérées, ses comptages
+  connus remis à zéro, sans effacer les meubles ni les liens inconnus.
+- Copies alternatives d’un set ou de ses constituants : provenance explicite,
+  métadonnées, photos, rendus 3D, caméras, dispositions, couleurs, quantités,
+  pièces supplémentaires et commentaires conservés. Le renommage ne rompt
+  pas les liens visuels. Une copie ne déclare aucune possession.
+- Recherche facultative d’alternatives équivalentes et projets : identités
+  physiques conservées, réservations respectées, origines inconnues exclues.
+- Dernier ajout au stock : tri, date locale distincte de l’import catalogue,
+  mise à jour des lignes fusionnées et restauration de la date par Annuler.
+- Un marqueur interne de migration n’entre pas dans les sauvegardes de
+  préférences : correction découverte par la première suite complète.
+
+Recherche de sets contenant des pièces
+- Remontée pièce → mini-figurine → set, sous-sets, cycles, versions actives,
+  inventaires locaux/API et compositions manuelles, sans mélange de sources.
+- Filtre AND de plusieurs pièces, choix indépendant Toutes les couleurs ou
+  couleur exacte ; même référence deux fois pour demander deux couleurs.
+  Ajout depuis un catalogue filtrable avec photos et sélection multiple.
+  La sélection du premier résultat et son aperçu sont actualisés ensemble.
+- Reproduction avec les exports CSV publics Rebrickable téléchargés pour
+  ce contrôle : 47 789 inventaires. Pour 41850, 1 résultat direct avec
+  l’ancienne requête, 23 sets/coffrets avec les liens de mini-figurines et
+  sous-sets. Le nombre dépend des données locales et peut évoluer.
+  Aucun stock n’a été créé par cette recherche.
+
+Rangement
+- Un meuble précis ou Tous les meubles : ordre des positions y/x puis
+  lignes/colonnes des tiroirs ; les noms du meuble distinguent les adresses.
+  Le choix Tous les meubles reste actif après un clic dans un tiroir.
+- Catégorie / Taille en tenons / Référence se cochent indépendamment.
+  Combinaisons, dimensions manquantes, identités et couleurs vérifiées.
+  Aucune case cochée bloque la proposition avec un message explicite.
+- Aperçu 3D/photo dans le tableau, cache commun avec le meuble et les détails,
+  couleurs par ligne et arrêt des chargements à la fermeture.
+- Nombre de tiroirs par référence : choix distinct pour chaque pièce,
+  répartition équilibrée par couleur, conservation exacte des totaux et
+  des restants déjà rangés ailleurs. Les quantités inconnues restent inconnues.
+  Les couleurs séparées disposent chacune du nombre demandé de tiroirs.
+  Une répartition partielle d’une référence bloque l’application.
+- Protection des tiroirs nommés, mixtes et hors portée ; réorganisation
+  explicite d’une catégorie. Une proposition devenue périmée est refusée.
+  Un échec dans le deuxième meuble annule toutes les écritures. Aperçu,
+  contenu enregistré et annulation persistante unique concordent.
+
+Interface
+Contrôles visuels Qt/Linux en format normal et compact : stocks, sélecteur
+utilisable, recherche de sets, choix de pièces, nouveau projet et catalogue
+alternatif. Rangement à 1360 × 820 et 800 × 540, réglage des nombres de
+tiroirs à 800 × 540. Le compact conserve les commandes et replie les textes
+explicatifs ; les colonnes restent accessibles par défilement horizontal.
+Les miniatures restent fines, indépendantes du réglage des grandes arêtes.
+Les photos de sets des captures d’essai sont des illustrations explicitement
+marquées comme jeux de test, et non des images officielles de sets.
+
+Fabrication
+Lanceur Windows 64 bits recompilé avec MinGW-w64 pour la version 0.1.61.
+Runtime Windows repris du paquet complet v0.1.60 dont le SHA-256 a été
+vérifié : feb906b88e557c8f243955856dde79714bf1dd4397183313dd675e64e1132619.
+L’outil de fabrication vérifie la version, les icônes, les dépendances,
+la structure, les CRC et la concordance des sources avec le paquet complet.
+Les ressources publiques et LDraw sont inclus dans les deux ZIP ; les
+bases personnelles, caches, journaux et outils de travail sont exclus.
+Les empreintes finales des ZIP figurent dans les notes de release.
+
+Limite : l’exécution native Windows et la confirmation du plantage
+0xc0000374 sur le PC concerné restent à vérifier.
+
+
+#### CONTROLE_v0.1.60.txt
+
+BRICKLABO v0.1.60 — CONTRÔLE DE LIVRAISON
+14 octobre 2026
+
+Base : v0.1.59, commit 75e681d893fa9c4dcccec65f1dda1f4f458d851b.
+Environnement : Python 3.12.14, PySide6 / shiboken6 6.11.2,
+NumPy 2.5.3, Pillow 12.3.0, Qt/Linux offscreen.
+
+Suite complète : 773 tests réussis en 365,361 secondes, dont 11 nouveaux.
+Après le dernier ajustement limitant la vérification complète aux sets,
+les 12 tests ciblés v0.1.60 ont réussi en 4,492 secondes, y compris un
+contrôle supplémentaire de l’ajout des compositions de mini-figurines.
+Compilation Python et différences Git contrôlées.
+
+Scénarios vérifiés
+- Vrac uniquement : toutes les exclusions de pièces et mini-figurines en
+  vrac sont retirées, y compris les lignes masquées par un filtre. Les
+  composants des sets possédés et des futurs ajouts de sets sont exclus.
+  Les choix individuels des sets restent mémorisés pour les réactiver.
+- Le bouton principal relance une fois la recherche avec les critères
+  actuels : seuil, couleurs, nombre d’exemplaires et référence recherchée.
+  Il est désactivé pendant l’analyse et réactivé après une erreur.
+- Le sélecteur remet son filtre à vide et coche tout le vrac. OK enregistre
+  la sélection ; Annuler conserve les préférences précédentes.
+- Stock, quantités des tiroirs, historique et réservations des projets
+  restent inchangés. Les réservations continuent à réduire le disponible.
+- Une fenêtre MOC déjà ouverte relit les exclusions actuelles au prochain
+  lancement. Les inventaires transférés dans le vrac sont utilisables.
+- Ajout réel des inventaires publics Rebrickable de 10696-1 et 10698-1
+  depuis le catalogue : les deux sets sont trouvés à 100 % avec le vrac.
+  L’inventaire complet de 10698-1 seul donne également 100 % en couleurs
+  exactes. Exclure 87697 et 98138pr0008 produit huit pièces manquantes et
+  environ 99 % ; Vrac uniquement réinclut les lignes et retrouve 100 %.
+- Ajouter toutes les pièces depuis une fiche de set vérifie les références
+  du catalogue avant toute mutation. Les références absentes sont nommées.
+  Un inventaire modifié depuis l’ouverture exige de rouvrir la fiche.
+  L’ajout des seules pièces sélectionnées reste disponible, ainsi que
+  l’ajout complet d’une composition de mini-figurine.
+- Les nouvelles commandes et explications disposent de textes FR / EN
+  et des bulles d’aide habituelles après deux secondes de survol.
+
+Interface
+Quatre captures Qt/Linux examinées : stock utilisable à 950 × 650 et
+800 × 540 ; sets réalisables à 1120 × 760 et 800 × 600. Les nouvelles
+commandes, les exports et la validation restent visibles. Les colonnes
+du tableau conservent leur défilement horizontal en format compact.
+
+Fabrication
+Lanceur Windows 64 bits recompilé avec MinGW-w64 pour la version 0.1.60.
+Icône bitmap en sept tailles et métadonnées de version contrôlées.
+Runtime Python 3.12.10 et dépendances Windows repris du paquet v0.1.59
+dont l’empreinte SHA-256 a été vérifiée. Les ressources publiques et
+LDraw sont incluses dans les deux ZIP. Les outils de livraison vérifient
+les CRC, la structure, les exécutables, les dépendances et la concordance
+des sources avec le paquet complet. Les empreintes finales figurent
+dans les notes de release.
+
+Limite : l’exécution native Windows et la confirmation du plantage
+0xc0000374 sur le PC concerné restent à vérifier.
+
+
+#### CONTROLE_v0.1.59.txt
+
+BRICKLABO v0.1.59 — CONTRÔLE DE LIVRAISON
+14 octobre 2026
+
+Base : v0.1.58, commit 3bac2bb5e7e0bff8ec3275b6acc48e7eb8cd6433.
+Environnement : Python 3.12, PySide6 / shiboken6 6.11.2, NumPy 2.5.3,
+Pillow 12.3.0, Qt/Linux avec affichage offscreen.
+
+Suite complète : 762 tests réussis en 361,761 secondes, dont 22 nouveaux.
+Compilation Python et différences Git contrôlées.
+
+Scénarios vérifiés
+- Stock utilisable : une case globale exclut tous les composants des sets
+  possédés. Le calcul lit alors le vrac, après les réservations des projets.
+  Les futurs ajouts de sets restent exclus. Les exclusions individuelles sont
+  conservées ; annuler le dialogue ne change pas les préférences.
+- Les détails et exports reprennent le mode du résultat calculé. Les pistes
+  de MOC appliquent le même choix. Les quantités affichées dans le sélecteur
+  passent du stock combiné au seul vrac lorsque la case est décochée.
+- Glisser-déposer : déplacer 20 pièces 3005 rouges sur 40 laisse 20 à
+  l’origine et ajoute 20 à destination, sans changer le stock. Une sélection
+  multiple se règle ligne par ligne ; un conflit refuse tout le transfert.
+  Annuler le dialogue ne change ni contenu ni historique. Annuler/Rétablir
+  restaure les deux tiroirs ensemble. Les références sans comptage gardent
+  leur état inconnu quand elles sont déplacées vers un tiroir vide.
+- Un ajout de 10 au vrac de 40 pièces entièrement comptées dans un seul
+  tiroir donne 50 dans le stock et le tiroir. L’action s’annule et se rétablit
+  ensemble. Avec deux tiroirs de 20, les comptages restent 20/20 et les
+  10 nouvelles pièces restent à ranger. Les comptages partiels ou inconnus
+  et les composants de sets possédés ne sont pas convertis en comptage total.
+- Le meuble affiche son total de pièces lorsque tous ses comptages sont
+  connus ; survol et inventaire conservent le détail par référence/couleur.
+  Les inventaires ouverts sont actualisés après modification du stock.
+- Recherche : -modulex et brick -modulex -duplo excluent les mots dans les
+  noms, références, catégories et thèmes. Résultats indexés et compatibles
+  identiques, thèmes NULL préservés, caractères LIKE littéraux et tirets
+  internes des références conservés. Application réelle du filtre vérifiée.
+- Bulles d’aide : le nouveau choix a une explication française et anglaise.
+  Les boutons achevés de la fenêtre principale sont enregistrés dès sa
+  construction, sans attendre le prochain contrôle périodique.
+
+Interface
+Huit captures Qt/Linux examinées : stock utilisable à 950 × 650 et
+800 × 540 ; transfert à 700 × 380 et 570 × 340 ; meuble à 1360 × 790
+et 800 × 540 ; filtres avancés à 630 × 610 et 800 × 540.
+Les dialogues conservent leurs commandes de validation. Les tableaux et
+panneaux existants peuvent défiler lorsqu’ils dépassent la place disponible.
+
+Fabrication
+Lanceur recompilé avec MinGW-w64 : Windows 64 bits, version 0.1.59,
+icône bitmap en sept tailles correspondant au fichier ICO fourni.
+Runtime Python 3.12.10 et dépendances Windows repris du paquet v0.1.58,
+avec versions conformes à app/requirements.txt. Les deux ZIP incluent LDraw
+et les ressources publiques. CRC, structure, exécutables, dépendances et
+concordance des sources/du paquet complet vérifiés par les outils de livraison.
+Les empreintes SHA-256 des archives finales figurent dans les notes de release.
+
+Limite : l’exécution native Windows, le glisser-déposer Windows et la
+confirmation du plantage 0xc0000374 sur le PC concerné restent à vérifier.
+
+
+#### CONTROLE_v0.1.58.txt
+
+BRICKLABO v0.1.58 — CONTRÔLE DE LIVRAISON
+14 octobre 2026
+
+Base : v0.1.57, commit 051cb712d51e34c29fa660e2e49b38f62331c641.
+Environnement : Python 3.12, PySide6 / shiboken6 6.11.2, NumPy 2.5.3,
+Pillow 12.3.0, Qt/Linux avec affichage offscreen.
+
+Périmètre : création de projets depuis les sets réalisables ; aperçu du set
+dans Mes projets et ouverture par double-clic ; sélecteur de sets avec filtres,
+pagination et photo ; exclusion des mini-figurines ; inventaire éditable des
+tiroirs ; modèles d’étiquettes pour tout le catalogue Mini-figs ; listes CSV
+Rebrickable avec quantité et version d’inventaire ; stabilité des objets Qt.
+
+Suite complète : 740 tests réussis en 491,823 secondes, dont 45 nouveaux tests.
+91 tests ciblés revérifiés ; compilation Python et différences Git contrôlées.
+
+Scénarios vérifiés
+- CSV natif « Set Number,Quantity,Inventory Ver » : 106 références et
+  109 exemplaires importés dans une base d’essai avec les données publiques
+  fournies. Aucun ajout lors d’une reprise ; annulation complète vérifiée.
+  Le fichier personnel utilisé n’est pas inclus dans les sources ni les ZIP.
+- Une version demandée est respectée même si une autre version est plus
+  récente. Version absente ou invalide : ligne conservée en attente.
+  L’import général détecte les collections et ouvre l’assistant de stock.
+- Les projets reprennent le nombre d’exemplaires et l’exclusion des figurines.
+  La création ne réserve ni n’ajoute de stock. Les projets personnels effacent
+  l’ancien aperçu du set ; les fenêtres conservent les bonnes références triées.
+- Les caches API distinguent l’inventaire complet et le modèle sans figurines.
+  Les anciens caches incomplets demandent un rechargement ; les CSV locaux
+  peuvent servir directement. Une figurine intacte du stock n’est pas démontée
+  quand l’exclusion est active. Détails, pourcentages et CSV sont cohérents.
+- Les tiroirs montrent leurs comptages propres, avec couleur et référence.
+  Inconnu et zéro restent distincts. Les modifications sont atomiques,
+  bornées au stock en vrac et annulables/rétablissables. Une édition devenue
+  périmée ou une référence/couleur déjà présente est refusée sans écrasement.
+- Les modèles Mini-figs couvrent toutes les sources et les futures références.
+  Les dispositions individuelles existantes sont adaptées en conservant leurs
+  couleurs de catégories et leurs arêtes. Sauvegarde/restauration vérifiée.
+
+Stabilité
+- Un plantage a été reproduit en combinant nettoyage mémoire, éditeur
+  d’étiquettes et fermeture de fenêtres avec le filtre Qt global des bulles
+  d’aide. Le filtre global est remplacé par une observation des boutons
+  entièrement construits, dont les wrappers sont conservés jusqu’à destruction.
+- Les nouveaux boutons sont détectés périodiquement, puis chaque bouton
+  attend son propre délai de deux secondes. Les commandes ne sont pas activées
+  par le survol. Les fenêtres fermées n’affichent pas de bulle tardive.
+- Le nettoyage cyclique Python est différé vers le thread GUI, après la fin
+  native des tâches. Les callbacks encore actifs dans une boucle modale
+  empêchent cette collecte. Les tâches et fenêtres sont détruites explicitement
+  sur le thread GUI avant la fin de l’application et son éventuelle mise à jour.
+- Essai prolongé : 60 itérations, 120 parcours d’ouverture/fermeture de fenêtres,
+  120 tâches de rendu 3D réel terminées, zéro erreur et zéro tâche restante.
+
+Interface
+Contrôles visuels à 1360 × 790 et 800 × 540 : Mes projets, Sets réalisables,
+Choisir un set, Nouveau projet, Inventaire du tiroir, édition d’une ligne.
+Les dimensions demandées sont conservées ; aucun bouton visible comprimé.
+Les commandes de recherche restent compactes et les tableaux peuvent défiler.
+Le redessin des meubles conserve trois lectures groupées pour dix meubles.
+
+Fabrication
+Lanceur recompilé avec MinGW-w64 : Windows 64 bits, version 0.1.58,
+icône bitmap en sept tailles correspondant au fichier ICO fourni.
+Runtime Python 3.12.10 et dépendances Windows repris du paquet précédent,
+avec versions conformes à app/requirements.txt. Les deux ZIP incluent LDraw
+et les ressources publiques. CRC, structure, exécutables, dépendances et
+concordance des sources/du paquet complet vérifiés.
+Les empreintes SHA-256 des archives finales figurent dans les notes de release.
+
+Limite : l’exécution native Windows et la disparition du code 0xc0000374
+sur le PC concerné doivent encore être confirmées. Les essais Qt/Linux ne
+constituent pas une reproduction de cet environnement Windows exact.
+
+
+#### CONTROLE_v0.1.57.txt
+
+BrickLabo v0.1.57 — Quantités par tiroir, historique et projets
+Contrôle du 14 octobre 2026.
+
+Base : v0.1.56 publiée, commit 239d9793ca7357b4d61c94f258d16e0d6c1fa0e9.
+
+Fonctions intégrées :
+- Comptage physique par référence, source et couleur dans un tiroir, distinct de la possession. Transferts partiels, déplacement et fusion des comptages, restant à ranger et propositions avec quantités facultatives. Le total réparti ne peut pas dépasser le stock en vrac.
+- Migration des associations v56 avec quantité inconnue (NULL / À renseigner), distincte d’un zéro explicite. Aucun nombre supposé dans les anciens tiroirs.
+- Journal partagé de 100 actions par défaut, limite 1 à 500. Annuler/Rétablir, Ctrl+Z/Ctrl+Y et fenêtre d’historique. Persistance au redémarrage, ordre de restauration, protection des références et des modifications incompatibles, restauration atomique. Les opérations refusées ou sans changement conservent la suite à rétablir.
+- Mes projets : set depuis inventaire local complet ou construction personnelle, besoins par référence/couleur, états À préparer / En cours / Terminé, réservation automatique, sélection ou quantité précise, libération et suppression. Les projets terminés gardent les réservations jusqu’à libération explicite.
+- Réservations concurrentes bornées par le stock en vrac exact ; possession conservée. Colonnes du stock et recherches de constructions adaptées. Quantités physiques et réservations indépendantes, sans addition des deux mesures.
+- Sauvegardes sélectives des projets et des quantités des tiroirs. Restauration transactionnelle avec validation du stock nécessaire et réinitialisation du journal. Anciennes sauvegardes de rangement compatibles. Aide et bulles FR/EN.
+
+Validation exécutée sous Qt/Linux, Python 3.12, PySide6/shiboken6 6.11.2 :
+- Suite complète finale : 695 tests réussis, 0 échec et 0 erreur, en 414.863 secondes (415.153 secondes avec découverte des tests).
+- 36 nouveaux tests : quantités sans duplication ; dépassements atomiques ; sources et couleurs distinctes ; transferts et déplacements ; retrait d’un emplacement ; réduction de stock protégée ; opérations sans changement et glissements périmés ; propositions et réorganisation ; passage d’une association générique à une couleur de stock ; projets concurrents ; maintien des réservations après terminaison ; séparation rangement/réservation ; suppression et restauration ; inventaires de sets et pièces supplémentaires ; inventaires incomplets refusés ; recherche avec stock libre ; annulations mixtes après redémarrage ; branche de rétablissement ; conflits de lignes et d’enfants liés ; autres tiroirs conservés ; limite du journal ; couleurs individuelles ; sauvegardes et migration v56 ; commandes Qt, saisie de comptage et sélection triée.
+- Les anciens contrôles d’interface et de sauvegarde sont actualisés pour Mes projets, la nouvelle famille JSON et la réinitialisation du journal lors d’une restauration.
+- Essai supplémentaire : 183 références fictives réparties dans un meuble de 183 tiroirs, quantité de chaque référence conservée, projet réservé sans modification du stock, fermeture/réouverture de SQLite, trois annulations puis trois rétablissements cohérents. Réussi en 0.378 seconde.
+- Inspection des nouvelles interfaces à 1360 × 790 et 800 × 540 : colonnes de quantités rapprochées, menus de projets, comptage et transfert, défilement des commandes, proposition avec quantité restante et journal appliqué/annulé. Contrôle automatique des boutons de tous les onglets à 950 × 650.
+
+Fabrication : tools/build_distribution.py réutilise le runtime Windows v0.1.56, dont le SHA-256 est 5b3b75d61eb3ee3574cd00f747e51506a4f2d8bda8f4cb244b400f994cdbb8ec. Aucune nouvelle dépendance Python. Lanceur recompilé pour v0.1.57 ; versions harmonisées dans VERSION, structure.json, COMPOSANTS.json et les ressources du lanceur.
+Le constructeur contrôle le PE AMD64, le manifeste longPathAware, les sept tailles de l’icône et leurs données, les versions exactes des dépendances, la concordance des fichiers applicatifs entre archives complète et sources et les CRC ZIP. Une erreur interrompt la fabrication. Donnees, caches, journaux et fichiers temporaires sont exclus. La bibliothèque officielle LDraw 2026-09 fournie reste conservée.
+
+Limite : exécution native Windows non effectuée dans cet environnement Linux. Les tests Qt et le rendu s’exécutent sous Linux ; le lanceur et les fichiers de la distribution Windows sont inspectés.
+
+
+#### CONTROLE_v0.1.56.txt
+
+BrickLabo v0.1.56 — Contrôle du rangement proposé et de l’annulation
+
+Base : v0.1.55 publiée sur GitHub, commit b398a4893e73af22dcb15faa86ebaaac1f56080d.
+
+Modifications :
+- Aperçu du meuble proposé utilisant la géométrie et les miniatures partagées. Aucune écriture lors de la consultation ou du changement des tiroirs proposés. Contenu détaillé avec catégories, couleurs et stock global en vrac ; 0 pour une référence de catalogue non possédée.
+- Modes catégorie/taille, une référence par tiroir et regroupement libre de références. Sélection Ctrl/Maj, choix d’un tiroir commun et modification des destinations individuelles. Sources et variantes distinctes ; couleurs ensemble ou séparées. Dimensions inconnues prises en charge dans les deux modes par référence.
+- Colonne Catégorie dans Contenu du tiroir, identité de glisser-déposer conservée.
+- Journal d’une seule dernière action pour les couleurs 3D générales et individuelles, associations, déplacements, retraits et propositions appliquées. Persistance après redémarrage, annulation atomique, restauration des noms et contenus, protection des changements incompatibles ultérieurs. Une nouvelle action de stock prend la priorité. Un placement déjà présent ne remplace pas le journal. L’annulation des couleurs et emplacements ne modifie pas les quantités.
+
+Validation sous Qt/Linux, Python 3.12, PySide6 et shiboken6 6.11.2 :
+- Suite complète : 657 tests réussis en 675.853 secondes, avant l’ajout final de l’annulation des couleurs individuelles.
+- Après cet ajout : 86 tests ciblés réussis en 38.854 secondes (rangement/annulation, couleurs, mises à jour visuelles, liens de couleurs, traductions, bulles d’aide et corrections d’import).
+- Après les derniers ajustements de largeur et d’aide : 49 tests réussis en 10.059 secondes.
+- 21 nouveaux tests : prévisualisation et fermeture sans écriture ; détails, catégories et quantités ; places manquantes et conflits ; variantes et couleurs ; dimensions inconnues ; sélection multiple et tiroir commun ; références de catalogue non possédées ; colonne Catégorie et identité de déplacement ; petite fenêtre 800 × 540 ; réutilisation réelle du cache LDraw entre façade et tableau ; bouton principal et Ctrl+Z ; journal après redémarrage ; réglage absent et valeurs par défaut ; absence de modification ; conflits ; couleurs individuelles avec conservation de photo et autres références ; couleur depuis le volet d’aperçu ; déplacement entre tiroirs ; réorganisation avec restauration des noms ; retrait ; nouvelle action de stock prioritaire ; opérations invalides sans perte du journal.
+- Contrôle visuel de douze références dans la bibliothèque officielle fournie, à 1360 × 790 et 800 × 540. Les commandes, le zoom et le déplacement de la séparation restent accessibles ; les tableaux peuvent défiler horizontalement.
+
+Distribution : lanceur Windows recompilé pour 0.1.56 ; contrôles PE 64 bits, manifeste, icône, versions des dépendances, CRC ZIP et concordance des sources du runtime effectués par le constructeur. Les deux archives excluent les données personnelles, caches et fichiers de travail. La bibliothèque officielle LDraw fournie et les dépendances Windows de la v0.1.55 sont conservées.
+
+Limite : l’exécution native Windows n’a pas été effectuée dans cet environnement Linux. Les contrôles Qt et le rendu sont exécutés sous Linux ; le lanceur et la structure de la distribution Windows sont inspectés.
+
+
+#### CONTROLE_v0.1.55.txt
+
+BrickLabo v0.1.55 — Contrôle des tâches, de la couleur d’origine et des vues de roues
+
+Signalement : exception Windows 0xc0000374, pendant une mise à jour BrickArchitect et une collecte mémoire.
+
+Défaut reproduit dans la v0.1.54 : 100 QObject de signaux créés dans le thread GUI, puis détruits dans des threads de travail. Le code Python d’analyse HTML ne constitue pas, à lui seul, la preuve de la cause du crash natif Windows.
+
+Correctif : suppression de l’auto-destruction des QRunnable ; rétention explicite jusqu’à la fin effective du pool ; signaux parentés à un gestionnaire appartenant à QApplication ; destruction différée de ces signaux et libération des callbacks dans le thread GUI ; protection des callbacks en cours dans une boucle d’événements imbriquée ; nettoyage lors d’erreur, d’annulation, d’échec de démarrage et de fermeture.
+
+Validation effectuée sous Qt/Linux avec PySide6 et shiboken6 6.11.2, comme le runtime Windows :
+- Suite complète de stabilisation des tâches, avant les ajouts couleur / roues : 627 tests, tous réussis en 532.826 secondes.
+- 10 nouveaux tests de durée de vie : concurrence et collecte mémoire, absence de fuite, parent détruit, fenêtre modeless fermée, callback avec boucle imbriquée, tâches concurrentes encore actives, erreur, annulation, fermeture et échec de lancement.
+- Huit processus indépendants : 800 tâches, 800 signaux détruits dans le thread GUI, aucun objet de signal ou de tâche résiduel après drainage.
+- Aucun changement de schéma des données, du stock, des meubles, des modèles d’étiquette ou des dépendances livrées.
+
+Ajouts couleur / roues :
+- 141 tests ciblés réussis en 30.702 secondes après les derniers changements : couleurs, vues et angles, modèles et rendu des étiquettes, PNG/PDF, miniatures et caches, arêtes, mises à jour visuelles, traductions, aide des boutons et durée de vie des tâches.
+- 11 nouveaux tests : retour à la couleur d’origine avec Appliquer / Annuler et persistance, maintien des couleurs individuelles ; axes X/Y/Z, roues épaisses, face arrière et repère non inversé, anciennes références tournées et chaînées, variantes de descriptions, distinction des supports de roue, maintien des autres vues et exports.
+- Contrôle visuel sur neuf références de la bibliothèque officielle fournie : 4624, 55982, 30027, 4185, 56145, 11208, 2573, 30028 et 6015.
+
+Distribution : lanceur Windows recompilé ; contrôles PE 64 bits, manifeste, icône, versions des dépendances et intégrité ZIP effectués par le constructeur.
+
+Limite : le crash natif Windows signalé n’a pas été reproduit dans cet environnement Linux. La mise à jour BrickArchitect doit être retestée sur le PC concerné.
+
+
+#### CONTROLE_v0.1.54.txt
+
+BrickLabo v0.1.54 — Controle de livraison
+
+617 tests couverts sur Qt/Linux : suite complete de 603 tests, puis revalidation
+des controles modifies et 14 nouveaux tests de stock et rangement.
+Revalidation finale : 153 tests reussis en 43,190 s ; 27 controles d interface
+et de langue reussis en 99,371 s, et 23 controles d aide et de catalogues reussis.
+140 fichiers Python valides en syntaxe.
+
+Petits ecrans : recherche de 130 a 240 pixels, filtres sur une seule ligne
+avec defilement horizontal. Volet superieur redimensionnable a la souris,
+hauteur conservee au redemarrage et dans les preferences. Chaque bouton
+reste accessible quand le volet est reduit. Verification visuelle FR/EN
+a 1024 x 600, 800 x 480 et 1366 x 768 ; glissement reel Qt verifie.
+
+Categories : cases a cocher dans le menu, sans bandeau au-dessus du tableau.
+Cocher/decocher les resultats de recherche conserve les autres choix.
+Exclusion groupee de toutes les categories Duplo verifiee, synchronisation
+avec les filtres avances et compatibilite des prereglages conserves.
+
+Sets : choix distincts au clic droit et dans le bouton Ajouter au stock...
+Inventaire vers le stock en vrac, ou set vers Mon stock set avec composants suivis.
+Couleurs, quantites, pieces supplementaires, mini-figures et sous-sets verifies.
+Multiselection atomique, inventaire incomplet refuse et annulation testee.
+Rebrickable, BrickLink et inventaires alternatifs verifies localement.
+Aucun telechargement implicite ; les inventaires doivent deja etre disponibles.
+
+Rangement : meuble de destination dans Pieces a ranger, commun au glisser-deposer
+et au rangement automatique par categorie et taille. Selection ou references
+affichees capturees depuis le stock ou les catalogues. Petites tailles d abord ;
+tiroirs du haut vers le bas, puis de gauche a droite dans chaque rangee.
+Meuble de 30 tiroirs, references sans stock et controle de proposition perimee testes.
+Clic droit sur un tiroir : retrait d une reference/couleur ou retrait de toutes
+les references apres confirmation. Autres tiroirs et toutes les quantites conserves.
+Un plan d inventaire est theorique : les pieces manquantes exigent une comparaison
+avec les quantites physiquement comptees. Le stock affiche reste global, pas un
+comptage propre a chaque tiroir.
+
+Les modeles d etiquettes v51/v52, l edition par categorie et selection, la mise
+a jour officielle LDraw et les aides apres deux secondes de v53 sont inclus.
+Bibliotheque LDraw officielle UPDATE 2026-09 conservee dans les ZIP de livraison.
+
+Fabrication : lanceur Windows recompile pour 0.1.54, controles PE 64 bits,
+icone originale et manifeste, dependances du runtime et CRC des deux ZIP.
+Sources et fichiers communs de la distribution compares par le fabricant.
+Exclusion de Donnees, caches, journaux, fichiers temporaires et bytecode.
+Execution native Windows et ergonomie de glissement sur Windows a confirmer.
+
+Mise a jour : conserver une sauvegarde et le dossier Donnees de l ancienne version.
+
+
+#### CONTROLE_v0.1.53.txt
+
+BrickLabo v0.1.53 — Controle de livraison
+
+595 tests reussis sur Qt/Linux en 50,116 s.
+14 tests de bulles : apparition apres deux secondes reelles, delai complet pour le bouton suivant,
+annulation au depart / clic / fermeture, controle detruit protege, controles dynamiques et desactives,
+aides existantes et liens conserves, changement de libelle, Annuler de l editeur distinct du dialogue,
+cases sans texte expliquees par leur libelle de formulaire, descriptions anglaises,
+identifiants non exposes, donnees non modifiees, autres apercus non interceptes,
+et fichier d aide optionnel manquant sans blocage.
+214 descriptions courtes FR / EN et 16 contextes particuliers.
+Aucune modification de stock, rendu, etiquettes ou reseau au survol.
+
+Demarrage anglais avec boutons affiches et aide anglaise verifie en processus independant.
+Initialisation des aides uniquement sur controles construits, sans inspection pendant Polish.
+
+Verification visuelle a 1366 x 768, police 12 points, francais et anglais :
+quatre bulles reelles par langue, dans ecran principal, imports, editeur d etiquettes et cles API.
+Absence de bulle a 1,85 s, presence a 2,1 s ; texte lisible, cadres et boutons visibles.
+137 fichiers Python valides en syntaxe.
+
+Fonctions API recensees depuis les appels du code, sans utiliser de cles personnelles :
+RB : photo / identifiants externes, inventaires sets par lots et mini-figs,
+alternatives d un set, MOC a partir des sets reconstituables, conversion automatique BL vers RB.
+BL : photo / palette, inventaires sets et mini-figs dont lots de sets, couleurs disponibles d une reference.
+Imports CSV/TXT, recherche MOC par mots / createur, exports publics, notices,
+LDraw, stock / rangement, etiquettes et calcul sur inventaires locaux accessibles sans ces cles.
+Recherche de photos accessible sans API, avec complements possibles si les cles sont configurees.
+
+Distribution : lanceur Windows recompile 0.1.53 ; runtime conserve ; inspection PE, icone,
+manifeste et verification CRC / contenus des ZIP. Donnees personnelles exclues.
+Lancement natif Windows a confirmer sur le PC utilisateur. Conserver Donnees pendant la migration.
+
+
+#### CONTROLE_v0.1.52.txt
+
+BrickLabo v0.1.52 — Controle de livraison
+
+581 tests reussis sur Qt/Linux en 43,776 s.
+18 tests nouveaux de dispositions : modeles nommes, suppression sans perte des dispositions,
+priorite individuel / categorie / general, nouvelle reference et format general,
+application atomique a une selection de references ou d entrees colorees,
+selection supprimee refusee, couleurs / quantites / cameras / aretes preservees,
+apercu au survol et chargement asynchrone sans mutation du brouillon,
+sauvegardes selectives et interface anglaise.
+10 tests de mise a jour LDraw : telechargement simule, validation, echec et archive invalide,
+reutilisation, retrait de l ancienne copie geree apres activation, protection des fichiers externes,
+correspondances explicites uniques, dependance sticker absente refusee et assemblage recursif.
+
+Verification reelle de complete.zip officiel UPDATE 2026-09, telecharge depuis library.ldraw.org.
+CRC ZIP correct. SHA-256 f3e496d0ede69ca7942fa4aa198e661ee2d22723906101e2e339d8917a4dd5f2.
+24 856 fichiers de pieces de premier niveau, 8 429 liens BL et 6 943 liens RB explicites uniques.
+87552d02.dat officiel : assemblage de 87552.dat et 6177954b.dat.
+Rendu reel : 4 277 triangles, dont 980 pour le corps et 3 297 pour le sticker.
+Lien BrickLink 87552pb065R vers 87552d02 verifie. Tourner l apercu pour voir sa face decoree.
+
+Interface a 1366 x 768 : francais en 10 / 12 points et anglais en 12 points.
+Modeles et apercu lateral, destination categorie, multiselection, file d impression,
+Appliquer / Fermer et bouton de mise a jour LDraw visibles. Aucun bouton tronque observe.
+135 fichiers Python valides en syntaxe.
+
+Distribution : lanceur Windows recompile en version 0.1.52, runtime conserve,
+inspection PE, icone et manifeste, verification des contenus et CRC des deux ZIP.
+Lancement et interactions natives Windows restent a confirmer sur le PC utilisateur.
+Les donnees personnelles ne sont pas incluses. Conserver Donnees lors de la migration.
+
+
+#### CONTROLE_v0.1.51.txt
+
+BrickLabo v0.1.51 — contrôle de livraison
+Base : sources de la v0.1.50 publiée sur GitHub et runtime du ZIP complet v0.1.50.
+
+Fonctionnalités
+- Modèles prédéfinis dans l’éditeur général et dans Disposition de cette étiquette.
+- Vue principale centrée : seule vue, centrée dans l’espace de l’étiquette, sans dessus ni côté ; catégorie et dimensions en tenons dans le bandeau, références en bas.
+- Vue principale et vue de dessous : principale à gauche, dessous à droite ; modèle classique conservé.
+- Choix dans le brouillon, Appliquer pour enregistrer ; annulation / rétablissement et réglages individuels conservés.
+- Format courant, couleurs, fond, transparence et arêtes conservés lors du choix d’un modèle.
+- Projection LDraw du dessous opposée à celle du dessus, avec orientation fixe et cache de géométrie partagé.
+- Calque du dessous déplaçable, redimensionnable, recadrable et zoomable ; accessible dans Ajouter une information.
+- Calcul des seules vues utilisées, avec vue principale toujours disponible pour le grand aperçu.
+- Photo seule : aucun dessous inventé ; indication d’indisponibilité dans l’aperçu et l’éditeur.
+- Exports PNG / PDF, impression, modèles JSON et sauvegardes sélectives utilisent la disposition enregistrée.
+
+Vérifications
+553 tests réussis sous Qt/Linux en 46,453 secondes, dont 13 nouveaux tests dédiés.
+- Face inférieure distincte et repère asymétrique correctement orienté ; rotation de la principale sans rotation du dessous.
+- Réutilisation du cache de géométrie et absence de calcul des vues cachées / inutilisées.
+- Centrage de la partie visible d’une image comportant des marges transparentes.
+- Conservation du format, couleurs, transparence et réglages d’arêtes ; brouillon sans écriture avant Appliquer.
+- Mise à jour effective de l’aperçu, annulation / rétablissement et choix cohérent dans la liste.
+- Disposition individuelle et modèle général indépendants, format personnalisé conservé après redémarrage.
+- PNG / PDF, recadrage, zoom limité au calque, aller-retour JSON et restauration sélective.
+- Photographies sans fausse vue du dessous, avec indication dès la réouverture de l’éditeur.
+- Choix et légende en anglais ; régressions existantes couvertes par la suite complète.
+Syntaxe des 130 fichiers Python vérifiée.
+Contrôle visuel de vrais rendus LDraw de la brique 3001 : les deux modèles à 65 × 23 mm.
+Six vues de l’éditeur à 1366 × 768, en français à 10 et 12 pt et en anglais à 12 pt : choix des modèles et boutons Appliquer / Fermer visibles, fenêtre contenue dans cette résolution.
+
+Distribution
+Runtime Windows et dépendances repris de la v0.1.50, sans nouvelle dépendance.
+Lanceur recompilé en v0.1.51 ; contrôle PE64, versions, icône DIB et manifest de chemins longs par les outils de fabrication.
+Contrôle des ZIP, CRC et cohérence des sources avec la distribution complète.
+Aucun dossier Donnees, profil utilisateur, cache, log ou script de contrôle local dans les archives.
+L’exécution native Windows reste à confirmer sur un PC Windows.
+
+
+#### CONTROLE_v0.1.50.txt
+
+BrickLabo v0.1.50 — contrôle de livraison
+Base : v0.1.49 livrée ; les modifications de cette version sont conservées.
+
+Fonctionnalités
+- Bouton et menu du clic droit Associer à un tiroir depuis les catalogues de pièces et mini-figs.
+- Sélection multiple, meuble et tiroir choisis dans une fenêtre indépendante ; aucune saisie de quantité.
+- Associations de référence sans couleur imposée, sans création d’entrée de stock et sans modification des quantités, du journal d’annulation, de la révision du stock, des composants de sets, de la file d’impression ou de l’historique.
+- Dans Pièces à ranger : choix du stock en vrac, de tous les catalogues, de Rebrickable, BrickLink, BrickArchitect, Briques Alternatives ou Mini-Figs. Recherche, catégorie, sélection multiple et glissement vers un tiroir. Quantité masquée en mode catalogue.
+- Ajouter depuis un catalogue ouvre cette vue dans Mon rangement. Les pièces déjà associées sont masquées par défaut ; Sans emplacement uniquement permet de les afficher pour d’autres tiroirs.
+- Les références, sources et variantes restent distinctes. Les sets et références masquées ne sont pas associables par le parcours catalogue.
+- Les associations sans stock restent recherchables, déplaçables, imprimables et sauvegardées. La réorganisation d’une catégorie déjà liée au meuble reste possible sans stock positif.
+- Le parcours du stock garde ses contrôles de présence, couleur et quantité positive. Les déplacements depuis un tiroir conservent leur validation de l’association d’origine.
+
+Vérifications
+540 tests réussis sous Qt/Linux, dont 15 nouveaux tests de cette version.
+- Ajout de références non possédées, sources distinctes, variantes et mini-figs ; aucune entrée ou quantité de stock créée.
+- Stock et autres tables de possession strictement identiques avant et après association.
+- Refus des sélections invalides, des sets, des références masquées ou disparues, des couleurs incompatibles avec le mode catalogue et des destinations supprimées.
+- Transactions atomiques et retour arrière intégral en cas d’erreur d’écriture.
+- Doublons ignorés ; déplacement de liens sans stock et conservation des autres emplacements.
+- Sauvegarde / restauration du rangement sur une base sans stock.
+- Proposition de réorganisation d’une catégorie liée au meuble, sans stock possédé.
+- Bouton direct du catalogue, sélection multiple capturée et aucune demande de quantité.
+- Événements Qt de glisser-déposer après tri du tableau ; modes stock et catalogue correctement séparés.
+- Filtres des catalogues RB, BL, BA, ALT et mini-figs ; quantité masquée en mode catalogue.
+- Affichage du total réel du stock toutes couleurs confondues pour les liens sans couleur, et quantité de la couleur choisie pour les liens spécifiques. Aucune quantité modifiée.
+- Traductions françaises / anglaises.
+Contrôle visuel à 1366 × 768 en français à 10 et 12 pt et en anglais à 12 pt : bouton du catalogue, fenêtre d’association, choix de l’origine, meuble et tableau visibles ensemble. Commandes du bandeau supérieur dans leurs groupes et sans chevauchement. Les contrôles existants de petites fenêtres restent couverts.
+
+Distribution
+Runtime Windows repris du ZIP complet v0.1.49, dépendances inchangées.
+Lanceur Windows recompilé en v0.1.50 ; contrôle PE64, icône DIB et manifest de chemins longs par l’outil de fabrication.
+Contrôle des deux ZIP, CRC et cohérence des sources avec la version complète.
+Aucun profil utilisateur, dossier Donnees, cache, log ou script de contrôle local inclus.
+L’exécution native Windows et le geste de glisser-déposer sur Windows restent à confirmer sur le PC de l’utilisateur.
+
+Limites conservées
+La proposition automatique utilise le stock non rangé ou réorganise les références déjà associées ; elle ne remplit pas un meuble avec tout le catalogue.
+La recherche de Pièces à ranger affiche au plus 5000 lignes ; affiner la source, catégorie ou recherche pour afficher les autres.
+Le rangement est une association de références à des emplacements, pas un comptage physique par tiroir.
+Comparaison exacte des inventaires MOC avec le stock et export Wanted List BrickLink restent hors de cette livraison.
+
+
+#### CONTROLE_v0.1.49.txt
+
+BrickLabo v0.1.49 — contrôle de livraison
+Base : v0.1.48 livrée, empreintes des deux archives vérifiées avant extraction.
+
+Fonctionnalités livrées
+- Marges des groupes et espacement de 12 px entre les commandes du bandeau supérieur.
+- Choix et conservation d’un dossier PNG / PDF absolu, y compris hors du logiciel.
+- Les disques externes absents ne bloquent pas le lancement ; les erreurs d’export interrompent la génération sans ajout à l’historique.
+- Profil d’arêtes fines fixe pour les miniatures des tableaux, des tiroirs et de l’impression des meubles. Le noir et l’épaisseur personnalisés restent actifs dans les grands rendus et sur les étiquettes.
+- Les fenêtres d’édition des arêtes et des dispositions ne rechargent plus les tableaux de stock à leur fermeture.
+- Pièces à ranger : stock filtrable, catégorie, multisélection, glisser-déposer vers un tiroir, cible surlignée et association au clavier. Vue côte à côte pour garder le meuble et le tableau visibles.
+- Contenu du tiroir : déplacement des liens sélectionnés vers un autre tiroir ; les autres emplacements et toutes les quantités restent inchangés. Les associations existantes à stock nul restent déplaçables.
+- Proposition de rangement : catégorie, dimensions explicites en tenons, ordre croissant du nombre de tenons puis des dimensions, couleurs regroupées ou séparées, références et variantes conservées.
+- Destinations ajustables ; capacité limitée affichée. Les références sans dimensions restent à ranger manuellement. Pas d’estimation du volume ou de la capacité physique réelle d’un tiroir.
+- Réorganisation explicite d’une catégorie du meuble, sans toucher aux tiroirs mixtes ni aux autres meubles. Tous les contenus existants doivent retrouver un tiroir ; une proposition obsolète est refusée. Transaction atomique.
+
+Validation
+525 tests réussis sous Qt/Linux en 42,265 s, dont 19 nouveaux tests de cette version.
+Exports PNG et PDF réels dans un dossier externe avec caractères accentués.
+Glisser-déposer : événements Qt entre tableau et façade, vue de face et inclinée ; les gestes souris de déplacement des meubles et des tiroirs existants restent couverts.
+Contrôles de tri des lignes, couleurs natives, multisélection, reprise du stock nul, stockage inchangé, erreurs d’écriture et propositions devenues obsolètes.
+Rendu réel LDraw : pixels des miniatures identiques après changement des réglages généraux et individuels ; grand aperçu modifié ; cache de miniatures réutilisé.
+Contrôle visuel à 1366 × 768 : français à 10 et 12 pt, anglais à 12 pt. Aucun chevauchement ou bouton hors de son groupe dans le bandeau supérieur. Meuble et tableau de pièces visibles ensemble. Proposition avec destinations et commandes accessibles.
+Les tests existants conservent le contrôle des 13 onglets à 950 × 650, avec défilement lorsque nécessaire.
+
+Distribution
+Runtime Windows repris sans changement de dépendances depuis le ZIP complet v0.1.48.
+Lanceur Windows recompilé en v0.1.49 ; contrôle PE64, icône DIB et manifest de chemins longs par l’outil de fabrication.
+Contrôle des deux ZIP, CRC, versions, contenu des sources et dépendances embarquées par l’outil de fabrication.
+Aucun dossier Donnees, profil utilisateur, cache, log ou script de contrôle local ajouté aux ZIP.
+L’exécution native Windows et le geste de glisser-déposer sur Windows restent à confirmer sur le PC de l’utilisateur.
+
+Points encore hors de cette livraison
+Comparaison exacte des inventaires MOC avec le stock et export Wanted List BrickLink.
+Le rangement décrit des associations logicielles ; les pièces physiques restent à déplacer selon la proposition choisie.
+
+
+#### CONTROLE_v0.1.48.txt
+
+BrickLabo v0.1.48 — Controle du 12 octobre 2026
+
+BASE
+Sources v0.1.47 livrees, SHA-256 :
+79697c5263aa4fc47853ed35935a6b26f294bfbc4c781c1dcbdcf9672476b212
+
+VALIDATION
+506 tests reussis sous Qt/Linux, dont 19 tests de correction et reprise d'import.
+Python de test : 3.12.14. PySide6 / Qt : 6.11.2.
+Imports CSV Rebrickable, CSV/TXT/XML BrickLink, couleurs par source, quantites
+incorrectes, references absentes, inventaires incomplets, reprise apres fermeture
+sans le fichier original, corrections apres tri, absence de doublons entre deux
+assistants, transaction et annulation, inventaires personnels et destination supprimee.
+Boutons controles dans les 13 onglets a 950 x 650 ; controles avec une police
+agrandie a 1366 x 768 en francais et en anglais. Apercus visuels inspectes.
+Aide et traductions FR / EN mises a jour.
+
+DISTRIBUTION
+Lanceur Windows AMD64 PE32+ recompile avec MinGW-w64.
+Icone d'origine verifiee : 16, 24, 32, 48, 64, 128 et 256 px.
+Runtime Windows conserve : Python 3.12.10 ; PySide6 6.11.2, numpy 2.5.3,
+Pillow 12.3.0, reportlab 4.5.1 et charset-normalizer 3.5.2.
+Archives completes et sources fabriquees a partir du meme code.
+Aucune donnee utilisateur ni cle API dans les archives.
+
+LIMITE
+L'execution native Windows n'a pas ete effectuee dans cet environnement.
+Le lancement de BrickLabo.exe et les parcours de correction / reprise doivent
+encore etre confirmes sur un PC Windows.
+
+TRAVAUX RESTANTS DU PROJET
+Comparaison exacte des MOC / constructions alternatives avec le stock et
+export Wanted List BrickLink. L'export Rebrickable existant reste disponible.
+
+English: 506 automated Qt/Linux tests passed, including 19 import correction
+and recovery tests. Small-window controls and larger-font French/English
+layouts were checked. The Windows launcher, original icon and packaged
+dependencies were validated. Native Windows execution remains unverified.
+Exact MOC stock comparison and BrickLink Wanted List exports remain pending.
+
+
+#### Instructions et notes historiques de LISEZ-MOI.txt avant 0.1.73
+
+BrickLabo v0.1.72
+
+Nouveau v0.1.72 : requêtes, filtres, stocks, projets et meubles accélérés ; chargement des inventaires en arrière-plan après fermeture de sa fenêtre. Cliquer sur Inventaires dans la barre d’état pour suivre ou mettre en pause. BrickLabo doit rester ouvert. Voir documentation/GUIDE_v0.1.72.md.
+
+Nouveau v0.1.71 : familles de formes (1 × N puis 2 × N), capacités, analyse de lots, sets affectés aux projets, achats et réceptions, import MOC en projet, tableau de bord, sauvegardes automatiques et téléphone en Wi-Fi sans QR code. Voir documentation/GUIDE_v0.1.71.md.
+
+Nouveau v0.1.70 : charger tous les inventaires du catalogue Rebrickable ou BrickLink sans plafond de 9 999 / 10 000 sets. Laisser la recherche vide puis Préparer tous les sets trouvés → Enchaîner les lots. Les pages et lots ne limitent pas la file, qui reste enregistrée avec pause et reprise. Affichage des grands meubles accéléré par réutilisation des tiroirs et dessin simplifié des petites cases ; le zoom conserve les détails. Voir documentation/NOUVEAUTES.txt.
+
+Nouveau v0.1.69 : Mes projets → Compter aussi les pièces de mes sets possédés. Le calcul additionne le vrac libre et les inventaires réels des sets, sans les déplacer. Le choix se conserve par projet ; Apport des sets détaille le résultat. Les réservations et prélèvements restent sur le vrac. Dans la pick list, Déjà prélevées s’actualise après Annuler/Rétablir, conserve les lignes entièrement prises et explique un onglet vide. Supprimer un meuble conserve les prélèvements avec Aucun tiroir défini ; supprimer un projet libère ces pièces dans le stock sans les remettre dans un tiroir. Correction de SetPicker already deleted. Voir documentation/NOUVEAUTES.txt.
+
+Nouveau : Nouveau projet de construction et Mes projets → Ignorer les couleurs. Choisir une reconstruction aux couleurs prévues ou avec toutes les couleurs des références disponibles. La recherche de sets réalisables transmet ce choix au projet. Les couleurs réellement réservées et prélevées restent suivies, sans changer le stock possédé.
+
+Nouveau : Mon rangement → Organiser le meuble → Aligner les meubles… → En grille. Choisir 4 meubles par rangée pour disposer 8 meubles en deux rangées de 4. L’aperçu suit les réglages ; Appliquer enregistre la disposition. Les contenus sont conservés et les positions s’annulent en une action.
+
+Nouveau : la colonne Rangement des catalogues de pièces et du stock indique Aucun tiroir, Déjà rangée et les adresses associées. Le survol donne les couleurs et quantités renseignées. Plusieurs références d’un même tiroir sont reconnues séparément si elles figurent dans son contenu. Cette version ne contient pas de reconnaissance par photo.
+
+Nouveautés : brouillons de rangement enregistrés, inventaire guidé, comparaison de reconstructions, lots d’achat/import, prélèvements de projets et assistant de démarrage. Ouvrir Données et réglages → Outils de collection. Les meubles s’alignent horizontalement ou verticalement et restent en vue de face. Mode d’emploi : documentation/FONCTIONS_v0.1.65.md. Une sauvegarde complète conserve les nouveaux suivis. Les comptages sont des observations ; les prélèvements conservent la possession totale.
+
+Échanger ou déplacer dans l’aperçu
+Dans Mon rangement → Ranger par catégorie et taille en tenons, maintenir le bouton gauche sur un tiroir proposé, le glisser sur un autre tiroir puis relâcher. Si la destination contient une proposition, les deux contenus complets sont échangés. Sur un tiroir libre admissible, le contenu est déplacé. Une bordure bleue indique la destination. Références, couleurs et quantités restent ensemble ; le tableau et la sélection suivent. Avec Tous les meubles, le déplacement peut traverser les meubles retenus.
+
+Ajouter une référence par clic droit
+Dans l’aperçu, clic droit sur un tiroir → Ajouter une autre référence… ouvre un choix avec recherche, tri et aperçus. Choisir une référence puis Ajouter au tiroir : elle quitte son ancien tiroir proposé pour rejoindre la destination. Les autres références du tiroir source restent en place. Les placements déjà choisis sont conservés, même si une ligne regroupait plusieurs références. Référence et Plusieurs références par tiroir sont activés si nécessaire. Annuler le choix conserve le brouillon. Dans la vue habituelle de Mon rangement, la même commande ouvre les références du stock et les ajoute au tiroir cliqué sans remplacer son contenu.
+
+Partager un tiroir et conserver les comptages
+La case Plusieurs références par tiroir autorise le mélange de références dans une proposition automatique, tout en conservant Nombre de tiroirs. Les différents tiroirs comptés d’une même référence et couleur restent distincts ; les réunir bloque l’application et affiche un conflit. Un déplacement ultérieur échange tout le contenu proposé du tiroir partagé. Les choix sont conservés lors d’un changement du nombre de tiroirs. Une fenêtre de choix devenue ancienne demande de rouvrir le choix.
+
+Valider la proposition
+Ces gestes dans l’aperçu modifient uniquement le brouillon. Les tiroirs occupés ou réservés hors de la proposition restent protégés. Échap annule le glissement en cours ; un dépôt hors des tiroirs n’applique aucun changement. Seul Appliquer le rangement proposé enregistre les placements ; le stock global reste inchangé et une seule action Annuler restaure le rangement. Le double-clic ouvre toujours le détail du tiroir.
+
+Nombre de tiroirs dans le tableau
+Dans Mon rangement → Ranger par catégorie et taille en tenons, régler Nombre de tiroirs directement à côté de Références. Les flèches actualisent la proposition et l’aperçu ; après une saisie, appuyer sur Entrée ou quitter le champ. Le critère Référence est activé automatiquement. Si une ligne réunit plusieurs références de même format, cocher Référence pour disposer d’un réglage par pièce. Les lignes (1/2), (2/2)… partagent le même nombre total ; si les couleurs sont séparées, le nombre s’applique à chaque couleur.
+
+Conserver les choix et rapprocher les tiroirs
+Changer ce nombre conserve les destinations choisies manuellement, les critères, les couleurs, l’ordre des catégories et le cadrage de l’aperçu. Les placements automatiques peuvent se décaler pour libérer les places voisines. Le logiciel cherche des tiroirs voisins dans le même meuble, de préférence sur la même rangée, en respectant les tiroirs personnalisés, occupés et réservés. Si les destinations restent espacées, un message le signale dans la proposition ; les listes Tiroir proposé restent réglables. Avec Répartir les quantités restantes, 40 pièces dans deux tiroirs donnent 20 + 20. Seul Appliquer le rangement proposé enregistre les emplacements ; le stock global est conservé et le rangement reste annulable en une action.
+
+Tri par colonne
+Cliquer sur les en-têtes du tableau de proposition ou de Nombre de tiroirs par référence… pour trier dans les deux sens. Quantités et nombres de tiroirs suivent un tri numérique. Les aperçus, champs, sélections et destinations suivent toujours leur référence, y compris après un recalcul. La fenêtre de réglage séparée conserve également les destinations choisies à la main quand elle est validée.
+
+Dupliquer un format de meuble
+Dans Mon rangement → Organiser le meuble → Dupliquer le format du meuble…, donner un nom à la copie. Le nouveau meuble reprend le nombre de colonnes et de rangées, les positions et les dimensions personnalisées des tiroirs, ainsi que les emplacements laissés sans tiroir. Les tiroirs créés ont un nom et un contenu vides, prêts pour un nouveau rangement. La copie est placée à droite des meubles existants et reste indépendante du modèle. Les stocks et les comptages du meuble original sont conservés. Si le format change pendant la saisie, rouvrir la duplication pour revoir ce format avant de créer la copie.
+
+Ordre personnalisable des catégories
+Dans Ranger par catégorie et taille en tenons, Ordre des catégories… affiche les catégories des pièces à ranger avec leur position, leur nombre de références distinctes et le nombre de tiroirs nécessaires. Saisir une position puis quitter le champ, ou sélectionner une ligne et utiliser Monter / Descendre. Les autres positions se décalent automatiquement. Ordre alphabétique rétablit cet ordre dans le brouillon. Valider active Catégorie et Taille en tenons ; chaque catégorie est alors traitée dans l’ordre choisi, puis ses formats sont triés par longueur × largeur croissante en tenons. Référence garde le choix d’un tiroir par référence et Séparer les couleurs reste indépendant. Les formats de même surface gardent un ordre déterministe par dimensions. Les dimensions absentes restent signalées ou sont incluses avec Référence, sans taille inventée.
+
+Enchaîner les catégories dans les meubles
+Avec Tous les meubles, le remplissage continue dans le meuble suivant selon la disposition du rangement. Exemple : 30 références Briques en position 1, puis 23 références Plates en position 2, avec Référence coché. Dans un format de 33 tiroirs, les 30 briques occupent les premiers tiroirs ; les 3 premières plates occupent la suite et les 20 restantes continuent dans le meuble suivant. Si Référence est décoché, plusieurs références de même format peuvent partager un tiroir et le nombre de tiroirs nécessaires est recalculé. Vérifier l’aperçu et les destinations avant Appliquer. Les tiroirs réservés et déjà occupés restent protégés selon les règles de la proposition. L’application du rangement reste annulable en une seule action.
+
+Retenir un ordre de catégories
+Retenir cet ordre pour les prochains rangements est coché au départ. Valider la fenêtre mémorise l’ordre comme préférence, même si la proposition est ensuite fermée. Décocher cette case utilise l’ordre pour cette proposition seulement ; Annuler conserve les réglages précédents. Les catégories non présentes dans la sélection restent mémorisées après celles qui viennent d’être ordonnées. Les nouvelles catégories sont ajoutées à la suite, par ordre alphabétique. L’ordre est inclus dans Sauvegardes → Autres préférences. Le regroupement libre de références conserve ses affectations manuelles.
+
+Rangement dans tous les meubles
+Dans Mon rangement → Pièces à ranger, Meuble de destination propose Tous les meubles pour le glisser-déposer. Dans Ranger par catégorie et taille en tenons, Meubles à utiliser permet aussi de choisir tous les meubles en une opération. L’ordre suit leur position du haut vers le bas, de gauche à droite, puis les tiroirs du haut vers le bas dans chaque meuble. Le tableau indique le nom du meuble et l’adresse du tiroir ; l’aperçu montre tous les meubles retenus. Les tiroirs vides nommés restent protégés. La réorganisation exige une catégorie et conserve les tiroirs mixtes. Une seule action Annuler rétablit l’ensemble.
+
+Critères de rangement à cocher
+Les cases Catégorie, Taille en tenons et Référence se combinent librement. Catégorie + Taille est le réglage initial ; Catégorie seule réunit la famille, Taille seule peut réunir plusieurs familles de même format, et Référence sépare chaque identité de pièce. Une taille absente du nom n’est jamais devinée : la pièce reste à ranger si seule la taille est demandée, mais reste incluse avec Référence. Séparer les couleurs reste indépendant. Le regroupement libre conserve le choix de plusieurs références dans un tiroir.
+
+Aperçus et plusieurs tiroirs par référence
+Le tableau de proposition affiche un aperçu 3D ou photo, une quantité proposée et le tiroir de destination. Pour un groupe de plusieurs références, l’image représente la première pièce ; sélectionner la ligne et ouvrir Contenu du tiroir pour voir toutes les références et leurs aperçus. Nombre de tiroirs par référence… permet de choisir 1, 2, 3 tiroirs ou davantage pour chaque référence et coche Référence. Avec Répartir les quantités restantes, les quantités sont réparties aussi également que possible entre ces tiroirs, couleur par couleur, sans modifier le stock global. Par exemple, 40 pièces dans 3 tiroirs donnent 14, 13 et 13. Sans comptage, les associations restent À renseigner. Depuis un catalogue, aucune possession n’est créée. Si Séparer les couleurs est coché, le nombre de tiroirs s’applique à chaque couleur. Tous les tiroirs demandés pour une référence doivent être choisis, ou tous laissés sans emplacement ; une répartition partielle bloque l’application. Pour modifier ensuite les nombres, utiliser l’inventaire du tiroir ou Transférer une quantité…. Décocher Référence ou changer de mode remet les nombres de tiroirs à leur valeur initiale.
+
+Sets contenant plusieurs pièces : Dans la fenêtre Sets contenant une pièce, la pièce ouverte est déjà présente avec Toutes les couleurs. Ajouter une pièce… ouvre un catalogue avec recherche, filtres et miniatures ; Ctrl/Maj permet plusieurs choix sur la page. Choisir séparément une couleur ou Toutes les couleurs pour chaque ligne, puis Rechercher. Seuls les sets contenant toutes les pièces et couleurs demandées sont affichés. Une même référence peut être ajoutée deux fois pour demander deux couleurs. Retirer la sélection et Revenir à cette pièce modifient uniquement les critères, puis Rechercher actualise les résultats.
+
+Pièces des mini-figurines et sous-sets : La recherche remonte maintenant de la pièce à la mini-figurine, puis au set, et traverse les sous-sets et coffrets. Elle utilise aussi les inventaires chargés par lots via API, respecte les versions et conserve les sources et références exactes. Pour 41850, les exports Rebrickable contrôlés passent de 1 résultat direct à 23 sets, coffrets inclus. Le nombre peut évoluer avec les données. Les inventaires doivent être présents localement ; télécharger/importer les exports complets pour une couverture complète, sans clé API.
+
+Choisir le stock utilisable : Le vrac coché et les inventaires des sets cochés constituent deux sources indépendantes. Sets cochés uniquement décoche le vrac et conserve les choix individuels des sets. Un set sélectionné fournit ses composants même lorsque toutes les lignes de vrac sont décochées, sans démontage enregistré ni ajout au vrac. Les comptages personnalisés sont respectés ; les sets sans suivi utilisent leur inventaire local complet avec un avertissement. Les réservations des projets réduisent seulement le vrac. Le tableau affiche les photos des sets et les aperçus des pièces.
+
+Catalogue alternatif et commentaires : Le clic droit sur un set propose Copier le set vers le catalogue alternatif… et Copier les pièces du set vers le catalogue alternatif…. La seconde commande copie aussi les références constituant son inventaire, leurs couleurs, quantités, supplémentaires et compositions locales des mini-figurines. Le commentaire facultatif, par exemple marque Lepin, reste modifiable dans Modifier la référence et apparaît dans la colonne Commentaire. Photos, métadonnées, rendus 3D et réglages personnels sont conservés, avec une origine explicite utilisable après renommage. Les anciennes copies identifiables sont réparées sans remplacer leurs visuels personnalisés. Une copie de catalogue ne déclare aucune possession.
+
+Alternatives dans les recherches et projets : Autoriser les briques alternatives équivalentes est facultatif, désactivé au départ. Il permet de comparer les copies dont l’origine est connue aux besoins natifs dans les sets réalisables et les pistes de MOC. Dans Nouveau projet, la même option utilise les alternatives libres du vrac en conservant les références et couleurs physiques. Les pièces déjà réservées ne sont pas réutilisées. La création ne réserve rien ; les réservations restent explicites. Pour réserver les pièces d’un set possédé, transférer d’abord son inventaire dans le vrac.
+
+Vider le stock en une opération : Vider Mon stock… et Vider Mon stock set… agissent sur toutes les pages et tous les filtres, après une confirmation affichant les quantités. Le vidage du vrac libère ses réservations et met les comptages connus des tiroirs à zéro ; les meubles, associations et quantités inconnues restent conservés. Le vidage des sets ne transfère aucune pièce dans le vrac. Une seule action Annuler/Rétablir restaure le tout, même après redémarrage. Une modification du stock pendant la confirmation bloque le vidage.
+
+Date et heure du dernier ajout : Dans les deux catalogues de stock, Dernier ajout au stock apparaît après Référence, avec date et heure locales et tri par colonne. Cette date est distincte de la date d’import du catalogue général. Un ajout à une référence/couleur existante fusionne les quantités et actualise sa date ; Annuler restaure la quantité et la date précédentes. Supprimer une ligne retire sa quantité totale, et non uniquement le dernier ajout.
+
+
+Sets realisables > Vrac uniquement : reinclut tout le vrac et relance la recherche sans les composants des sets possedes. Les inventaires deja transferes dans le vrac sont inclus, hors reservations des projets.
+Choisir le stock utilisable > Utiliser uniquement le stock en vrac : meme selection, a valider avec OK. Annuler conserve les choix precedents.
+Dans la fiche d un set, l ajout de toutes les pieces refuse un inventaire incomplet et indique les references absentes du catalogue.
+
+Survoler un bouton pendant deux secondes affiche une breve aide, dans les differentes fenetres.
+Les cles API servent uniquement aux acces API ; catalogues locaux, etiquettes et rangement restent disponibles sans cles.
+Details des fonctions API dans Aide et README.
+
+Modeles d etiquette : menu avec apercu au survol et Enregistrer un modele pour les dispositions personnalisees.
+Appliquer a > Categorie pour une famille de pieces ; les dispositions individuelles restent prioritaires.
+Selectionner plusieurs lignes > Disposition de la selection pour un reglage commun a la volee.
+Mise a jour des donnees > Mettre a jour LDraw (complete.zip) pour telecharger la bibliotheque officielle.
+Archive verifiee avant activation. Ancienne copie geree inutilisee supprimee ; fichiers externes et ressource fournie conserves.
+LDraw officiel 2026-09 fourni, incluant le raccourci modele + sticker 87552d02.
+
+Editeur d etiquettes > Modeles d etiquette : Vue principale centree ou Vue principale et vue de dessous.
+Choisir le modele, ajuster les calques si besoin, puis Appliquer. Le format et les couleurs sont conserves.
+La vue de dessous est calculee depuis LDraw ; une photo seule ne fournit pas cette vue.
+Ces modeles sont egalement disponibles pour une etiquette individuelle.
+
+Extraire le ZIP entier dans un nouveau dossier accessible en ecriture.
+Fermer l ancienne version, conserver une sauvegarde et copier Donnees a cote du nouvel exe.
+Lancer BrickLabo.exe ; conserver app, ressources, documentation et licences ensemble.
+Mises a jour suivantes : Mise a jour des donnees > Rechercher une mise a jour du logiciel.
+Le ZIP complet et son SHA-256 sont verifies ; Donnees est conserve.
+Mon rangement : Disposer les meubles ou Organiser le meuble > Positionner / Supprimer le meuble.
+Filtres avances : Selectionner toutes les categories, puis decocher les categories a retirer.
+Mon rangement > Organiser le meuble : Deplacer les tiroirs ou Imprimer les meubles sur A4 (PDF possible).
+Mon rangement : molette et boutons + / - pour zoomer ; Zoom sur le meuble ; Vue complete pour tous les meubles.
+Taille des apercus sur les tiroirs : reglage conserve. Renommer le meuble dans Organiser le meuble.
+Retirer les references : selection ou, sans selection, vider les liens du tiroir apres confirmation ; stock conserve.
+Sets contenant : clic droit pour les alternatives ou pour afficher le set exact dans son catalogue.
+Apres mise a jour integree et demarrage reussi, anciennes copies du logiciel supprimees ; Donnees conserve.
+Photo du set Rebrickable 030-2 : recours BrickLink verifie, sans cle API ; reference conservee.
+Aretes 3D : apercus acceleres ; Valeurs par defaut = noir 86,3 %, epaisseur 1 px ; Appliquer pour enregistrer.
+Fermeture visible jusqu a la fin des taches ; temporaires nettoyes, erreurs eventuelles dans les logs.
+Photos de secours : correspondances de pieces verifiees BrickArchitect reutilisees, liens officiels des sets/minifigurines.
+Imports : Ajouter les lignes pretes ; corriger les autres puis Enregistrer la correction.
+Reprise : Importer une collection > Imports en attente > Reprendre cet import ; fichier source inutile.
+Petites fenetres : boutons repartis et defilement pour atteindre toutes les commandes.
+Aide : documentation/AIDE.html. Historique : documentation/NOUVEAUTES.txt.
+Diagnostic : BrickLabo.exe --self-test, puis Donnees/diagnostic.json.
+En cas d erreur de chemin, deplacer tout le logiciel vers un chemin plus court.
+
+Extract the complete ZIP into a new writable folder. Close the old version and keep a backup.
+Copy Donnees beside the new executable and retain all subfolders.
+English guide: documentation/AIDE.en.html.
+Label editor > Preset layouts: Centred main view or Main and bottom views. Apply saves the choice.
+Bottom view requires LDraw. Current label format, colours, transparency and edge settings are retained.
+
+Future updates: Data updates > Check for a software update.
+The complete ZIP and GitHub SHA-256 are verified; Donnees is preserved.
+
+Storage: wheel / +/- zoom, Zoom to cabinet, Full view, saved Drawer preview size and Rename cabinet.
+Sets containing: right-click for alternate builds or the exact set catalogue.
+After a successful integrated update startup, old application copies are removed; Donnees is preserved.
+
+Rebrickable set 030-2: verified BrickLink photo fallback without an API key; reference preserved.
+
+3D edges: faster previews; Default values = 86.3% black, 1 px width; Apply saves.
+Shutdown stays visible until workers finish; temporary cleanup failures are logged.
+Photo fallbacks reuse verified BrickArchitect part links and official set/minifigure links.
+
+Nouveautes v0.1.49 :
+Dossier PNG / PDF : choisir librement un dossier sur le PC.
+Mon rangement > Pieces a ranger : glisser une selection sur un tiroir.
+Mon rangement > Ranger par categorie et taille : preparer et ajuster une proposition, puis appliquer.
+Les miniatures gardent des aretes fines ; les reglages des aretes concernent les grands apercus et etiquettes.
+
+Nouveautes v0.1.50 :
+Catalogue > selection > Associer a un tiroir : choisir meuble et tiroir, sans ajout au stock ni quantite.
+Mon rangement > Pieces a ranger : choisir Stock en vrac ou un catalogue, puis glisser les references vers un tiroir.
+Les references et leurs variantes restent distinctes.
+
+Nouveautes v0.1.54 :
+Recherche et filtres des catalogues sur une ligne compacte, avec defilement horizontal si necessaire.
+Glisser la bordure sous les boutons superieurs pour regler la hauteur du volet ; ce choix est memorise.
+Tous les boutons restent accessibles par defilement quand le volet est reduit.
+
+CORRECTION v0.1.55
+Durée de vie des tâches et signaux Qt sécurisée pour éviter leur destruction dans les threads de travail. Les données personnelles sont conservées.
+
+Couleur 3D → Valeurs par défaut : remettre le jaune d’origine puis Appliquer ; Annuler conserve le réglage précédent.
+Les roues et pneus utilisent leur face arrière pour la vue du dessous, y compris les anciennes références tournées.
+
+NOUVEAUTES v0.1.56
+Rangement : aperçu du meuble proposé avant application, clic sur un tiroir et détails du contenu.
+Modes : par catégorie/taille, une référence par tiroir, ou regroupement libre.
+Mode libre : sélectionner avec Ctrl/Maj puis Regrouper la sélection pour choisir un tiroir commun.
+Contenu du tiroir : colonne Catégorie.
+Annuler la dernière action / Ctrl+Z : couleurs 3D générales ou individuelles, placements, déplacements et retraits de références des tiroirs.
+Une seule dernière action, conservée après redémarrage ; stock et quantités préservés lors de l’annulation d’un rangement.
+
+NEW v0.1.56
+Storage proposal cabinet preview before applying, drawer selection and content details.
+Modes: category/size, one reference per drawer, or free reference grouping.
+Free mode: Ctrl/Shift multi-selection, then Group selection to choose one shared drawer.
+Drawer contents: Category column. Undo last action / Ctrl+Z also restores 3D colours and drawer assignments, moves and removals.
+One latest action survives restarts; storage undo preserves stock quantities.
+
+NOUVEAUTES v0.1.57
+Contenu du tiroir : Quantité dans ce tiroir, distincte du stock global. Saisir un comptage ou transférer une partie dans un autre tiroir.
+Pièces à ranger : restant à ranger ; depuis le stock, le glissement affecte ce reste. Les catalogues créent toujours des associations sans comptage.
+Rangement automatique : Répartir les quantités restantes, aperçu et validation avant application.
+Migration v0.1.56 : anciennes associations conservées, quantités À renseigner, aucun comptage inventé.
+Annuler / Rétablir / Historique des actions : Ctrl+Z / Ctrl+Y, 100 actions par défaut et limite 1 à 500, conservées après redémarrage.
+Mes projets : Nouveau projet depuis un inventaire local complet de set ou une construction personnelle.
+États : À préparer, En cours, Terminé. Besoins, réservations, stock libre et manquants par référence et couleur.
+Les réservations conservent le stock possédé et le rangement. Un projet terminé garde ses réservations jusqu'à Libérer les réservations.
+Sauvegardes : nouvelle famille Projets et réservations ; quantités incluses dans Meubles et emplacements.
+Restaurer le stock nécessaire avec les comptages et réservations. Les restaurations incohérentes sont refusées entièrement.
+
+NEW v0.1.57
+Drawer contents: Quantity in this drawer, separate from global stock. Set counts or transfer part to another drawer.
+Parts to store: remaining quantities; stock dragging places that remainder. Catalogue assignments still have unknown counts.
+Automatic storage: Allocate remaining quantities, then review and apply the proposal.
+v0.1.56 migration: assignments retained, quantities To be entered, no invented counts.
+Undo / Redo / Action history: Ctrl+Z / Ctrl+Y, 100 actions by default, configurable 1 to 500 and persistent across restarts.
+My projects: New project from a complete local set inventory or a custom build.
+States: Planned, In progress, Completed. Requirements, reservations, free stock and missing parts by reference and colour.
+Reservations preserve owned stock and locations. Completed projects retain reservations until Release reservations.
+Backups: new Projects and reservations family; counts included in Cabinets and locations.
+Restore sufficient loose stock along with counts and reservations. Inconsistent restores roll back entirely.
+
+Projets, inventaire des tiroirs et corrections — v0.1.58
+
+- Sets réalisables : bouton et clic droit Créer un projet avec ce set…. Le nombre d’exemplaires et l’option Exclure les minifigurines sont transmis au nouveau projet.
+- Mes projets : la sélection affiche le set dans le volet droit ; un double-clic ou Voir le set ouvre sa fiche et son inventaire.
+- Choisir un set : catalogue paginé avec miniatures, aperçu photo, recherche, filtres par thème, année et source, filtres avancés et filtres enregistrés. Le formulaire du projet montre aussi le set choisi.
+- Exclure les minifigurines : calcul, pourcentages, détails et exports portent sur le modèle. Les figurines intactes en stock ne sont pas démontées pour ce calcul. Les anciens inventaires API sans distinction modèle/figurines demandent un rechargement par lots ; les CSV complets Rebrickable peuvent être utilisés directement.
+- Tiroirs : le survol donne les références, les couleurs et les quantités de ce tiroir. Un double-clic ouvre Inventaire du tiroir pour ajouter, modifier ou retirer une référence, une couleur ou un comptage. Quantité inconnue et zéro restent distincts. Les limites du stock, les conflits de modification et Annuler/Rétablir sont pris en compte.
+- Import CSV Rebrickable : prise en charge de Set Number, Quantity, Inventory Ver. La quantité d’exemplaires et la version d’inventaire sont respectées. Une version absente reste à vérifier ; aucune substitution silencieuse par la dernière version. Les corrections, la reprise et l’annulation restent disponibles.
+- Étiquettes : Appliquer à → Tout le catalogue Mini-figs règle les mini-figurines de toutes les sources, leurs dispositions personnalisées existantes et les futures références. Les couleurs, les angles et les arêtes propres aux étiquettes sont conservés.
+- Stabilité : les bulles d’aide observent uniquement les boutons construits, puis le nettoyage cyclique Python/Qt est exécuté dans le thread d’interface, uniquement après la fin des tâches natives. Les fenêtres sont détruites explicitement sur ce thread à la fermeture. Cette protection répond aux journaux de corruption de mémoire reçus en v0.1.57 ; sa confirmation sur Windows reste nécessaire.
+
+
+Projects, drawer inventories and fixes — v0.1.58
+
+- Buildable sets can create a project with the search copy count and Exclude minifigures option.
+- My projects show the set in the right preview; double-click or View set opens its photo and inventory.
+- Choose a set provides a paginated catalogue with thumbnails, photo preview, search, theme/year/source filters, advanced filters and saved filters. The new-project form also previews the chosen set.
+- Exclude minifigures applies to requirements, percentages, details, exports and project creation. Intact stock figures are preserved. Legacy flattened API caches require a batch refresh; full Rebrickable CSV inventories can be used directly.
+- Drawers show references, colours and physical counts on hover. Double-click opens an editable inventory. Unknown counts remain distinct from zero; stock bounds, edit conflicts and Undo/Redo are enforced.
+- Rebrickable CSV import accepts Set Number, Quantity, Inventory Ver, preserving copy counts and requested inventory versions. Missing versions remain pending for correction; the latest version is never silently substituted.
+- Labels → Apply to → Entire Minifigures catalogue applies a layout to every source, existing individual layouts and future references, preserving label colours, angles and 3D edges.
+- Stability defers cyclic Python/Qt collection to the idle GUI thread after native tasks finish, and explicitly destroys windows there during shutdown. This addresses the v0.1.57 heap-corruption reports; native Windows confirmation is still required.
+
+
+Vrac transferts et filtres — v0.1.59
+
+Vrac uniquement : Dans Sets réalisables → Choisir le stock utilisable, décocher Utiliser les pièces de Mon stock set exclut tous les composants des sets possédés, y compris ceux ajoutés plus tard. La recherche utilise seulement les pièces et mini-figurines en vrac, après les réservations des projets. Les détails, exports et suggestions MOC reprennent ce choix. Les exclusions individuelles des sets sont conservées pour une réactivation ultérieure.
+
+Transfert partiel par glisser-déposer : Glisser une référence depuis le contenu d’un tiroir vers un autre ouvre Quantités à déplacer pour les comptages connus. Choisir par exemple 20 pièces sur 40 : 20 restent à l’origine et 20 sont déposées à destination. Une sélection de plusieurs références peut être réglée ligne par ligne ; la validation est atomique et annulable. Annuler le dialogue ne change aucun tiroir. Les références sans comptage sont déplacées entièrement, sans inventer de quantité.
+
+Ajouts au stock et meubles : Après un ajout au vrac, une référence et une couleur entièrement comptées dans un seul tiroir suivent le nouveau total. Par exemple 40 pièces puis un ajout de 10 donnent 50 dans ce tiroir. Si plusieurs tiroirs partagent la référence, ou si le comptage est partiel ou inconnu, les comptages sont conservés et les nouvelles pièces restent à ranger. Les composants de sets possédés restent distincts du vrac. L’ajout et l’actualisation du tiroir s’annulent et se rétablissent ensemble. Le rangement et les inventaires ouverts s’actualisent ; un rangement masqué est relu à son ouverture.
+
+Quantité visible sur le meuble : La façade affiche le nombre de pièces lorsque tous les comptages du tiroir sont connus. Le survol conserve le détail par référence et couleur ; zéro et quantité inconnue restent distincts.
+
+Exclure un mot de la recherche : Dans la recherche normale et les filtres avancés, -modulex retire les références contenant modulex dans le nom, la référence ou la catégorie. brick -modulex -duplo combine un mot recherché et plusieurs exclusions. Les thèmes des sets suivent également ce filtre. Les recherches indexées et compatibles sont cohérentes ; les tirets internes des références, comme 75192-1, restent littéraux.
