@@ -5,7 +5,7 @@ import hashlib
 from contextlib import closing
 import json
 import os
-from pathlib import Path
+from pathlib import Path,PureWindowsPath
 import shutil
 import sqlite3
 import sys
@@ -22,12 +22,35 @@ def data_directory():
     return application_directory()/'Donnees'
 
 
+def _path_text(value):
+    text=str(value).replace('\\','/')
+    if text[:8].casefold()=='//?/unc/':text='//'+text[8:]
+    elif text.startswith('//?/'):text=text[4:]
+    return text.rstrip('/')
+
+
+def _windows_restore_identity(value):
+    if sys.platform!='win32' or not PureWindowsPath(str(value)).is_absolute():return None
+    try:return _path_text(Path(value).resolve())
+    except (OSError,RuntimeError,ValueError):return None
+
+
 def _remap(value,old,new):
     if isinstance(value,str):
-        normalized=value.replace('\\','/');prefix=str(old).replace('\\','/').rstrip('/')
+        normalized=_path_text(value);prefix=_path_text(old)
         if normalized.casefold()==prefix.casefold():return str(new)
         if normalized.casefold().startswith(prefix.casefold()+'/'):
             return str(Path(new)/normalized[len(prefix)+1:])
+        # A Windows 8.3 alias (for example RUNNER~1) and its long spelling
+        # identify the same root. Resolve only absolute paths on the same
+        # drive/share; URLs and other drives must remain untouched.
+        drive=PureWindowsPath(normalized).drive
+        if drive and drive.casefold()==PureWindowsPath(prefix).drive.casefold():
+            resolved=_windows_restore_identity(value);resolved_prefix=_windows_restore_identity(old)
+            if resolved is not None and resolved_prefix is not None:
+                if resolved.casefold()==resolved_prefix.casefold():return str(new)
+                if resolved.casefold().startswith(resolved_prefix.casefold()+'/'):
+                    return str(Path(new)/resolved[len(resolved_prefix)+1:])
     elif isinstance(value,list):return [_remap(v,old,new) for v in value]
     elif isinstance(value,dict):return {k:_remap(v,old,new) for k,v in value.items()}
     return value
