@@ -53,8 +53,8 @@ class FixtureResources:
         def inside(path):
             return isinstance(path, (str, Path)) and Path(path).resolve().is_relative_to(directory)
         with self.lock:
-            databases = [db for db in self.databases if inside(db.path)]
-            archives = [archive for archive in self.archives if inside(archive.filename)]
+            databases = [db for db in self.databases if db._reader is not None and inside(db.path)]
+            archives = [archive for archive in self.archives if archive.fp is not None and inside(archive.filename)]
         if databases or archives:
             self.before_close()
         for db in databases:
