@@ -13,12 +13,13 @@ import subprocess
 import tempfile
 from zipfile import ZipFile, ZIP_DEFLATED, ZIP_STORED
 from check_distribution import check
+from check_release import check as check_release
 
 SOURCE=Path(__file__).resolve().parent.parent
 VERSION=json.loads((SOURCE/'app'/'structure.json').read_text(encoding='utf-8'))['version']
 FOLDERS=('app','ressources','documentation','licences')
 ROOT_FILES=('LISEZ-MOI.txt','PROJET_GITHUB.url')
-EXTRA_SOURCE=('README.md','README.en.md')
+EXTRA_SOURCE=('README.md','README.en.md','LICENSE','AGENTS.md','CONTRIBUTING.md')
 
 def excluded(path):
     vendor=any(path.parts[:len(prefix)]==prefix for prefix in (('app','lib'),('BrickLabo','app','lib'),('Lib','site-packages')))
@@ -76,6 +77,7 @@ def package(root,path):
     print(path.name,path.stat().st_size,'bytes',flush=True)
 
 def build(original,output):
+    check_release()
     original=Path(original).resolve();output=Path(output).resolve()
     if output.is_relative_to(SOURCE):raise ValueError('Output must be outside the source tree')
     if (SOURCE/'app'/'lib').exists():raise ValueError('Source tree must not contain embedded runtime libraries')
@@ -89,7 +91,8 @@ def build(original,output):
         for folder in ('tests','tools'):copy_tree(SOURCE/folder,source/folder)
         for name in EXTRA_SOURCE:
             shutil.copyfile(SOURCE/name,source/name)
-            (full/'documentation'/name).write_text((SOURCE/name).read_text(encoding='utf-8').replace('(documentation/','('),encoding='utf-8')
+            if name.startswith('README'):
+                (full/'documentation'/name).write_text((SOURCE/name).read_text(encoding='utf-8').replace('(documentation/','('),encoding='utf-8')
         extract_runtime(original,full);launcher(full,work)
         print(json.dumps(check(full),ensure_ascii=False),flush=True)
         if sorted(p.name for p in full.iterdir() if p.is_file())!=sorted(('BrickLabo.exe',)+ROOT_FILES):raise RuntimeError('Unexpected root file')

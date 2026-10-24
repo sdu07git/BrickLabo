@@ -4,19 +4,25 @@ import gc
 from pathlib import Path
 import sys
 import unittest
+import argparse
+from test_reporting import ReportResult
 ROOT=Path(__file__).resolve().parent.parent
 sys.path.insert(0,str(ROOT/'app'))
 sys.path.insert(0,str(ROOT/'tests'))
 os.environ['PYTHONPATH']=str(ROOT/'app')+os.pathsep+os.environ.get('PYTHONPATH','')
 os.environ.setdefault('QT_QPA_PLATFORM','offscreen')
 if __name__=='__main__':
+    parser=argparse.ArgumentParser(description=__doc__)
+    parser.add_argument('tests',nargs='*')
+    parser.add_argument('--report',type=Path);parser.add_argument('--junit',type=Path)
+    args=parser.parse_args()
     from PySide6.QtCore import QCoreApplication,QEvent,QThreadPool
     from PySide6.QtWidgets import QApplication
     from atelier.gui_gc import GuiGarbageCollector
     from atelier.task_lifetime import drain_tasks
     app=QApplication.instance() or QApplication([])
     collector=GuiGarbageCollector(app);collector.timer.stop()
-    class GuiResult(unittest.TextTestResult):
+    class GuiResult(ReportResult):
         def stopTest(self,test):
             gc.disable()
             if QThreadPool.globalInstance().waitForDone(0):
@@ -25,8 +31,9 @@ if __name__=='__main__':
                     QCoreApplication.sendPostedEvents(None,QEvent.Type.DeferredDelete)
                     collector.collect_if_idle(force=True)
             super().stopTest(test)
-    suite=unittest.defaultTestLoader.loadTestsFromNames(sys.argv[1:]) if len(sys.argv)>1 else unittest.defaultTestLoader.discover(str(ROOT/'tests'))
+    suite=unittest.defaultTestLoader.loadTestsFromNames(args.tests) if args.tests else unittest.defaultTestLoader.discover(str(ROOT/'tests'))
     result=unittest.TextTestRunner(verbosity=2,resultclass=GuiResult).run(suite)
     joined=QThreadPool.globalInstance().waitForDone(10000);app.processEvents()
     stopped=collector.stop() if joined else False
+    result.save(args.report,args.junit,bool(joined and stopped))
     raise SystemExit(not (result.wasSuccessful() and joined and stopped))
