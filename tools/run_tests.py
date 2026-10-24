@@ -7,6 +7,7 @@ import unittest
 import argparse
 from test_reporting import ReportResult
 from test_resources import FixtureResources
+from test_shards import select_suite
 ROOT=Path(__file__).resolve().parent.parent
 sys.path.insert(0,str(ROOT/'app'))
 sys.path.insert(0,str(ROOT/'tests'))
@@ -17,7 +18,15 @@ if __name__=='__main__':
     parser.add_argument('tests',nargs='*')
     parser.add_argument('--report',type=Path);parser.add_argument('--junit',type=Path)
     parser.add_argument('--failfast',action='store_true',help='Stop at the first failing case while diagnosing a platform')
+    parser.add_argument('--shard',help='Optional deterministic partition, zero-based INDEX/TOTAL')
     args=parser.parse_args()
+    shard=None
+    if args.shard:
+        try:
+            index,total=map(int,args.shard.split('/'))
+            if not 0<=index<total<=64:raise ValueError()
+            shard=index,total
+        except ValueError:parser.error('--shard expects INDEX/TOTAL with 0 <= INDEX < TOTAL <= 64')
     from PySide6.QtCore import QCoreApplication,QEvent,QThreadPool
     from PySide6.QtWidgets import QApplication
     from atelier.gui_gc import GuiGarbageCollector
@@ -41,8 +50,9 @@ if __name__=='__main__':
             raise RuntimeError('Fixture task disposal did not finish during cleanup')
     with FixtureResources(fixture_idle):
         suite=unittest.defaultTestLoader.loadTestsFromNames(args.tests) if args.tests else unittest.defaultTestLoader.discover(str(ROOT/'tests'))
+        suite,selection=select_suite(suite,shard)
         result=unittest.TextTestRunner(verbosity=2,resultclass=GuiResult,failfast=args.failfast).run(suite)
     joined=QThreadPool.globalInstance().waitForDone(10000);app.processEvents()
     stopped=collector.stop() if joined else False
-    result.save(args.report,args.junit,bool(joined and stopped))
+    result.save(args.report,args.junit,bool(joined and stopped),selection)
     raise SystemExit(not (result.wasSuccessful() and joined and stopped))

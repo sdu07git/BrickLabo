@@ -48,7 +48,7 @@ class ReportResult(unittest.TextTestResult):
         if err:
             self.current.update(status='failed', details=self.current['details'] + self._exc_info_to_string(err, test))
 
-    def save(self, json_path, xml_path, shutdown_ok):
+    def save(self, json_path, xml_path, shutdown_ok, selection=None):
         from atelier.version import VERSION
         import PySide6
         data = dict(version=VERSION, system=platform.system(), python=platform.python_version(),
@@ -56,6 +56,7 @@ class ReportResult(unittest.TextTestResult):
                     errors=len(self.errors), skipped=len(self.skipped),
                     seconds=perf_counter() - self.started,
                     success=bool(self.wasSuccessful() and shutdown_ok), qt_shutdown=shutdown_ok, cases=self.cases)
+        data.update(selection or {})
         if json_path:
             path = Path(json_path); path.parent.mkdir(parents=True, exist_ok=True)
             path.write_text(json.dumps(data, ensure_ascii=False, indent=2) + '\n', encoding='utf-8')

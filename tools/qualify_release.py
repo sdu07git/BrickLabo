@@ -96,7 +96,14 @@ def qualify(output, duration):
     app.setStyle('Fusion'); app.setStyleSheet(STYLE)
     collector = GuiGarbageCollector(app); collector.timer.stop()
     report = dict(version=VERSION, system=platform.system(), python=platform.python_version(),
-                  checks=[], manual_physical_print_confirmed=False, manual_long_term_windows_pc_confirmed=False)
+                  qt_platform=app.platformName(), checks=[], captures=[], manual_physical_print_confirmed=False, manual_long_term_windows_pc_confirmed=False)
+    def capture(widget, name, requested=None, language=None):
+        shot=widget.grab()
+        assert not shot.isNull()
+        assert shot.save(str(output/name))
+        report['captures'].append(dict(file=name,language=language,requested_size=requested,
+            logical_size=[widget.width(),widget.height()],pixels=[shot.width(),shot.height()],
+            device_pixel_ratio=shot.devicePixelRatio()))
     windows = []; databases = []; renderer = None
     with tempfile.TemporaryDirectory(prefix='bricklabo-qualification-') as disposable:
         folder = Path(disposable)
@@ -186,7 +193,7 @@ def qualify(output, duration):
                         buffer = BytesIO(); images[part['ref']].save(buffer, format='PNG')
                         preview.images[(part['id'], str(part['chosen_color']))] = buffer.getvalue()
                 preview.export_pdf(output / 'meuble-a4.pdf')
-                preview.show(); app.processEvents(); preview.grab().save(str(output / 'apercu-meuble-a4.png'))
+                preview.show(); app.processEvents(); capture(preview,'apercu-meuble-a4.png')
                 preview.close()
             import atelier.app as application
             from atelier.i18n import set_language
@@ -206,15 +213,16 @@ def qualify(output, duration):
                     for width, height in ((1366, 768), (800, 600)):
                         window.resize(width, height); window.show(); app.processEvents()
                         assert window.workspace_splitter.sizes()[1] >= 200
-                        window.grab().save(str(output / f'interface-{language}-{width}.png'))
+                        capture(window,f'interface-{language}-{width}.png',[width,height],language)
                     for part in storage_wall.wall_contents(demo):
                         if part['ref'] in images:
                             window.storage.icons[(part['id'], str(part['chosen_color']))] = pixmap(images[part['ref']])
                     window.nav.setCurrentRow(next(i for i, row in enumerate(application.NAV) if row[3]=='storage'))
                     window.resize(1366, 850); app.processEvents(); window.storage.fit_all(); app.processEvents()
-                    window.grab().save(str(output / f'rangement-{language}.png'))
+                    capture(window,f'rangement-{language}.png',[1366,850],language)
                     window.close(); app.processEvents()
-            report['checks'].append(dict(case='ui_and_exports', languages=['fr', 'en'], sizes=[[1366,768],[800,600]], label_mm=[65,23], paper='A4', physical_print=False))
+            actual=sorted({tuple(row['logical_size']) for row in report['captures'] if row['file'].startswith('interface-')})
+            report['checks'].append(dict(case='ui_and_exports', languages=['fr', 'en'], sizes=actual, requested_sizes=[[1366,768],[800,600]], label_mm=[65,23], paper='A4', physical_print=False))
             report['success'] = True
         finally:
             for window in reversed(windows):
