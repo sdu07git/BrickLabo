@@ -190,8 +190,10 @@ class BrickArchitectCatalogue(Catalogue):
         if not db.setting('columns_BA_part_catalogue'):
             db.set_setting('columns_BA_part_catalogue',['ref','name','category','architect_rank','ldraw_model','image'])
         super().__init__(db,'BA','part','catalogue',parent)
-        self.button=QPushButton(tr('Mettre à jour BrickArchitect depuis le site…'));self.button.clicked.connect(self.update_site);self.layout().insertWidget(0,self.button)
-        self.cancel_button=QPushButton(tr('Annuler la mise à jour'));self.cancel_button.hide();self.cancel_button.clicked.connect(lambda:self.cancelled.set());self.layout().insertWidget(1,self.cancel_button)
+        from .ui_common import HorizontalControls
+        self.update_controls=HorizontalControls(self);self.layout().insertWidget(0,self.update_controls)
+        self.button=QPushButton(tr('Mettre à jour BrickArchitect depuis le site…'));self.button.clicked.connect(self.update_site);self.update_controls.row.addWidget(self.button)
+        self.cancel_button=QPushButton(tr('Annuler la mise à jour'));self.cancel_button.hide();self.cancel_button.clicked.connect(lambda:self.cancelled.set());self.update_controls.row.addWidget(self.cancel_button)
         self.info=QLabel();self.info.setWordWrap(True);self.layout().insertWidget(1,self.info);self.update_info()
     def update_info(self):
         info=self.db.setting('brickarchitect_info',{})
