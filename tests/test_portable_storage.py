@@ -7,7 +7,7 @@ from atelier.viewpoint import DEFAULT_CAMERA,camera_for_item,save_camera
 
 class PortableStorageTests(unittest.TestCase):
     def setUp(self):
-        self.temp=tempfile.TemporaryDirectory();self.folder=Path(self.temp.name);self.app=self.folder/'BrickLabo';self.app.mkdir();self.target=self.app/'Donnees';self.profile=self.folder/'Profile';self.source=self.profile/'LEGOAtelier'
+        self.temp=tempfile.TemporaryDirectory();self.folder=Path(self.temp.name).resolve();self.app=self.folder/'BrickLabo';self.app.mkdir();self.target=self.app/'Donnees';self.profile=self.folder/'Profile';self.source=self.profile/'LEGOAtelier'
     def tearDown(self):__import__('atelier.temp_area',fromlist=['close']).close();self.temp.cleanup()
     def legacy(self):
         db=Database(self.source/'atelier.sqlite');db.set_setting('api_rb','test-key');db.set_setting('camera_presets',{'Avant':{'yaw':180,'pitch':-23,'roll':-3}})
