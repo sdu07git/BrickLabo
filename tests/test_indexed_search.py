@@ -100,7 +100,7 @@ class IndexedSearchTests(unittest.TestCase):
   with patch.object(backups,'VERSION','0.1.99'):self.assertEqual(validate_archive(archive)['version'],__import__('atelier.version',fromlist=['VERSION']).VERSION)
   with patch.object(backups,'VERSION','0.1.31'):
    with self.assertRaises(ValueError):validate_archive(archive)
-  queue_restore(self.db,archive);self.db.run("UPDATE items SET name='Modified',search='modified'");apply_pending(self.db.path.parent)
+  queue_restore(self.db,archive);self.db.run("UPDATE items SET name='Modified',search='modified'");self.db.close();apply_pending(self.db.path.parent)
   restored=Database(self.db.path);self.assertEqual(restored.query(search='slope')[1],1);self.assertEqual(restored.setting('search_presets_demo')['Test']['search'],'slope')
   # Backups from the stable baseline can be read by the alternative branch.
   with patch.object(backups,'VERSION','0.1.28'):create_backup(restored,archive)

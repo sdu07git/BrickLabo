@@ -14,10 +14,10 @@ class BackupTests(unittest.TestCase):
  def test_snapshot_content_private_keys_and_exclusions(self):
   self.save();manifest=validate_archive(self.zip)
   self.assertIn('images/file',manifest['files']);self.assertIn('Notices/file',manifest['files']);self.assertNotIn('temp/file',manifest['files']);self.assertNotIn('cache/file',manifest['files'])
-  queue_restore(self.db,self.zip);apply_pending(self.root);restored=Database(self.db.path);self.assertEqual(restored.setting('api_rb'),'private-key');self.assertEqual(restored.rows('SELECT quantity FROM stock')[0]['quantity'],4)
+  queue_restore(self.db,self.zip);self.db.close();apply_pending(self.root);restored=Database(self.db.path);self.assertEqual(restored.setting('api_rb'),'private-key');self.assertEqual(restored.rows('SELECT quantity FROM stock')[0]['quantity'],4)
  def test_apply_at_restart_and_previous_preserved(self):
   self.save();queue_restore(self.db,self.zip);self.db.add('stock',1,'86',3)
-  self.assertEqual(self.db.rows('SELECT quantity FROM stock')[0]['quantity'],7);apply_pending(self.root)
+  self.assertEqual(self.db.rows('SELECT quantity FROM stock')[0]['quantity'],7);self.db.close();apply_pending(self.root)
   self.assertEqual(Database(self.db.path).rows('SELECT quantity FROM stock')[0]['quantity'],4)
   report=json.loads((self.root/REPORT).read_text());previous=Database(Path(report['previous'])/'atelier.sqlite');self.assertEqual(previous.rows('SELECT quantity FROM stock')[0]['quantity'],7)
  def test_cancel(self):
@@ -25,7 +25,7 @@ class BackupTests(unittest.TestCase):
  def test_inside_data_rejected(self):
   with self.assertRaises(ValueError):create_backup(self.db,self.root/'save.zip')
  def test_stage_tamper_preserves_current_data(self):
-  self.save();stage=queue_restore(self.db,self.zip);(stage/'Donnees'/'images'/'file').write_bytes(b'bad');apply_pending(self.root)
+  self.save();stage=queue_restore(self.db,self.zip);(stage/'Donnees'/'images'/'file').write_bytes(b'bad');self.db.close();apply_pending(self.root)
   self.assertFalse(json.loads((self.root/REPORT).read_text())['success']);self.assertEqual(self.db.rows('SELECT quantity FROM stock')[0]['quantity'],4)
  def test_traversal_rejected(self):
   self.save()
@@ -33,12 +33,12 @@ class BackupTests(unittest.TestCase):
   with self.assertRaises(ValueError):queue_restore(self.db,self.zip)
   self.assertFalse((self.home/'escape').exists())
  def test_relocation(self):
-  self.db.set_setting('output',str(self.root/'Exports'));self.save();new=Database(self.home/'New'/'Donnees'/'atelier.sqlite');queue_restore(new,self.zip);apply_pending(new.path.parent)
+  self.db.set_setting('output',str(self.root/'Exports'));self.save();new=Database(self.home/'New'/'Donnees'/'atelier.sqlite');queue_restore(new,self.zip);new.close();apply_pending(new.path.parent)
   self.assertEqual(Database(new.path).setting('output'),str(new.path.parent/'Exports'))
  def test_swap_failure_rolls_back(self):
   self.save();stage=queue_restore(self.db,self.zip);original=Path.rename
   def rename(path,target):
    if path==stage/'Donnees':raise OSError('Simulated locked destination')
    return original(path,target)
-  with patch.object(Path,'rename',rename):apply_pending(self.root)
+  with patch.object(Path,'rename',rename):self.db.close();apply_pending(self.root)
   self.assertFalse(json.loads((self.root/REPORT).read_text())['success']);self.assertEqual(self.db.rows('SELECT quantity FROM stock')[0]['quantity'],4)

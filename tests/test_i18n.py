@@ -105,5 +105,5 @@ print('ENGLISH_STARTUP_OK')
   from atelier.backups import create_backup,queue_restore,apply_pending,REPORT
   with tempfile.TemporaryDirectory() as folder:
    root=Path(folder)/'BrickLabo'/'Donnees';db=Database(root/'atelier.sqlite');db.set_setting('ui_language','en');archive=Path(folder)/'backup.zip';create_backup(db,archive)
-   db.set_setting('ui_language','fr');i18n.set_language('fr');queue_restore(db,archive);apply_pending(root)
+   db.set_setting('ui_language','fr');i18n.set_language('fr');queue_restore(db,archive);db.close();apply_pending(root)
    self.assertEqual(i18n.read_language(db.path),'en');self.assertEqual(i18n.language(),'en');self.assertIn('Backup restored',json.loads((root/REPORT).read_text())['message'])
