@@ -6,6 +6,7 @@ import sys
 import unittest
 import argparse
 from test_reporting import ReportResult
+from test_resources import FixtureResources
 ROOT=Path(__file__).resolve().parent.parent
 sys.path.insert(0,str(ROOT/'app'))
 sys.path.insert(0,str(ROOT/'tests'))
@@ -32,8 +33,15 @@ if __name__=='__main__':
                     QCoreApplication.sendPostedEvents(None,QEvent.Type.DeferredDelete)
                     collector.collect_if_idle(force=True)
             super().stopTest(test)
-    suite=unittest.defaultTestLoader.loadTestsFromNames(args.tests) if args.tests else unittest.defaultTestLoader.discover(str(ROOT/'tests'))
-    result=unittest.TextTestRunner(verbosity=2,resultclass=GuiResult,failfast=args.failfast).run(suite)
+    def fixture_idle():
+        if not QThreadPool.globalInstance().waitForDone(10000):
+            raise RuntimeError('Fixture still has running Qt tasks during cleanup')
+        app.processEvents()
+        if not drain_tasks():
+            raise RuntimeError('Fixture task disposal did not finish during cleanup')
+    with FixtureResources(fixture_idle):
+        suite=unittest.defaultTestLoader.loadTestsFromNames(args.tests) if args.tests else unittest.defaultTestLoader.discover(str(ROOT/'tests'))
+        result=unittest.TextTestRunner(verbosity=2,resultclass=GuiResult,failfast=args.failfast).run(suite)
     joined=QThreadPool.globalInstance().waitForDone(10000);app.processEvents()
     stopped=collector.stop() if joined else False
     result.save(args.report,args.junit,bool(joined and stopped))
