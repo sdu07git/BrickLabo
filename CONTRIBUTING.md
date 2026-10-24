@@ -23,11 +23,15 @@ distribution précédente publique dont le SHA-256 est fixé, puis LDraw.
 
 `python tools/run_tests.py --report ../validation/tests.json --junit ../validation/tests.xml`
 exécute la suite complète avec le garde-fou Qt. Les rapports restent hors du dépôt.
+Le banc ferme les connexions SQLite et archives appartenant aux collections de
+test avant le retrait explicite de leurs dossiers temporaires. Windows refuse
+normalement d'effacer un fichier encore ouvert. Les ressources extérieures au
+dossier nettoyé restent ouvertes et les erreurs de suppression restent visibles.
 
 `python tools/qualify_release.py --output ../validation/qualification --duration 120`
 contrôle les vrais inventaires, les sauvegardes et les rendus. Une session longue
 peut employer `--duration 14400`. Les captures proviennent de données fictives.
-La matrice GitHub Actions conserve séparément les résultats Linux et Windows.
+La matrice GitHub Actions conserve séparément les résultats Linux et Windows, en quatre lots déterministes par plateforme. `--shard 0/4` sélectionne un lot ; sans cette option la suite complète reste exécutée dans un seul processus. Le contrôle de couverture refuse les lots manquants, doublons, recensements différents ou résultats en échec avant de déclarer la suite complète réussie.
 
 Une distribution 1.0 exige `python tools/check_release.py --for-final --evidence PATH`.
 Les essais physiques et autorisations externes restent ouverts tant qu'aucune
